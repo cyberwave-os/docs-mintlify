@@ -1,0 +1,191 @@
+{
+    "$schema": "https://mintlify.com/docs.json",
+    "theme": "mint",
+    "name": "Cyberwave Docs",
+    "colors": {
+      "primary": "#00b5dd",
+      "light": "#33cfef",
+      "dark": "#0091b1"
+    },
+    "favicon": "/favicon.svg",
+    "navigation": {
+      "tabs": [
+        {
+          "tab": "Guides",
+          "groups": [
+            {
+              "group": "Getting started",
+              "pages": [
+                "index",
+                "quickstart"
+              ]
+            },
+            {
+              "group": "Concepts",
+              "pages": [
+                "concepts/digital-twins",
+                "concepts/environment-editor"
+              ]
+            },
+            {  
+              "group": "SKDs",
+              "pages": [
+                "sdks/python-sdk",
+                "sdks/javascript-sdk",
+                "sdks/cpp-sdk"
+              ]
+            }
+          ]
+        },
+        {
+          "tab": "API reference",
+          "groups": [
+            {
+              "group": "Overview",
+              "pages": [
+                "api-reference/overview"
+              ]
+            },
+            {
+                "group": "MQTT API",
+                "pages": [
+                  "api-reference/mqtt/main"
+                ]
+            },
+            {
+              "group": "REST API",
+              "pages": [
+                "api-reference/rest/AssetCreateSchema",
+                "api-reference/rest/AssetCreateWithURDFSchema",
+                "api-reference/rest/AssetGLBFromAttachmentSchema",
+                "api-reference/rest/AssetSchema",
+                "api-reference/rest/AssetUpdateSchema",
+                "api-reference/rest/AttachmentCreateSchema",
+                "api-reference/rest/AttachmentSchema",
+                "api-reference/rest/BulkJointStatesUpdateSchema",
+                "api-reference/rest/CombinedDatasetGenerationRequestSchema",
+                "api-reference/rest/CompleteLargeUploadSchema",
+                "api-reference/rest/ContactFormSchema",
+                "api-reference/rest/DatasetGenerationRequestSchema",
+                "api-reference/rest/DatasetGenerationRequestSchemaByDate",
+                "api-reference/rest/DatasetGenerationResponseSchema",
+                "api-reference/rest/DefaultApi",
+                "api-reference/rest/EdgeCreateSchema",
+                "api-reference/rest/EdgeSchema",
+                "api-reference/rest/EnvironmentCreateSchema",
+                "api-reference/rest/EnvironmentSchema",
+                "api-reference/rest/InitiateLargeUploadResponse",
+                "api-reference/rest/InitiateLargeUploadSchema",
+                "api-reference/rest/JointSchema",
+                "api-reference/rest/JointStateSchema",
+                "api-reference/rest/JointStatesSchema",
+                "api-reference/rest/JointStateUpdateSchema",
+                "api-reference/rest/LinkShareCreateSchema",
+                "api-reference/rest/LinkShareRevokeSchema",
+                "api-reference/rest/LinkShareSchema",
+                "api-reference/rest/LLMGenerationSchema",
+                "api-reference/rest/LLMResponseSchema",
+                "api-reference/rest/MLModelCreateSchema",
+                "api-reference/rest/MLModelSchema",
+                "api-reference/rest/MLModelUpdateSchema",
+                "api-reference/rest/OrganizationSchema",
+                "api-reference/rest/OrganizationUpdateSchema",
+                "api-reference/rest/Payload",
+                "api-reference/rest/PermissionsSchema",
+                "api-reference/rest/PlanSchema",
+                "api-reference/rest/PopularTagSchema",
+                "api-reference/rest/PopularTagsResponseSchema",
+                "api-reference/rest/ProjectCreateSchema",
+                "api-reference/rest/ProjectSchema",
+                "api-reference/rest/ProjectShareResponseSchema",
+                "api-reference/rest/PublicUserSchema",
+                "api-reference/rest/RobotDescriptionSchema",
+                "api-reference/rest/ShareSchema",
+                "api-reference/rest/SharesResponseSchema",
+                "api-reference/rest/TeamMemberResponse",
+                "api-reference/rest/TeamShareSchema",
+                "api-reference/rest/TwinCreateSchema",
+                "api-reference/rest/TwinRelationshipSchema",
+                "api-reference/rest/TwinSchema",
+                "api-reference/rest/TwinStateUpdateSchema",
+                "api-reference/rest/TwinTelemetryMetadataSchema",
+                "api-reference/rest/UpdateDatasetMetadataSchema",
+                "api-reference/rest/URDFProjectCreateSchema",
+                "api-reference/rest/URDFProjectSchema",
+                "api-reference/rest/UserSchema",
+                "api-reference/rest/UserShareSchema",
+                "api-reference/rest/VendorDescriptionSchema",
+                "api-reference/rest/VLMGenerationSchema",
+                "api-reference/rest/VLMResponseSchema",
+                "api-reference/rest/WorkflowConnectionCreateSchema",
+                "api-reference/rest/WorkflowConnectionSchema",
+                "api-reference/rest/WorkflowCreateSchema",
+                "api-reference/rest/WorkflowExecuteSchema",
+                "api-reference/rest/WorkflowExecutionSchema",
+                "api-reference/rest/WorkflowNodeCreateSchema",
+                "api-reference/rest/WorkflowNodeExecutionSchema",
+                "api-reference/rest/WorkflowNodeSchema",
+                "api-reference/rest/WorkflowNodeUpdateSchema",
+                "api-reference/rest/WorkflowSchema",
+                "api-reference/rest/WorkflowUpdateSchema",
+                "api-reference/rest/WorkspaceResponseSchema",
+                "api-reference/rest/WorkspaceSchema",
+                "api-reference/rest/WorkspaceUpdateSchema",
+                "api-reference/rest/WorkspaceUserSchema"
+              ]
+            }
+          ]
+        }
+      ],
+      "global": {
+        "anchors": [
+          {
+            "anchor": "Dashboard",
+            "href": "https://cyberwave.com/dashboard",
+            "icon": "book-open-cover"
+          },
+          {
+            "anchor": "Blog",
+            "href": "https://cyberwave.com/blog",
+            "icon": "newspaper"
+          }
+        ]
+      }
+    },
+    "logo": {
+      "light": "/images/cyberwave-logo-black.svg",
+      "dark": "/images/cyberwave-logo-white.svg"
+    },
+    "navbar": {
+      "links": [
+        {
+          "label": "Contact",
+          "href": "mailto:info@cyberwave.com"
+        }
+      ],
+      "primary": {
+        "type": "button",
+        "label": "Dashboard",
+        "href": "https://cyberwave.com/dashboard"
+      }
+    },
+    "contextual": {
+      "options": [
+       "copy",
+       "view",
+       "chatgpt",
+       "claude",
+       "perplexity",
+       "mcp",
+       "cursor",
+       "vscode"
+     ]
+    },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/cyberwave_com",
+      "linkedin": "https://www.linkedin.com/company/cyberwave-com/",
+      "youtube": "https://www.youtube.com/channel/UCmw6EQ1nJj7sqjkITm2wjCw"
+    }
+  }
+  }

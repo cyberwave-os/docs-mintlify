@@ -1,1 +1,1 @@
-# docs-mintlify
+# Cyberwave Docs

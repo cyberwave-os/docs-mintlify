@@ -1,0 +1,288 @@
+
+<Note>
+**Cyberwave is in Private Beta**
+
+To get started, sign up for our Private Beta and get a token!
+
+<button 
+  onClick={() => document.getElementById('waitlist-modal').style.display = 'flex'}
+  style={{ 
+    padding: '0.75rem 1.5rem',
+    background: 'linear-gradient(135deg, #00b5dd 0%, #0091b1 100%)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '0.5rem',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    fontSize: '1rem',
+    marginTop: '1rem',
+    transition: 'all 0.2s'
+  }}
+  onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+  onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+>
+  Join Private Beta →
+</button>
+</Note>
+
+{/* Waitlist Modal */}
+<div 
+  id="waitlist-modal"
+  style={{
+    display: 'none',
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    zIndex: 9999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '1rem'
+  }}
+  onClick={(e) => {
+    if (e.target.id === 'waitlist-modal') {
+      document.getElementById('waitlist-modal').style.display = 'none';
+    }
+  }}
+>
+  <div 
+    style={{
+      background: 'white',
+      borderRadius: '1rem',
+      maxWidth: '500px',
+      width: '100%',
+      maxHeight: '90vh',
+      overflow: 'auto',
+      position: 'relative'
+    }}
+    onClick={(e) => e.stopPropagation()}
+  >
+    {/* Close button */}
+    <button
+      onClick={() => document.getElementById('waitlist-modal').style.display = 'none'}
+      style={{
+        position: 'absolute',
+        top: '1rem',
+        right: '1rem',
+        background: 'transparent',
+        border: 'none',
+        fontSize: '1.5rem',
+        cursor: 'pointer',
+        color: '#666',
+        lineHeight: 1,
+        padding: '0.25rem',
+        width: '2rem',
+        height: '2rem'
+      }}
+    >
+      ✕
+    </button>
+
+    {/* Modal content */}
+    <div style={{ padding: '2rem' }}>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h2 style={{ 
+          margin: '0 0 0.5rem 0',
+          fontSize: '1.5rem',
+          color: '#00b5dd'
+        }}>
+          Join the Cyberwave Private Beta
+        </h2>
+        <p style={{ 
+          margin: 0,
+          color: '#666',
+          fontSize: '0.95rem'
+        }}>
+          We're inviting a select group of pioneers to test Cyberwave in both virtual and real-world environments. Apply now to secure your spot.
+        </p>
+      </div>
+
+      <form 
+        id="waitlist-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const form = e.target;
+          const formData = new FormData(form);
+          const fullName = formData.get('fullName');
+          const nameParts = fullName.split(' ');
+          const submitButton = form.querySelector('button[type="submit"]');
+          const statusDiv = document.getElementById('form-status');
+          
+          submitButton.disabled = true;
+          submitButton.textContent = 'Joining...';
+          statusDiv.innerHTML = '';
+          
+          fetch('https://api.cyberwave.com/api/v1/contact/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              first_name: nameParts[0] || fullName,
+              last_name: nameParts.slice(1).join(' ') || '',
+              email: formData.get('email'),
+              subject: 'Waitlist Registration',
+              message: `Waitlist Registration:\n\n${formData.get('message') || 'No additional message provided.'}\n\nNote: This user has joined the waitlist for early access to new features.`
+            })
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              statusDiv.innerHTML = '<p style="color: #00b5dd; font-weight: bold; margin: 0; padding: 0.75rem; background: #e6f7fb; border-radius: 0.5rem;">✓ Welcome to the waitlist! We\'ll be in touch soon.</p>';
+              form.reset();
+              setTimeout(() => {
+                document.getElementById('waitlist-modal').style.display = 'none';
+                statusDiv.innerHTML = '';
+              }, 2000);
+            } else {
+              statusDiv.innerHTML = '<p style="color: #dc2626; margin: 0; padding: 0.75rem; background: #fee; border-radius: 0.5rem;">⚠ ' + (data.message || 'Something went wrong. Please try again.') + '</p>';
+            }
+          })
+          .catch(err => {
+            statusDiv.innerHTML = '<p style="color: #dc2626; margin: 0; padding: 0.75rem; background: #fee; border-radius: 0.5rem;">⚠ Failed to join waitlist. Please try again.</p>';
+          })
+          .finally(() => {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Join Private Beta';
+          });
+        }}
+        style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '1rem'
+        }}
+      >
+        <div>
+          <label style={{ 
+            display: 'block',
+            marginBottom: '0.5rem',
+            fontWeight: '500',
+            fontSize: '0.875rem',
+            color: '#333'
+          }}>
+            Full Name *
+          </label>
+          <input 
+            type="text" 
+            name="fullName" 
+            placeholder="John Doe" 
+            required 
+            style={{ 
+              width: '100%',
+              padding: '0.75rem', 
+              borderRadius: '0.5rem', 
+              border: '1px solid #ddd',
+              fontSize: '1rem',
+              boxSizing: 'border-box'
+            }} 
+          />
+        </div>
+
+        <div>
+          <label style={{ 
+            display: 'block',
+            marginBottom: '0.5rem',
+            fontWeight: '500',
+            fontSize: '0.875rem',
+            color: '#333'
+          }}>
+            Email *
+          </label>
+          <input 
+            type="email" 
+            name="email" 
+            placeholder="john@example.com" 
+            required 
+            style={{ 
+              width: '100%',
+              padding: '0.75rem', 
+              borderRadius: '0.5rem', 
+              border: '1px solid #ddd',
+              fontSize: '1rem',
+              boxSizing: 'border-box'
+            }} 
+          />
+        </div>
+
+        <div>
+          <label style={{ 
+            display: 'block',
+            marginBottom: '0.5rem',
+            fontWeight: '500',
+            fontSize: '0.875rem',
+            color: '#333'
+          }}>
+            Tell us more (optional)
+          </label>
+          <textarea
+            name="message"
+            placeholder="What features are you most interested in? Any specific use case?"
+            rows="4"
+            style={{ 
+              width: '100%',
+              padding: '0.75rem', 
+              borderRadius: '0.5rem', 
+              border: '1px solid #ddd',
+              fontSize: '1rem',
+              fontFamily: 'inherit',
+              resize: 'vertical',
+              boxSizing: 'border-box'
+            }} 
+          />
+        </div>
+
+        <div id="form-status"></div>
+
+        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+          <button 
+            type="button"
+            onClick={() => document.getElementById('waitlist-modal').style.display = 'none'}
+            style={{ 
+              flex: 1,
+              padding: '0.875rem', 
+              background: '#f3f4f6', 
+              color: '#374151', 
+              border: 'none', 
+              borderRadius: '0.5rem', 
+              fontWeight: '500', 
+              cursor: 'pointer',
+              fontSize: '1rem'
+            }}
+          >
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            style={{ 
+              flex: 1,
+              padding: '0.875rem', 
+              background: 'linear-gradient(135deg, #00b5dd 0%, #0091b1 100%)',
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '0.5rem', 
+              fontWeight: 'bold', 
+              cursor: 'pointer',
+              fontSize: '1rem',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
+            onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+          >
+            Join Private Beta
+          </button>
+        </div>
+
+        <p style={{ 
+          color: '#999', 
+          fontSize: '0.75rem', 
+          textAlign: 'center',
+          margin: '0.5rem 0 0 0'
+        }}>
+          No credit card required • Cancel anytime
+        </p>
+      </form>
+    </div>
+  </div>
+</div>

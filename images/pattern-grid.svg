@@ -1,0 +1,12 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<rect width="1920" height="1080" fill="url(#pattern0_411_1054)"/>
+<defs>
+<pattern id="pattern0_411_1054" patternUnits="userSpaceOnUse" patternTransform="matrix(56 0 0 56 932 0)" preserveAspectRatio="none" viewBox="0 0 56 56" width="1" height="1">
+<g id="pattern0_411_1054_inner">
+<mask id="path-1-inside-1_411_1054" fill="white">
+<path d="M0 0H56V56H0V0Z"/>
+</mask>
+<path d="M56 56V57H57V56H56ZM56 0H55V56H56H57V0H56ZM56 56V55H0V56V57H56V56Z" fill="#CFCFCF" mask="url(#path-1-inside-1_411_1054)"/>
+</g>
+</pattern></defs>
+</svg>

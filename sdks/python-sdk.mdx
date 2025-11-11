@@ -1,0 +1,141 @@
+---
+title: 'Python SDK'
+description: 'Programmatically control your robots and simulations using our comprehensive Python SDK'
+icon: 'python'
+---
+
+import EarlyAccess from '/snippets/early-access.mdx';
+
+## What is the Cyberwave Python SDK?
+
+The Cyberwave Python SDK provides a powerful, easy-to-use interface for controlling robots, running simulations, and managing digital twins programmatically. Perfect for automation, testing, and advanced robotics applications.
+
+<CardGroup cols={3}>
+  <Card title="Robot Control" icon="robot">
+    Direct robot manipulation
+  </Card>
+  <Card title="Simulation" icon="desktop">
+    Run automated simulations
+  </Card>
+  <Card title="Data Analytics" icon="bolt">
+    Collect and analyze data
+  </Card>
+</CardGroup>
+
+## Installation
+
+<EarlyAccess />
+
+Install the Cyberwave Python SDK using pip:
+
+```bash
+pip install cyberwave
+```
+
+<Note>
+**Requirements:**
+- Python 3.11 or higher
+- API token (generated from your Profile page after getting Private Beta access)
+</Note>
+
+## Quick Start Example
+
+Make your robot go BRRRRRRR:
+
+```python
+import cyberwave as cw
+
+# Connect to your digital twin
+robot = cw.twin("the-robot-studio/so101")
+
+# Move the robot to a position
+robot.move(x=1.0, y=0.0, z=0.5)
+robot.rotate(yaw=90)
+
+# Actuate the robot's joint to 30 degrees
+robot.joints.set("1", 30)
+```
+
+## Stream Video
+
+Install the additional dependencies for camera streaming:
+
+```bash
+pip install cyberwave[camera]
+```
+
+Now you can stream real time video data from your robot or sensor:
+
+```python
+from cyberwave import Cyberwave
+import asyncio
+import os
+
+token = os.getenv("CYBERWAVE_TOKEN")
+
+client = Cyberwave(
+    token=token,
+)
+
+# Get or create a twin to stream to
+twin_uuid = os.getenv("TWIN_UUID")
+
+# Create camera streamer
+streamer = client.video_stream(
+    twin_uuid=twin_uuid,
+    camera_id=0,  # Default camera (change if you have multiple cameras)
+    fps=10,  # Frames per second, optional
+)
+
+try:
+    await streamer.start()
+    print("Stream is active. Press Ctrl+C to stop...")
+
+    # Keep streaming until interrupted
+    while True:
+        await asyncio.sleep(1)
+
+except KeyboardInterrupt:
+    print("Stopping stream...")
+except Exception as e:
+    print(f"Error during streaming: {e}")
+finally:
+    await streamer.stop()
+    client.disconnect()
+    print("Stream stopped and resources cleaned up")
+```
+
+## Authentication & Setup
+
+Get your API token from the Cyberwave dashboard and configure authentication:
+
+<Steps>
+  <Step title="Generate Token">
+    Go to Dashboard → Profile → API Tokens to generate your token
+  </Step>
+  <Step title="Set Environment Variable">
+    Set your token as an environment variable:
+    ```bash
+    export CYBERWAVE_API_TOKEN=your_token
+    ```
+  </Step>
+  <Step title="Initialize Client">
+    The SDK will automatically use the environment variable
+  </Step>
+</Steps>
+
+## Ready to Code?
+
+Start building powerful robotics applications with the Cyberwave Python SDK. Explore our examples and documentation.
+
+<CardGroup cols={3}>
+  <Card title="Get API Token" icon="terminal" href="https://cyberwave.com/profile">
+    Generate your API token from your profile page
+  </Card>
+  <Card title="View on PyPI" icon="download" href="https://pypi.org/project/cyberwave/">
+    View the package on PyPI
+  </Card>
+  <Card title="Check on Github" icon="github" href="https://github.com/cyberwave-os/cyberwave-python">
+    Clone the repo from Github
+  </Card>
+</CardGroup>

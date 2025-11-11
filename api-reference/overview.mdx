@@ -1,0 +1,57 @@
+---
+title: 'API Overview'
+description: 'Cyberwave APIs overview'
+---
+
+## Introduction
+
+Cyberwave provides two main APIs to interact with the platform, each designed for specific use cases and communication patterns.
+
+## REST API
+
+The REST API is used for **non-real-time communication** with the Cyberwave platform. It follows standard HTTP methods and is ideal for:
+
+- Creating and managing digital twins
+- Configuring robot settings
+- Retrieving historical data
+- Managing user accounts and permissions
+- Performing administrative tasks
+
+
+## MQTT API
+
+The MQTT API is used for **real-time communication** with robots and telemetry data. This lightweight, publish-subscribe protocol is perfect for:
+
+- Live robot control and commands
+- Real-time telemetry streaming
+- Sensor data collection
+- Event notifications
+- Low-latency bidirectional communication
+
+## Choosing the Right API
+
+| Use Case | Recommended API |
+|----------|----------------|
+| Fetch robot configuration | REST |
+| Send real-time commands to robots | MQTT |
+| Query historical telemetry | REST |
+| Stream live sensor data | MQTT |
+| Manage user permissions | REST |
+| Receive instant event notifications | MQTT |
+
+## Getting Started
+
+To start using the Cyberwave APIs, make sure you have:
+
+1. A valid API key or authentication credentials
+2. The appropriate SDK installed (optional but recommended)
+3. Network access to the Cyberwave platform
+
+<CardGroup cols={2}>
+  <Card title="REST Quickstart" icon="rocket" href="/quickstart#rest-api">
+    Get started with REST API in minutes
+  </Card>
+  <Card title="MQTT Quickstart" icon="bolt" href="/quickstart#mqtt-api">
+    Connect to MQTT and start streaming
+  </Card>
+</CardGroup>

@@ -1,0 +1,130 @@
+---
+title: "Quick Start"
+description: "Get up and running with Cyberwave in just a few minutes"
+icon: "rocket"
+---
+
+import EarlyAccess from '/snippets/early-access.mdx';
+
+## Step 1: Create Your First Project
+
+<EarlyAccess />
+
+Projects help you organize your robotics work by grouping related environments, assets, and simulations together.
+
+<AccordionGroup>
+  <Accordion title="What you'll do" icon="check-circle">
+    - Click "New Project" from the dashboard
+    - Give it a name like "My First Robot Project"
+    - Add a description of what you're building
+  </Accordion>
+</AccordionGroup>
+
+<Card
+  title="Go to Dashboard"
+  icon="folder-plus"
+  href="https://cyberwave.com/dashboard"
+>
+  Create your first project from the dashboard
+</Card>
+
+---
+
+## Step 2: Create an Environment
+
+Environments are 3D spaces where your robots live and interact. Think of them as virtual worlds for your simulations.
+
+<AccordionGroup>
+  <Accordion title="What you'll do" icon="check-circle">
+    - Click "New Environment" from your project
+    - Pick a name for your environment
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Step 3: Add Robot Assets
+
+Browse our catalog of pre-built robots or upload your own URDF files to bring your robots into the simulation.
+
+<AccordionGroup>
+  <Accordion title="What you'll do" icon="check-circle">
+    - Browse the asset catalog for robots
+    - Add robots to your environment
+    - Position and configure your robots
+  </Accordion>
+</AccordionGroup>
+
+<Card
+  title="Browse Catalog"
+  icon="book-open"
+  href="https://cyberwave.com/catalog"
+>
+  Explore our robot catalog
+</Card>
+
+---
+
+## Step 4: Control with Python SDK
+
+Take full control of your robots using our Python SDK. Write code to move robots, read sensors, and implement complex behaviors.
+
+```python
+# Install the Cyberwave SDK
+pip install cyberwave
+
+# Control your robot
+import cyberwave as cw
+
+# Connect to your robot
+robot = cw.twin("the-robot-studio/so101")
+
+# Move the robot to a position
+robot.move(x=1.0, y=0.0, z=0.5)
+robot.rotate(yaw=90)
+
+# Actuate the robot's joint to 30 degrees
+robot.joints.set("1", 30)
+```
+
+---
+
+## What's Next?
+
+Now that you've got the basics down, here are some next steps to explore:
+
+<CardGroup cols={2}>
+  <Card
+    title="Advanced Robotics"
+    icon="robot"
+  >
+    - Multi-robot coordination
+    - Sensor integration
+    - Path planning algorithms
+  </Card>
+  <Card
+    title="Customization"
+    icon="wrench"
+  >
+    - Upload custom URDF models
+    - Create custom environments
+    - Build custom sensors
+  </Card>
+</CardGroup>
+
+<CardGroup cols={2}>
+  <Card
+    title="Full Documentation"
+    icon="book-open"
+    href="/index"
+  >
+    Explore complete documentation
+  </Card>
+  <Card
+    title="Explore Robots"
+    icon="robot"
+    href="https://cyberwave.com/catalog"
+  >
+    Browse our robot catalog
+  </Card>
+</CardGroup>
