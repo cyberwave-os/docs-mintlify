@@ -28,6 +28,11 @@ Method | HTTP request | Description
 [**src_app_api_attachments_update_attachment**](DefaultApi.md#src_app_api_attachments_update_attachment) | **PUT** /api/v1/attachments/{uuid} | Update Attachment
 [**src_app_api_attachments_upload_attachment**](DefaultApi.md#src_app_api_attachments_upload_attachment) | **POST** /api/v1/attachments/{uuid}/upload | Upload Attachment
 [**src_app_api_contact_contact_form**](DefaultApi.md#src_app_api_contact_contact_form) | **POST** /api/v1/contact/ | Contact Form
+[**src_app_api_controller_policies_create_controller_policy**](DefaultApi.md#src_app_api_controller_policies_create_controller_policy) | **POST** /api/v1/controller-policies | Create Controller Policy
+[**src_app_api_controller_policies_delete_controller_policy**](DefaultApi.md#src_app_api_controller_policies_delete_controller_policy) | **DELETE** /api/v1/controller-policies/{uuid} | Delete Controller Policy
+[**src_app_api_controller_policies_get_controller_policy**](DefaultApi.md#src_app_api_controller_policies_get_controller_policy) | **GET** /api/v1/controller-policies/{uuid} | Get Controller Policy
+[**src_app_api_controller_policies_list_controller_policies**](DefaultApi.md#src_app_api_controller_policies_list_controller_policies) | **GET** /api/v1/controller-policies | List Controller Policies
+[**src_app_api_controller_policies_update_controller_policy**](DefaultApi.md#src_app_api_controller_policies_update_controller_policy) | **PUT** /api/v1/controller-policies/{uuid} | Update Controller Policy
 [**src_app_api_edges_create_edge**](DefaultApi.md#src_app_api_edges_create_edge) | **POST** /api/v1/edges | Create Edge
 [**src_app_api_edges_delete_edge**](DefaultApi.md#src_app_api_edges_delete_edge) | **DELETE** /api/v1/edges/{uuid} | Delete Edge
 [**src_app_api_edges_get_edge**](DefaultApi.md#src_app_api_edges_get_edge) | **GET** /api/v1/edges/{uuid} | Get Edge
@@ -38,31 +43,36 @@ Method | HTTP request | Description
 [**src_app_api_environments_create_environment_link**](DefaultApi.md#src_app_api_environments_create_environment_link) | **POST** /api/v1/environments/{uuid}/create-link | Create Environment Link
 [**src_app_api_environments_create_environment_simulation**](DefaultApi.md#src_app_api_environments_create_environment_simulation) | **POST** /api/v1/environments/{uuid}/simulations | Create Environment Simulation
 [**src_app_api_environments_create_standalone_environment**](DefaultApi.md#src_app_api_environments_create_standalone_environment) | **POST** /api/v1/environments | Create Standalone Environment
-[**src_app_api_environments_delete_dataset**](DefaultApi.md#src_app_api_environments_delete_dataset) | **DELETE** /api/v1/environments/{uuid}/datasets/{dataset_uuid} | Delete Dataset
 [**src_app_api_environments_delete_environment_for_project**](DefaultApi.md#src_app_api_environments_delete_environment_for_project) | **DELETE** /api/v1/projects/{project_uuid}/environments/{uuid} | Delete Environment For Project
-[**src_app_api_environments_generate_combined_telemetry_dataset**](DefaultApi.md#src_app_api_environments_generate_combined_telemetry_dataset) | **POST** /api/v1/environments/{uuid}/generate-combined-dataset | Generate Combined Telemetry Dataset
-[**src_app_api_environments_generate_telemetry_dataset**](DefaultApi.md#src_app_api_environments_generate_telemetry_dataset) | **POST** /api/v1/environments/{uuid}/generate-dataset | Generate Telemetry Dataset
-[**src_app_api_environments_get_dataset_data**](DefaultApi.md#src_app_api_environments_get_dataset_data) | **GET** /api/v1/environments/{uuid}/datasets/{dataset_uuid}/data | Get Dataset Data
+[**src_app_api_environments_delete_recording**](DefaultApi.md#src_app_api_environments_delete_recording) | **DELETE** /api/v1/environments/{uuid}/recordings/{recording_uuid} | Delete Recording
+[**src_app_api_environments_generate_combined_telemetry_recording**](DefaultApi.md#src_app_api_environments_generate_combined_telemetry_recording) | **POST** /api/v1/environments/{uuid}/generate-combined-recording | Generate Combined Telemetry Recording
+[**src_app_api_environments_generate_telemetry_recording**](DefaultApi.md#src_app_api_environments_generate_telemetry_recording) | **POST** /api/v1/environments/{uuid}/generate-recording | Generate Telemetry Recording
 [**src_app_api_environments_get_environment**](DefaultApi.md#src_app_api_environments_get_environment) | **GET** /api/v1/environments/{uuid} | Get Environment
 [**src_app_api_environments_get_environment_invitations**](DefaultApi.md#src_app_api_environments_get_environment_invitations) | **GET** /api/v1/environments/{uuid}/invitations | Get Environment Invitations
 [**src_app_api_environments_get_environment_mujoco_scene**](DefaultApi.md#src_app_api_environments_get_environment_mujoco_scene) | **GET** /api/v1/environments/{uuid}/mujoco-scene | Get Environment Mujoco Scene
 [**src_app_api_environments_get_environment_mujoco_scene_xml**](DefaultApi.md#src_app_api_environments_get_environment_mujoco_scene_xml) | **GET** /api/v1/environments/{uuid}/mujoco-scene.xml | Get Environment Mujoco Scene Xml
-[**src_app_api_environments_get_environment_recordings**](DefaultApi.md#src_app_api_environments_get_environment_recordings) | **GET** /api/v1/environments/{uuid}/datasets | Get Environment Recordings
-[**src_app_api_environments_get_environment_sessions**](DefaultApi.md#src_app_api_environments_get_environment_sessions) | **GET** /api/v1/environments/{uuid}/environment-sessions | Get Environment Sessions
+[**src_app_api_environments_get_environment_recordings**](DefaultApi.md#src_app_api_environments_get_environment_recordings) | **GET** /api/v1/environments/{uuid}/recordings | Get Environment Recordings
+[**src_app_api_environments_get_environment_sessions**](DefaultApi.md#src_app_api_environments_get_environment_sessions) | **GET** /api/v1/environments/{uuid}/sessions | Get Environment Sessions
 [**src_app_api_environments_get_environment_sharing_info_endpoint**](DefaultApi.md#src_app_api_environments_get_environment_sharing_info_endpoint) | **GET** /api/v1/environments/{uuid}/sharing | Get Environment Sharing Info Endpoint
 [**src_app_api_environments_get_environment_simulations**](DefaultApi.md#src_app_api_environments_get_environment_simulations) | **GET** /api/v1/environments/{uuid}/simulations | Get Environment Simulations
 [**src_app_api_environments_get_environment_twins**](DefaultApi.md#src_app_api_environments_get_environment_twins) | **GET** /api/v1/environments/{uuid}/twins | Get Environment Twins
-[**src_app_api_environments_get_twins_sessions**](DefaultApi.md#src_app_api_environments_get_twins_sessions) | **GET** /api/v1/environments/{uuid}/twins-sessions | Get Twins Sessions
+[**src_app_api_environments_get_recording_data**](DefaultApi.md#src_app_api_environments_get_recording_data) | **GET** /api/v1/environments/{uuid}/recordings/{recording_uuid}/data | Get Recording Data
 [**src_app_api_environments_invite_user_to_environment**](DefaultApi.md#src_app_api_environments_invite_user_to_environment) | **POST** /api/v1/environments/{uuid}/invite | Invite User To Environment
 [**src_app_api_environments_list_all_environments**](DefaultApi.md#src_app_api_environments_list_all_environments) | **GET** /api/v1/environments | List All Environments
 [**src_app_api_environments_list_environments_for_project**](DefaultApi.md#src_app_api_environments_list_environments_for_project) | **GET** /api/v1/projects/{project_uuid}/environments | List Environments For Project
+[**src_app_api_environments_process_all_environment_sessions**](DefaultApi.md#src_app_api_environments_process_all_environment_sessions) | **POST** /api/v1/environments/{uuid}/process-all-sessions | Process All Environment Sessions
 [**src_app_api_environments_remove_user_from_environment**](DefaultApi.md#src_app_api_environments_remove_user_from_environment) | **DELETE** /api/v1/environments/{uuid}/users/{user_id} | Remove User From Environment
 [**src_app_api_environments_reset_environment**](DefaultApi.md#src_app_api_environments_reset_environment) | **POST** /api/v1/environments/{uuid}/reset | Reset Environment
 [**src_app_api_environments_revoke_environment_link**](DefaultApi.md#src_app_api_environments_revoke_environment_link) | **POST** /api/v1/environments/{uuid}/revoke-link | Revoke Environment Link
 [**src_app_api_environments_share_environment_with_user**](DefaultApi.md#src_app_api_environments_share_environment_with_user) | **POST** /api/v1/environments/{uuid}/share | Share Environment With User
 [**src_app_api_environments_stop_environment_simulation**](DefaultApi.md#src_app_api_environments_stop_environment_simulation) | **POST** /api/v1/environments/{uuid}/simulations/{simulation_id}/stop | Stop Environment Simulation
-[**src_app_api_environments_update_dataset_metadata**](DefaultApi.md#src_app_api_environments_update_dataset_metadata) | **PUT** /api/v1/environments/{uuid}/datasets/{dataset_uuid} | Update Dataset Metadata
 [**src_app_api_environments_update_environment_for_project**](DefaultApi.md#src_app_api_environments_update_environment_for_project) | **PUT** /api/v1/projects/{project_uuid}/environments/{uuid} | Update Environment For Project
+[**src_app_api_environments_update_recording_metadata**](DefaultApi.md#src_app_api_environments_update_recording_metadata) | **PUT** /api/v1/environments/{uuid}/recordings/{recording_uuid} | Update Recording Metadata
+[**src_app_api_episode_create_episode**](DefaultApi.md#src_app_api_episode_create_episode) | **POST** /api/v1/episodes | Create Episode
+[**src_app_api_episode_delete_episode**](DefaultApi.md#src_app_api_episode_delete_episode) | **DELETE** /api/v1/episodes/{uuid} | Delete Episode
+[**src_app_api_episode_get_episode**](DefaultApi.md#src_app_api_episode_get_episode) | **GET** /api/v1/episodes/{uuid} | Get Episode
+[**src_app_api_episode_list_episodes**](DefaultApi.md#src_app_api_episode_list_episodes) | **GET** /api/v1/episodes | List Episodes
+[**src_app_api_episode_update_episode**](DefaultApi.md#src_app_api_episode_update_episode) | **PUT** /api/v1/episodes/{uuid} | Update Episode
 [**src_app_api_invitation_router_accept_invitation_endpoint**](DefaultApi.md#src_app_api_invitation_router_accept_invitation_endpoint) | **GET** /api/v1/invitations/accept/{token} | Accept Invitation Endpoint
 [**src_app_api_invitation_router_get_invitation_info**](DefaultApi.md#src_app_api_invitation_router_get_invitation_info) | **GET** /api/v1/invitations/info/{token} | Get Invitation Info
 [**src_app_api_mlmodels_create_mlmodel**](DefaultApi.md#src_app_api_mlmodels_create_mlmodel) | **POST** /api/v1/mlmodels | Create Mlmodel
@@ -85,6 +95,7 @@ Method | HTTP request | Description
 [**src_app_api_twins_create_twin**](DefaultApi.md#src_app_api_twins_create_twin) | **POST** /api/v1/twins | Create Twin
 [**src_app_api_twins_delete_twin**](DefaultApi.md#src_app_api_twins_delete_twin) | **DELETE** /api/v1/twins/{uuid} | Delete Twin
 [**src_app_api_twins_get_twin**](DefaultApi.md#src_app_api_twins_get_twin) | **GET** /api/v1/twins/{uuid} | Get Twin
+[**src_app_api_twins_get_twin_latest_frame**](DefaultApi.md#src_app_api_twins_get_twin_latest_frame) | **GET** /api/v1/twins/{uuid}/latest-frame | Get Twin Latest Frame
 [**src_app_api_twins_get_twin_relationships**](DefaultApi.md#src_app_api_twins_get_twin_relationships) | **GET** /api/v1/twins/{uuid}/relationships | Get Twin Relationships
 [**src_app_api_twins_list_all_twins**](DefaultApi.md#src_app_api_twins_list_all_twins) | **GET** /api/v1/twins | List All Twins
 [**src_app_api_twins_update_twin**](DefaultApi.md#src_app_api_twins_update_twin) | **PUT** /api/v1/twins/{uuid} | Update Twin
@@ -1969,6 +1980,400 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **src_app_api_controller_policies_create_controller_policy**
+> ControllerPolicySchema src_app_api_controller_policies_create_controller_policy(controller_policy_create_schema)
+
+Create Controller Policy
+
+Create a new controller policy.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.controller_policy_create_schema import ControllerPolicyCreateSchema
+from cyberwave.rest.models.controller_policy_schema import ControllerPolicySchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    controller_policy_create_schema = cyberwave.rest.ControllerPolicyCreateSchema() # ControllerPolicyCreateSchema | 
+
+    try:
+        # Create Controller Policy
+        api_response = api_instance.src_app_api_controller_policies_create_controller_policy(controller_policy_create_schema)
+        print("The response of DefaultApi->src_app_api_controller_policies_create_controller_policy:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_controller_policies_create_controller_policy: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **controller_policy_create_schema** | [**ControllerPolicyCreateSchema**](ControllerPolicyCreateSchema.md)|  | 
+
+### Return type
+
+[**ControllerPolicySchema**](ControllerPolicySchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_controller_policies_delete_controller_policy**
+> Dict[str, bool] src_app_api_controller_policies_delete_controller_policy(uuid)
+
+Delete Controller Policy
+
+Delete a controller policy.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    uuid = 'uuid_example' # str | 
+
+    try:
+        # Delete Controller Policy
+        api_response = api_instance.src_app_api_controller_policies_delete_controller_policy(uuid)
+        print("The response of DefaultApi->src_app_api_controller_policies_delete_controller_policy:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_controller_policies_delete_controller_policy: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+
+### Return type
+
+**Dict[str, bool]**
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_controller_policies_get_controller_policy**
+> ControllerPolicySchema src_app_api_controller_policies_get_controller_policy(uuid)
+
+Get Controller Policy
+
+Get a specific controller policy by UUID.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.controller_policy_schema import ControllerPolicySchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    uuid = 'uuid_example' # str | 
+
+    try:
+        # Get Controller Policy
+        api_response = api_instance.src_app_api_controller_policies_get_controller_policy(uuid)
+        print("The response of DefaultApi->src_app_api_controller_policies_get_controller_policy:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_controller_policies_get_controller_policy: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+
+### Return type
+
+[**ControllerPolicySchema**](ControllerPolicySchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_controller_policies_list_controller_policies**
+> List[ControllerPolicySchema] src_app_api_controller_policies_list_controller_policies()
+
+List Controller Policies
+
+List all controller policies for the authenticated user.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.controller_policy_schema import ControllerPolicySchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+
+    try:
+        # List Controller Policies
+        api_response = api_instance.src_app_api_controller_policies_list_controller_policies()
+        print("The response of DefaultApi->src_app_api_controller_policies_list_controller_policies:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_controller_policies_list_controller_policies: %s\n" % e)
+```
+
+
+
+### Parameters
+
+This endpoint does not need any parameter.
+
+### Return type
+
+[**List[ControllerPolicySchema]**](ControllerPolicySchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_controller_policies_update_controller_policy**
+> ControllerPolicySchema src_app_api_controller_policies_update_controller_policy(uuid, controller_policy_update_schema)
+
+Update Controller Policy
+
+Update an existing controller policy.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.controller_policy_schema import ControllerPolicySchema
+from cyberwave.rest.models.controller_policy_update_schema import ControllerPolicyUpdateSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    uuid = 'uuid_example' # str | 
+    controller_policy_update_schema = cyberwave.rest.ControllerPolicyUpdateSchema() # ControllerPolicyUpdateSchema | 
+
+    try:
+        # Update Controller Policy
+        api_response = api_instance.src_app_api_controller_policies_update_controller_policy(uuid, controller_policy_update_schema)
+        print("The response of DefaultApi->src_app_api_controller_policies_update_controller_policy:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_controller_policies_update_controller_policy: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+ **controller_policy_update_schema** | [**ControllerPolicyUpdateSchema**](ControllerPolicyUpdateSchema.md)|  | 
+
+### Return type
+
+[**ControllerPolicySchema**](ControllerPolicySchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **src_app_api_edges_create_edge**
 > EdgeSchema src_app_api_edges_create_edge(edge_create_schema)
 
@@ -2588,7 +2993,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **src_app_api_environments_create_environment_simulation**
-> Dict[str, object] src_app_api_environments_create_environment_simulation(uuid, payload)
+> Dict[str, object] src_app_api_environments_create_environment_simulation(uuid, simulation_start_schema=simulation_start_schema)
 
 Create Environment Simulation
 
@@ -2598,6 +3003,7 @@ Create Environment Simulation
 
 ```python
 import cyberwave.rest
+from cyberwave.rest.models.simulation_start_schema import SimulationStartSchema
 from cyberwave.rest.rest import ApiException
 from pprint import pprint
 
@@ -2623,11 +3029,11 @@ with cyberwave.rest.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = cyberwave.rest.DefaultApi(api_client)
     uuid = 'uuid_example' # str | 
-    payload = None # Dict[str, object] | 
+    simulation_start_schema = cyberwave.rest.SimulationStartSchema() # SimulationStartSchema |  (optional)
 
     try:
         # Create Environment Simulation
-        api_response = api_instance.src_app_api_environments_create_environment_simulation(uuid, payload)
+        api_response = api_instance.src_app_api_environments_create_environment_simulation(uuid, simulation_start_schema=simulation_start_schema)
         print("The response of DefaultApi->src_app_api_environments_create_environment_simulation:\n")
         pprint(api_response)
     except Exception as e:
@@ -2642,7 +3048,7 @@ with cyberwave.rest.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **uuid** | **str**|  | 
- **payload** | [**Dict[str, object]**](object.md)|  | 
+ **simulation_start_schema** | [**SimulationStartSchema**](SimulationStartSchema.md)|  | [optional] 
 
 ### Return type
 
@@ -2654,7 +3060,7 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
+ - **Content-Type**: application/json
  - **Accept**: application/json
 
 ### HTTP response details
@@ -2743,86 +3149,6 @@ Name | Type | Description  | Notes
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **src_app_api_environments_delete_dataset**
-> Dict[str, object] src_app_api_environments_delete_dataset(uuid, dataset_uuid)
-
-Delete Dataset
-
-Delete a dataset.
-
-### Example
-
-* Api Key Authentication (CustomTokenAuthentication):
-
-```python
-import cyberwave.rest
-from cyberwave.rest.rest import ApiException
-from pprint import pprint
-
-# Defining the host is optional and defaults to http://localhost
-# See configuration.py for a list of all supported configuration parameters.
-configuration = cyberwave.rest.Configuration(
-    host = "http://localhost"
-)
-
-# The client must configure the authentication and authorization parameters
-# in accordance with the API server security policy.
-# Examples for each auth method are provided below, use the example that
-# satisfies your auth use case.
-
-# Configure API key authorization: CustomTokenAuthentication
-configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
-
-# Enter a context with an instance of the API client
-with cyberwave.rest.ApiClient(configuration) as api_client:
-    # Create an instance of the API class
-    api_instance = cyberwave.rest.DefaultApi(api_client)
-    uuid = 'uuid_example' # str | 
-    dataset_uuid = 'dataset_uuid_example' # str | 
-
-    try:
-        # Delete Dataset
-        api_response = api_instance.src_app_api_environments_delete_dataset(uuid, dataset_uuid)
-        print("The response of DefaultApi->src_app_api_environments_delete_dataset:\n")
-        pprint(api_response)
-    except Exception as e:
-        print("Exception when calling DefaultApi->src_app_api_environments_delete_dataset: %s\n" % e)
-```
-
-
-
-### Parameters
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **uuid** | **str**|  | 
- **dataset_uuid** | **str**|  | 
-
-### Return type
-
-**Dict[str, object]**
-
-### Authorization
-
-[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-### HTTP response details
-
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** | OK |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
 # **src_app_api_environments_delete_environment_for_project**
 > src_app_api_environments_delete_environment_for_project(project_uuid, uuid)
 
@@ -2899,17 +3225,12 @@ void (empty response body)
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **src_app_api_environments_generate_combined_telemetry_dataset**
-> DatasetGenerationResponseSchema src_app_api_environments_generate_combined_telemetry_dataset(uuid, combined_dataset_generation_request_schema)
+# **src_app_api_environments_delete_recording**
+> Dict[str, object] src_app_api_environments_delete_recording(uuid, recording_uuid)
 
-Generate Combined Telemetry Dataset
+Delete Recording
 
-Generate a combined Parquet dataset containing telemetry data for multiple twins.
-
-Payload should contain:
-- twin_uuids: List of twin UUIDs
-- start_timestamp: Start timestamp of the session (microseconds)
-- end_timestamp: End timestamp of the session (microseconds)
+Delete a recording.
 
 ### Example
 
@@ -2917,8 +3238,6 @@ Payload should contain:
 
 ```python
 import cyberwave.rest
-from cyberwave.rest.models.combined_dataset_generation_request_schema import CombinedDatasetGenerationRequestSchema
-from cyberwave.rest.models.dataset_generation_response_schema import DatasetGenerationResponseSchema
 from cyberwave.rest.rest import ApiException
 from pprint import pprint
 
@@ -2944,15 +3263,15 @@ with cyberwave.rest.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = cyberwave.rest.DefaultApi(api_client)
     uuid = 'uuid_example' # str | 
-    combined_dataset_generation_request_schema = cyberwave.rest.CombinedDatasetGenerationRequestSchema() # CombinedDatasetGenerationRequestSchema | 
+    recording_uuid = 'recording_uuid_example' # str | 
 
     try:
-        # Generate Combined Telemetry Dataset
-        api_response = api_instance.src_app_api_environments_generate_combined_telemetry_dataset(uuid, combined_dataset_generation_request_schema)
-        print("The response of DefaultApi->src_app_api_environments_generate_combined_telemetry_dataset:\n")
+        # Delete Recording
+        api_response = api_instance.src_app_api_environments_delete_recording(uuid, recording_uuid)
+        print("The response of DefaultApi->src_app_api_environments_delete_recording:\n")
         pprint(api_response)
     except Exception as e:
-        print("Exception when calling DefaultApi->src_app_api_environments_generate_combined_telemetry_dataset: %s\n" % e)
+        print("Exception when calling DefaultApi->src_app_api_environments_delete_recording: %s\n" % e)
 ```
 
 
@@ -2963,11 +3282,96 @@ with cyberwave.rest.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **uuid** | **str**|  | 
- **combined_dataset_generation_request_schema** | [**CombinedDatasetGenerationRequestSchema**](CombinedDatasetGenerationRequestSchema.md)|  | 
+ **recording_uuid** | **str**|  | 
 
 ### Return type
 
-[**DatasetGenerationResponseSchema**](DatasetGenerationResponseSchema.md)
+**Dict[str, object]**
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_environments_generate_combined_telemetry_recording**
+> RecordingGenerationResponseSchema src_app_api_environments_generate_combined_telemetry_recording(uuid, combined_recording_generation_request_schema)
+
+Generate Combined Telemetry Recording
+
+DEPRECATED: This endpoint is deprecated in favor of the simplified session-based approach.
+Use POST /{uuid}/process-all-sessions to process all sessions for all twins.
+
+For backward compatibility, this endpoint will redirect to the new approach.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.combined_recording_generation_request_schema import CombinedRecordingGenerationRequestSchema
+from cyberwave.rest.models.recording_generation_response_schema import RecordingGenerationResponseSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    uuid = 'uuid_example' # str | 
+    combined_recording_generation_request_schema = cyberwave.rest.CombinedRecordingGenerationRequestSchema() # CombinedRecordingGenerationRequestSchema | 
+
+    try:
+        # Generate Combined Telemetry Recording
+        api_response = api_instance.src_app_api_environments_generate_combined_telemetry_recording(uuid, combined_recording_generation_request_schema)
+        print("The response of DefaultApi->src_app_api_environments_generate_combined_telemetry_recording:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_environments_generate_combined_telemetry_recording: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+ **combined_recording_generation_request_schema** | [**CombinedRecordingGenerationRequestSchema**](CombinedRecordingGenerationRequestSchema.md)|  | 
+
+### Return type
+
+[**RecordingGenerationResponseSchema**](RecordingGenerationResponseSchema.md)
 
 ### Authorization
 
@@ -2986,12 +3390,12 @@ Name | Type | Description  | Notes
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **src_app_api_environments_generate_telemetry_dataset**
-> DatasetGenerationResponseSchema src_app_api_environments_generate_telemetry_dataset(uuid, payload)
+# **src_app_api_environments_generate_telemetry_recording**
+> RecordingGenerationResponseSchema src_app_api_environments_generate_telemetry_recording(uuid, payload)
 
-Generate Telemetry Dataset
+Generate Telemetry Recording
 
-Generate a Parquet dataset containing telemetry data for a specific session.
+Generate a Parquet recording containing telemetry data for a specific session.
 
 Payload should contain:
 - twin_uuid: UUID of the twin
@@ -3004,8 +3408,8 @@ Payload should contain:
 
 ```python
 import cyberwave.rest
-from cyberwave.rest.models.dataset_generation_response_schema import DatasetGenerationResponseSchema
 from cyberwave.rest.models.payload import Payload
+from cyberwave.rest.models.recording_generation_response_schema import RecordingGenerationResponseSchema
 from cyberwave.rest.rest import ApiException
 from pprint import pprint
 
@@ -3034,12 +3438,12 @@ with cyberwave.rest.ApiClient(configuration) as api_client:
     payload = cyberwave.rest.Payload() # Payload | 
 
     try:
-        # Generate Telemetry Dataset
-        api_response = api_instance.src_app_api_environments_generate_telemetry_dataset(uuid, payload)
-        print("The response of DefaultApi->src_app_api_environments_generate_telemetry_dataset:\n")
+        # Generate Telemetry Recording
+        api_response = api_instance.src_app_api_environments_generate_telemetry_recording(uuid, payload)
+        print("The response of DefaultApi->src_app_api_environments_generate_telemetry_recording:\n")
         pprint(api_response)
     except Exception as e:
-        print("Exception when calling DefaultApi->src_app_api_environments_generate_telemetry_dataset: %s\n" % e)
+        print("Exception when calling DefaultApi->src_app_api_environments_generate_telemetry_recording: %s\n" % e)
 ```
 
 
@@ -3054,7 +3458,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**DatasetGenerationResponseSchema**](DatasetGenerationResponseSchema.md)
+[**RecordingGenerationResponseSchema**](RecordingGenerationResponseSchema.md)
 
 ### Authorization
 
@@ -3063,89 +3467,6 @@ Name | Type | Description  | Notes
 ### HTTP request headers
 
  - **Content-Type**: application/json
- - **Accept**: application/json
-
-### HTTP response details
-
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** | OK |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-# **src_app_api_environments_get_dataset_data**
-> Dict[str, object] src_app_api_environments_get_dataset_data(uuid, dataset_uuid, sample_rate_hz=sample_rate_hz)
-
-Get Dataset Data
-
-Get sampled dataset data for visualization.
-Returns timestamps and observation states sampled at the specified rate.
-
-### Example
-
-* Api Key Authentication (CustomTokenAuthentication):
-
-```python
-import cyberwave.rest
-from cyberwave.rest.rest import ApiException
-from pprint import pprint
-
-# Defining the host is optional and defaults to http://localhost
-# See configuration.py for a list of all supported configuration parameters.
-configuration = cyberwave.rest.Configuration(
-    host = "http://localhost"
-)
-
-# The client must configure the authentication and authorization parameters
-# in accordance with the API server security policy.
-# Examples for each auth method are provided below, use the example that
-# satisfies your auth use case.
-
-# Configure API key authorization: CustomTokenAuthentication
-configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
-
-# Enter a context with an instance of the API client
-with cyberwave.rest.ApiClient(configuration) as api_client:
-    # Create an instance of the API class
-    api_instance = cyberwave.rest.DefaultApi(api_client)
-    uuid = 'uuid_example' # str | 
-    dataset_uuid = 'dataset_uuid_example' # str | 
-    sample_rate_hz = 5 # int |  (optional) (default to 5)
-
-    try:
-        # Get Dataset Data
-        api_response = api_instance.src_app_api_environments_get_dataset_data(uuid, dataset_uuid, sample_rate_hz=sample_rate_hz)
-        print("The response of DefaultApi->src_app_api_environments_get_dataset_data:\n")
-        pprint(api_response)
-    except Exception as e:
-        print("Exception when calling DefaultApi->src_app_api_environments_get_dataset_data: %s\n" % e)
-```
-
-
-
-### Parameters
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **uuid** | **str**|  | 
- **dataset_uuid** | **str**|  | 
- **sample_rate_hz** | **int**|  | [optional] [default to 5]
-
-### Return type
-
-**Dict[str, object]**
-
-### Authorization
-
-[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
  - **Accept**: application/json
 
 ### HTTP response details
@@ -3316,8 +3637,12 @@ Name | Type | Description  | Notes
 
 Get Environment Mujoco Scene
 
-Get MuJoCo scene zip file for an environment.
+Get MuJoCo scene ZIP file for an environment.
 Returns cached URL if available, otherwise triggers async generation.
+Cache format (new):
+- Success: {"url": str, "created_at": str, "task_id": str, "status": "success"}
+- Failure: {"url": None, "created_at": str, "task_id": str, "status": "failed", "error": str}
+- Legacy: Just the URL string (for backward compatibility)
 
 ### Example
 
@@ -3470,8 +3795,8 @@ void (empty response body)
 
 Get Environment Recordings
 
-Get all available datasets for an environment.
-Returns list of dataset metadata excluding the dataset_path.
+Get all available recordings for an environment.
+Returns list of recording metadata excluding the recording_path.
 
 ### Example
 
@@ -3546,13 +3871,14 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **src_app_api_environments_get_environment_sessions**
-> Dict[str, object] src_app_api_environments_get_environment_sessions(uuid, recording_by_day=recording_by_day)
+> Dict[str, object] src_app_api_environments_get_environment_sessions(uuid)
 
 Get Environment Sessions
 
-Get sessions grouped by overlapping time periods across all twins in the environment.
-Returns sessions where multiple twins recorded simultaneously.
-If the query parameter "recording_by_day" is true, return the session available for the environment by day.
+Get all recording sessions for an environment.
+Returns sessions for all twins in the environment, with start/end timestamps.
+
+This is the simplified session-based API that replaces the old twins-sessions endpoint.
 
 ### Example
 
@@ -3585,11 +3911,10 @@ with cyberwave.rest.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = cyberwave.rest.DefaultApi(api_client)
     uuid = 'uuid_example' # str | 
-    recording_by_day = False # bool |  (optional) (default to False)
 
     try:
         # Get Environment Sessions
-        api_response = api_instance.src_app_api_environments_get_environment_sessions(uuid, recording_by_day=recording_by_day)
+        api_response = api_instance.src_app_api_environments_get_environment_sessions(uuid)
         print("The response of DefaultApi->src_app_api_environments_get_environment_sessions:\n")
         pprint(api_response)
     except Exception as e:
@@ -3604,7 +3929,6 @@ with cyberwave.rest.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **uuid** | **str**|  | 
- **recording_by_day** | **bool**|  | [optional] [default to False]
 
 ### Return type
 
@@ -3858,14 +4182,13 @@ Name | Type | Description  | Notes
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **src_app_api_environments_get_twins_sessions**
-> Dict[str, object] src_app_api_environments_get_twins_sessions(uuid, recording_by_day=recording_by_day)
+# **src_app_api_environments_get_recording_data**
+> Dict[str, object] src_app_api_environments_get_recording_data(uuid, recording_uuid, sample_rate_hz=sample_rate_hz)
 
-Get Twins Sessions
+Get Recording Data
 
-Get recording sessions (periods between start/end events) for twins in the environment.
-Returns sessions grouped by twin.
-If the query parameter "recording_by_day" is true, return the daily session available for the environment.
+Get sampled recording data for visualization.
+Returns timestamps and observation states sampled at the specified rate.
 
 ### Example
 
@@ -3898,15 +4221,16 @@ with cyberwave.rest.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = cyberwave.rest.DefaultApi(api_client)
     uuid = 'uuid_example' # str | 
-    recording_by_day = False # bool |  (optional) (default to False)
+    recording_uuid = 'recording_uuid_example' # str | 
+    sample_rate_hz = 5 # int |  (optional) (default to 5)
 
     try:
-        # Get Twins Sessions
-        api_response = api_instance.src_app_api_environments_get_twins_sessions(uuid, recording_by_day=recording_by_day)
-        print("The response of DefaultApi->src_app_api_environments_get_twins_sessions:\n")
+        # Get Recording Data
+        api_response = api_instance.src_app_api_environments_get_recording_data(uuid, recording_uuid, sample_rate_hz=sample_rate_hz)
+        print("The response of DefaultApi->src_app_api_environments_get_recording_data:\n")
         pprint(api_response)
     except Exception as e:
-        print("Exception when calling DefaultApi->src_app_api_environments_get_twins_sessions: %s\n" % e)
+        print("Exception when calling DefaultApi->src_app_api_environments_get_recording_data: %s\n" % e)
 ```
 
 
@@ -3917,7 +4241,8 @@ with cyberwave.rest.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **uuid** | **str**|  | 
- **recording_by_day** | **bool**|  | [optional] [default to False]
+ **recording_uuid** | **str**|  | 
+ **sample_rate_hz** | **int**|  | [optional] [default to 5]
 
 ### Return type
 
@@ -4150,6 +4475,90 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**List[EnvironmentSchema]**](EnvironmentSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_environments_process_all_environment_sessions**
+> Dict[str, object] src_app_api_environments_process_all_environment_sessions(uuid)
+
+Process All Environment Sessions
+
+Process all recording sessions for all twins in the environment.
+This endpoint will:
+1. Discover all twins in the environment
+2. Find all sessions for each twin
+3. Queue recording generation tasks for each session
+
+Returns information about queued tasks.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    uuid = 'uuid_example' # str | 
+
+    try:
+        # Process All Environment Sessions
+        api_response = api_instance.src_app_api_environments_process_all_environment_sessions(uuid)
+        print("The response of DefaultApi->src_app_api_environments_process_all_environment_sessions:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_environments_process_all_environment_sessions: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+
+### Return type
+
+**Dict[str, object]**
 
 ### Authorization
 
@@ -4558,90 +4967,6 @@ Name | Type | Description  | Notes
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **src_app_api_environments_update_dataset_metadata**
-> TwinTelemetryMetadataSchema src_app_api_environments_update_dataset_metadata(uuid, dataset_uuid, update_dataset_metadata_schema)
-
-Update Dataset Metadata
-
-Update dataset metadata (e.g., session name).
-
-### Example
-
-* Api Key Authentication (CustomTokenAuthentication):
-
-```python
-import cyberwave.rest
-from cyberwave.rest.models.twin_telemetry_metadata_schema import TwinTelemetryMetadataSchema
-from cyberwave.rest.models.update_dataset_metadata_schema import UpdateDatasetMetadataSchema
-from cyberwave.rest.rest import ApiException
-from pprint import pprint
-
-# Defining the host is optional and defaults to http://localhost
-# See configuration.py for a list of all supported configuration parameters.
-configuration = cyberwave.rest.Configuration(
-    host = "http://localhost"
-)
-
-# The client must configure the authentication and authorization parameters
-# in accordance with the API server security policy.
-# Examples for each auth method are provided below, use the example that
-# satisfies your auth use case.
-
-# Configure API key authorization: CustomTokenAuthentication
-configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
-
-# Enter a context with an instance of the API client
-with cyberwave.rest.ApiClient(configuration) as api_client:
-    # Create an instance of the API class
-    api_instance = cyberwave.rest.DefaultApi(api_client)
-    uuid = 'uuid_example' # str | 
-    dataset_uuid = 'dataset_uuid_example' # str | 
-    update_dataset_metadata_schema = cyberwave.rest.UpdateDatasetMetadataSchema() # UpdateDatasetMetadataSchema | 
-
-    try:
-        # Update Dataset Metadata
-        api_response = api_instance.src_app_api_environments_update_dataset_metadata(uuid, dataset_uuid, update_dataset_metadata_schema)
-        print("The response of DefaultApi->src_app_api_environments_update_dataset_metadata:\n")
-        pprint(api_response)
-    except Exception as e:
-        print("Exception when calling DefaultApi->src_app_api_environments_update_dataset_metadata: %s\n" % e)
-```
-
-
-
-### Parameters
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **uuid** | **str**|  | 
- **dataset_uuid** | **str**|  | 
- **update_dataset_metadata_schema** | [**UpdateDatasetMetadataSchema**](UpdateDatasetMetadataSchema.md)|  | 
-
-### Return type
-
-[**TwinTelemetryMetadataSchema**](TwinTelemetryMetadataSchema.md)
-
-### Authorization
-
-[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
-
-### HTTP request headers
-
- - **Content-Type**: application/json
- - **Accept**: application/json
-
-### HTTP response details
-
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** | OK |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
 # **src_app_api_environments_update_environment_for_project**
 > EnvironmentSchema src_app_api_environments_update_environment_for_project(project_uuid, uuid, environment_create_schema)
 
@@ -4706,6 +5031,478 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**EnvironmentSchema**](EnvironmentSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_environments_update_recording_metadata**
+> TwinTelemetryMetadataSchema src_app_api_environments_update_recording_metadata(uuid, recording_uuid, update_recording_metadata_schema)
+
+Update Recording Metadata
+
+Update recording metadata (e.g., session name).
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.twin_telemetry_metadata_schema import TwinTelemetryMetadataSchema
+from cyberwave.rest.models.update_recording_metadata_schema import UpdateRecordingMetadataSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    uuid = 'uuid_example' # str | 
+    recording_uuid = 'recording_uuid_example' # str | 
+    update_recording_metadata_schema = cyberwave.rest.UpdateRecordingMetadataSchema() # UpdateRecordingMetadataSchema | 
+
+    try:
+        # Update Recording Metadata
+        api_response = api_instance.src_app_api_environments_update_recording_metadata(uuid, recording_uuid, update_recording_metadata_schema)
+        print("The response of DefaultApi->src_app_api_environments_update_recording_metadata:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_environments_update_recording_metadata: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+ **recording_uuid** | **str**|  | 
+ **update_recording_metadata_schema** | [**UpdateRecordingMetadataSchema**](UpdateRecordingMetadataSchema.md)|  | 
+
+### Return type
+
+[**TwinTelemetryMetadataSchema**](TwinTelemetryMetadataSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_episode_create_episode**
+> EpisodeSchema src_app_api_episode_create_episode(episode_create_schema)
+
+Create Episode
+
+Create a new episode. Timestamps in microseconds.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.episode_create_schema import EpisodeCreateSchema
+from cyberwave.rest.models.episode_schema import EpisodeSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    episode_create_schema = cyberwave.rest.EpisodeCreateSchema() # EpisodeCreateSchema | 
+
+    try:
+        # Create Episode
+        api_response = api_instance.src_app_api_episode_create_episode(episode_create_schema)
+        print("The response of DefaultApi->src_app_api_episode_create_episode:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_episode_create_episode: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **episode_create_schema** | [**EpisodeCreateSchema**](EpisodeCreateSchema.md)|  | 
+
+### Return type
+
+[**EpisodeSchema**](EpisodeSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_episode_delete_episode**
+> Dict[str, bool] src_app_api_episode_delete_episode(uuid)
+
+Delete Episode
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    uuid = 'uuid_example' # str | 
+
+    try:
+        # Delete Episode
+        api_response = api_instance.src_app_api_episode_delete_episode(uuid)
+        print("The response of DefaultApi->src_app_api_episode_delete_episode:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_episode_delete_episode: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+
+### Return type
+
+**Dict[str, bool]**
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_episode_get_episode**
+> EpisodeSchema src_app_api_episode_get_episode(uuid)
+
+Get Episode
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.episode_schema import EpisodeSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    uuid = 'uuid_example' # str | 
+
+    try:
+        # Get Episode
+        api_response = api_instance.src_app_api_episode_get_episode(uuid)
+        print("The response of DefaultApi->src_app_api_episode_get_episode:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_episode_get_episode: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+
+### Return type
+
+[**EpisodeSchema**](EpisodeSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_episode_list_episodes**
+> List[EpisodeSchema] src_app_api_episode_list_episodes()
+
+List Episodes
+
+List all episodes.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.episode_schema import EpisodeSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+
+    try:
+        # List Episodes
+        api_response = api_instance.src_app_api_episode_list_episodes()
+        print("The response of DefaultApi->src_app_api_episode_list_episodes:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_episode_list_episodes: %s\n" % e)
+```
+
+
+
+### Parameters
+
+This endpoint does not need any parameter.
+
+### Return type
+
+[**List[EpisodeSchema]**](EpisodeSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_episode_update_episode**
+> EpisodeSchema src_app_api_episode_update_episode(uuid, episode_update_schema)
+
+Update Episode
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.episode_schema import EpisodeSchema
+from cyberwave.rest.models.episode_update_schema import EpisodeUpdateSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    uuid = 'uuid_example' # str | 
+    episode_update_schema = cyberwave.rest.EpisodeUpdateSchema() # EpisodeUpdateSchema | 
+
+    try:
+        # Update Episode
+        api_response = api_instance.src_app_api_episode_update_episode(uuid, episode_update_schema)
+        print("The response of DefaultApi->src_app_api_episode_update_episode:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_episode_update_episode: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+ **episode_update_schema** | [**EpisodeUpdateSchema**](EpisodeUpdateSchema.md)|  | 
+
+### Return type
+
+[**EpisodeSchema**](EpisodeSchema.md)
 
 ### Authorization
 
@@ -6432,6 +7229,72 @@ Name | Type | Description  | Notes
 
  - **Content-Type**: Not defined
  - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_twins_get_twin_latest_frame**
+> src_app_api_twins_get_twin_latest_frame(uuid)
+
+Get Twin Latest Frame
+
+Get the latest frame from a twin's camera stream.
+Serves the frame directly from Redis without saving to permanent storage.
+
+### Example
+
+
+```python
+import cyberwave.rest
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    uuid = 'uuid_example' # str | 
+
+    try:
+        # Get Twin Latest Frame
+        api_instance.src_app_api_twins_get_twin_latest_frame(uuid)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_twins_get_twin_latest_frame: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: Not defined
 
 ### HTTP response details
 
