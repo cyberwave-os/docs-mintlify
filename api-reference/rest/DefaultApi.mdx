@@ -33,6 +33,11 @@ Method | HTTP request | Description
 [**src_app_api_controller_policies_get_controller_policy**](DefaultApi.md#src_app_api_controller_policies_get_controller_policy) | **GET** /api/v1/controller-policies/{uuid} | Get Controller Policy
 [**src_app_api_controller_policies_list_controller_policies**](DefaultApi.md#src_app_api_controller_policies_list_controller_policies) | **GET** /api/v1/controller-policies | List Controller Policies
 [**src_app_api_controller_policies_update_controller_policy**](DefaultApi.md#src_app_api_controller_policies_update_controller_policy) | **PUT** /api/v1/controller-policies/{uuid} | Update Controller Policy
+[**src_app_api_datasets_create_dataset**](DefaultApi.md#src_app_api_datasets_create_dataset) | **POST** /api/v1/datasets | Create Dataset
+[**src_app_api_datasets_delete_dataset**](DefaultApi.md#src_app_api_datasets_delete_dataset) | **DELETE** /api/v1/datasets/{uuid} | Delete Dataset
+[**src_app_api_datasets_get_dataset**](DefaultApi.md#src_app_api_datasets_get_dataset) | **GET** /api/v1/datasets/{uuid} | Get Dataset
+[**src_app_api_datasets_list_datasets**](DefaultApi.md#src_app_api_datasets_list_datasets) | **GET** /api/v1/datasets | List Datasets
+[**src_app_api_datasets_update_dataset**](DefaultApi.md#src_app_api_datasets_update_dataset) | **PUT** /api/v1/datasets/{uuid} | Update Dataset
 [**src_app_api_edges_create_edge**](DefaultApi.md#src_app_api_edges_create_edge) | **POST** /api/v1/edges | Create Edge
 [**src_app_api_edges_delete_edge**](DefaultApi.md#src_app_api_edges_delete_edge) | **DELETE** /api/v1/edges/{uuid} | Delete Edge
 [**src_app_api_edges_get_edge**](DefaultApi.md#src_app_api_edges_get_edge) | **GET** /api/v1/edges/{uuid} | Get Edge
@@ -2356,6 +2361,402 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**ControllerPolicySchema**](ControllerPolicySchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_datasets_create_dataset**
+> Dict[str, object] src_app_api_datasets_create_dataset(dataset_create_schema)
+
+Create Dataset
+
+Create a new dataset. This starts an async task to generate the parquet file.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.dataset_create_schema import DatasetCreateSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    dataset_create_schema = cyberwave.rest.DatasetCreateSchema() # DatasetCreateSchema | 
+
+    try:
+        # Create Dataset
+        api_response = api_instance.src_app_api_datasets_create_dataset(dataset_create_schema)
+        print("The response of DefaultApi->src_app_api_datasets_create_dataset:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_datasets_create_dataset: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **dataset_create_schema** | [**DatasetCreateSchema**](DatasetCreateSchema.md)|  | 
+
+### Return type
+
+**Dict[str, object]**
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_datasets_delete_dataset**
+> Dict[str, bool] src_app_api_datasets_delete_dataset(uuid)
+
+Delete Dataset
+
+Soft delete a dataset by setting is_deleted=True.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    uuid = 'uuid_example' # str | 
+
+    try:
+        # Delete Dataset
+        api_response = api_instance.src_app_api_datasets_delete_dataset(uuid)
+        print("The response of DefaultApi->src_app_api_datasets_delete_dataset:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_datasets_delete_dataset: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+
+### Return type
+
+**Dict[str, bool]**
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_datasets_get_dataset**
+> DatasetSchema src_app_api_datasets_get_dataset(uuid)
+
+Get Dataset
+
+Get a specific dataset by UUID. Generates signed URL for dataset parquet file if available.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.dataset_schema import DatasetSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    uuid = 'uuid_example' # str | 
+
+    try:
+        # Get Dataset
+        api_response = api_instance.src_app_api_datasets_get_dataset(uuid)
+        print("The response of DefaultApi->src_app_api_datasets_get_dataset:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_datasets_get_dataset: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+
+### Return type
+
+[**DatasetSchema**](DatasetSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_datasets_list_datasets**
+> List[DatasetSchema] src_app_api_datasets_list_datasets()
+
+List Datasets
+
+List all datasets for the current user that are not deleted. Generates signed URLs for dataset parquet files.
+
+Query parameters:
+    environment: Optional UUID to filter datasets by environment (filters datasets whose episodes contain twins from that environment).
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.dataset_schema import DatasetSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+
+    try:
+        # List Datasets
+        api_response = api_instance.src_app_api_datasets_list_datasets()
+        print("The response of DefaultApi->src_app_api_datasets_list_datasets:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_datasets_list_datasets: %s\n" % e)
+```
+
+
+
+### Parameters
+
+This endpoint does not need any parameter.
+
+### Return type
+
+[**List[DatasetSchema]**](DatasetSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_datasets_update_dataset**
+> DatasetSchema src_app_api_datasets_update_dataset(uuid, dataset_update_schema)
+
+Update Dataset
+
+Update a dataset.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.dataset_schema import DatasetSchema
+from cyberwave.rest.models.dataset_update_schema import DatasetUpdateSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    uuid = 'uuid_example' # str | 
+    dataset_update_schema = cyberwave.rest.DatasetUpdateSchema() # DatasetUpdateSchema | 
+
+    try:
+        # Update Dataset
+        api_response = api_instance.src_app_api_datasets_update_dataset(uuid, dataset_update_schema)
+        print("The response of DefaultApi->src_app_api_datasets_update_dataset:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_datasets_update_dataset: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+ **dataset_update_schema** | [**DatasetUpdateSchema**](DatasetUpdateSchema.md)|  | 
+
+### Return type
+
+[**DatasetSchema**](DatasetSchema.md)
 
 ### Authorization
 
