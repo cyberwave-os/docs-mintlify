@@ -28,8 +28,10 @@ Method | HTTP request | Description
 [**src_app_api_attachments_update_attachment**](DefaultApi.md#src_app_api_attachments_update_attachment) | **PUT** /api/v1/attachments/{uuid} | Update Attachment
 [**src_app_api_attachments_upload_attachment**](DefaultApi.md#src_app_api_attachments_upload_attachment) | **POST** /api/v1/attachments/{uuid}/upload | Upload Attachment
 [**src_app_api_contact_contact_form**](DefaultApi.md#src_app_api_contact_contact_form) | **POST** /api/v1/contact/ | Contact Form
+[**src_app_api_controller_policies_clone_controller_policy**](DefaultApi.md#src_app_api_controller_policies_clone_controller_policy) | **POST** /api/v1/controller-policies/{uuid}/clone | Clone Controller Policy
 [**src_app_api_controller_policies_create_controller_policy**](DefaultApi.md#src_app_api_controller_policies_create_controller_policy) | **POST** /api/v1/controller-policies | Create Controller Policy
 [**src_app_api_controller_policies_delete_controller_policy**](DefaultApi.md#src_app_api_controller_policies_delete_controller_policy) | **DELETE** /api/v1/controller-policies/{uuid} | Delete Controller Policy
+[**src_app_api_controller_policies_get_action_from_policy**](DefaultApi.md#src_app_api_controller_policies_get_action_from_policy) | **GET** /api/v1/controller-policies/action | Get Action From Policy
 [**src_app_api_controller_policies_get_controller_policy**](DefaultApi.md#src_app_api_controller_policies_get_controller_policy) | **GET** /api/v1/controller-policies/{uuid} | Get Controller Policy
 [**src_app_api_controller_policies_list_controller_policies**](DefaultApi.md#src_app_api_controller_policies_list_controller_policies) | **GET** /api/v1/controller-policies | List Controller Policies
 [**src_app_api_controller_policies_update_controller_policy**](DefaultApi.md#src_app_api_controller_policies_update_controller_policy) | **PUT** /api/v1/controller-policies/{uuid} | Update Controller Policy
@@ -85,6 +87,13 @@ Method | HTTP request | Description
 [**src_app_api_mlmodels_get_mlmodel**](DefaultApi.md#src_app_api_mlmodels_get_mlmodel) | **GET** /api/v1/mlmodels/{uuid} | Get Mlmodel
 [**src_app_api_mlmodels_list_mlmodels**](DefaultApi.md#src_app_api_mlmodels_list_mlmodels) | **GET** /api/v1/mlmodels | List Mlmodels
 [**src_app_api_mlmodels_update_mlmodel**](DefaultApi.md#src_app_api_mlmodels_update_mlmodel) | **PUT** /api/v1/mlmodels/{uuid} | Update Mlmodel
+[**src_app_api_mltrainings_create_mltraining**](DefaultApi.md#src_app_api_mltrainings_create_mltraining) | **POST** /api/v1/mltrainings | Create Mltraining
+[**src_app_api_mltrainings_delete_mltraining**](DefaultApi.md#src_app_api_mltrainings_delete_mltraining) | **DELETE** /api/v1/mltrainings/{uuid} | Delete Mltraining
+[**src_app_api_mltrainings_deploy_mltraining**](DefaultApi.md#src_app_api_mltrainings_deploy_mltraining) | **POST** /api/v1/mltrainings/{uuid}/deploy | Deploy Mltraining
+[**src_app_api_mltrainings_get_deployed_mltrainings**](DefaultApi.md#src_app_api_mltrainings_get_deployed_mltrainings) | **GET** /api/v1/mltrainings/deployed | Get Deployed Mltrainings
+[**src_app_api_mltrainings_get_mltraining**](DefaultApi.md#src_app_api_mltrainings_get_mltraining) | **GET** /api/v1/mltrainings/{uuid} | Get Mltraining
+[**src_app_api_mltrainings_list_mltrainings_for_user_workspaces**](DefaultApi.md#src_app_api_mltrainings_list_mltrainings_for_user_workspaces) | **GET** /api/v1/mltrainings | List Mltrainings For User Workspaces
+[**src_app_api_mltrainings_update_mltraining**](DefaultApi.md#src_app_api_mltrainings_update_mltraining) | **PUT** /api/v1/mltrainings/{uuid} | Update Mltraining
 [**src_app_api_projects_create_project**](DefaultApi.md#src_app_api_projects_create_project) | **POST** /api/v1/projects | Create Project
 [**src_app_api_projects_create_project_link**](DefaultApi.md#src_app_api_projects_create_project_link) | **POST** /api/v1/projects/{uuid}/create-link | Create Project Link
 [**src_app_api_projects_delete_project**](DefaultApi.md#src_app_api_projects_delete_project) | **DELETE** /api/v1/projects/{uuid} | Delete Project
@@ -143,12 +152,18 @@ Method | HTTP request | Description
 [**src_users_api_members_leave_team**](DefaultApi.md#src_users_api_members_leave_team) | **DELETE** /api/v1/users/workspaces/{team_uuid}/members/{uuid}/leave | Leave Team
 [**src_users_api_members_list_team_members**](DefaultApi.md#src_users_api_members_list_team_members) | **GET** /api/v1/users/workspaces/{team_uuid}/members | List Team Members
 [**src_users_api_members_remove_team_member**](DefaultApi.md#src_users_api_members_remove_team_member) | **DELETE** /api/v1/users/workspaces/{team_uuid}/members/{uuid} | Remove Team Member
+[**src_users_api_organizations_add_organization_member_by_email**](DefaultApi.md#src_users_api_organizations_add_organization_member_by_email) | **POST** /api/v1/users/organizations/{uuid}/members | Add Organization Member By Email
+[**src_users_api_organizations_create_organization**](DefaultApi.md#src_users_api_organizations_create_organization) | **POST** /api/v1/users/organizations | Create Organization
 [**src_users_api_organizations_delete_organization**](DefaultApi.md#src_users_api_organizations_delete_organization) | **DELETE** /api/v1/users/organizations/{uuid} | Delete Organization
 [**src_users_api_organizations_get_organization**](DefaultApi.md#src_users_api_organizations_get_organization) | **GET** /api/v1/users/organizations/{uuid} | Get Organization
 [**src_users_api_organizations_get_organization_by_slug**](DefaultApi.md#src_users_api_organizations_get_organization_by_slug) | **GET** /api/v1/users/organizations/by-slug/{slug} | Get Organization By Slug
+[**src_users_api_organizations_list_organization_members**](DefaultApi.md#src_users_api_organizations_list_organization_members) | **GET** /api/v1/users/organizations/{uuid}/members | List Organization Members
 [**src_users_api_organizations_list_organizations**](DefaultApi.md#src_users_api_organizations_list_organizations) | **GET** /api/v1/users/organizations | List Organizations
+[**src_users_api_organizations_remove_organization_member**](DefaultApi.md#src_users_api_organizations_remove_organization_member) | **DELETE** /api/v1/users/organizations/{uuid}/members/{user_uuid} | Remove Organization Member
 [**src_users_api_organizations_update_organization**](DefaultApi.md#src_users_api_organizations_update_organization) | **PUT** /api/v1/users/organizations/{uuid} | Update Organization
 [**src_users_api_plans_get_plan**](DefaultApi.md#src_users_api_plans_get_plan) | **GET** /api/v1/users/plan | Get Plan
+[**src_users_api_workspaces_add_workspace_member_by_email**](DefaultApi.md#src_users_api_workspaces_add_workspace_member_by_email) | **POST** /api/v1/users/workspaces/{uuid}/add-member | Add Workspace Member By Email
+[**src_users_api_workspaces_check_workspace_slug**](DefaultApi.md#src_users_api_workspaces_check_workspace_slug) | **GET** /api/v1/users/workspaces/check-slug/{slug} | Check Workspace Slug
 [**src_users_api_workspaces_create_workspace**](DefaultApi.md#src_users_api_workspaces_create_workspace) | **POST** /api/v1/users/workspaces | Create Workspace
 [**src_users_api_workspaces_delete_workspace**](DefaultApi.md#src_users_api_workspaces_delete_workspace) | **DELETE** /api/v1/users/workspaces/{uuid} | Delete Workspace
 [**src_users_api_workspaces_get_default_workspace**](DefaultApi.md#src_users_api_workspaces_get_default_workspace) | **GET** /api/v1/users/workspaces/default | Get Default Workspace
@@ -156,6 +171,7 @@ Method | HTTP request | Description
 [**src_users_api_workspaces_get_workspace**](DefaultApi.md#src_users_api_workspaces_get_workspace) | **GET** /api/v1/users/workspaces/{uuid} | Get Workspace
 [**src_users_api_workspaces_get_workspace_by_slug**](DefaultApi.md#src_users_api_workspaces_get_workspace_by_slug) | **GET** /api/v1/users/workspaces/by-slug/{slug} | Get Workspace By Slug
 [**src_users_api_workspaces_list_workspaces**](DefaultApi.md#src_users_api_workspaces_list_workspaces) | **GET** /api/v1/users/workspaces | List Workspaces
+[**src_users_api_workspaces_remove_workspace_member**](DefaultApi.md#src_users_api_workspaces_remove_workspace_member) | **DELETE** /api/v1/users/workspaces/{uuid}/members/{user_uuid} | Remove Workspace Member
 [**src_users_api_workspaces_set_default_workspace**](DefaultApi.md#src_users_api_workspaces_set_default_workspace) | **POST** /api/v1/users/workspaces/default | Set Default Workspace
 [**src_users_api_workspaces_update_workspace**](DefaultApi.md#src_users_api_workspaces_update_workspace) | **PUT** /api/v1/users/workspaces/{uuid} | Update Workspace
 
@@ -761,7 +777,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **src_app_api_assets_list_assets**
-> List[AssetSchema] src_app_api_assets_list_assets()
+> List[AssetListSchema] src_app_api_assets_list_assets()
 
 List Assets
 
@@ -770,7 +786,7 @@ List Assets
 
 ```python
 import cyberwave.rest
-from cyberwave.rest.models.asset_schema import AssetSchema
+from cyberwave.rest.models.asset_list_schema import AssetListSchema
 from cyberwave.rest.rest import ApiException
 from pprint import pprint
 
@@ -803,7 +819,7 @@ This endpoint does not need any parameter.
 
 ### Return type
 
-[**List[AssetSchema]**](AssetSchema.md)
+[**List[AssetListSchema]**](AssetListSchema.md)
 
 ### Authorization
 
@@ -1985,6 +2001,87 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **src_app_api_controller_policies_clone_controller_policy**
+> ControllerPolicySchema src_app_api_controller_policies_clone_controller_policy(uuid, workspace_uuid=workspace_uuid)
+
+Clone Controller Policy
+
+Clone a controller policy into the specified workspace (or user's default workspace).
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.controller_policy_schema import ControllerPolicySchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    uuid = 'uuid_example' # str | 
+    workspace_uuid = 'workspace_uuid_example' # str |  (optional)
+
+    try:
+        # Clone Controller Policy
+        api_response = api_instance.src_app_api_controller_policies_clone_controller_policy(uuid, workspace_uuid=workspace_uuid)
+        print("The response of DefaultApi->src_app_api_controller_policies_clone_controller_policy:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_controller_policies_clone_controller_policy: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+ **workspace_uuid** | **str**|  | [optional] 
+
+### Return type
+
+[**ControllerPolicySchema**](ControllerPolicySchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **src_app_api_controller_policies_create_controller_policy**
 > ControllerPolicySchema src_app_api_controller_policies_create_controller_policy(controller_policy_create_schema)
 
@@ -2143,6 +2240,91 @@ Name | Type | Description  | Notes
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **src_app_api_controller_policies_get_action_from_policy**
+> str src_app_api_controller_policies_get_action_from_policy(instruction, twin_uuid, camera_twin_uuid)
+
+Get Action From Policy
+
+Get action from an ML model policy based on instruction and twin state.
+
+Validates that the twins exist and the camera is live, then dispatches
+the actual execution to a Celery worker.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    instruction = 'instruction_example' # str | 
+    twin_uuid = 'twin_uuid_example' # str | 
+    camera_twin_uuid = 'camera_twin_uuid_example' # str | 
+
+    try:
+        # Get Action From Policy
+        api_response = api_instance.src_app_api_controller_policies_get_action_from_policy(instruction, twin_uuid, camera_twin_uuid)
+        print("The response of DefaultApi->src_app_api_controller_policies_get_action_from_policy:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_controller_policies_get_action_from_policy: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **instruction** | **str**|  | 
+ **twin_uuid** | **str**|  | 
+ **camera_twin_uuid** | **str**|  | 
+
+### Return type
+
+**str**
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **src_app_api_controller_policies_get_controller_policy**
 > ControllerPolicySchema src_app_api_controller_policies_get_controller_policy(uuid)
 
@@ -2223,11 +2405,11 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **src_app_api_controller_policies_list_controller_policies**
-> List[ControllerPolicySchema] src_app_api_controller_policies_list_controller_policies()
+> List[ControllerPolicySchema] src_app_api_controller_policies_list_controller_policies(asset_uuid=asset_uuid, workspace_uuid=workspace_uuid)
 
 List Controller Policies
 
-List all controller policies for the authenticated user.
+List all controller policies for the authenticated user, optionally filtered by asset and workspace.
 
 ### Example
 
@@ -2260,10 +2442,12 @@ configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
 with cyberwave.rest.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = cyberwave.rest.DefaultApi(api_client)
+    asset_uuid = 'asset_uuid_example' # str |  (optional)
+    workspace_uuid = 'workspace_uuid_example' # str |  (optional)
 
     try:
         # List Controller Policies
-        api_response = api_instance.src_app_api_controller_policies_list_controller_policies()
+        api_response = api_instance.src_app_api_controller_policies_list_controller_policies(asset_uuid=asset_uuid, workspace_uuid=workspace_uuid)
         print("The response of DefaultApi->src_app_api_controller_policies_list_controller_policies:\n")
         pprint(api_response)
     except Exception as e:
@@ -2274,7 +2458,11 @@ with cyberwave.rest.ApiClient(configuration) as api_client:
 
 ### Parameters
 
-This endpoint does not need any parameter.
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **asset_uuid** | **str**|  | [optional] 
+ **workspace_uuid** | **str**|  | [optional] 
 
 ### Return type
 
@@ -5772,8 +5960,6 @@ Name | Type | Description  | Notes
 
 List Episodes
 
-List all episodes.
-
 ### Example
 
 * Api Key Authentication (CustomTokenAuthentication):
@@ -6452,6 +6638,566 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**MLModelSchema**](MLModelSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_mltrainings_create_mltraining**
+> Dict[str, object] src_app_api_mltrainings_create_mltraining(ml_training_create_schema)
+
+Create Mltraining
+
+Create a new ML training.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.ml_training_create_schema import MLTrainingCreateSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    ml_training_create_schema = cyberwave.rest.MLTrainingCreateSchema() # MLTrainingCreateSchema | 
+
+    try:
+        # Create Mltraining
+        api_response = api_instance.src_app_api_mltrainings_create_mltraining(ml_training_create_schema)
+        print("The response of DefaultApi->src_app_api_mltrainings_create_mltraining:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_mltrainings_create_mltraining: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **ml_training_create_schema** | [**MLTrainingCreateSchema**](MLTrainingCreateSchema.md)|  | 
+
+### Return type
+
+**Dict[str, object]**
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_mltrainings_delete_mltraining**
+> Dict[str, object] src_app_api_mltrainings_delete_mltraining(uuid)
+
+Delete Mltraining
+
+Delete an ML training.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    uuid = 'uuid_example' # str | 
+
+    try:
+        # Delete Mltraining
+        api_response = api_instance.src_app_api_mltrainings_delete_mltraining(uuid)
+        print("The response of DefaultApi->src_app_api_mltrainings_delete_mltraining:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_mltrainings_delete_mltraining: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+
+### Return type
+
+**Dict[str, object]**
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_mltrainings_deploy_mltraining**
+> Dict[str, object] src_app_api_mltrainings_deploy_mltraining(uuid, ml_training_deploy_schema)
+
+Deploy Mltraining
+
+Deploy a completed ML training to one or more twins.
+
+The deployment process:
+1. Export the trained model weights
+2. Create a new ControllerPolicy (type: mlmodel) with the trained model
+3. Assign the controller policy to the specified twins
+
+TODO: Implement actual deployment logic:
+- Export trained model weights to storage
+- Create ControllerPolicy with type='mlmodel' and model reference
+- Update each twin's controller_policy FK to the new policy
+- Optionally start inference service
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.ml_training_deploy_schema import MLTrainingDeploySchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    uuid = 'uuid_example' # str | 
+    ml_training_deploy_schema = cyberwave.rest.MLTrainingDeploySchema() # MLTrainingDeploySchema | 
+
+    try:
+        # Deploy Mltraining
+        api_response = api_instance.src_app_api_mltrainings_deploy_mltraining(uuid, ml_training_deploy_schema)
+        print("The response of DefaultApi->src_app_api_mltrainings_deploy_mltraining:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_mltrainings_deploy_mltraining: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+ **ml_training_deploy_schema** | [**MLTrainingDeploySchema**](MLTrainingDeploySchema.md)|  | 
+
+### Return type
+
+**Dict[str, object]**
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_mltrainings_get_deployed_mltrainings**
+> List[MLTrainingSchema] src_app_api_mltrainings_get_deployed_mltrainings()
+
+Get Deployed Mltrainings
+
+Get all deployed ML trainings for the authenticated user's workspaces.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.ml_training_schema import MLTrainingSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+
+    try:
+        # Get Deployed Mltrainings
+        api_response = api_instance.src_app_api_mltrainings_get_deployed_mltrainings()
+        print("The response of DefaultApi->src_app_api_mltrainings_get_deployed_mltrainings:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_mltrainings_get_deployed_mltrainings: %s\n" % e)
+```
+
+
+
+### Parameters
+
+This endpoint does not need any parameter.
+
+### Return type
+
+[**List[MLTrainingSchema]**](MLTrainingSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_mltrainings_get_mltraining**
+> MLTrainingSchema src_app_api_mltrainings_get_mltraining(uuid)
+
+Get Mltraining
+
+Get a specific ML training by UUID.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.ml_training_schema import MLTrainingSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    uuid = 'uuid_example' # str | 
+
+    try:
+        # Get Mltraining
+        api_response = api_instance.src_app_api_mltrainings_get_mltraining(uuid)
+        print("The response of DefaultApi->src_app_api_mltrainings_get_mltraining:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_mltrainings_get_mltraining: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+
+### Return type
+
+[**MLTrainingSchema**](MLTrainingSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_mltrainings_list_mltrainings_for_user_workspaces**
+> List[MLTrainingSchema] src_app_api_mltrainings_list_mltrainings_for_user_workspaces()
+
+List Mltrainings For User Workspaces
+
+List all ML trainings for the authenticated user's workspaces.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.ml_training_schema import MLTrainingSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+
+    try:
+        # List Mltrainings For User Workspaces
+        api_response = api_instance.src_app_api_mltrainings_list_mltrainings_for_user_workspaces()
+        print("The response of DefaultApi->src_app_api_mltrainings_list_mltrainings_for_user_workspaces:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_mltrainings_list_mltrainings_for_user_workspaces: %s\n" % e)
+```
+
+
+
+### Parameters
+
+This endpoint does not need any parameter.
+
+### Return type
+
+[**List[MLTrainingSchema]**](MLTrainingSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_mltrainings_update_mltraining**
+> MLTrainingSchema src_app_api_mltrainings_update_mltraining(uuid, ml_training_update_schema)
+
+Update Mltraining
+
+Update an ML training.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.ml_training_schema import MLTrainingSchema
+from cyberwave.rest.models.ml_training_update_schema import MLTrainingUpdateSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    uuid = 'uuid_example' # str | 
+    ml_training_update_schema = cyberwave.rest.MLTrainingUpdateSchema() # MLTrainingUpdateSchema | 
+
+    try:
+        # Update Mltraining
+        api_response = api_instance.src_app_api_mltrainings_update_mltraining(uuid, ml_training_update_schema)
+        print("The response of DefaultApi->src_app_api_mltrainings_update_mltraining:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_mltrainings_update_mltraining: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+ **ml_training_update_schema** | [**MLTrainingUpdateSchema**](MLTrainingUpdateSchema.md)|  | 
+
+### Return type
+
+[**MLTrainingSchema**](MLTrainingSchema.md)
 
 ### Authorization
 
@@ -11007,6 +11753,171 @@ void (empty response body)
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **src_users_api_organizations_add_organization_member_by_email**
+> AddMemberByEmailResponse src_users_api_organizations_add_organization_member_by_email(uuid, add_member_by_email_request)
+
+Add Organization Member By Email
+
+Add a member to an organization by email address.
+
+If user exists in Cyberwave, add them to the organization.
+If user doesn't exist, return user_exists=False so frontend can show contact link.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.add_member_by_email_request import AddMemberByEmailRequest
+from cyberwave.rest.models.add_member_by_email_response import AddMemberByEmailResponse
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    uuid = 'uuid_example' # str | 
+    add_member_by_email_request = cyberwave.rest.AddMemberByEmailRequest() # AddMemberByEmailRequest | 
+
+    try:
+        # Add Organization Member By Email
+        api_response = api_instance.src_users_api_organizations_add_organization_member_by_email(uuid, add_member_by_email_request)
+        print("The response of DefaultApi->src_users_api_organizations_add_organization_member_by_email:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_users_api_organizations_add_organization_member_by_email: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+ **add_member_by_email_request** | [**AddMemberByEmailRequest**](AddMemberByEmailRequest.md)|  | 
+
+### Return type
+
+[**AddMemberByEmailResponse**](AddMemberByEmailResponse.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_users_api_organizations_create_organization**
+> Dict[str, OrganizationSchema] src_users_api_organizations_create_organization(organization_create_schema)
+
+Create Organization
+
+Create a new organization
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.organization_create_schema import OrganizationCreateSchema
+from cyberwave.rest.models.organization_schema import OrganizationSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    organization_create_schema = cyberwave.rest.OrganizationCreateSchema() # OrganizationCreateSchema | 
+
+    try:
+        # Create Organization
+        api_response = api_instance.src_users_api_organizations_create_organization(organization_create_schema)
+        print("The response of DefaultApi->src_users_api_organizations_create_organization:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_users_api_organizations_create_organization: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **organization_create_schema** | [**OrganizationCreateSchema**](OrganizationCreateSchema.md)|  | 
+
+### Return type
+
+[**Dict[str, OrganizationSchema]**](OrganizationSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **src_users_api_organizations_delete_organization**
 > src_users_api_organizations_delete_organization(uuid)
 
@@ -11239,6 +12150,85 @@ Name | Type | Description  | Notes
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **src_users_api_organizations_list_organization_members**
+> OrgMembersResponse src_users_api_organizations_list_organization_members(uuid)
+
+List Organization Members
+
+List all members of an organization
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.org_members_response import OrgMembersResponse
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    uuid = 'uuid_example' # str | 
+
+    try:
+        # List Organization Members
+        api_response = api_instance.src_users_api_organizations_list_organization_members(uuid)
+        print("The response of DefaultApi->src_users_api_organizations_list_organization_members:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_users_api_organizations_list_organization_members: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+
+### Return type
+
+[**OrgMembersResponse**](OrgMembersResponse.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **src_users_api_organizations_list_organizations**
 > Dict[str, List[OrganizationSchema]] src_users_api_organizations_list_organizations()
 
@@ -11305,6 +12295,84 @@ This endpoint does not need any parameter.
 
  - **Content-Type**: Not defined
  - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_users_api_organizations_remove_organization_member**
+> src_users_api_organizations_remove_organization_member(uuid, user_uuid)
+
+Remove Organization Member
+
+Remove a member from an organization
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    uuid = 'uuid_example' # str | 
+    user_uuid = 'user_uuid_example' # str | 
+
+    try:
+        # Remove Organization Member
+        api_instance.src_users_api_organizations_remove_organization_member(uuid, user_uuid)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_users_api_organizations_remove_organization_member: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+ **user_uuid** | **str**|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: Not defined
 
 ### HTTP response details
 
@@ -11471,8 +12539,172 @@ This endpoint does not need any parameter.
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **src_users_api_workspaces_add_workspace_member_by_email**
+> AddMemberByEmailResponse src_users_api_workspaces_add_workspace_member_by_email(uuid, add_member_by_email_request)
+
+Add Workspace Member By Email
+
+Add a member to a workspace by email address.
+
+If user exists in Cyberwave, add them to the workspace.
+If user doesn't exist, return user_exists=False so frontend can show contact link.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.add_member_by_email_request import AddMemberByEmailRequest
+from cyberwave.rest.models.add_member_by_email_response import AddMemberByEmailResponse
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    uuid = 'uuid_example' # str | 
+    add_member_by_email_request = cyberwave.rest.AddMemberByEmailRequest() # AddMemberByEmailRequest | 
+
+    try:
+        # Add Workspace Member By Email
+        api_response = api_instance.src_users_api_workspaces_add_workspace_member_by_email(uuid, add_member_by_email_request)
+        print("The response of DefaultApi->src_users_api_workspaces_add_workspace_member_by_email:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_users_api_workspaces_add_workspace_member_by_email: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+ **add_member_by_email_request** | [**AddMemberByEmailRequest**](AddMemberByEmailRequest.md)|  | 
+
+### Return type
+
+[**AddMemberByEmailResponse**](AddMemberByEmailResponse.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_users_api_workspaces_check_workspace_slug**
+> SlugAvailabilitySchema src_users_api_workspaces_check_workspace_slug(slug)
+
+Check Workspace Slug
+
+Check if a workspace slug is available
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.slug_availability_schema import SlugAvailabilitySchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    slug = 'slug_example' # str | 
+
+    try:
+        # Check Workspace Slug
+        api_response = api_instance.src_users_api_workspaces_check_workspace_slug(slug)
+        print("The response of DefaultApi->src_users_api_workspaces_check_workspace_slug:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_users_api_workspaces_check_workspace_slug: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **slug** | **str**|  | 
+
+### Return type
+
+[**SlugAvailabilitySchema**](SlugAvailabilitySchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **src_users_api_workspaces_create_workspace**
-> WorkspaceSchema src_users_api_workspaces_create_workspace()
+> WorkspaceSchema src_users_api_workspaces_create_workspace(workspace_create_schema=workspace_create_schema)
 
 Create Workspace
 
@@ -11484,6 +12716,7 @@ Create a workspace
 
 ```python
 import cyberwave.rest
+from cyberwave.rest.models.workspace_create_schema import WorkspaceCreateSchema
 from cyberwave.rest.models.workspace_schema import WorkspaceSchema
 from cyberwave.rest.rest import ApiException
 from pprint import pprint
@@ -11509,10 +12742,11 @@ configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
 with cyberwave.rest.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = cyberwave.rest.DefaultApi(api_client)
+    workspace_create_schema = cyberwave.rest.WorkspaceCreateSchema() # WorkspaceCreateSchema |  (optional)
 
     try:
         # Create Workspace
-        api_response = api_instance.src_users_api_workspaces_create_workspace()
+        api_response = api_instance.src_users_api_workspaces_create_workspace(workspace_create_schema=workspace_create_schema)
         print("The response of DefaultApi->src_users_api_workspaces_create_workspace:\n")
         pprint(api_response)
     except Exception as e:
@@ -11523,7 +12757,10 @@ with cyberwave.rest.ApiClient(configuration) as api_client:
 
 ### Parameters
 
-This endpoint does not need any parameter.
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **workspace_create_schema** | [**WorkspaceCreateSchema**](WorkspaceCreateSchema.md)|  | [optional] 
 
 ### Return type
 
@@ -11535,7 +12772,7 @@ This endpoint does not need any parameter.
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
+ - **Content-Type**: application/json
  - **Accept**: application/json
 
 ### HTTP response details
@@ -11980,6 +13217,90 @@ This endpoint does not need any parameter.
 ### Return type
 
 [**List[WorkspaceSchema]**](WorkspaceSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_users_api_workspaces_remove_workspace_member**
+> RemoveMemberResponse src_users_api_workspaces_remove_workspace_member(uuid, user_uuid)
+
+Remove Workspace Member
+
+Remove a member from a workspace.
+
+Only workspace owner or organization owner can remove members.
+Cannot remove the workspace owner or the last member.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.remove_member_response import RemoveMemberResponse
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    uuid = 'uuid_example' # str | 
+    user_uuid = 'user_uuid_example' # str | 
+
+    try:
+        # Remove Workspace Member
+        api_response = api_instance.src_users_api_workspaces_remove_workspace_member(uuid, user_uuid)
+        print("The response of DefaultApi->src_users_api_workspaces_remove_workspace_member:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_users_api_workspaces_remove_workspace_member: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+ **user_uuid** | **str**|  | 
+
+### Return type
+
+[**RemoveMemberResponse**](RemoveMemberResponse.md)
 
 ### Authorization
 
