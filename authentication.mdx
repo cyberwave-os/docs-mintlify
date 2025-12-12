@@ -1,0 +1,215 @@
+---
+title: "Authentication"
+description: "Set up API credentials to connect to Cyberwave"
+icon: "key"
+---
+
+## Overview
+
+Cyberwave uses API keys or tokens to authenticate requests. You'll need credentials to:
+- Connect the Python SDK
+- Make REST API calls
+- Establish MQTT connections
+
+---
+
+## Getting Your API Key
+
+<Steps>
+  <Step title="Sign in to Cyberwave">
+    Go to [cyberwave.com](https://cyberwave.com) and sign in to your account.
+  </Step>
+  
+  <Step title="Navigate to Profile">
+    Click your profile icon and select **Profile** or go directly to [cyberwave.com/profile](https://cyberwave.com/profile).
+  </Step>
+  
+  <Step title="Generate API Key">
+    In the API Keys section, click **Generate New Key**. Copy the key immediately—it won't be shown again.
+  </Step>
+</Steps>
+
+<Warning>
+Keep your API key secure. Don't commit it to version control or share it publicly.
+</Warning>
+
+---
+
+## Using Your API Key
+
+### Environment Variable (Recommended)
+
+Set your API key as an environment variable:
+
+```bash
+export CYBERWAVE_API_KEY="your_api_key_here"
+```
+
+The SDK automatically reads this variable:
+
+```python
+import cyberwave as cw
+
+# Automatically uses CYBERWAVE_API_KEY
+robot = cw.twin("the-robot-studio/so101")
+```
+
+### Direct Configuration
+
+Pass the API key directly when initializing the client:
+
+```python
+from cyberwave import Cyberwave
+
+client = Cyberwave(api_key="your_api_key_here")
+```
+
+### Using Tokens
+
+For short-lived sessions, you can use tokens instead of API keys:
+
+```python
+from cyberwave import Cyberwave
+
+# Token-based authentication
+client = Cyberwave(token="your_bearer_token")
+```
+
+---
+
+## Environment Variables
+
+The SDK supports these environment variables:
+
+| Variable | Description |
+|----------|-------------|
+| `CYBERWAVE_API_KEY` | Your API key for authentication |
+| `CYBERWAVE_TOKEN` | Bearer token (alternative to API key) |
+| `CYBERWAVE_BASE_URL` | API base URL (default: `https://api.cyberwave.com`) |
+| `CYBERWAVE_ENVIRONMENT_ID` | Default environment ID |
+| `CYBERWAVE_WORKSPACE_ID` | Default workspace ID |
+
+### Example `.env` File
+
+```bash
+CYBERWAVE_API_KEY=cw_live_xxxxxxxxxxxxxxxxxxxx
+CYBERWAVE_ENVIRONMENT_ID=env_xxxxxxxxxxxxxxxxxxxx
+```
+
+Load with [python-dotenv](https://pypi.org/project/python-dotenv/):
+
+```python
+from dotenv import load_dotenv
+load_dotenv()
+
+import cyberwave as cw
+robot = cw.twin("the-robot-studio/so101")
+```
+
+---
+
+## MQTT Authentication
+
+For real-time features (video streaming, live updates), the SDK connects to MQTT automatically using your API credentials.
+
+```python
+from cyberwave import Cyberwave
+
+client = Cyberwave(api_key="your_api_key")
+
+# MQTT connection uses the same credentials
+robot = client.twin("the-robot-studio/so101")
+robot.subscribe_joints(lambda data: print(f"Joints: {data}"))
+```
+
+### Custom MQTT Settings
+
+Override MQTT connection settings if needed:
+
+```python
+client = Cyberwave(
+    api_key="your_api_key",
+    mqtt_host="mqtt.cyberwave.com",
+    mqtt_port=1883
+)
+```
+
+---
+
+## REST API Authentication
+
+For direct REST API calls, include your API key in the `Authorization` header:
+
+```bash
+curl -X GET "https://api.cyberwave.com/api/assets/" \
+  -H "Authorization: Bearer your_api_key_here"
+```
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Authentication failed: Invalid or missing credentials">
+    - Verify your API key is correct
+    - Check that the environment variable is set: `echo $CYBERWAVE_API_KEY`
+    - Ensure the key hasn't expired—generate a new one if needed
+  </Accordion>
+  
+  <Accordion title="No CYBERWAVE_API_KEY found">
+    The SDK couldn't find credentials. Either:
+    - Set the `CYBERWAVE_API_KEY` environment variable
+    - Pass `api_key` directly to `Cyberwave()`
+  </Accordion>
+  
+  <Accordion title="MQTT connection failed">
+    - Check your network allows outbound connections on port 1883
+    - Verify your API key has MQTT permissions
+    - Try reconnecting: `client.mqtt.connect()`
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Security Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use Environment Variables" icon="terminal">
+    Never hardcode API keys in your source code
+  </Card>
+  
+  <Card title="Rotate Keys Regularly" icon="rotate">
+    Generate new keys periodically and revoke old ones
+  </Card>
+  
+  <Card title="Limit Permissions" icon="shield">
+    Use workspace-scoped keys when possible
+  </Card>
+  
+  <Card title="Audit Access" icon="eye">
+    Monitor API usage in your dashboard
+  </Card>
+</CardGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Quick Start"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Create your first digital twin
+  </Card>
+  
+  <Card
+    title="Python SDK"
+    icon="python"
+    href="/sdks/python-sdk"
+  >
+    Full SDK documentation
+  </Card>
+</CardGroup>
+

@@ -17,21 +17,33 @@
               "group": "Getting started",
               "pages": [
                 "index",
-                "quickstart"
+                "quickstart",
+                "authentication"
               ]
             },
             {
               "group": "Concepts",
               "pages": [
                 "concepts/digital-twins",
+                "concepts/catalog",
+                "concepts/workflows",
+                "concepts/edge-devices",
+                "concepts/ml-models",
                 "concepts/environment-editor"
               ]
             },
+            {
+              "group": "Examples",
+              "pages": [
+                "examples/so101-arm",
+                "examples/unitree-go2",
+                "examples/video-streaming"
+              ]
+            },
             {  
-              "group": "SKDs",
+              "group": "SDKs",
               "pages": [
                 "sdks/python-sdk",
-                "sdks/javascript-sdk",
                 "sdks/cpp-sdk"
               ]
             }
@@ -160,7 +172,7 @@
       "links": [
         {
           "label": "Contact",
-          "href": "mailto:info@cyberwave.com"
+          "href": "https://cyberwave.com/contact-us"
         }
       ],
       "primary": {

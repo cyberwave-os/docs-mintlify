@@ -1,0 +1,366 @@
+---
+title: "Video Streaming"
+description: "Stream camera feeds to digital twins using WebRTC"
+icon: "video"
+---
+
+## Overview
+
+Cyberwave supports real-time video streaming from cameras to digital twins using WebRTC. This enables remote monitoring, teleoperation, and computer vision applications.
+
+<Info>
+Video streaming requires additional dependencies:
+```bash
+pip install cyberwave[camera]
+```
+</Info>
+
+---
+
+## Prerequisites
+
+### Install Dependencies
+
+```bash
+# Install SDK with camera support
+pip install cyberwave[camera]
+```
+
+### Install FFmpeg
+
+Video encoding requires FFmpeg:
+
+<Tabs>
+  <Tab title="macOS">
+    ```bash
+    brew install ffmpeg pkg-config
+    ```
+  </Tab>
+  <Tab title="Ubuntu/Debian">
+    ```bash
+    sudo apt-get install ffmpeg
+    ```
+  </Tab>
+  <Tab title="Windows">
+    Download from [ffmpeg.org](https://ffmpeg.org/download.html) and add to PATH.
+  </Tab>
+</Tabs>
+
+---
+
+## Quick Start
+
+### Basic Streaming
+
+```python
+import asyncio
+from cyberwave import Cyberwave
+
+async def main():
+    client = Cyberwave()
+    
+    # Create or get a camera twin
+    camera = client.twin("cyberwave/standard-cam")
+    
+    # Create streamer
+    streamer = client.video_stream(
+        twin_uuid=camera.uuid,
+        camera_id=0,  # Default camera
+        fps=10        # Frames per second
+    )
+    
+    # Start streaming
+    await streamer.start()
+    print(f"Streaming to twin {camera.uuid}")
+    
+    # Keep streaming until interrupted
+    try:
+        while True:
+            await asyncio.sleep(1)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        await streamer.stop()
+        client.disconnect()
+
+asyncio.run(main())
+```
+
+---
+
+## Configuration Options
+
+### Frame Rate
+
+Adjust FPS based on your bandwidth and use case:
+
+```python
+# Low bandwidth / monitoring
+streamer = client.video_stream(twin_uuid=uuid, fps=5)
+
+# Standard streaming
+streamer = client.video_stream(twin_uuid=uuid, fps=10)
+
+# High quality / teleoperation
+streamer = client.video_stream(twin_uuid=uuid, fps=30)
+```
+
+### Camera Selection
+
+Select different cameras if multiple are available:
+
+```python
+# Default camera (usually webcam)
+streamer = client.video_stream(twin_uuid=uuid, camera_id=0)
+
+# Secondary camera
+streamer = client.video_stream(twin_uuid=uuid, camera_id=1)
+
+# External USB camera
+streamer = client.video_stream(twin_uuid=uuid, camera_id=2)
+```
+
+---
+
+## Streaming from Robots
+
+### With CameraTwin
+
+Robots with cameras return `CameraTwin` instances with built-in streaming:
+
+```python
+import asyncio
+import cyberwave as cw
+
+async def stream_robot_camera():
+    # Go2 has cameras - returns CameraTwin
+    robot = cw.twin("unitree/go2")
+    
+    # Use built-in streaming method
+    streamer = robot.start_streaming(fps=15)
+    
+    await streamer.start()
+    print("Robot camera streaming!")
+    
+    await asyncio.sleep(60)
+    
+    await streamer.stop()
+    robot.stop_streaming()
+
+asyncio.run(stream_robot_camera())
+```
+
+### With Standard Twin
+
+For twins without camera capabilities, use the client directly:
+
+```python
+import asyncio
+from cyberwave import Cyberwave
+
+async def stream_to_twin():
+    client = Cyberwave()
+    
+    # Any twin can receive video
+    robot = client.twin("the-robot-studio/so101")
+    
+    # Use client.video_stream() for any twin
+    streamer = client.video_stream(
+        twin_uuid=robot.uuid,
+        fps=10
+    )
+    
+    await streamer.start()
+    await asyncio.sleep(60)
+    await streamer.stop()
+
+asyncio.run(stream_to_twin())
+```
+
+---
+
+## Time Synchronization
+
+For applications requiring precise timing (data logging, synchronization):
+
+```python
+import asyncio
+from cyberwave import Cyberwave
+from cyberwave.utils import TimeReference
+
+async def synchronized_stream():
+    client = Cyberwave()
+    robot = client.twin("unitree/go2")
+    
+    # Create shared time reference
+    time_ref = TimeReference()
+    
+    # Pass to streamer
+    streamer = client.video_stream(
+        twin_uuid=robot.uuid,
+        fps=10,
+        time_reference=time_ref
+    )
+    
+    await streamer.start()
+    
+    # Frames are timestamped with time_ref
+    await asyncio.sleep(60)
+    await streamer.stop()
+
+asyncio.run(synchronized_stream())
+```
+
+---
+
+## Error Handling
+
+Handle common streaming issues:
+
+```python
+import asyncio
+from cyberwave import Cyberwave
+
+async def robust_streaming():
+    client = Cyberwave()
+    
+    try:
+        robot = client.twin("unitree/go2")
+        streamer = client.video_stream(twin_uuid=robot.uuid, fps=10)
+        
+        await streamer.start()
+        print("Streaming started successfully!")
+        
+        while True:
+            await asyncio.sleep(1)
+            
+    except ImportError as e:
+        print("Camera dependencies missing!")
+        print("Install with: pip install cyberwave[camera]")
+        
+    except KeyboardInterrupt:
+        print("\nStopping stream...")
+        
+    except Exception as e:
+        print(f"Error during streaming: {e}")
+        
+    finally:
+        if 'streamer' in locals():
+            await streamer.stop()
+        client.disconnect()
+        print("Cleanup complete")
+
+asyncio.run(robust_streaming())
+```
+
+---
+
+## Full Example
+
+Complete streaming application with logging:
+
+```python
+"""
+Camera Streaming Example
+
+Stream video from a local camera to a Cyberwave digital twin.
+
+Requirements:
+    pip install cyberwave[camera]
+    brew install ffmpeg  # macOS
+"""
+
+import asyncio
+import logging
+import os
+from cyberwave import Cyberwave
+from cyberwave.utils import TimeReference
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+async def main():
+    # Get twin UUID from environment or create new
+    twin_uuid = os.getenv("TWIN_UUID")
+    
+    # Initialize client
+    client = Cyberwave()
+    
+    if not twin_uuid:
+        logger.info("Creating new camera twin...")
+        camera = client.twin("cyberwave/standard-cam")
+        twin_uuid = camera.uuid
+        logger.info(f"Created twin: {twin_uuid}")
+    
+    # Create time reference for synchronization
+    time_reference = TimeReference()
+    
+    # Create camera streamer
+    streamer = client.video_stream(
+        twin_uuid=twin_uuid,
+        camera_id=0,
+        fps=10,
+        time_reference=time_reference
+    )
+    
+    logger.info(f"Starting stream to twin {twin_uuid}...")
+    
+    try:
+        await streamer.start()
+        logger.info("Camera streaming started successfully!")
+        logger.info("Press Ctrl+C to stop...")
+        
+        while True:
+            await asyncio.sleep(1)
+            
+    except KeyboardInterrupt:
+        logger.info("Interrupt received, stopping...")
+        
+    except Exception as e:
+        logger.error(f"Error during streaming: {e}")
+        
+    finally:
+        await streamer.stop()
+        client.disconnect()
+        logger.info("Stream stopped and resources cleaned up")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+---
+
+## Viewing the Stream
+
+Once streaming, view the video in:
+
+1. **Cyberwave Dashboard** — Open your twin in the web interface
+2. **Environment Editor** — See the camera feed on your digital twin
+3. **Custom Applications** — Use the REST API to access stream data
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Unitree Go2 Example"
+    icon="dog"
+    href="/examples/unitree-go2"
+  >
+    Control a quadruped with cameras
+  </Card>
+  
+  <Card
+    title="Python SDK"
+    icon="python"
+    href="/sdks/python-sdk"
+  >
+    Full SDK documentation
+  </Card>
+</CardGroup>
+

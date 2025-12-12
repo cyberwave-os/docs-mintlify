@@ -1,0 +1,142 @@
+---
+title: "Asset Catalog"
+description: "Browse and use pre-built robot assets to create digital twins instantly"
+icon: "grid"
+---
+
+## What is the Asset Catalog?
+
+The Asset Catalog is Cyberwave's library of pre-configured robot assets. Each asset includes a 3D model, kinematic definition (URDF), and metadata that lets you create digital twins with a single line of code.
+
+<Info>
+Assets in the catalog are identified by a **registry ID** in the format `vendor/model`, such as `the-robot-studio/so101` or `unitree/go2`.
+</Info>
+
+---
+
+## Using Catalog Assets
+
+### Create a Twin from an Asset
+
+Use the Python SDK to create a digital twin from any catalog asset:
+
+```python
+import cyberwave as cw
+
+# Create a twin from an asset registry ID
+robot = cw.twin("the-robot-studio/so101")
+
+# The twin is ready to use
+robot.move(x=1, y=0, z=0.5)
+robot.rotate(yaw=90)
+```
+
+The `cw.twin()` function handles everything:
+- Finds the asset in the catalog
+- Creates (or retrieves) a digital twin in your environment
+- Returns an appropriate Twin class based on the asset's capabilities
+
+---
+
+## Asset Capabilities
+
+Assets in the catalog have different capabilities based on their type:
+
+<CardGroup cols={2}>
+  <Card title="Robot Arms" icon="robot-astromech">
+    Joint control, inverse kinematics, gripper operations
+  </Card>
+  
+  <Card title="Mobile Robots" icon="car">
+    Position control, rotation, navigation
+  </Card>
+  
+  <Card title="Quadrupeds" icon="dog">
+    Leg joint control, gait patterns, camera streaming
+  </Card>
+  
+  <Card title="Drones" icon="plane">
+    Takeoff, landing, hover, flight control
+  </Card>
+</CardGroup>
+
+### Capability-Based Twin Classes
+
+The SDK automatically returns the right Twin class based on capabilities:
+
+```python
+# Returns GripperTwin for robot arms
+arm = cw.twin("the-robot-studio/so101")
+arm.joints.set("shoulder", 45)
+
+# Returns CameraTwin for robots with cameras
+dog = cw.twin("unitree/go2")
+streamer = dog.start_streaming(fps=15)
+
+# Returns FlyingTwin for drones
+drone = cw.twin("dji/mini-3")
+drone.takeoff(altitude=2.0)
+```
+
+---
+
+## Browsing the Catalog
+
+### Web Interface
+
+Browse assets at [cyberwave.com/catalog](https://cyberwave.com/catalog):
+- Filter by category (arms, mobile robots, quadrupeds, drones)
+- Search by manufacturer or model name
+- View 3D previews and specifications
+
+### SDK Search
+
+Search the catalog programmatically:
+
+```python
+from cyberwave import Cyberwave
+
+client = Cyberwave()
+
+# Search for assets
+results = client.assets.search("unitree")
+for asset in results:
+    print(f"{asset.registry_id}: {asset.name}")
+```
+
+---
+
+## Asset Structure
+
+Each catalog asset contains:
+
+| Component | Description |
+|-----------|-------------|
+| **Registry ID** | Unique identifier (`vendor/model`) |
+| **URDF File** | Robot description with joints and links |
+| **3D Model** | GLB mesh for visualization |
+| **Metadata** | Category, manufacturer, version, tags |
+| **Capabilities** | Sensors, grippers, flight, etc. |
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Quick Start"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Create your first digital twin in minutes
+  </Card>
+  
+  <Card
+    title="SO101 Arm Example"
+    icon="robot-astromech"
+    href="/examples/so101-arm"
+  >
+    Control a robot arm with joint manipulation
+  </Card>
+</CardGroup>
+
