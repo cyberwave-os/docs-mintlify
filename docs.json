@@ -177,7 +177,7 @@
       ],
       "primary": {
         "type": "button",
-        "label": "Dashboard",
+        "label": "Sign in",
         "href": "https://cyberwave.com/dashboard"
       }
     },
