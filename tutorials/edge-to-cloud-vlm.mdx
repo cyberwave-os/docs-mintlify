@@ -1,19 +1,18 @@
 ---
-title: "Building Edge-to-Cloud VLM Pipelines"
+title: "Building Edge-to-Cloud VLM Pipelines with Cyberwave"
 sidebarTitle: "Edge VLM Pipeline"
-description: "Develop an intelligent VLM pipeline for real-time visual inspection and automated safety monitoring."
+description: "Develop an edge-to-cloud VLM pipeline for real-time visual inspection and automated safety monitoring."
 icon: "code"
 iconType: "solid"
 ---
 
 <Info>
-**Duration:** 25-30 minutes | **Stack:** Python, VLM, Edge Devices, Workflows
+**Stack:** Python, VLM, Edge Devices, Workflows
 </Info>
 
 ## Overview
 
-In this tutorial, you will learn how to connect your physical hardware to Cyberwave and build an automated AI safety sentinel using Vision Language Models. 
-
+In this tutorial, you will learn how to integrate physical hardware with Cyberwave and deploy an autonomous safety sentinel powered by Vision Language Models.
 By the end of this guide, you will be able to: 
 
 - **Connect:** Turn your local computer (Edge Device) into a smart camera node
@@ -28,6 +27,10 @@ To demonstrate these capabilities, we will build an **"Active Safety Officer"** 
 In high-stakes manufacturing environments, relying on manual surveillance for safety compliance is scalable only until it fails. In this tutorial, we will transform a standard webcam into an **"Active Safety Officer."** Instead of just recording footage, your camera will automatically detect if a worker is wearing the correct safety gear (PPE) and send an alert if they aren't. 
 
 We will build this system using the **[Cyberwave Edge SDK](https://github.com/cyberwave-os/cyberwave-edge-python)** and a **Vision Language Model (VLM)** workflow. 
+
+<Frame>
+  <img src="/images/working-flow.jpg" alt="System workflow diagram" style={{display: 'block', margin: '0 auto'}} />
+</Frame>
 
 ---
 
@@ -92,7 +95,7 @@ Before starting this tutorial, ensure you have:
 
 ### Step 1.1: Install the SDK
 
-We utilize the `cyberwave-edge-python` SDK to handle the hardware abstraction layer (HAL) and the network handshake between your physical camera and Cyberwave.
+We utilize the [`cyberwave-edge-python` SDK](https://github.com/cyberwave-os/cyberwave-edge-python) to handle the hardware abstraction layer (HAL) and the network handshake between your physical camera and Cyberwave.
 
 Open your terminal and run the following commands:
 
@@ -113,7 +116,7 @@ pip install -e .
 
 In the Cyberwave Dashboard, create a Digital Twin to represent your edge node:
 
-1. Create a New **Project** and **Environment**. 
+1. Create a **New Project** and **Environment**. 
 2. **Add a Scene Object** to the environment to create a new twin.
 3. **Choose the specific asset** from the Catalog and configure it with these details:
    - **Asset Type:** Standard Camera
@@ -126,7 +129,19 @@ Hover over the three dots of the asset in the sidebar, and click on **"Copy Twin
 *(Note: If you do not see the three dots, your sidebar might be too narrow. Click and drag the edge of the sidebar to expand it.)*
 </Warning>
 
-4. Navigate to **Settings > API Keys** and generate a new API Token. 
+4. Navigate to **Settings > API Keys** and generate a new API Token.
+
+<iframe 
+  src="https://app.tango.us/app/embed/797ba062-7d41-4827-8b19-57cb1f43c081"
+  title="Provision the Digital Twin"
+  width="100%"
+  height="100%"
+  style={{minHeight: "500px"}}
+  sandbox="allow-scripts allow-top-navigation-by-user-activation allow-popups allow-same-origin"
+  referrerPolicy="strict-origin-when-cross-origin"
+  frameBorder="0"
+  allowFullScreen
+></iframe>
 
 ### Step 1.3: Configure the Edge Environment (`.env`)
 
@@ -192,6 +207,8 @@ If you see these messages, your edge device is successfully connected!
 
 To confirm data ingestion, return to your Cyberwave Environment and "turn on" the camera in the interface. You should see live video frames streaming from your edge device directly into the Digital Twin.
 
+![Camera turn on](/images/camera-turn-on.png)
+
 ---
 
 ## Phase 2: Configure the Workflow
@@ -201,6 +218,8 @@ To confirm data ingestion, return to your Cyberwave Environment and "turn on" th
 </Note>
 
 We will use Cyberwave Workflows to create a **"Fetch-Analyze-Act"** loop.
+
+![](/images/final-workflow.png)
 
 ### Workflow Basics
 
@@ -216,6 +235,18 @@ When configuring nodes, you can set inputs using:
 2. Click **Create Workflow** and name it `PPE-Compliance-Audit`.
 3. **Trigger:** Select a **Schedule Trigger**. Set it to run every **1 minute**.
 
+<iframe 
+  src="https://app.tango.us/app/embed/4c6f2e29-82e5-4a22-a114-b743b0000e53"
+  title="Initialize the Workflow"
+  width="100%"
+  height="100%"
+  style={{minHeight: "500px"}}
+  sandbox="allow-scripts allow-top-navigation-by-user-activation allow-popups allow-same-origin"
+  referrerPolicy="strict-origin-when-cross-origin"
+  frameBorder="0"
+  allowFullScreen
+></iframe>
+
 ### Step 2.2: Data Ingestion Node
 
 From the **Node Library → Actions**, add a **"Data Source"** node.
@@ -225,7 +256,10 @@ From the **Node Library → Actions**, add a **"Data Source"** node.
 **Configuration:**
 - **Data Source Type:** Twin Image
 - **Select Digital Twin:** Choose the `PPE Sentinel` twin created in Phase 1
-- **Output Used:** We will utilize the `Image URL` output generated by this node
+- **Output Used:** We will utilize the `Image URL` output generated by this node. 
+- **Connection:** Connect this node to the **Schedule** node by dragging the pointer from one node to another. 
+
+![](/images/data-source.png)
 
 ### Step 2.3: Intelligence Node (VLM Integration)
 
@@ -236,6 +270,7 @@ From the **Node Library → Actions**, add a **"Call Models"** node.
 **Configuration:**
 
 - **Select Model:** VLM Model
+![](/images/model-config.png)
 - **Prompt [Fixed Value]:** Copy the following strict logic prompt:
 
 ```
@@ -261,6 +296,9 @@ Analyze this image for PPE compliance.
 
 - **Image URL [Reference Node]:** Select the `Data Source` node and map its `Image URL` output to this field
 - **Output Used:** We will use the `Result` variable (string format)
+- **Connection:** Connect this node to the **Data Source** node by dragging the pointer from one node to another. 
+
+![](/images/model-input-config.png)
 
 ### Step 2.4: Conditional Branch Node
 
@@ -275,6 +313,8 @@ From the **Node Library → Actions**, add a **"Conditionals"** node.
 
 **Logic:** The workflow continues only if the VLM returns `false` (indicating a safety violation).
 
+![](/images/conditional-inputs.png)
+
 ### Step 2.5: Email Notification Node
 
 From the **Node Library → Actions**, add a **"Send Emails"** node.
@@ -286,6 +326,8 @@ From the **Node Library → Actions**, add a **"Send Emails"** node.
 - **Subject:** `PPE Compliance Violation`
 - **Body:** `There is a PPE violation detected in Zone X. Please investigate.`
 
+![](/images/send-email.png)
+
 ### Step 2.6: Activate the Workflow
 
 Click **Activate** to deploy the workflow configuration. This process automatically validates your workflow logic, ensuring it can run correctly and alerting you to any configuration errors before deployment.
@@ -293,6 +335,8 @@ Click **Activate** to deploy the workflow configuration. This process automatica
 <Info>
 Your workflow is now live and will run every minute to check for PPE compliance!
 </Info>
+
+![](/images/activate-workflow.png)
 
 ---
 
