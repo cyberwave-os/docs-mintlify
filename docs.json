@@ -46,6 +46,12 @@
                 "sdks/python-sdk",
                 "sdks/cpp-sdk"
               ]
+            },
+            {
+              "group": "Tutorials",
+              "pages": [
+                "tutorials/edge-to-cloud-vlm"
+              ]
             }
           ]
         },
