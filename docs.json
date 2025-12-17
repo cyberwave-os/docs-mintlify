@@ -32,14 +32,6 @@
                 "concepts/environment-editor"
               ]
             },
-            {
-              "group": "Examples",
-              "pages": [
-                "examples/so101-arm",
-                "examples/unitree-go2",
-                "examples/video-streaming"
-              ]
-            },
             {  
               "group": "SDKs",
               "pages": [
