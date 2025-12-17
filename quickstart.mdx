@@ -4,7 +4,7 @@ description: "Get up and running with Cyberwave in just a few minutes"
 icon: "rocket"
 ---
 
-import EarlyAccess from '/snippets/early-access.mdx';
+import EarlyAccess from "/snippets/early-access.mdx";
 
 ## Step 1: Create Your First Project
 
@@ -14,9 +14,8 @@ Projects help you organize your robotics work by grouping related environments, 
 
 <AccordionGroup>
   <Accordion title="What you'll do" icon="check-circle">
-    - Click "New Project" from the dashboard
-    - Give it a name like "My First Robot Project"
-    - Add a description of what you're building
+    - Click "New Project" from the dashboard - Give it a name like "My First
+    Robot Project" - Add a description of what you're building
   </Accordion>
 </AccordionGroup>
 
@@ -36,8 +35,8 @@ Environments are 3D spaces where your robots live and interact. Think of them as
 
 <AccordionGroup>
   <Accordion title="What you'll do" icon="check-circle">
-    - Click "New Environment" from your project
-    - Pick a name for your environment
+    - Click "New Environment" from your project - Pick a name for your
+    environment
   </Accordion>
 </AccordionGroup>
 
@@ -49,9 +48,8 @@ Browse our catalog of pre-built robots or upload your own URDF files to bring yo
 
 <AccordionGroup>
   <Accordion title="What you'll do" icon="check-circle">
-    - Browse the asset catalog for robots
-    - Add robots to your environment
-    - Position and configure your robots
+    - Browse the asset catalog for robots - Add robots to your environment -
+    Position and configure your robots
   </Accordion>
 </AccordionGroup>
 
@@ -79,9 +77,9 @@ import cyberwave as cw
 # Connect to your robot
 robot = cw.twin("the-robot-studio/so101")
 
-# Move the robot to a position
-robot.move(x=1.0, y=0.0, z=0.5)
-robot.rotate(yaw=90)
+# Change the robot position and rotation
+robot.edit_position(x=1.0, y=0.0, z=0.5)
+robot.edit_rotation(yaw=90)
 
 # Actuate the robot's joint to 30 degrees
 robot.joints.set("1", 30)
@@ -94,30 +92,17 @@ robot.joints.set("1", 30)
 Now that you've got the basics down, here are some next steps to explore:
 
 <CardGroup cols={2}>
-  <Card
-    title="Advanced Robotics"
-    icon="robot"
-  >
-    - Multi-robot coordination
-    - Sensor integration
-    - Path planning algorithms
+  <Card title="Advanced Robotics" icon="robot">
+    - Multi-robot coordination - Sensor integration - Path planning algorithms
   </Card>
-  <Card
-    title="Customization"
-    icon="wrench"
-  >
-    - Upload custom URDF models
-    - Create custom environments
-    - Build custom sensors
+  <Card title="Customization" icon="wrench">
+    - Upload custom URDF models - Create custom environments - Build custom
+    sensors
   </Card>
 </CardGroup>
 
 <CardGroup cols={2}>
-  <Card
-    title="Full Documentation"
-    icon="book-open"
-    href="/index"
-  >
+  <Card title="Full Documentation" icon="book-open" href="/index">
     Explore complete documentation
   </Card>
   <Card
