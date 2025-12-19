@@ -9,6 +9,7 @@ Method | HTTP request | Description
 [**src_app_api_assets_create_asset_with_urdf**](DefaultApi.md#src_app_api_assets_create_asset_with_urdf) | **POST** /api/v1/assets/create-with-urdf | Create Asset With Urdf
 [**src_app_api_assets_delete_asset**](DefaultApi.md#src_app_api_assets_delete_asset) | **DELETE** /api/v1/assets/{uuid} | Delete Asset
 [**src_app_api_assets_get_asset**](DefaultApi.md#src_app_api_assets_get_asset) | **GET** /api/v1/assets/{uuid} | Get Asset
+[**src_app_api_assets_get_asset_controllers**](DefaultApi.md#src_app_api_assets_get_asset_controllers) | **GET** /api/v1/assets/{uuid}/controllers | Get Asset Controllers
 [**src_app_api_assets_get_asset_kinematics**](DefaultApi.md#src_app_api_assets_get_asset_kinematics) | **GET** /api/v1/assets/{uuid}/kinematics | Get Asset Kinematics
 [**src_app_api_assets_get_popular_tags**](DefaultApi.md#src_app_api_assets_get_popular_tags) | **GET** /api/v1/assets/popular-tags | Get Popular Tags
 [**src_app_api_assets_initiate_large_glb_upload**](DefaultApi.md#src_app_api_assets_initiate_large_glb_upload) | **POST** /api/v1/assets/{uuid}/initiate-large-glb-upload | Initiate Large Glb Upload
@@ -534,6 +535,72 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**AssetSchema**](AssetSchema.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_assets_get_asset_controllers**
+> List[ControllerPolicySchema] src_app_api_assets_get_asset_controllers(uuid)
+
+Get Asset Controllers
+
+### Example
+
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.controller_policy_schema import ControllerPolicySchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.DefaultApi(api_client)
+    uuid = 'uuid_example' # str | 
+
+    try:
+        # Get Asset Controllers
+        api_response = api_instance.src_app_api_assets_get_asset_controllers(uuid)
+        print("The response of DefaultApi->src_app_api_assets_get_asset_controllers:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->src_app_api_assets_get_asset_controllers: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+
+### Return type
+
+[**List[ControllerPolicySchema]**](ControllerPolicySchema.md)
 
 ### Authorization
 
@@ -4380,12 +4447,16 @@ void (empty response body)
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **src_app_api_environments_get_environment_recordings**
-> List[TwinTelemetryMetadataSchema] src_app_api_environments_get_environment_recordings(uuid)
+> Dict[str, object] src_app_api_environments_get_environment_recordings(uuid)
 
 Get Environment Recordings
 
-Get all available recordings for an environment.
+Get all available recordings for an environment with pagination.
 Returns list of recording metadata excluding the recording_path.
+
+Query params:
+- limit: Max number of records to return (default 50)
+- offset: Number of records to skip (default 0)
 
 ### Example
 
@@ -4393,7 +4464,6 @@ Returns list of recording metadata excluding the recording_path.
 
 ```python
 import cyberwave.rest
-from cyberwave.rest.models.twin_telemetry_metadata_schema import TwinTelemetryMetadataSchema
 from cyberwave.rest.rest import ApiException
 from pprint import pprint
 
@@ -4440,7 +4510,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**List[TwinTelemetryMetadataSchema]**](TwinTelemetryMetadataSchema.md)
+**Dict[str, object]**
 
 ### Authorization
 
@@ -6657,7 +6727,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **src_app_api_mltrainings_create_mltraining**
-> Dict[str, object] src_app_api_mltrainings_create_mltraining(ml_training_create_schema)
+> MLTrainingSchema src_app_api_mltrainings_create_mltraining(ml_training_create_schema)
 
 Create Mltraining
 
@@ -6670,6 +6740,7 @@ Create a new ML training.
 ```python
 import cyberwave.rest
 from cyberwave.rest.models.ml_training_create_schema import MLTrainingCreateSchema
+from cyberwave.rest.models.ml_training_schema import MLTrainingSchema
 from cyberwave.rest.rest import ApiException
 from pprint import pprint
 
@@ -6716,7 +6787,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-**Dict[str, object]**
+[**MLTrainingSchema**](MLTrainingSchema.md)
 
 ### Authorization
 
