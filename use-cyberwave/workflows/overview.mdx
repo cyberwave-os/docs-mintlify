@@ -1,4 +1,194 @@
 ---
 title: "Overview"
-description: "Create and customize 3D environments for your robotics simulations and testing scenarios"
+description: "Automate robot operations with visual workflow orchestration"
 ---
+
+## What are Workflows?
+
+Workflows in Cyberwave let you create automated sequences of robot operations. Connect nodes visually to build complex behaviors without writing procedural code.
+
+<Info>
+Workflows run on Cyberwave's cloud infrastructure, ensuring reliable execution even when your local machine is offline.
+</Info>
+
+---
+
+## Workflow Components
+
+### Nodes
+
+Nodes are the building blocks of workflows. Each node performs a specific action:
+
+<CardGroup cols={2}>
+  <Card title="Twin Nodes" icon="robot">
+    Control digital twin position, rotation, and state
+  </Card>
+  
+  <Card title="Joint Nodes" icon="gear">
+    Set individual joint positions or run trajectories
+  </Card>
+  
+  <Card title="Condition Nodes" icon="code-branch">
+    Branch based on sensor data or twin state
+  </Card>
+  
+  <Card title="Delay Nodes" icon="clock">
+    Add timing between operations
+  </Card>
+</CardGroup>
+
+### Connections
+
+Connections define the execution flow between nodes:
+- **Sequential**: Execute nodes one after another
+- **Parallel**: Execute multiple nodes simultaneously
+- **Conditional**: Branch based on conditions
+
+---
+
+## Creating a Workflow
+
+### Using the SDK
+
+```python
+from cyberwave import Cyberwave
+
+client = Cyberwave()
+
+# Create a new workflow
+workflow = client.api.workflow_create({
+    "name": "Pick and Place",
+    "description": "Move arm to pick position, grip, move to place position, release"
+})
+
+# Add nodes
+pick_node = client.api.workflow_node_create(workflow.uuid, {
+    "type": "joint_control",
+    "config": {
+        "twin_uuid": "your-twin-uuid",
+        "joints": {"shoulder": 45, "elbow": 30}
+    }
+})
+
+grip_node = client.api.workflow_node_create(workflow.uuid, {
+    "type": "gripper",
+    "config": {
+        "action": "close",
+        "force": 0.8
+    }
+})
+
+# Connect nodes
+client.api.workflow_connection_create(workflow.uuid, {
+    "source_node": pick_node.uuid,
+    "target_node": grip_node.uuid
+})
+```
+
+### Using the Dashboard
+
+1. Navigate to **Workflows** in the dashboard
+2. Click **Create Workflow**
+3. Drag nodes from the palette to the canvas
+4. Connect nodes by dragging from output to input ports
+5. Configure each node's parameters
+6. Click **Save** and **Run**
+
+---
+
+## Executing Workflows
+
+### Manual Execution
+
+```python
+# Execute a workflow
+execution = client.api.workflow_execute(workflow.uuid)
+print(f"Execution ID: {execution.uuid}")
+print(f"Status: {execution.status}")
+```
+
+### Triggered Execution
+
+Workflows can be triggered by:
+- **Schedule**: Run at specific times (cron)
+- **Events**: Run when sensor data matches conditions
+- **API**: Trigger from external systems
+
+---
+
+## Monitoring Executions
+
+Track workflow execution status and results:
+
+```python
+# Get execution details
+execution = client.api.workflow_execution_get(execution_uuid)
+
+print(f"Status: {execution.status}")
+print(f"Started: {execution.started_at}")
+print(f"Completed: {execution.completed_at}")
+
+# Get node-level execution details
+for node_execution in execution.node_executions:
+    print(f"  {node_execution.node_name}: {node_execution.status}")
+```
+
+---
+
+## Example: Inspection Workflow
+
+A typical inspection workflow might include:
+
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│ Move to     │───▶│ Capture     │───▶│ Analyze     │
+│ Position 1  │    │ Image       │    │ Image       │
+└─────────────┘    └─────────────┘    └─────────────┘
+                                             │
+                         ┌───────────────────┴───────────────────┐
+                         ▼                                       ▼
+                  ┌─────────────┐                         ┌─────────────┐
+                  │ Pass:       │                         │ Fail:       │
+                  │ Move Next   │                         │ Alert       │
+                  └─────────────┘                         └─────────────┘
+```
+
+---
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Keep workflows focused">
+    Create separate workflows for distinct operations rather than one large workflow. This makes debugging and maintenance easier.
+  </Accordion>
+  
+  <Accordion title="Add error handling">
+    Include condition nodes to handle failure cases gracefully. Consider what should happen if a joint can't reach its target.
+  </Accordion>
+  
+  <Accordion title="Use meaningful names">
+    Name nodes and workflows descriptively. "Move to inspection position" is better than "Node 1".
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="API Reference"
+    icon="code"
+    href="/api-reference/rest/WorkflowSchema"
+  >
+    Full workflow API documentation
+  </Card>
+  
+  <Card
+    title="SO101 Example"
+    icon="robot-astromech"
+    href="/examples/so101-arm"
+  >
+    See workflows in action with a robot arm
+  </Card>
+</CardGroup>

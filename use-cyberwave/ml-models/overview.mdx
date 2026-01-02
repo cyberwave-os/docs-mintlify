@@ -1,4 +1,245 @@
 ---
 title: "Overview"
-description: "Create and customize 3D environments for your robotics simulations and testing scenarios"
+description: "Register and deploy AI models for robotics workflows"
 ---
+
+## What are ML Models?
+
+ML Models in Cyberwave are AI models registered in your workspace that can process various inputs—video, images, audio, text, or robot actions. They integrate with workflows and can run in the cloud or on edge devices.
+
+<Info>
+ML Models define **what the model can do** (input types) and **where it runs** (provider). The actual inference happens through the model provider's API or on your edge device.
+</Info>
+
+---
+
+## Model Capabilities
+
+Each ML Model specifies what inputs it can process:
+
+| Capability | Description | Example Use Cases |
+|------------|-------------|-------------------|
+| `can_take_video_as_input` | Process video streams | Surveillance, teleoperation |
+| `can_take_image_as_input` | Process single images | Quality inspection, object detection |
+| `can_take_audio_as_input` | Process audio data | Voice commands, anomaly detection |
+| `can_take_text_as_input` | Process text prompts | Natural language commands |
+| `can_take_action_as_input` | Process robot actions | Behavior cloning, RL policies |
+
+---
+
+## Registering a Model
+
+### Via the SDK
+
+```python
+from cyberwave import Cyberwave
+
+client = Cyberwave()
+
+# Register a vision model
+model = client.api.create_mlmodel({
+    "name": "Object Detector",
+    "description": "YOLOv8 model for detecting warehouse items",
+    "model_external_id": "yolov8n",
+    "model_provider_name": "local",
+    "can_take_image_as_input": True,
+    "can_take_video_as_input": True,
+    "visibility": "private",
+    "tags": ["vision", "detection", "warehouse"]
+})
+
+print(f"Model UUID: {model.uuid}")
+```
+
+### Via the Dashboard
+
+1. Navigate to **ML Models** in your workspace
+2. Click **Add Model**
+3. Fill in the model details:
+   - Name and description
+   - External ID (model identifier for the provider)
+   - Provider name (e.g., "openai", "local", "huggingface")
+   - Input capabilities
+4. Click **Create**
+
+---
+
+## Model Providers
+
+Models can run through different providers:
+
+<CardGroup cols={2}>
+  <Card title="Local / Edge" icon="microchip">
+    Run on your edge devices using ONNX, TensorRT, or custom inference
+  </Card>
+  
+  <Card title="Cloud APIs" icon="cloud">
+    Use OpenAI, Anthropic, or other cloud AI services
+  </Card>
+  
+  <Card title="Hugging Face" icon="face-smile">
+    Deploy models from Hugging Face Hub
+  </Card>
+  
+  <Card title="Custom" icon="code">
+    Your own inference servers and endpoints
+  </Card>
+</CardGroup>
+
+---
+
+## Using Models in Workflows
+
+ML Models integrate with workflow nodes for automated processing:
+
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│ Capture     │───▶│ ML Model:   │───▶│ Condition:  │
+│ Image       │    │ Detect      │    │ Found?      │
+└─────────────┘    │ Objects     │    └─────────────┘
+                   └─────────────┘           │
+                                    ┌───────┴───────┐
+                                    ▼               ▼
+                             ┌───────────┐   ┌───────────┐
+                             │ Pick      │   │ Alert     │
+                             │ Object    │   │ Operator  │
+                             └───────────┘   └───────────┘
+```
+
+---
+
+## Example: Vision-Language Model
+
+Register a VLM for natural language robot control:
+
+```python
+from cyberwave import Cyberwave
+
+client = Cyberwave()
+
+# Register GPT-4 Vision for robot commands
+vlm = client.api.create_mlmodel({
+    "name": "Robot Commander",
+    "description": "Interprets visual scenes and generates robot commands",
+    "model_external_id": "gpt-4-vision-preview",
+    "model_provider_name": "openai",
+    "can_take_image_as_input": True,
+    "can_take_text_as_input": True,
+    "visibility": "private",
+    "metadata": {
+        "max_tokens": 1000,
+        "temperature": 0.2
+    }
+})
+```
+
+---
+
+## Listing Models
+
+```python
+from cyberwave import Cyberwave
+
+client = Cyberwave()
+
+# List all models in your workspace
+models = client.api.list_mlmodels()
+
+for model in models:
+    print(f"{model.name} ({model.model_provider_name})")
+    print(f"  Video: {model.can_take_video_as_input}")
+    print(f"  Image: {model.can_take_image_as_input}")
+    print(f"  Text: {model.can_take_text_as_input}")
+```
+
+---
+
+## Model Visibility
+
+| Visibility | Who Can Access |
+|------------|----------------|
+| `private` | Only your workspace members |
+| `workspace` | All workspace members |
+| `public` | Anyone (admin-only to create) |
+
+---
+
+## Running Inference
+
+### Cloud Models
+
+For cloud-based models, Cyberwave routes requests to the provider:
+
+```python
+# Via workflow nodes or API
+response = client.api.vlm_generation({
+    "model_uuid": vlm.uuid,
+    "prompt": "What objects do you see? How should the robot pick them up?",
+    "image_url": "https://..."
+})
+```
+
+### Edge Models
+
+For local models, run inference on your edge device:
+
+```python
+import asyncio
+from cyberwave import Cyberwave
+
+async def run_local_inference():
+    client = Cyberwave()
+    
+    # Your local model
+    import torch
+    model = torch.hub.load('ultralytics/yolov8', 'yolov8n')
+    
+    twin_uuid = "your-twin-uuid"
+    
+    def on_frame(frame_data):
+        """Process each incoming frame."""
+        # Run detection
+        results = model(frame_data)
+        
+        # Publish results back to Cyberwave
+        detections = results.pandas().xyxy[0].to_dict()
+        client.mqtt.publish(
+            f"twins/{twin_uuid}/detections",
+            detections
+        )
+    
+    # Subscribe to video frames
+    client.mqtt.subscribe(
+        f"twins/{twin_uuid}/video/frames",
+        on_frame
+    )
+    
+    while True:
+        await asyncio.sleep(1)
+
+asyncio.run(run_local_inference())
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Workflows"
+    icon="diagram-project"
+    href="/concepts/workflows"
+  >
+    Use ML Models in automated workflows
+  </Card>
+  
+  <Card
+    title="Edge Devices"
+    icon="microchip"
+    href="/concepts/edge-devices"
+  >
+    Run models on edge hardware
+  </Card>
+</CardGroup>
+
+
