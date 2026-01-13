@@ -25,6 +25,49 @@ These robot arms expose developers to real robotic hardware without the cost or 
 
 ## Set up the SO101
 
+Before configuring the software, you need to physically connect your SO101 hardware components.
+
+### Connect the Hardware Components
+
+Follow this sequence to set up your physical hardware:
+
+#### Step 1: Power the Robot Arms
+
+Connect both the leader and follower arms to their power supplies:
+
+1. Locate the power input on each arm's controller board. 
+2. Connect the appropriate power supply to each arm. 
+3. **Verify voltage:** Ensure the voltage matches your motor specifications
+   - Common configurations: 6V or 12V (depends on your motors).
+   - Check your SO101 build documentation for the correct voltage. 
+
+<Warning>
+Using incorrect voltage can damage the motors or controller. Always verify the voltage specification before powering on the arms.
+</Warning>
+
+#### Step 2: Connect Arms to Computer
+
+Each arm needs a USB connection to communicate with your computer:
+
+1. **Leader arm:**
+   - Plug one end of a USB-C cable into the leader arm's controller.
+   - Plug the other end into your computer (laptop, Raspberry Pi, or SBC). 
+
+2. **Follower arm:**
+   - Plug one end of a USB-C cable into the follower arm's controller.
+   - Plug the other end into your computer. 
+
+<Note>
+Each arm appears as a separate serial device. You'll identify their specific ports in the software setup steps.
+</Note>
+
+#### Step 3: Connect the Camera
+
+If you're using an external camera for dataset recording:
+
+1. Connect your USB camera or IP camera to the computer.
+2. Verify the camera is detected by your system.
+
 ---
 
 ## Use Cyberwave with SO101
@@ -60,7 +103,7 @@ This guide helps you:
 Before you begin this quick start guide, ensure you have the following: 
 <Tabs>
   <Tab title="Hardware">
-    - SO101 robot arm set (leader and follower arms) *(Contact us if you want access to this hardware)*
+    - SO101 robot arm set (leader and follower arms) *([Contact us](mailto:info@cyberwave.com) if you want access to this hardware)*
     - External camera (USB or IP camera) to record video feeds for datasets
     - Computer or single-board computer (SBC, e.g., Raspberry Pi)
     - USB or serial connection to the SO101 devices
@@ -85,7 +128,7 @@ Before you begin this quick start guide, ensure you have the following:
 
 #### Step 1: Install the SDK
 
-We use the `cyberwave-edge-python-so101` SDK to handle teleoperation and remote control of the SO101.
+We use the [`cyberwave-edge-python-so101` SDK](https://github.com/cyberwave-os/cyberwave-edge-python-so101.git) to handle teleoperation and remote control of the SO101.
 Open your Terminal and run the following commamnds: 
 
 ```bash
@@ -123,6 +166,9 @@ Now, retrieve your **Cyberwave API token**:
 CYBERWAVE_TOKEN=your_token_here
 ```
 
+![](/images/cyberwave-api-token.png)
+
+
 Optionally, export the token as an environment variable for the current session:
 ```
 export CYBERWAVE_TOKEN=your_token_here
@@ -151,6 +197,18 @@ Hover over the three dots of the asset in the sidebar, and click on **"Copy Twin
 
 *(Note: If you do not see the three dots, your sidebar might be too narrow. Click and drag the edge of the sidebar to expand it.)*
 </Warning>
+
+<iframe 
+  src="https://app.tango.us/app/embed/b1cf3d05-342b-499b-ae79-15c4ea3c6c0a" 
+  style={{ minHeight: '640px' }}
+  sandbox="allow-scripts allow-top-navigation-by-user-activation allow-popups allow-same-origin" 
+  title="Add Twins to Cyberwave Environment" 
+  width="100%" 
+  height="100%" 
+  referrerPolicy="strict-origin-when-cross-origin" 
+  frameBorder="0" 
+  allowFullScreen
+/>
 
 Your Cyberwave environment now replicates your real-world physical setup with both digital twins configured and ready to connect.
 
@@ -283,7 +341,7 @@ so101-teleoperate \
     --twin-uuid YOUR_SO101_TWIN_UUID \
     --leader-port /dev/tty.usbmodem123 \
     --follower-port /dev/tty.usbmodem456 \
-    --twin-uuid YOUR_CAMERA_TWIN_UUID \
+    --camera-uuid YOUR_CAMERA_TWIN_UUID \
     --fps 30
 ```
 
@@ -299,7 +357,7 @@ so101-teleoperate \
 | `--twin-uuid` | Digital twin ID for the SO101 robot arm in Cyberwave | 
 | `--leader-port` | Serial port for the leader arm (input device) |
 | `--follower-port` | Serial port for the follower arm (output device) | 
-| `--camera-twin-uuid` | Digital twin ID for the camera to stream visual data | 
+| `--camera-uuid` | Digital twin ID for the camera to stream visual data | 
 | `--fps` | Frames per second for telemetry updates (default: 30) |
 
 <Note>
@@ -340,6 +398,7 @@ Recording episodes captures the manual operations performed through teleoperatio
    - Locate the camera icon in the upper-right corner
    - Click the **Turn On** icon to activate the camera feed
 4. Click **Start Recording** to begin capturing data
+![](/images/record-episodes.png)
 
 <Note>
 Make sure teleoperation is running (from Step 7) before you start recording. The recording captures both the arm movements and camera feed simultaneously.
@@ -385,44 +444,49 @@ After recording, you'll trim the raw recording into discrete episodes and export
 
 **Create Episodes from Recording:**
 
-1. Open the **recorded session** in your Cyberwave environment
-2. **Review the timeline**: You'll see the full recording with video and telemetry data
+1. Open the **recorded session** in your Cyberwave environment. 
+2. **Review the timeline**: You'll see the full recording with video and telemetry data. 
 3. **Trim episodes:**
    - Identify the start and end of each successful task demonstration
    - Use the trim tool to isolate each episode
    - Remove any failed attempts, pauses, or unwanted sections
-4. **Label episodes** (optional): add descriptive names for organization
+4. **Label episodes** (optional): add descriptive names for organization. 
 
 <Note>
 Each episode should contain one complete task execution from start to finish. Keep episodes focused and remove any unnecessary setup or reset time between demonstrations.
 </Note>
 
-**Select and Export:**
+**Create a Dataset:**
 
 Once you've created episodes:
 
-1. **Review all episodes** to ensure quality
-2. **Select the episodes** you want to include in the final dataset
+1. **Review all episodes** to ensure quality. 
+2. **Select the episodes** you want to include in the final dataset. 
    - Check the box next to each desired episode
    - Deselect any that have errors or poor quality
-3. Click **Export Dataset**
-4. Choose export format and settings (if prompted)
-5. Confirm the export
+3. Click **Create Dataset**. 
+![](/images/create-dataset.png)
 
 <Tip>
-Aim for consistency in your episodes — they should all demonstrate the same task in similar conditions. Remove outliers or failed attempts to improve training data quality.
+Aim for consistency in your episodes, they should all demonstrate the same task in similar conditions. Remove outliers or failed attempts to improve training data quality.
 </Tip>
 
 **Manage Your Datasets:**
 
-After exporting:
 1. Navigate to the **Manage Datasets** tab in Cyberwave
-2. View all your exported datasets
+2. View all your created datasets. 
 3. Access dataset details:
    - Number of episodes
    - Duration
-   - Metadata (timestamps, robot configuration, etc.)
-4. Download datasets for local training or use them directly in Cyberwave for model training
+4. Download datasets for local training or use them directly in Cyberwave for model training. 
+![](/images/manage-datasets.png)
+
+**Export Your Datasets:**
+
+1. Go to File -> Export -> **Export Datasets**. 
+2. Select the specific dataset you want to export. 
+3. Click on **Export**. 
+![](/images/export-datasets.png)
 
 <Check>
 **Dataset Created:** Your dataset is now ready for training machine learning models. Each episode contains synchronized robot movements and camera footage that can teach autonomous behaviors.
@@ -438,159 +502,114 @@ With your dataset created, you can now train a machine learning model to autonom
 
 Training transforms your recorded demonstrations into a model that can predict and execute similar actions autonomously.
 
-##### Start Model Training
+**Configure training parameters:**
 
-1. In your Cyberwave environment, navigate to **AI → Training**
-2. Click **New Training** or **Train Model**
-3. **Select your dataset:**
-   - Choose the dataset you exported in the previous section
-   - Verify the number of episodes and data quality
-4. **Configure training parameters:**
-   - **Model architecture:** Choose the appropriate model type (e.g., VLA - Vision-Language-Action)
-   - **Training epochs:** Number of iterations through the dataset
-   - **Batch size:** Number of episodes processed together
-   - **Learning rate:** Controls training speed and stability
-   - **Validation split:** Percentage of data reserved for validation
+1. **Workspace:** Select your workspace from the dropdown.
+2. **ML Model:** Choose the appropriate ML model. 
+3. **Dataset:** Select the dataset you created earlier. 
 
-<Tip>
-If you're unsure about parameters, start with the default recommended settings. Cyberwave provides optimized presets for common robotics tasks.
-</Tip>
+4. **Advanced Settings:**
+   
+   **Data Augmentation:**
+   - Use the slider to select augmentation level:
+     - `0` — No augmentation
+     - `1` — Low augmentation (recommended for most cases)
+     - `2` — Medium augmentation (for more robust generalization)
+   
+   <Note>
+   Data augmentation adds variations to your training data (like slight position changes or lighting differences) to help the model generalize better to new situations.
+   </Note>
 
-5. **Start training** — Click **Begin Training**
+   **Training Stop Policy:**
+   
+   Choose one of two stopping strategies:
+   
+   - **Save best model until iterations** (recommended for beginners)
+     - Set the number of iterations (max: 5000)
+     - Training continues until reaching the specified iterations
+     - The best-performing model checkpoint is saved
+   
+   - **Stop when validation loss is under threshold** (for faster training)
+     - Set the validation loss threshold (default: 0.01)
+     - Set max iterations (max: 5000)
+     - Training stops early when validation loss reaches the threshold
+     - May be faster since training stops when a valid model is found
 
-##### Monitor Training Progress
+   <Tip>
+   If you're unsure, use the default settings: "Save best model until iterations" with 5000 iterations. This ensures complete training without premature stopping.
+   </Tip>
 
-While training is in progress:
-- View **real-time metrics** (loss, accuracy, validation performance)
-- Check **training status** (queued, running, completed)
-- **Estimated time remaining** is displayed
-
-Training duration depends on:
-- Dataset size (number of episodes)
-- Model complexity
-- Available compute resources
-
-<Note>
-Training can take anywhere from a few minutes to several hours depending on dataset size and model architecture. You can close the browser — training continues in the background.
-</Note>
-
-##### Manage Your Trainings
-
-Navigate to **AI → Training** to:
-- View all training runs (active and completed)
-- Compare performance metrics across different trainings
-- Access training logs and diagnostics
-- Delete old or failed training runs
-
----
+5. Click **Start Training** to begin. 
 
 #### Step 2: Deploy a Model
 
 Once training completes successfully, deploy the model to make it available as a controller policy.
 
-##### Create a Deployment
+**Create a Deployment:**
 
-1. Navigate to **AI → Deployments**
-2. Click **New Deployment** or **Deploy Model**
-3. **Select your trained model** from the list of completed trainings
-4. **Configure deployment settings:**
-   - **Deployment name:** Give it a descriptive name (e.g., "SO101 Pick-and-Place v1")
-   - **Target environment:** Select your SO101 environment
-   - **Hardware target:** Specify if deploying to simulation, physical robot, or both
-5. Click **Deploy**
+1. Navigate to **AI → Deployments**. 
+2. Click **Start New Deployment**.
+3. **Select your trained model** from the list of completed trainings. 
+4. **Select the target twins** to deploy the model to. 
+5. Click **Deploy**. 
 
 <Check>
 **Model Deployed:** Your trained model is now available as a controller policy and ready to control the robot autonomously.
 </Check>
 
-##### Monitor Deployments
+#### Step 4: Set Up Remote Operation
 
-In the **AI → Deployments** tab, you can:
-- View all active deployments
-- Check deployment status and health
-- Update or rollback deployments
-- Delete unused deployments
+Remote operation allows you to control the SO101 follower arm directly from Cyberwave without using a physical leader arm. This is useful for testing, calibration, or when you only have a single follower arm.
 
----
+**How Remote Operation Works:**
 
-#### Step 3: Use the Model as a Controller Policy
+Unlike teleoperation (which uses a leader arm to control the follower), remote operation:
+- Connects only the **follower arm** to Cyberwave
+- Allows control through the **Cyberwave dashboard** in your browser
+- Enables **manual joint control** or **scripted movements**
+- Streams real-time feedback to the digital twin
 
-Now comes the exciting part — using your AI model to autonomously control the physical SO101 robot!
+**Start Remote Operation:**
 
-##### Assign the Controller Policy
+Run the following command in your terminal, replacing the placeholders with your actual values:
 
-1. In your environment, navigate to the **SO101 digital twin**
-2. Open **Controller Settings** or **Policies**
-3. Click **Add Controller Policy**
-4. Select your deployed model from the list (e.g., "SO101 Pick-and-Place v1")
-5. **Activate the policy**
+```
+so101-remoteoperate \
+    --follower-port /dev/tty.usbmodem456 \
+    --twin-uuid YOUR_SO101_TWIN_UUID \
+    --token YOUR_CYBERWAVE_TOKEN
+```
+
+Replace these values:
+- `/dev/tty.usbmodem456` — Your follower arm port from Step 4
+- `YOUR_SO101_TWIN_UUID` — The SO101 Twin UUID from Step 3
+- `YOUR_CYBERWAVE_TOKEN` — Your API token from Step 2 (or use the environment variable)
+
+#### Step 4: Use the Model as a Controller Policy
+
+Now use your trained model to autonomously control the physical SO101 robot.
+
+**Assign the Controller Policy:**
+
+1. In your environment, switch to **Edit Mode**.
+2. Click **Assign Controller Policy** from the right side view.
+3. Select your deployed model from the dropdown.
+4. Click **Save Configuration**.
+5. The model now appears as a controller policy in the right side view. 
+
+**Execute with Natural Language Prompts:**
+
+1. Switch to **Live View**.
+2. You'll see an option to enter a prompt.
+3. Type your instruction (e.g., *"Pick up the object and place it in the box"*). 
+5. The model deploys the action to the SO101 in your real environment setup. 
 
 <Warning>
-Before activating autonomous control, ensure the workspace is clear and the robot has safe operating space. Be ready to stop the robot if needed.
+Ensure the workspace is clear and the robot has safe operating space before executing autonomous actions.
 </Warning>
 
-##### Give Instructions to the Model
-
-With a Vision-Language-Action (VLA) model deployed, you can provide natural language prompts:
-
-1. **Enter a prompt** describing the task:
-   - Example: *"Pick up the red block and place it in the box"*
-   - Example: *"Grab the object in front of you"*
-   - Example: *"Move to the starting position"*
-2. Click **Execute** or **Run**
-3. **Observe the robot** — the SO101 should autonomously execute the task based on your prompt and its training
-
-<Accordion title="Example: Autonomous Pick-and-Place">
-**Scenario:** You trained a model on pick-and-place demonstrations
-
-**Steps:**
-1. Place an object on the table in front of the SO101
-2. Activate the deployed controller policy
-3. Enter prompt: *"Pick up the object and place it in the box"*
-4. Press Execute
-5. Watch the SO101:
-   - Move to the object
-   - Close gripper to grasp
-   - Lift and move to box
-   - Release object
-   - Return to rest position
-
-The robot performs the task autonomously without teleoperation!
-</Accordion>
-
-##### Evaluate and Iterate
-
-After testing your model:
-- **Success rate:** Track how often the robot completes the task correctly
-- **Quality:** Assess smoothness and accuracy of movements
-- **Edge cases:** Test with variations (different objects, positions, lighting)
-
-If performance needs improvement:
-1. Collect more demonstrations with better coverage of edge cases
-2. Retrain the model with the expanded dataset
-3. Deploy the updated model
-4. Test again
-
-<Tip>
-Start with simple, controlled scenarios and gradually increase complexity. If the model struggles, collect more diverse training data covering the specific scenarios where it fails.
-</Tip>
-
----
-
-### Summary
-
-Congratulations! You've successfully:
-
-✅ Set up SO101 hardware and connected it to your computer  
-✅ Configured Cyberwave environment with digital twins  
-✅ Established teleoperation between leader and follower arms  
-✅ Created datasets from manual demonstrations  
-✅ Trained an ML model on your custom dataset  
-✅ Deployed the model as an autonomous controller policy  
-✅ Controlled the physical robot using AI and natural language prompts
-
 <Check>
-**Complete Setup:** Your SO101 is now fully integrated with Cyberwave and capable of autonomous operation powered by your trained models!
+**Autonomous Control Active:** Your SO101 is now controlled by AI using natural language prompts!
 </Check>
 
 
