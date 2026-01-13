@@ -1,0 +1,188 @@
+---
+title: "Quick Start"
+description: "Get up and running with Cyberwave in just a few minutes"
+icon: "bolt"
+---
+
+import EarlyAccess from '/snippets/early-access.mdx';
+
+## Step 1: Create Your First Project
+
+<EarlyAccess />
+
+Projects help you organize your robotics work by grouping related environments, assets, and simulations together.
+
+<AccordionGroup>
+  <Accordion title="What you'll do" icon="check-circle">
+    - Click "New Project" from the dashboard
+    - Give it a name like "My First Robot Project"
+    - Add a description of what you're building
+  </Accordion>
+</AccordionGroup>
+
+<Card
+  title="Go to Dashboard"
+  icon="folder-plus"
+  href="https://cyberwave.com/dashboard"
+>
+  Create your first project from the dashboard
+</Card>
+
+---
+
+## Step 2: Create an Environment
+
+Environments are 3D spaces where your robots live and interact. Think of them as virtual worlds for your simulations.
+
+<AccordionGroup>
+  <Accordion title="What you'll do" icon="check-circle">
+    - Click "New Environment" from your project
+    - Pick a name for your environment
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Step 3: Add Robot Assets
+
+Browse our catalog of pre-built robots or upload your own URDF files to bring your robots into the simulation.
+
+<AccordionGroup>
+  <Accordion title="What you'll do" icon="check-circle">
+    - Browse the asset catalog for robots
+    - Add robots to your environment
+    - Position and configure your robots
+  </Accordion>
+</AccordionGroup>
+
+<Card
+  title="Browse Catalog"
+  icon="book-open"
+  href="https://cyberwave.com/catalog"
+>
+  Explore our robot catalog
+</Card>
+
+---
+
+## Step 4: Control with Python SDK
+
+Take full control of your robots using our Python SDK. Write code to move robots, read sensors, and implement complex behaviors.
+
+```python
+# Install the Cyberwave SDK
+pip install cyberwave
+
+# Control your robot
+import cyberwave as cw
+
+# Connect to your robot
+robot = cw.twin("the-robot-studio/so101")
+
+# Move the robot to a position
+robot.move(x=1.0, y=0.0, z=0.5)
+robot.rotate(yaw=90)
+
+# Actuate the robot's joint to 30 degrees
+robot.joints.set("1", 30)
+```
+
+---
+
+## Step 5: Record and Create Datasets
+
+Collect training data by recording your robot operations. These datasets will be used to train AI models for autonomous behavior.
+
+<AccordionGroup>
+  <Accordion title="What you'll do" icon="check-circle">
+    - Switch your environment to **Live Mode**
+    - Turn on the camera to capture video feed
+    - Start recording your robot operations
+    - Perform the task you want the robot to learn multiple times
+    - Stop recording when you have enough demonstrations
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+Record 10-15 demonstrations of the same task with slight variations for better model training results.
+</Tip>
+
+---
+
+## Step 6: Export Your Dataset
+
+Process your recordings into structured datasets ready for training.
+
+<AccordionGroup>
+  <Accordion title="What you'll do" icon="check-circle">
+    - Review your recorded sessions
+    - Trim recordings to create episodes (one per task completion)
+    - Select quality episodes for your dataset
+    - Export the dataset
+    - Access your dataset from the **Manage Datasets** tab
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Step 7: Train an AI Model
+
+Use your dataset to train a machine learning model that can control your robot autonomously.
+
+<AccordionGroup>
+  <Accordion title="What you'll do" icon="check-circle">
+    - Navigate to **AI → Training** in your environment
+    - Click **New Training**
+    - Select your exported dataset
+    - Choose model architecture (e.g., VLA model)
+    - Configure training parameters or use defaults
+    - Click **Start Training**
+    - Monitor training progress in the Training tab
+  </Accordion>
+</AccordionGroup>
+
+```python
+# Training happens in the cloud - no local setup required!
+# Monitor progress in the Cyberwave dashboard
+```
+
+---
+
+## Step 8: Deploy Your Model
+
+Deploy your trained model as a controller policy to enable autonomous robot control.
+
+<AccordionGroup>
+  <Accordion title="What you'll do" icon="check-circle">
+    - Go to **AI → Deployments** in your environment
+    - Click **Deploy Model**
+    - Select your trained model
+    - Give your deployment a name
+    - Configure deployment settings
+    - Click **Deploy**
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Step 9: Use AI to Control Your Robot
+
+Control your robot autonomously using natural language prompts powered by your deployed AI model.
+
+<AccordionGroup>
+  <Accordion title="What you'll do" icon="check-circle">
+    - Switch to **Edit Mode** in your environment
+    - Click **Assign Controller Policy** for your robot
+    - Select your deployed model
+    - Save the configuration
+    - Switch to **Live Mode**
+    - Enter a natural language prompt (e.g., "Pick up the object")
+    - Watch your robot execute the task autonomously!
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+Ensure the workspace is clear and the robot has safe operating space before running autonomous operations.
+</Warning>
+
+---

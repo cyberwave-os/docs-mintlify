@@ -1,0 +1,616 @@
+---
+title: "SO101"
+icon: "microchip"
+description: "Set Up and Use SO101 Robot Arms with Cyberwave."
+---
+
+## What are SO101 Robot Arms?
+SO101 is an **open-source**, **6-degree-of-freedom (6-DOF)** robotic arm set designed for desk-based use. It is commonly built using 3D-printed parts and standard hardware servos, making it low-cost and highly customizable.
+
+These robot arms expose developers to real robotic hardware without the cost or complexity of industrial systems. The SO101 arm set is often deployed as a dual-arm (leader–follower) configuration, but this setup is optional. Users can also operate a single follower arm independently. 
+
+### Physical Components
+- **6-DOF Articulated Arm**: A compact 6-DOF robotic manipulator designed for close-range, desk-based operations. 
+- **Servo-Driven Joints**: Uses position-controlled servo motors to enable real-time joint movement.
+- **Lightweight, Open-Source Hardware**: Built from lightweight, open-source hardware components that are easy to modify and extend. 
+- **Simple End-Effector (Gripper)**: Includes a gripper suitable for basic manipulation tasks.
+- **Leader-Follower Physical Setup (Optional)**: Supports a dual-arm configuration useful for teleoperation and imitation learning: 
+    - **Leader arm (manually actuated)**: Joint positions are sampled.
+    - **Follower arm (actively controlled)**: Mirrors the leader’s joint trajectories in real time.
+
+**Note:** The leader arm is a secondary passive arm used to capture human-guided motion. This setup is optional; you can use only the follower arm if preferred.
+- **USB Control from a Computer / SBC**: The SO101 can be directly controlled from a laptop or single-board computer (SBC, such as a Raspberry Pi) over USB or serial communication. This allows developers to control the robot without industrial controllers or specialized hardware.
+
+---
+
+## Set up the SO101
+
+Before configuring the software, you need to physically connect your SO101 hardware components.
+
+### Connect the Hardware Components
+
+Follow this sequence to set up your physical hardware:
+
+#### Step 1: Power the Robot Arms
+
+Connect both the leader and follower arms to their power supplies:
+
+1. Locate the power input on each arm's controller board. 
+2. Connect the appropriate power supply to each arm. 
+3. **Verify voltage:** Ensure the voltage matches your motor specifications
+   - Common configurations: 6V or 12V (depends on your motors).
+   - Check your SO101 build documentation for the correct voltage. 
+
+<Warning>
+Using incorrect voltage can damage the motors or controller. Always verify the voltage specification before powering on the arms.
+</Warning>
+
+#### Step 2: Connect Arms to Computer
+
+Each arm needs a USB connection to communicate with your computer:
+
+1. **Leader arm:**
+   - Plug one end of a USB-C cable into the leader arm's controller.
+   - Plug the other end into your computer (laptop, Raspberry Pi, or SBC). 
+
+2. **Follower arm:**
+   - Plug one end of a USB-C cable into the follower arm's controller.
+   - Plug the other end into your computer. 
+
+<Note>
+Each arm appears as a separate serial device. You'll identify their specific ports in the software setup steps.
+</Note>
+
+#### Step 3: Connect the Camera
+
+If you're using an external camera for dataset recording:
+
+1. Connect your USB camera or IP camera to the computer.
+2. Verify the camera is detected by your system.
+
+---
+
+## Use Cyberwave with SO101
+
+The SO101 robot arm set provides a low-cost and efficient way to get started with robotic manipulation. Using Cyberwave with an SO101 arm set enables the following capabilities:
+
+- **Quick onboarding**: Onboard an SO101 arm from the Cyberwave catalog, automatically create its digital twin, and begin interacting with it in just a few clicks, no manual hardware configuration required.
+
+- **Teleoperation**: Teleoperate the SO101 using Cyberwave’s SDK, enabling real-time control of the follower arm through a physical leader arm with joint-level mirroring.
+
+- **Remote operation**: Operate the SO101 without a leader arm by sending control commands directly from Cyberwave via the browser, SDK, or APIs.
+
+- **Controller policies**: Assign external controller policies such as keyboard input, scripted controllers, or vision-language-action (VLA) models using a standardized control interface.
+
+- **Create and export datasets**: Record SO101 operations, including video feeds and control actions, and automatically structure them into episodic datasets for training and evaluation.
+
+- **Train and deploy models**: Train machine learning models using collected datasets and deploy them directly as controller policies within Cyberwave.
+
+- **Simulation and real-world execution**: Test trained models in a browser-based 3D simulated environment using the SO101 digital twin, then deploy the same models to the physical robot without changing the logic.
+
+---
+
+## Get Started with SO101
+
+### Goals
+This guide helps you:
+- Set up an SO101 arm and an external camera in a real environment and replicate the same setup in Cyberwave.
+- Configure teleoperation and remote operation to control the follower arm using a leader arm and Cyberwave data.
+- Create datasets for specific tasks and use them to train and deploy ML models.
+- Use deployed ML models as controller policies to control the follower arm directly from Cyberwave.
+
+### Prerequisites
+Before you begin this quick start guide, ensure you have the following: 
+<Tabs>
+  <Tab title="Hardware">
+    - SO101 robot arm set (leader and follower arms) *([Contact us](mailto:info@cyberwave.com) if you want access to this hardware)*
+    - External camera (USB or IP camera) to record video feeds for datasets
+    - Computer or single-board computer (SBC, e.g., Raspberry Pi)
+    - USB or serial connection to the SO101 devices
+  </Tab>
+
+  <Tab title="Software">
+    - Python 3.8 or higher
+    - `pip` installed (Python package manager)
+    - `git` installed
+    - Serial port access enabled on the system
+  </Tab>
+
+  <Tab title="Credentials">
+    - A Cyberwave account  
+      ([Request Early Access](https://cyberwave.com/request-early-access))
+    - API token from your dashboard  
+      *(Cyberwave → Settings → API Keys)*
+  </Tab>
+</Tabs>
+
+### Set Up Teleoperation
+
+#### Step 1: Install the SDK
+
+We use the [`cyberwave-edge-python-so101` SDK](https://github.com/cyberwave-os/cyberwave-edge-python-so101.git) to handle teleoperation and remote control of the SO101.
+Open your Terminal and run the following commamnds: 
+
+```bash
+# 1. Clone the SDK
+git clone https://github.com/cyberwave/cyberwave-edge-python-so101.git
+
+# 2. Navigate to the SDK directory
+cd cyberwave-edge-python-so101
+
+# 3. Install the dependencies
+pip install -e .
+```
+
+#### Step 2: Configure Environment Credentials
+
+Before connecting to Cyberwave, you need to configure your environment with the necessary authentication credentials. This step secures your connection and identifies your workspace.
+
+In your local terminal, navigate to the SDK directory (if not already there) and create your environment configuration file:
+
+```
+# 1. Create the `.env` file from the example template
+cp .env.example .env
+
+# 2. Open the `.env` file in your preferred editor:
+nano .env 
+```
+
+Now, retrieve your **Cyberwave API token**:
+1. Navigate to Cyberwave Dashboard. 
+2. Go to Settings → **API Keys**. 
+3. Generate a new API Token. 
+4. Copy the generated token. 
+5. Add your token to the `.env` file:
+```
+CYBERWAVE_TOKEN=your_token_here
+```
+
+![](/images/cyberwave-api-token.png)
+
+
+Optionally, export the token as an environment variable for the current session:
+```
+export CYBERWAVE_TOKEN=your_token_here
+```
+
+#### Step 3: Set Up the Cyberwave Environment
+
+Now that your local environment is configured, you need to create a corresponding digital environment in Cyberwave that mirrors your physical setup.
+1. Log in to Cyberwave.
+2. Create a new **Project** and **Environment**.
+
+**Add the SO101 Arm:**
+
+1. In your environment, click **Add Scene Object** to create a new twin.
+2. Browse the Catalog and select **SO101**.
+3. Click **Add to Environment**. 
+
+**Add the Camera:**
+1. Click **Add Scene Object** again.
+2. Browse the Catalog and select **Standard Camera**.
+3. Click **Add to Environment**. 
+
+<Warning>
+**Critical:** Copy the **Twin UUID** generated for both the assets. You will need it immediately. 
+Hover over the three dots of the asset in the sidebar, and click on **"Copy Twin UUID"**.
+
+*(Note: If you do not see the three dots, your sidebar might be too narrow. Click and drag the edge of the sidebar to expand it.)*
+</Warning>
+
+<iframe 
+  src="https://app.tango.us/app/embed/b1cf3d05-342b-499b-ae79-15c4ea3c6c0a" 
+  style={{ minHeight: '640px' }}
+  sandbox="allow-scripts allow-top-navigation-by-user-activation allow-popups allow-same-origin" 
+  title="Add Twins to Cyberwave Environment" 
+  width="100%" 
+  height="100%" 
+  referrerPolicy="strict-origin-when-cross-origin" 
+  frameBorder="0" 
+  allowFullScreen
+/>
+
+Your Cyberwave environment now replicates your real-world physical setup with both digital twins configured and ready to connect.
+
+#### Step 4: Find Device Ports
+
+When you connect your SO101 robot arm(s) to your computer via USB, each device appears as a serial port on your system. You need to identify the correct port name to communicate with each arm.
+
+**Understanding Serial Ports:**
+
+Your computer may have multiple USB/serial devices connected at any time. Each device appears as a port with a name like:
+- **macOS/Linux:** `/dev/tty.usbmodem123` or `/dev/ttyUSB0`
+- **Windows:** `COM3` or `COM4`
+
+<Note>
+Every SO101 arm appears as a separate serial device. If you're using both a leader and follower arm, each will have its own unique port that you must identify separately.
+</Note>
+
+**Detect the Port:**
+
+The SDK includes an interactive tool to help you identify which serial port corresponds to your SO101 arm. In your terminal, run:
+
+```
+so101-find-port
+```
+
+- The tool scans for available serial ports
+- It may prompt you to plug or unplug the SO101 arm
+- When the device is detected, it confirms which port appeared or disappeared
+- The tool displays the detected port name
+
+**Save Your Port Information:**
+
+Once the port is detected, copy and save the port name; you'll need it in the next steps.
+
+#### Step 5: Verify Device Connection
+
+Now that you've identified the serial ports for your SO101 arm(s), it's time to verify that your computer can successfully communicate with the devices. This step ensures the hardware connection is working properly before proceeding to teleoperation.
+
+**Test the Connection:**
+
+The SDK includes a diagnostic tool that reads live data from your SO101 arm. This command queries the device and displays its current state, confirming that communication is working correctly.
+
+Run the following command, replacing `/dev/tty.usbmodem123` with the actual port you identified in Step 4:
+
+```
+so101-read-device --port /dev/tty.usbmodem123
+```
+
+<Tip>
+If you have both leader and follower arms connected, run this command separately for each arm using their respective ports to verify both connections.
+</Tip>
+
+If the connection is successful, you'll see real-time data from the SO101 arm, including:
+- Joint angles for all 6 degrees of freedom
+- Device status (e.g., connection state, errors)
+- Sensor values (e.g., position feedback)
+
+#### Step 6: Calibrate the Devices
+
+Calibration is a **required step** before using an SO101 arm for teleoperation or control. It ensures that the software correctly understands the physical state of the robot and can accurately map commands to hardware movements.
+
+Calibration defines:
+- The **zero (reference) position** of each joint
+- The **valid movement range** for each joint
+- The **mapping** between the physical arm and the software model
+
+<Warning>
+You must calibrate each arm individually. If you're using a dual-arm setup (leader + follower), complete calibration for both devices.
+</Warning>
+
+**Calibrate the Leader Arm:**
+
+The leader arm is used for human-guided motion and does not execute commands. It captures your movements to control the follower arm.
+
+Replace `/dev/tty.usbmodem123` with your actual leader arm port from Step 4 and run the following command:
+
+```
+so101-calibrate --type leader --port /dev/tty.usbmodem123 --id leader1
+```
+
+This does the following: 
+- Registers the device as a leader arm
+- Stores its calibration under the ID leader1
+- Prepares the arm to be moved manually by a human
+
+**Calibrate the Follower Arm:**
+
+The follower arm is the arm that executes motion commands, either by mirroring the leader or receiving direct control inputs.
+
+Replace `/dev/tty.usbmodem456` with your actual follower arm port from Step 4 and run the following command:
+```
+so101-calibrate --type follower --port /dev/tty.usbmodem456 --id follower1
+```
+
+This does the following:
+- Registers the device as a follower arm
+- Stores its calibration under the ID follower1
+- Prepares the arm to receive and execute control commands
+
+**During Calibration:**
+
+The calibration process is interactive. You may be asked to:
+- Move one or more joints to specific positions
+- Hold the arm steady for a short period
+- Confirm that joints are aligned correctly
+
+<Tip>
+Follow the on-screen instructions carefully and complete each step before continuing. Take your time to ensure accurate calibration, this will improve control precision during operation.
+</Tip>
+
+#### Step 7: Set Up Teleoperation
+
+Teleoperation enables you to control the follower arm using the leader arm in real-time. The leader arm captures your manual movements, and the follower arm mirrors those movements instantly, creating an intuitive way to control the robot.
+
+**How Teleoperation Works:**
+
+The teleoperation system creates a synchronized connection between:
+1. **Physical leader arm** → captures human-guided joint movements
+2. **Physical follower arm** → executes the movements in real-time
+3. **Digital twin** → receives telemetry data from both arms for monitoring and recording
+
+Both the leader and follower arms send real-time joint data to their corresponding SO101 digital twin in Cyberwave (identified by the twin UUID). The camera also streams data to its digital twin for visual feedback and dataset recording.
+
+**Start Teleoperation:**
+
+The following command establishes the teleoperation link between your physical arms and their digital twins:
+
+```
+so101-teleoperate \
+    --twin-uuid YOUR_SO101_TWIN_UUID \
+    --leader-port /dev/tty.usbmodem123 \
+    --follower-port /dev/tty.usbmodem456 \
+    --camera-uuid YOUR_CAMERA_TWIN_UUID \
+    --fps 30
+```
+
+**Replace the following values:**
+- `YOUR_SO101_TWIN_UUID` — The Twin UUID you copied in Step 3 for the SO101 robot
+- `YOUR_CAMERA_TWIN_UUID` — The Twin UUID you copied in Step 3 for the Standard Camera
+- `/dev/tty.usbmodem123` — Your actual leader arm port from Step 4
+- `/dev/tty.usbmodem456` — Your actual follower arm port from Step 4
+
+**Command Parameters:**
+| **Parameter** | **Description** | 
+| ------------- | --------------- |
+| `--twin-uuid` | Digital twin ID for the SO101 robot arm in Cyberwave | 
+| `--leader-port` | Serial port for the leader arm (input device) |
+| `--follower-port` | Serial port for the follower arm (output device) | 
+| `--camera-uuid` | Digital twin ID for the camera to stream visual data | 
+| `--fps` | Frames per second for telemetry updates (default: 30) |
+
+<Note>
+The --fps parameter controls how frequently joint data is sent to Cyberwave. Higher values provide smoother visualization but require more bandwidth. 30 FPS is recommended for most use cases.
+</Note>
+
+**Test the Connection:**
+
+To verify teleoperation is working:
+1. Gently move one joint on the leader arm.
+2. Observe the corresponding joint moving on the follower arm.
+3. Check the digital twin in Cyberwave dashboard,it should mirror the movements. 
+
+**Teleoperation Active:**
+
+With teleoperation running, you can now perform tasks using the leader-follower setup. This forms the foundation for recording episodes and creating datasets in the next phases.
+
+---
+
+### Create and Export Datasets
+
+Once teleoperation is set up and working, you can create datasets by recording episodes of the robot performing specific tasks. These datasets can later be used to train machine learning models for autonomous operation.
+
+A **dataset** consists of multiple **episodes**, individual recordings of the robot completing a task. Each episode captures:
+- Joint positions and movements over time
+- Camera video feed showing the task execution
+- Timing and sequence data
+
+#### Step 1: Record Episodes
+
+Recording episodes captures the manual operations performed through teleoperation. Each recording can contain multiple task demonstrations that you'll later trim into episodes.
+
+**Start Recording in Live Mode:**
+
+1. Navigate to your **Cyberwave environment** in the dashboard
+2. Switch to **Live Mode** in the environment viewer
+3. **Turn on the camera:**
+   - Locate the camera icon in the upper-right corner
+   - Click the **Turn On** icon to activate the camera feed
+4. Click **Start Recording** to begin capturing data
+![](/images/record-episodes.png)
+
+<Note>
+Make sure teleoperation is running (from Step 7) before you start recording. The recording captures both the arm movements and camera feed simultaneously.
+</Note>
+
+**Perform Task Demonstrations:**
+
+With recording active, use the leader arm to guide the follower arm through the task you want to teach:
+
+1. **Position the robot** at the starting configuration
+2. **Execute the task** smoothly using the leader arm
+3. **Complete the task** fully (e.g., pick up object → move → place in box)
+4. **Repeat** the same task multiple times to create variety in the dataset
+
+<Accordion title="Example: Pick and Place Task">
+**Goal:** Train the SO101 to pick up an object and drop it inside a box.
+
+**Recording process:**
+1. Start with the gripper open near the object
+2. Move the leader arm to position the follower over the object
+3. Close the gripper to pick up the object
+4. Move to the box location
+5. Open the gripper to release the object
+6. Return to starting position
+7. Repeat 10-15 times with slight variations
+
+This creates a robust dataset with multiple examples of the same behavior.
+</Accordion>
+
+<Tip>
+Record multiple demonstrations of the same task with slight variations (different speeds, slightly different positions). This helps the model generalize better during training.
+</Tip>
+
+**Stop Recording:**
+
+When you've captured enough demonstrations:
+1. Click **Stop Recording** in the Cyberwave interface
+2. The recording will be saved and ready for processing
+
+#### Step 2: Export Dataset
+
+After recording, you'll trim the raw recording into discrete episodes and export them as a structured dataset.
+
+**Create Episodes from Recording:**
+
+1. Open the **recorded session** in your Cyberwave environment. 
+2. **Review the timeline**: You'll see the full recording with video and telemetry data. 
+3. **Trim episodes:**
+   - Identify the start and end of each successful task demonstration
+   - Use the trim tool to isolate each episode
+   - Remove any failed attempts, pauses, or unwanted sections
+4. **Label episodes** (optional): add descriptive names for organization. 
+
+<Note>
+Each episode should contain one complete task execution from start to finish. Keep episodes focused and remove any unnecessary setup or reset time between demonstrations.
+</Note>
+
+**Create a Dataset:**
+
+Once you've created episodes:
+
+1. **Review all episodes** to ensure quality. 
+2. **Select the episodes** you want to include in the final dataset. 
+   - Check the box next to each desired episode
+   - Deselect any that have errors or poor quality
+3. Click **Create Dataset**. 
+![](/images/create-dataset.png)
+
+<Tip>
+Aim for consistency in your episodes, they should all demonstrate the same task in similar conditions. Remove outliers or failed attempts to improve training data quality.
+</Tip>
+
+**Manage Your Datasets:**
+
+1. Navigate to the **Manage Datasets** tab in Cyberwave
+2. View all your created datasets. 
+3. Access dataset details:
+   - Number of episodes
+   - Duration
+4. Download datasets for local training or use them directly in Cyberwave for model training. 
+![](/images/manage-datasets.png)
+
+**Export Your Datasets:**
+
+1. Go to File -> Export -> **Export Datasets**. 
+2. Select the specific dataset you want to export. 
+3. Click on **Export**. 
+![](/images/export-datasets.png)
+
+<Check>
+**Dataset Created:** Your dataset is now ready for training machine learning models. Each episode contains synchronized robot movements and camera footage that can teach autonomous behaviors.
+</Check>
+
+---
+
+### Train and Deploy an ML Model
+
+With your dataset created, you can now train a machine learning model to autonomously replicate the behaviors you demonstrated. Once trained, the model can be deployed as a controller policy that directly controls the SO101 robot.
+
+#### Step 1: Train a Model
+
+Training transforms your recorded demonstrations into a model that can predict and execute similar actions autonomously.
+
+**Configure training parameters:**
+
+1. **Workspace:** Select your workspace from the dropdown.
+2. **ML Model:** Choose the appropriate ML model. 
+3. **Dataset:** Select the dataset you created earlier. 
+
+4. **Advanced Settings:**
+   
+   **Data Augmentation:**
+   - Use the slider to select augmentation level:
+     - `0` — No augmentation
+     - `1` — Low augmentation (recommended for most cases)
+     - `2` — Medium augmentation (for more robust generalization)
+   
+   <Note>
+   Data augmentation adds variations to your training data (like slight position changes or lighting differences) to help the model generalize better to new situations.
+   </Note>
+
+   **Training Stop Policy:**
+   
+   Choose one of two stopping strategies:
+   
+   - **Save best model until iterations** (recommended for beginners)
+     - Set the number of iterations (max: 5000)
+     - Training continues until reaching the specified iterations
+     - The best-performing model checkpoint is saved
+   
+   - **Stop when validation loss is under threshold** (for faster training)
+     - Set the validation loss threshold (default: 0.01)
+     - Set max iterations (max: 5000)
+     - Training stops early when validation loss reaches the threshold
+     - May be faster since training stops when a valid model is found
+
+   <Tip>
+   If you're unsure, use the default settings: "Save best model until iterations" with 5000 iterations. This ensures complete training without premature stopping.
+   </Tip>
+
+5. Click **Start Training** to begin. 
+
+#### Step 2: Deploy a Model
+
+Once training completes successfully, deploy the model to make it available as a controller policy.
+
+**Create a Deployment:**
+
+1. Navigate to **AI → Deployments**. 
+2. Click **Start New Deployment**.
+3. **Select your trained model** from the list of completed trainings. 
+4. **Select the target twins** to deploy the model to. 
+5. Click **Deploy**. 
+
+<Check>
+**Model Deployed:** Your trained model is now available as a controller policy and ready to control the robot autonomously.
+</Check>
+
+#### Step 4: Set Up Remote Operation
+
+Remote operation allows you to control the SO101 follower arm directly from Cyberwave without using a physical leader arm. This is useful for testing, calibration, or when you only have a single follower arm.
+
+**How Remote Operation Works:**
+
+Unlike teleoperation (which uses a leader arm to control the follower), remote operation:
+- Connects only the **follower arm** to Cyberwave
+- Allows control through the **Cyberwave dashboard** in your browser
+- Enables **manual joint control** or **scripted movements**
+- Streams real-time feedback to the digital twin
+
+**Start Remote Operation:**
+
+Run the following command in your terminal, replacing the placeholders with your actual values:
+
+```
+so101-remoteoperate \
+    --follower-port /dev/tty.usbmodem456 \
+    --twin-uuid YOUR_SO101_TWIN_UUID
+```
+
+Replace these values:
+- `/dev/tty.usbmodem456` — Your follower arm port from Step 4
+- `YOUR_SO101_TWIN_UUID` — The SO101 Twin UUID from Step 3
+- `YOUR_CYBERWAVE_TOKEN` — Your API token from Step 2 (or use the environment variable)
+
+#### Step 4: Use the Model as a Controller Policy
+
+Now use your trained model to autonomously control the physical SO101 robot.
+
+**Assign the Controller Policy:**
+
+1. In your environment, switch to **Edit Mode**.
+2. Click **Assign Controller Policy** from the right side view.
+3. Select your deployed model from the dropdown.
+4. Click **Save Configuration**.
+5. The model now appears as a controller policy in the right side view. 
+
+**Execute with Natural Language Prompts:**
+
+1. Switch to **Live View**.
+2. You'll see an option to enter a prompt.
+3. Type your instruction (e.g., *"Pick up the object and place it in the box"*). 
+5. The model deploys the action to the SO101 in your real environment setup. 
+
+<Warning>
+Ensure the workspace is clear and the robot has safe operating space before executing autonomous actions.
+</Warning>
+
+<Check>
+**Autonomous Control Active:** Your SO101 is now controlled by AI using natural language prompts!
+</Check>
+
+
+
+

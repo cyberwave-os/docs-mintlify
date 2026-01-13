@@ -16,20 +16,46 @@
             {
               "group": "Getting started",
               "pages": [
-                "index",
-                "quickstart",
-                "authentication"
+                "get-started/index",
+                "get-started/quickstart",
+                "get-started/core-data-hierarchy",
+                "get-started/access-control",
+                "get-started/key-concepts"
               ]
             },
             {
-              "group": "Concepts",
+              "group": "Use Cyberwave",
               "pages": [
-                "concepts/digital-twins",
-                "concepts/catalog",
-                "concepts/workflows",
-                "concepts/edge-devices",
-                "concepts/ml-models",
-                "concepts/environment-editor"
+                "use-cyberwave/setup-cyberwave",
+                {
+                  "group": "Catalog",
+                  "icon": "book-bookmark",
+                  "pages": [
+                    "use-cyberwave/catalog/overview"
+                  ]
+                },
+                {
+                  "group": "Digital Twins",
+                  "icon": "clone",
+                  "pages": [
+                    "use-cyberwave/digital-twins/overview"
+                  ]
+                },
+                {
+                  "group": "Workflows",
+                  "icon": "diagram-project",
+                  "pages": [
+                    "use-cyberwave/workflows/overview"
+                  ]
+                },
+                {
+                  "group": "ML Models",
+                  "icon": "brain",
+                  "pages": [
+                    "use-cyberwave/ml-models/overview"
+                  ]
+                },
+                "use-cyberwave/environment-editor"
               ]
             },
             {  
@@ -37,6 +63,12 @@
               "pages": [
                 "sdks/python-sdk",
                 "sdks/cpp-sdk"
+              ]
+            },
+            {
+              "group": "Hardware",
+              "pages": [
+                "hardware/so101"
               ]
             },
             {
