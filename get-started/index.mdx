@@ -1,50 +1,199 @@
 ---
 title: "Overview"
-description: "Everything you need to get started and master Cyberwave robotics platform."
-icon: "book"
+description: "Build, test, and deploy intelligent robotics systems with cloud-based digital twins and AI"
+icon: "house"
 ---
 
-## 🚀 Get Started
+## What is Cyberwave?
 
-New to Cyberwave? Start here to get up and running in minutes.
+Cyberwave is an all-in-one platform that bridges the gap between **physical robots** and **digital intelligence**. It enables you to create digital twins of your robots, build and test in simulation, train AI models, and deploy autonomous behaviors; all from a unified platform accessible through your browser or SDK.
+
+Whether you're developing a single robot arm, managing a fleet of mobile robots, or conducting cutting-edge robotics research, Cyberwave provides the tools and infrastructure you need to move faster and more confidently from concept to deployment.
+
+### Core Value Proposition
+
+<CardGroup cols={3}>
+  <Card title="Develop Faster" icon="bolt">
+    Test algorithms in simulation before deploying to hardware, reducing development cycles from weeks to days
+  </Card>
+  
+  <Card title="Reduce Risk" icon="shield-check">
+    Validate behaviors in safe digital environments before running on expensive physical robots
+  </Card>
+  
+  <Card title="Deploy Smarter" icon="brain">
+    Train and deploy AI models using real-world data collected through teleoperation and testing
+  </Card>
+  
+  <Card title="Scale Efficiently" icon="chart-line">
+    Manage multiple robots, environments, and workflows from a single unified platform
+  </Card>
+  
+  <Card title="Collaborate Seamlessly" icon="users">
+    Work with distributed teams using cloud-based tools with real-time synchronization
+  </Card>
+  
+  <Card title="Iterate Continuously" icon="rotate">
+    Collect data, train models, deploy, and refine in a continuous improvement loop
+  </Card>
+</CardGroup>
+
+---
+
+## Platform Capabilities
+
+### Digital Twins & Simulation
+
+Create virtual replicas of your physical robots that mirror behavior in real-time. Test control algorithms, path planning, and complex behaviors in physics-based simulations before deploying to hardware.
+
+<CardGroup cols={2}>
+  <Card title="Pre-Built Robot Catalog" icon="book-bookmark">
+    Access a library of ready-to-use robot models including arms, mobile robots, quadrupeds, and drones
+  </Card>
+  
+  <Card title="Custom Robot Import" icon="upload">
+    Bring your own robots by uploading URDF files and 3D models
+  </Card>
+  
+  <Card title="Physics Simulation" icon="atom">
+    Test in realistic physics environments powered by MuJoCo
+  </Card>
+  
+  <Card title="Real-Time Sync" icon="arrows-left-right">
+    Bidirectional communication between physical robots and digital twins
+  </Card>
+</CardGroup>
+
+### AI & Machine Learning
+
+Train AI models using data collected from your robots, deploy them as controller policies, and control robots using natural language commands.
+
+<CardGroup cols={2}>
+  <Card title="Data Collection" icon="database">
+    Record teleoperation sessions and create structured datasets automatically
+  </Card>
+  
+  <Card title="Model Training" icon="graduation-cap">
+    Train Vision-Language-Action (VLA) models in the cloud
+  </Card>
+  
+  <Card title="Autonomous Control" icon="robot">
+    Deploy trained models as controller policies for autonomous operation
+  </Card>
+  
+  <Card title="Natural Language Commands" icon="message">
+    Control robots using plain English prompts powered by VLM models
+  </Card>
+</CardGroup>
+
+### Workflows & Automation
+
+Build automated sequences of robot operations with visual workflow orchestration. Create complex behaviors without writing procedural code.
+
+<CardGroup cols={2}>
+  <Card title="Visual Workflow Builder" icon="diagram-project">
+    Drag-and-drop interface for creating automation sequences
+  </Card>
+  
+  <Card title="Trigger-Based Execution" icon="bolt">
+    Run workflows on schedule, events, or API triggers
+  </Card>
+  
+  <Card title="Cross-Project Workflows" icon="network-wired">
+    Orchestrate operations across multiple environments and robots
+  </Card>
+  
+  <Card title="Condition & Branching" icon="code-branch">
+    Add logic and decision-making to your automated workflows
+  </Card>
+</CardGroup>
+
+### Development Tools
+
+Comprehensive SDKs, APIs, and tools for programmatic control and integration.
+
+<CardGroup cols={2}>
+  <Card title="Python SDK" icon="python">
+    Full-featured SDK for robot control, simulation, and data management
+  </Card>
+  
+  <Card title="C++ SDK" icon="file-code">
+    High-performance SDK for edge devices and real-time control
+  </Card>
+  
+  <Card title="REST API" icon="plug">
+    Complete REST API for integration with any language or platform
+  </Card>
+  
+  <Card title="MQTT Protocol" icon="messages">
+    Real-time messaging for streaming video, telemetry, and control
+  </Card>
+</CardGroup>
+
+---
+
+## Getting Started
+
+### 🚀 Quick Start
+
+New to Cyberwave? Follow our quick start guide to create your first digital twin in minutes.
 
 <Card
   title="Quick Start Guide"
   icon="rocket"
-  href="/quickstart"
+  href="/get-started/quickstart"
 >
-  Get up and running with Cyberwave in just a few minutes
+  Create your first digital twin, run a simulation, and send control commands in under 10 minutes
 </Card>
 
-## Fundamentals
+### 📚 Learn the Fundamentals
 
-Core concepts and essential knowledge to get started with Cyberwave.
+Understand core concepts that power the Cyberwave platform.
 
-<CardGroup cols={2}>
+<CardGroup cols={3}>
   <Card
-    title="Digital Twin Introduction"
-    icon="robot"
-    href="/concepts/digital-twins"
+    title="Key Concepts"
+    icon="lightbulb"
+    href="/get-started/key-concepts"
   >
-    Learn what digital twins are and how they revolutionize robotics development and simulation.
+    Learn about digital twins, environments, workflows, and ML models
   </Card>
+  
   <Card
-    title="Environment Editor"
-    icon="globe"
-    href="/concepts/environment-editor"
+    title="Data Model"
+    icon="sitemap"
+    href="/get-started/core-data-hierarchy"
   >
-    Create and customize 3D environments for your robotics simulations and testing scenarios.
+    Understand how organizations, workspaces, and projects are structured
+  </Card>
+  
+  <Card
+    title="Access Control"
+    icon="shield"
+    href="/get-started/access-control"
+  >
+    Manage team permissions and project sharing
   </Card>
 </CardGroup>
 
-## Development
+### 🔧 Setup & Configuration
 
-APIs, SDKs, and programming resources for developers.
+Configure your environment and connect your robots.
 
-<Card
-  title="Python SDK Overview"
-  icon="code"
-  href="/sdks/python-sdk"
->
-  Programmatically control your robots and simulations using our comprehensive Python SDK.
-</Card>
+<CardGroup cols={2}>
+  <Card
+    title="Setup Cyberwave"
+    icon="wrench"
+    href="/use-cyberwave/setup-cyberwave"
+  >
+    Configure API credentials and authentication
+  </Card>
+  
+  <Card
+    title="Environment Editor"
+    icon="pen-to-square"
+    href="/use-cyberwave/environment-editor"
+  >
+    Create and customize 3D environments for your robots
+  </Card>
+</CardGroup>

@@ -17,9 +17,10 @@
               "group": "Getting started",
               "pages": [
                 "get-started/index",
-                "get-started/key-concepts",
                 "get-started/quickstart",
-                "get-started/core-data-hierarchy"
+                "get-started/core-data-hierarchy",
+                "get-started/access-control",
+                "get-started/key-concepts"
               ]
             },
             {
@@ -52,13 +53,6 @@
                   "icon": "brain",
                   "pages": [
                     "use-cyberwave/ml-models/overview"
-                  ]
-                },
-                {
-                  "group": "Controller Policies",
-                  "icon": "gamepad",
-                  "pages": [
-                    "use-cyberwave/controller-policies/overview"
                   ]
                 },
                 "use-cyberwave/environment-editor"

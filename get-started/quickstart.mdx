@@ -89,42 +89,100 @@ robot.joints.set("1", 30)
 
 ---
 
-## What's Next?
+## Step 5: Record and Create Datasets
 
-Now that you've got the basics down, here are some next steps to explore:
+Collect training data by recording your robot operations. These datasets will be used to train AI models for autonomous behavior.
 
-<CardGroup cols={2}>
-  <Card
-    title="Advanced Robotics"
-    icon="robot"
-  >
-    - Multi-robot coordination
-    - Sensor integration
-    - Path planning algorithms
-  </Card>
-  <Card
-    title="Customization"
-    icon="wrench"
-  >
-    - Upload custom URDF models
-    - Create custom environments
-    - Build custom sensors
-  </Card>
-</CardGroup>
+<AccordionGroup>
+  <Accordion title="What you'll do" icon="check-circle">
+    - Switch your environment to **Live Mode**
+    - Turn on the camera to capture video feed
+    - Start recording your robot operations
+    - Perform the task you want the robot to learn multiple times
+    - Stop recording when you have enough demonstrations
+  </Accordion>
+</AccordionGroup>
 
-<CardGroup cols={2}>
-  <Card
-    title="Full Documentation"
-    icon="book-open"
-    href="/index"
-  >
-    Explore complete documentation
-  </Card>
-  <Card
-    title="Explore Robots"
-    icon="robot"
-    href="https://cyberwave.com/catalog"
-  >
-    Browse our robot catalog
-  </Card>
-</CardGroup>
+<Tip>
+Record 10-15 demonstrations of the same task with slight variations for better model training results.
+</Tip>
+
+---
+
+## Step 6: Export Your Dataset
+
+Process your recordings into structured datasets ready for training.
+
+<AccordionGroup>
+  <Accordion title="What you'll do" icon="check-circle">
+    - Review your recorded sessions
+    - Trim recordings to create episodes (one per task completion)
+    - Select quality episodes for your dataset
+    - Export the dataset
+    - Access your dataset from the **Manage Datasets** tab
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Step 7: Train an AI Model
+
+Use your dataset to train a machine learning model that can control your robot autonomously.
+
+<AccordionGroup>
+  <Accordion title="What you'll do" icon="check-circle">
+    - Navigate to **AI → Training** in your environment
+    - Click **New Training**
+    - Select your exported dataset
+    - Choose model architecture (e.g., VLA model)
+    - Configure training parameters or use defaults
+    - Click **Start Training**
+    - Monitor training progress in the Training tab
+  </Accordion>
+</AccordionGroup>
+
+```python
+# Training happens in the cloud - no local setup required!
+# Monitor progress in the Cyberwave dashboard
+```
+
+---
+
+## Step 8: Deploy Your Model
+
+Deploy your trained model as a controller policy to enable autonomous robot control.
+
+<AccordionGroup>
+  <Accordion title="What you'll do" icon="check-circle">
+    - Go to **AI → Deployments** in your environment
+    - Click **Deploy Model**
+    - Select your trained model
+    - Give your deployment a name
+    - Configure deployment settings
+    - Click **Deploy**
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Step 9: Use AI to Control Your Robot
+
+Control your robot autonomously using natural language prompts powered by your deployed AI model.
+
+<AccordionGroup>
+  <Accordion title="What you'll do" icon="check-circle">
+    - Switch to **Edit Mode** in your environment
+    - Click **Assign Controller Policy** for your robot
+    - Select your deployed model
+    - Save the configuration
+    - Switch to **Live Mode**
+    - Enter a natural language prompt (e.g., "Pick up the object")
+    - Watch your robot execute the task autonomously!
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+Ensure the workspace is clear and the robot has safe operating space before running autonomous operations.
+</Warning>
+
+---
