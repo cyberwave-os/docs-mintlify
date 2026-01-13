@@ -43,7 +43,7 @@ MQTT API for Cyberwave platform
 
 ### `production` Server
 
-* URL: `mqtt://host.docker.internal:1883`
+* URL: `mqtt://mosquitto:1883`
 * Protocol: `mqtt`
 
 Production MQTT broker

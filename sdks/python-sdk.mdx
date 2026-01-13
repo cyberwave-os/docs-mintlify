@@ -1,10 +1,10 @@
 ---
-title: 'Python SDK'
-description: 'Programmatically control your robots and simulations using our comprehensive Python SDK'
-icon: 'python'
+title: "Python SDK"
+description: "Programmatically control your robots and simulations using our comprehensive Python SDK"
+icon: "python"
 ---
 
-import EarlyAccess from '/snippets/early-access.mdx';
+import EarlyAccess from "/snippets/early-access.mdx";
 
 ## What is the Cyberwave Python SDK?
 
@@ -33,9 +33,8 @@ pip install cyberwave
 ```
 
 <Note>
-**Requirements:**
-- Python 3.11 or higher
-- API token (generated from your Profile page after getting Private Beta access)
+  **Requirements:** - Python 3.11 or higher - API token (generated from your
+  Profile page after getting Private Beta access)
 </Note>
 
 ## Quick Start Example
@@ -49,8 +48,8 @@ import cyberwave as cw
 robot = cw.twin("the-robot-studio/so101")
 
 # Move the robot to a position
-robot.move(x=1.0, y=0.0, z=0.5)
-robot.rotate(yaw=90)
+robot.edit_position(x=1.0, y=0.0, z=0.5)
+robot.edit_rotation(yaw=90)
 
 # Actuate the robot's joint to 30 degrees
 robot.joints.set("1", 30)
@@ -114,10 +113,8 @@ Get your API token from the Cyberwave dashboard and configure authentication:
     Go to Dashboard → Profile → API Tokens to generate your token
   </Step>
   <Step title="Set Environment Variable">
-    Set your token as an environment variable:
-    ```bash
-    export CYBERWAVE_API_TOKEN=your_token
-    ```
+    Set your token as an environment variable: ```bash export
+    CYBERWAVE_API_TOKEN=your_token ```
   </Step>
   <Step title="Initialize Client">
     The SDK will automatically use the environment variable
@@ -129,13 +126,25 @@ Get your API token from the Cyberwave dashboard and configure authentication:
 Start building powerful robotics applications with the Cyberwave Python SDK. Explore our examples and documentation.
 
 <CardGroup cols={3}>
-  <Card title="Get API Token" icon="terminal" href="https://cyberwave.com/profile">
+  <Card
+    title="Get API Token"
+    icon="terminal"
+    href="https://cyberwave.com/profile"
+  >
     Generate your API token from your profile page
   </Card>
-  <Card title="View on PyPI" icon="download" href="https://pypi.org/project/cyberwave/">
+  <Card
+    title="View on PyPI"
+    icon="download"
+    href="https://pypi.org/project/cyberwave/"
+  >
     View the package on PyPI
   </Card>
-  <Card title="Check on Github" icon="github" href="https://github.com/cyberwave-os/cyberwave-python">
+  <Card
+    title="Check on Github"
+    icon="github"
+    href="https://github.com/cyberwave-os/cyberwave-python"
+  >
     Clone the repo from Github
   </Card>
 </CardGroup>

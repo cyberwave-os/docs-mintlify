@@ -9,7 +9,8 @@ icon: "microchip"
 Edge devices are physical computing units (like Raspberry Pi, NVIDIA Jetson, or industrial PCs) that run on-site alongside your robots. They bridge the gap between your physical hardware and the Cyberwave cloud platform.
 
 <Info>
-Edge devices run the **EdgeController** software, which receives commands from Cyberwave and relays them to your robots.
+  Edge devices run the **EdgeController** software, which receives commands from
+  Cyberwave and relays them to your robots.
 </Info>
 
 ---
@@ -20,15 +21,15 @@ Edge devices run the **EdgeController** software, which receives commands from C
   <Card title="Low Latency" icon="bolt">
     Process commands locally without round-trip to the cloud
   </Card>
-  
+
   <Card title="Offline Operation" icon="wifi-slash">
     Continue operating even when internet connectivity is lost
   </Card>
-  
+
   <Card title="Local Processing" icon="brain">
     Run ML models on-device for real-time inference
   </Card>
-  
+
   <Card title="Hardware Access" icon="usb">
     Direct connection to robot controllers, cameras, and sensors
   </Card>
@@ -36,206 +37,14 @@ Edge devices run the **EdgeController** software, which receives commands from C
 
 ---
 
-## Registering an Edge Device
-
-### Via the Dashboard
-
-1. Navigate to **Settings > Edge Devices**
-2. Click **Add Edge Device**
-3. Enter a name and optional metadata
-4. Copy the generated credentials
-
-### Via the SDK
-
-```python
-from cyberwave import Cyberwave
-
-client = Cyberwave()
-
-# Create an edge device
-edge = client.api.create_edge({
-    "name": "Factory Floor Pi",
-    "metadata": {
-        "location": "Building A",
-        "hardware": "Raspberry Pi 4"
-    }
-})
-
-print(f"Edge UUID: {edge.uuid}")
-```
-
----
-
-## Running the Edge Controller
-
-The EdgeController runs on your edge device and connects to Cyberwave via MQTT. It receives commands and can control local hardware.
-
-### Installation
-
-```bash
-pip install cyberwave
-```
-
-### Basic Controller
-
-```python
-import asyncio
-from cyberwave import Cyberwave
-
-async def main():
-    client = Cyberwave()
-    
-    # Create controller for a specific twin
-    controller = client.controller(twin_uuid="your-twin-uuid")
-    
-    # Start listening for commands
-    await controller.start()
-    
-    # Keep running
-    while True:
-        await asyncio.sleep(1)
-
-asyncio.run(main())
-```
-
-### Command Handling
-
-Handle incoming commands from Cyberwave:
-
-```python
-import asyncio
-from cyberwave import Cyberwave
-
-async def main():
-    client = Cyberwave()
-    
-    twin_uuid = "your-twin-uuid"
-    
-    # Connect to MQTT
-    client.mqtt.connect()
-    
-    def command_handler(data):
-        """Handle commands from Cyberwave."""
-        command = data.get("command")
-        
-        if command == "start_video":
-            # Start local camera streaming
-            print("Starting video stream...")
-            client.mqtt.publish_command_message(twin_uuid, "ok")
-            
-        elif command == "stop_video":
-            print("Stopping video stream...")
-            client.mqtt.publish_command_message(twin_uuid, "ok")
-            
-        else:
-            print(f"Unknown command: {command}")
-            client.mqtt.publish_command_message(twin_uuid, "error")
-    
-    # Subscribe to commands
-    client.mqtt.subscribe_command_message(twin_uuid, command_handler)
-    
-    print("Listening for commands...")
-    while True:
-        await asyncio.sleep(1)
-
-asyncio.run(main())
-```
-
----
-
-## Video Streaming from Edge
-
-Stream camera feeds from your edge device to the digital twin:
-
-```python
-import asyncio
-from cyberwave import Cyberwave
-
-async def stream_from_edge():
-    client = Cyberwave()
-    
-    twin_uuid = "your-twin-uuid"
-    
-    # Create video streamer
-    streamer = client.video_stream(
-        twin_uuid=twin_uuid,
-        camera_id=0,  # Local camera
-        fps=15
-    )
-    
-    await streamer.start()
-    print("Streaming from edge device...")
-    
-    # Stream until interrupted
-    try:
-        while True:
-            await asyncio.sleep(1)
-    except KeyboardInterrupt:
-        await streamer.stop()
-
-asyncio.run(stream_from_edge())
-```
-
----
-
-## Edge Device Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      Cyberwave Cloud                        │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │   REST API  │  │   MQTT      │  │   WebRTC    │         │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘         │
-└─────────┼────────────────┼────────────────┼─────────────────┘
-          │                │                │
-          │    Internet    │                │
-          │                │                │
-┌─────────┼────────────────┼────────────────┼─────────────────┐
-│         │      Edge Device (Raspberry Pi / Jetson)         │
-│  ┌──────▼──────┐  ┌──────▼──────┐  ┌──────▼──────┐         │
-│  │ SDK Client  │  │   MQTT      │  │   Camera    │         │
-│  │             │  │  Handler    │  │  Streamer   │         │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘         │
-│         │                │                │                 │
-│         └────────┬───────┴────────┬───────┘                 │
-│                  │                │                         │
-│           ┌──────▼──────┐  ┌──────▼──────┐                 │
-│           │   Robot     │  │   Camera    │                 │
-│           │  Controller │  │   (USB/CSI) │                 │
-│           └─────────────┘  └─────────────┘                 │
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Supported Hardware
-
-| Device | Use Case | Notes |
-|--------|----------|-------|
-| Raspberry Pi 4/5 | General purpose, low-cost | Good for cameras and GPIO |
-| NVIDIA Jetson | ML inference | Runs vision models on-device |
-| Intel NUC | High performance | Multiple robots per device |
-| Industrial PC | Production environments | Rugged, certified |
-
----
-
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card
-    title="Video Streaming"
-    icon="video"
-    href="/examples/video-streaming"
-  >
+  <Card title="Video Streaming" icon="video" href="/examples/video-streaming">
     Stream cameras from edge devices
   </Card>
-  
-  <Card
-    title="ML Models"
-    icon="brain"
-    href="/concepts/ml-models"
-  >
+
+  <Card title="ML Models" icon="brain" href="/concepts/ml-models">
     Run AI models on edge devices
   </Card>
 </CardGroup>
-

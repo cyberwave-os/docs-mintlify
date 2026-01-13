@@ -9,7 +9,8 @@ icon: "grid"
 The Asset Catalog is Cyberwave's library of pre-configured robot assets. Each asset includes a 3D model, kinematic definition (URDF), and metadata that lets you create digital twins with a single line of code.
 
 <Info>
-Assets in the catalog are identified by a **registry ID** in the format `vendor/model`, such as `the-robot-studio/so101` or `unitree/go2`.
+  Assets in the catalog are identified by a **registry ID** in the format
+  `vendor/model`, such as `the-robot-studio/so101` or `unitree/go2`.
 </Info>
 
 ---
@@ -27,11 +28,12 @@ import cyberwave as cw
 robot = cw.twin("the-robot-studio/so101")
 
 # The twin is ready to use
-robot.move(x=1, y=0, z=0.5)
-robot.rotate(yaw=90)
+robot.edit_position(x=1, y=0, z=0.5)
+robot.edit_rotation(yaw=90)
 ```
 
 The `cw.twin()` function handles everything:
+
 - Finds the asset in the catalog
 - Creates (or retrieves) a digital twin in your environment
 - Returns an appropriate Twin class based on the asset's capabilities
@@ -46,15 +48,17 @@ Assets in the catalog have different capabilities based on their type:
   <Card title="Robot Arms" icon="robot-astromech">
     Joint control, inverse kinematics, gripper operations
   </Card>
-  
-  <Card title="Mobile Robots" icon="car">
-    Position control, rotation, navigation
-  </Card>
-  
-  <Card title="Quadrupeds" icon="dog">
-    Leg joint control, gait patterns, camera streaming
-  </Card>
-  
+
+{" "}
+<Card title="Mobile Robots" icon="car">
+  Position control, rotation, navigation
+</Card>
+
+{" "}
+<Card title="Quadrupeds" icon="dog">
+  Leg joint control, gait patterns, camera streaming
+</Card>
+
   <Card title="Drones" icon="plane">
     Takeoff, landing, hover, flight control
   </Card>
@@ -85,6 +89,7 @@ drone.takeoff(altitude=2.0)
 ### Web Interface
 
 Browse assets at [cyberwave.com/catalog](https://cyberwave.com/catalog):
+
 - Filter by category (arms, mobile robots, quadrupeds, drones)
 - Search by manufacturer or model name
 - View 3D previews and specifications
@@ -110,27 +115,23 @@ for asset in results:
 
 Each catalog asset contains:
 
-| Component | Description |
-|-----------|-------------|
-| **Registry ID** | Unique identifier (`vendor/model`) |
-| **URDF File** | Robot description with joints and links |
-| **3D Model** | GLB mesh for visualization |
-| **Metadata** | Category, manufacturer, version, tags |
-| **Capabilities** | Sensors, grippers, flight, etc. |
+| Component        | Description                             |
+| ---------------- | --------------------------------------- |
+| **Registry ID**  | Unique identifier (`vendor/model`)      |
+| **URDF File**    | Robot description with joints and links |
+| **3D Model**     | GLB mesh for visualization              |
+| **Metadata**     | Category, manufacturer, version, tags   |
+| **Capabilities** | Sensors, grippers, flight, etc.         |
 
 ---
 
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card
-    title="Quick Start"
-    icon="rocket"
-    href="/quickstart"
-  >
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
     Create your first digital twin in minutes
   </Card>
-  
+
   <Card
     title="SO101 Arm Example"
     icon="robot-astromech"
@@ -139,4 +140,3 @@ Each catalog asset contains:
     Control a robot arm with joint manipulation
   </Card>
 </CardGroup>
-

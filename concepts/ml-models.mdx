@@ -9,7 +9,9 @@ icon: "brain"
 ML Models in Cyberwave are AI models registered in your workspace that can process various inputs—video, images, audio, text, or robot actions. They integrate with workflows and can run in the cloud or on edge devices.
 
 <Info>
-ML Models define **what the model can do** (input types) and **where it runs** (provider). The actual inference happens through the model provider's API or on your edge device.
+  ML Models define **what the model can do** (input types) and **where it runs**
+  (provider). The actual inference happens through the model provider's API or
+  on your edge device.
 </Info>
 
 ---
@@ -18,13 +20,13 @@ ML Models define **what the model can do** (input types) and **where it runs** (
 
 Each ML Model specifies what inputs it can process:
 
-| Capability | Description | Example Use Cases |
-|------------|-------------|-------------------|
-| `can_take_video_as_input` | Process video streams | Surveillance, teleoperation |
-| `can_take_image_as_input` | Process single images | Quality inspection, object detection |
-| `can_take_audio_as_input` | Process audio data | Voice commands, anomaly detection |
-| `can_take_text_as_input` | Process text prompts | Natural language commands |
-| `can_take_action_as_input` | Process robot actions | Behavior cloning, RL policies |
+| Capability                 | Description           | Example Use Cases                    |
+| -------------------------- | --------------------- | ------------------------------------ |
+| `can_take_video_as_input`  | Process video streams | Surveillance, teleoperation          |
+| `can_take_image_as_input`  | Process single images | Quality inspection, object detection |
+| `can_take_audio_as_input`  | Process audio data    | Voice commands, anomaly detection    |
+| `can_take_text_as_input`   | Process text prompts  | Natural language commands            |
+| `can_take_action_as_input` | Process robot actions | Behavior cloning, RL policies        |
 
 ---
 
@@ -73,39 +75,21 @@ Models can run through different providers:
   <Card title="Local / Edge" icon="microchip">
     Run on your edge devices using ONNX, TensorRT, or custom inference
   </Card>
-  
-  <Card title="Cloud APIs" icon="cloud">
-    Use OpenAI, Anthropic, or other cloud AI services
-  </Card>
-  
-  <Card title="Hugging Face" icon="face-smile">
-    Deploy models from Hugging Face Hub
-  </Card>
-  
+
+{" "}
+<Card title="Cloud APIs" icon="cloud">
+  Use OpenAI, Anthropic, or other cloud AI services
+</Card>
+
+{" "}
+<Card title="Hugging Face" icon="face-smile">
+  Deploy models from Hugging Face Hub
+</Card>
+
   <Card title="Custom" icon="code">
     Your own inference servers and endpoints
   </Card>
 </CardGroup>
-
----
-
-## Using Models in Workflows
-
-ML Models integrate with workflow nodes for automated processing:
-
-```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│ Capture     │───▶│ ML Model:   │───▶│ Condition:  │
-│ Image       │    │ Detect      │    │ Found?      │
-└─────────────┘    │ Objects     │    └─────────────┘
-                   └─────────────┘           │
-                                    ┌───────┴───────┐
-                                    ▼               ▼
-                             ┌───────────┐   ┌───────────┐
-                             │ Pick      │   │ Alert     │
-                             │ Object    │   │ Operator  │
-                             └───────────┘   └───────────┘
-```
 
 ---
 
@@ -157,89 +141,22 @@ for model in models:
 
 ## Model Visibility
 
-| Visibility | Who Can Access |
-|------------|----------------|
-| `private` | Only your workspace members |
-| `workspace` | All workspace members |
-| `public` | Anyone (admin-only to create) |
-
----
-
-## Running Inference
-
-### Cloud Models
-
-For cloud-based models, Cyberwave routes requests to the provider:
-
-```python
-# Via workflow nodes or API
-response = client.api.vlm_generation({
-    "model_uuid": vlm.uuid,
-    "prompt": "What objects do you see? How should the robot pick them up?",
-    "image_url": "https://..."
-})
-```
-
-### Edge Models
-
-For local models, run inference on your edge device:
-
-```python
-import asyncio
-from cyberwave import Cyberwave
-
-async def run_local_inference():
-    client = Cyberwave()
-    
-    # Your local model
-    import torch
-    model = torch.hub.load('ultralytics/yolov8', 'yolov8n')
-    
-    twin_uuid = "your-twin-uuid"
-    
-    def on_frame(frame_data):
-        """Process each incoming frame."""
-        # Run detection
-        results = model(frame_data)
-        
-        # Publish results back to Cyberwave
-        detections = results.pandas().xyxy[0].to_dict()
-        client.mqtt.publish(
-            f"twins/{twin_uuid}/detections",
-            detections
-        )
-    
-    # Subscribe to video frames
-    client.mqtt.subscribe(
-        f"twins/{twin_uuid}/video/frames",
-        on_frame
-    )
-    
-    while True:
-        await asyncio.sleep(1)
-
-asyncio.run(run_local_inference())
-```
+| Visibility  | Who Can Access                |
+| ----------- | ----------------------------- |
+| `private`   | Only your workspace members   |
+| `workspace` | All workspace members         |
+| `public`    | Anyone (admin-only to create) |
 
 ---
 
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card
-    title="Workflows"
-    icon="diagram-project"
-    href="/concepts/workflows"
-  >
+  <Card title="Workflows" icon="diagram-project" href="/concepts/workflows">
     Use ML Models in automated workflows
   </Card>
-  
-  <Card
-    title="Edge Devices"
-    icon="microchip"
-    href="/concepts/edge-devices"
-  >
+
+  <Card title="Edge Devices" icon="microchip" href="/concepts/edge-devices">
     Run models on edge hardware
   </Card>
 </CardGroup>
-
