@@ -68,7 +68,8 @@
             {
               "group": "Hardware",
               "pages": [
-                "hardware/so101"
+                "hardware/so101",
+                "hardware/ugv"
               ]
             },
             {

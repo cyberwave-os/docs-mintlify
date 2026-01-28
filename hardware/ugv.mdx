@@ -1,0 +1,157 @@
+---
+title: "UGV Beast Rover"
+icon: "beast"
+description: "Set Up and Use UGV Beast Rover with Cyberwave."
+---
+
+## Goal
+
+This guide will help you connect the UGV Beast Rover robot to Cyberwave and control it using a keyboard controller.
+
+---
+
+## Architecture
+
+The UGV Beast Rover runs on a dual-controller setup: a **Raspberry Pi** for high-level tasks like planning and perception, and an **ESP32** microcontroller for low-level motor control (motors, encoders, etc.). This design allows the Pi to focus on computation-heavy processes, while the ESP32 handles fast feedback loops.
+
+All ROS 2 components and related libraries run inside a **Docker container** on the Raspberry Pi to ensure a consistent, isolated environment. The Pi and ESP32 communicate over a serial UART link.
+
+To connect Cyberwave with the UGV Beast, we use an **MQTT bridge**. You’ll install a custom Cyberwave Docker image that establishes this MQTT bridge and uses the Cyberwave Python SDK to interface with the UGV Beast Rover.
+
+---
+
+## Setup Steps
+
+### 1. Set up the UGV Beast Rover
+
+* Power on the robot
+* Connect it to Wi-Fi or a hotspot
+* SSH into the Raspberry Pi and configure access
+* Identify the UGV’s IP address
+* Pull the custom Cyberwave Docker image
+
+### 2. Add the UGV Beast Twin in Cyberwave
+
+Create an environment in Cyberwave and add a **UGV Beast twin** to it. Make sure the twin has the required capabilities configured and enabled by default.
+
+---
+
+## SSH into the Raspberry Pi
+
+To access and configure the UGV Beast, you’ll first need to SSH into the Raspberry Pi.
+
+Generate an SSH key (if you haven’t already):
+
+```bash
+ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+```
+
+Then, update your `.ssh/config` file with:
+
+```ssh
+Host EdgeUGV
+    HostName 192.168.0.144      # Replace with your UGV Beast's IP
+    User ws
+    Port 22
+    IdentityFile ~/.ssh/id_rsa  # Replace with your SSH key path
+    ForwardAgent yes
+    ServerAliveInterval 60
+    ServerAliveCountMax 3
+```
+
+Connect using:
+
+```bash
+ssh root@192.168.0.144 -p 22
+```
+
+You can also use your IDE’s SSH features for easier access.
+
+**Credentials:**
+
+* Username: `ws`
+* Password: `ws`
+
+---
+
+## SSH into the Docker Container
+
+The UGV’s ROS 2 stack runs inside a Docker container. To SSH into this container, add the following entry to your `.ssh/config`:
+
+```ssh
+Host EdgeUGV-ros2-docker
+    HostName 192.168.0.144
+    User root
+    Port 23
+    IdentityFile ~/.ssh/id_rsa
+    ForwardAgent yes
+    ServerAliveInterval 60
+    ServerAliveCountMax 3
+```
+
+Then connect via:
+
+```bash
+ssh root@192.168.0.144 -p 23
+```
+
+Or again, use your IDE for quick access.
+
+**Docker Container Credentials:**
+
+* Username: `root`
+* Password: `ws`
+
+---
+
+## Configure Cyberwave Credentials in Docker
+
+Inside the Docker container, navigate to:
+
+```bash
+cd /home/ws/ugv_ws
+```
+
+This is where the ROS workspace for the UGV Beast lives. You’ll see the `build`, `install`, `log`, and `src` folders here.
+
+1. Open `src/mqtt_bridge/config/params.yaml` and replace the `cyberwave_token` with your actual Cyberwave API token.
+2. Then go to `src/mqtt_bridge/config/mappings/robot_ugv_beast_v1.yaml` and update the `twin_uuid` to your Cyberwave UGV Beast twin ID.
+3. Save both files.
+
+---
+
+## Rebuild the MQTT Bridge
+
+After updating the credentials, rebuild the MQTT bridge using this script:
+
+```bash
+cd /home/ws/ugv_ws
+./src/mqtt_bridge/scripts/ugv_beast/clean_build_mqtt.sh --logs
+```
+
+---
+
+## Launch the UGV Beast Stack
+
+To start the UGV Beast stack, run:
+
+```bash
+ros2 launch ugv_bringup master_beast.launch.py robot_id:=robot_ugv_beast_v1 debug_logs:=true
+```
+
+Change the `robot_id` if needed to match your configuration.
+
+---
+
+## Add the Cyberwave UGV Beast Controller
+
+Go back to your Cyberwave environment and switch to **Live Mode** to view updates in real time.
+
+Add a **UGV Beast controller policy** to enable keyboard control. From here, you can:
+
+* Move the rover using keyboard input
+* Turn on the onboard camera
+* Record video datasets
+* Interact with the robot in real time
+
+---
