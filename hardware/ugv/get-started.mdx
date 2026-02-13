@@ -1,10 +1,9 @@
 ---
-title: "Get Started with UGV Beast"
-icon: "play"
+title: "Get Started"
 description: "Set up the rover, install the Cyberwave Docker image, configure credentials, and launch the stack."
 ---
 
-## Set up the UGV Beast Rover
+## Set up the UGV Beast
 
 ### 1. Product Assembly
 Follow the steps mentioned in this tutorial for the product assembly. This [assembly tutorial](youtube.com/watch?v=t3EXdMzEUrA&feature=youtu.be) mainly includes two parts. The first is a tutorial on installing Raspberry Pi 4B/5 for ACCE model products, and the second is a tutorial for installing lithium batteries.
@@ -31,7 +30,7 @@ Replace `<UGV_IP>` with your UGV Beast's actual IP address, which is displayed o
 * Username: `ws`
 * Password: `ws`
 
-**SSH Troubleshooting**: In case you're unable to enable SSH with the guide instructions, [refer to this miscellaneous way to establish a SSH connection](ugv#miscellaneous) with the UGV Beast Rover. 
+**SSH Troubleshooting**: In case you're unable to enable SSH with the guide instructions, [refer to this section](ugv#miscellaneous) to use an alternative way to establish a SSH connection. 
 
 ### 3. End and Disable the Main Program
 When the UGV Beast is powered on, it automatically runs the Raspberry Pi's **default main program**, which occupies the serial port and camera. This prevents ROS 2 (and our custom Cyberwave stack) from accessing the hardware. Before proceeding, you need to **end and disable the main program**.
@@ -496,35 +495,13 @@ You must rebuild the MQTT bridge every time you change the token or twin UUID.
 
 ### Step 5: Launch the UGV Beast Stack
 
-Start the full UGV Beast ROS 2 stack with the MQTT bridge:
+Start the full UGV Beast ROS 2 stack with the MQTT bridge by running the launch script:
 
-<Tabs>
-  <Tab title="Using the run script">
-
-  ```bash
-  cd /home/ws/ugv_ws
-  chmod +x ugv_run.sh
-  ./ugv_run.sh
-  ```
-
-  </Tab>
-  <Tab title="Direct launch (Development)">
-
-  ```bash
-  cd /home/ws/ugv_ws
-  source install/setup.bash
-
-  # Standard launch
-  ros2 launch ugv_bringup master_beast.launch.py robot_id:=robot_ugv_beast_v1
-
-  # With debug logs
-  ros2 launch ugv_bringup master_beast.launch.py robot_id:=robot_ugv_beast_v1 debug_logs:=true
-  ```
-
-  </Tab>
-</Tabs>
-
-Change the `robot_id` if needed to match your configuration.
+```bash
+cd /home/ws/ugv_ws
+chmod +x ugv_run.sh
+./ugv_run.sh
+```
 
 Once launched, the MQTT bridge establishes a connection to Cyberwave and begins streaming telemetry data from the robot to the digital twin.
 
