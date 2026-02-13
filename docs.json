@@ -58,18 +58,32 @@
                 "use-cyberwave/environment-editor"
               ]
             },
+            {
+              "group": "Hardware",
+              "pages": [
+                {
+                  "group": "SO101",
+                  "icon": "microchip",
+                  "pages": [
+                    "hardware/so101/index",
+                    "hardware/so101/get-started"
+                  ]
+                },
+                {
+                  "group": "UGV Beast",
+                  "icon": "robot",
+                  "pages": [
+                    "hardware/ugv/index",
+                    "hardware/ugv/get-started"
+                  ]
+                }
+              ]
+            },
             {  
               "group": "SDKs",
               "pages": [
                 "sdks/python-sdk",
                 "sdks/cpp-sdk"
-              ]
-            },
-            {
-              "group": "Hardware",
-              "pages": [
-                "hardware/so101",
-                "hardware/ugv"
               ]
             },
             {

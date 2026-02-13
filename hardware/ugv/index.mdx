@@ -1,0 +1,34 @@
+---
+title: "UGV Beast Rover"
+icon: "play"
+description: "Set Up and Use UGV Beast Rover with Cyberwave."
+---
+
+## Goal
+
+This guide will help you connect the UGV Beast Rover robot to Cyberwave and control it using a keyboard controller.
+
+---
+
+## What is the UGV Beast Rover? 
+
+
+---
+
+## Architecture
+
+The UGV Beast Rover runs on a dual-controller setup: a **Raspberry Pi** for high-level tasks like planning and perception, and an **ESP32** microcontroller for low-level motor control (motors, encoders, etc.). This design allows the Pi to focus on computation-heavy processes, while the ESP32 handles fast feedback loops.
+
+All ROS 2 components and related libraries run inside a **Docker container** on the Raspberry Pi to ensure a consistent, isolated environment. The Pi and ESP32 communicate over a serial UART link.
+
+To connect Cyberwave with the UGV Beast, we use an **MQTT bridge**. You'll install a custom Cyberwave Docker image that establishes this MQTT bridge and uses the Cyberwave Python SDK to interface with the UGV Beast Rover.
+
+---
+
+## Next Steps
+
+<CardGroup cols={1}>
+  <Card title="Get Started with UGV Beast" icon="play" href="/hardware/ugv/get-started">
+    Set up the rover, install the Cyberwave Docker image, configure credentials, and launch the stack.
+  </Card>
+</CardGroup>
