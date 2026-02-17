@@ -1,0 +1,794 @@
+# cyberwave.rest.FeaturesApi
+
+All URIs are relative to *http://localhost*
+
+Method | HTTP request | Description
+------------- | ------------- | -------------
+[**src_app_api_features_delete_user_feature**](FeaturesApi.md#src_app_api_features_delete_user_feature) | **DELETE** /api/v1/features/admin/users/{user_uuid}/{feature} | Delete User Feature
+[**src_app_api_features_disable_org_feature**](FeaturesApi.md#src_app_api_features_disable_org_feature) | **POST** /api/v1/features/admin/organizations/disable | Disable Org Feature
+[**src_app_api_features_enable_org_feature**](FeaturesApi.md#src_app_api_features_enable_org_feature) | **POST** /api/v1/features/admin/organizations/enable | Enable Org Feature
+[**src_app_api_features_get_available_features**](FeaturesApi.md#src_app_api_features_get_available_features) | **GET** /api/v1/features/available | Get Available Features
+[**src_app_api_features_get_my_features**](FeaturesApi.md#src_app_api_features_get_my_features) | **GET** /api/v1/features/my-features | Get My Features
+[**src_app_api_features_grant_user_feature**](FeaturesApi.md#src_app_api_features_grant_user_feature) | **POST** /api/v1/features/admin/users/grant | Grant User Feature
+[**src_app_api_features_list_org_features**](FeaturesApi.md#src_app_api_features_list_org_features) | **GET** /api/v1/features/admin/organizations | List Org Features
+[**src_app_api_features_list_user_features**](FeaturesApi.md#src_app_api_features_list_user_features) | **GET** /api/v1/features/admin/users | List User Features
+[**src_app_api_features_revoke_user_feature**](FeaturesApi.md#src_app_api_features_revoke_user_feature) | **POST** /api/v1/features/admin/users/revoke | Revoke User Feature
+[**src_app_api_features_search_users**](FeaturesApi.md#src_app_api_features_search_users) | **GET** /api/v1/features/admin/users/search | Search Users
+
+
+# **src_app_api_features_delete_user_feature**
+> src_app_api_features_delete_user_feature(user_uuid, feature)
+
+Delete User Feature
+
+Delete a user's feature flag entirely (user falls back to org-level access).
+Staff only.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.FeaturesApi(api_client)
+    user_uuid = 'user_uuid_example' # str | 
+    feature = 'feature_example' # str | 
+
+    try:
+        # Delete User Feature
+        api_instance.src_app_api_features_delete_user_feature(user_uuid, feature)
+    except Exception as e:
+        print("Exception when calling FeaturesApi->src_app_api_features_delete_user_feature: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **user_uuid** | **str**|  | 
+ **feature** | **str**|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: Not defined
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_features_disable_org_feature**
+> src_app_api_features_disable_org_feature(enable_org_feature_request)
+
+Disable Org Feature
+
+Disable a feature for an organization.
+Staff can disable for any org, org owners/admins can disable for their own org.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.enable_org_feature_request import EnableOrgFeatureRequest
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.FeaturesApi(api_client)
+    enable_org_feature_request = cyberwave.rest.EnableOrgFeatureRequest() # EnableOrgFeatureRequest | 
+
+    try:
+        # Disable Org Feature
+        api_instance.src_app_api_features_disable_org_feature(enable_org_feature_request)
+    except Exception as e:
+        print("Exception when calling FeaturesApi->src_app_api_features_disable_org_feature: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **enable_org_feature_request** | [**EnableOrgFeatureRequest**](EnableOrgFeatureRequest.md)|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: Not defined
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_features_enable_org_feature**
+> OrgFeatureSchema src_app_api_features_enable_org_feature(enable_org_feature_request)
+
+Enable Org Feature
+
+Enable a feature for an organization.
+Staff can enable for any org, org owners/admins can enable for their own org.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.enable_org_feature_request import EnableOrgFeatureRequest
+from cyberwave.rest.models.org_feature_schema import OrgFeatureSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.FeaturesApi(api_client)
+    enable_org_feature_request = cyberwave.rest.EnableOrgFeatureRequest() # EnableOrgFeatureRequest | 
+
+    try:
+        # Enable Org Feature
+        api_response = api_instance.src_app_api_features_enable_org_feature(enable_org_feature_request)
+        print("The response of FeaturesApi->src_app_api_features_enable_org_feature:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling FeaturesApi->src_app_api_features_enable_org_feature: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **enable_org_feature_request** | [**EnableOrgFeatureRequest**](EnableOrgFeatureRequest.md)|  | 
+
+### Return type
+
+[**OrgFeatureSchema**](OrgFeatureSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_features_get_available_features**
+> AvailableFeaturesSchema src_app_api_features_get_available_features()
+
+Get Available Features
+
+Get list of all available features with metadata.
+
+### Example
+
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.available_features_schema import AvailableFeaturesSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.FeaturesApi(api_client)
+
+    try:
+        # Get Available Features
+        api_response = api_instance.src_app_api_features_get_available_features()
+        print("The response of FeaturesApi->src_app_api_features_get_available_features:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling FeaturesApi->src_app_api_features_get_available_features: %s\n" % e)
+```
+
+
+
+### Parameters
+
+This endpoint does not need any parameter.
+
+### Return type
+
+[**AvailableFeaturesSchema**](AvailableFeaturesSchema.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_features_get_my_features**
+> MyFeaturesResponseSchema src_app_api_features_get_my_features()
+
+Get My Features
+
+Get all features and their status for the current user.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.my_features_response_schema import MyFeaturesResponseSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.FeaturesApi(api_client)
+
+    try:
+        # Get My Features
+        api_response = api_instance.src_app_api_features_get_my_features()
+        print("The response of FeaturesApi->src_app_api_features_get_my_features:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling FeaturesApi->src_app_api_features_get_my_features: %s\n" % e)
+```
+
+
+
+### Parameters
+
+This endpoint does not need any parameter.
+
+### Return type
+
+[**MyFeaturesResponseSchema**](MyFeaturesResponseSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_features_grant_user_feature**
+> UserFeatureSchema src_app_api_features_grant_user_feature(grant_user_feature_request)
+
+Grant User Feature
+
+Grant a feature to a specific user.
+Staff only.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.grant_user_feature_request import GrantUserFeatureRequest
+from cyberwave.rest.models.user_feature_schema import UserFeatureSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.FeaturesApi(api_client)
+    grant_user_feature_request = cyberwave.rest.GrantUserFeatureRequest() # GrantUserFeatureRequest | 
+
+    try:
+        # Grant User Feature
+        api_response = api_instance.src_app_api_features_grant_user_feature(grant_user_feature_request)
+        print("The response of FeaturesApi->src_app_api_features_grant_user_feature:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling FeaturesApi->src_app_api_features_grant_user_feature: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **grant_user_feature_request** | [**GrantUserFeatureRequest**](GrantUserFeatureRequest.md)|  | 
+
+### Return type
+
+[**UserFeatureSchema**](UserFeatureSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_features_list_org_features**
+> List[OrgFeatureSchema] src_app_api_features_list_org_features(feature=feature)
+
+List Org Features
+
+List all organization-level feature flags.
+Staff only.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.org_feature_schema import OrgFeatureSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.FeaturesApi(api_client)
+    feature = 'feature_example' # str |  (optional)
+
+    try:
+        # List Org Features
+        api_response = api_instance.src_app_api_features_list_org_features(feature=feature)
+        print("The response of FeaturesApi->src_app_api_features_list_org_features:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling FeaturesApi->src_app_api_features_list_org_features: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **feature** | **str**|  | [optional] 
+
+### Return type
+
+[**List[OrgFeatureSchema]**](OrgFeatureSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_features_list_user_features**
+> List[UserFeatureSchema] src_app_api_features_list_user_features(feature=feature)
+
+List User Features
+
+List all user-level feature flags.
+Staff only.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.user_feature_schema import UserFeatureSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.FeaturesApi(api_client)
+    feature = 'feature_example' # str |  (optional)
+
+    try:
+        # List User Features
+        api_response = api_instance.src_app_api_features_list_user_features(feature=feature)
+        print("The response of FeaturesApi->src_app_api_features_list_user_features:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling FeaturesApi->src_app_api_features_list_user_features: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **feature** | **str**|  | [optional] 
+
+### Return type
+
+[**List[UserFeatureSchema]**](UserFeatureSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_features_revoke_user_feature**
+> src_app_api_features_revoke_user_feature(revoke_user_feature_request)
+
+Revoke User Feature
+
+Revoke a feature from a specific user.
+Staff only.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.revoke_user_feature_request import RevokeUserFeatureRequest
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.FeaturesApi(api_client)
+    revoke_user_feature_request = cyberwave.rest.RevokeUserFeatureRequest() # RevokeUserFeatureRequest | 
+
+    try:
+        # Revoke User Feature
+        api_instance.src_app_api_features_revoke_user_feature(revoke_user_feature_request)
+    except Exception as e:
+        print("Exception when calling FeaturesApi->src_app_api_features_revoke_user_feature: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **revoke_user_feature_request** | [**RevokeUserFeatureRequest**](RevokeUserFeatureRequest.md)|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: Not defined
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_features_search_users**
+> List[UserSearchResultSchema] src_app_api_features_search_users(q)
+
+Search Users
+
+Search users by email or name for granting features.
+Staff only.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.user_search_result_schema import UserSearchResultSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.FeaturesApi(api_client)
+    q = 'q_example' # str | 
+
+    try:
+        # Search Users
+        api_response = api_instance.src_app_api_features_search_users(q)
+        print("The response of FeaturesApi->src_app_api_features_search_users:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling FeaturesApi->src_app_api_features_search_users: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **q** | **str**|  | 
+
+### Return type
+
+[**List[UserSearchResultSchema]**](UserSearchResultSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+

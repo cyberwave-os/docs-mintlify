@@ -1,0 +1,912 @@
+# cyberwave.rest.CloudNodeWorkloadsApi
+
+All URIs are relative to *http://localhost*
+
+Method | HTTP request | Description
+------------- | ------------- | -------------
+[**src_app_api_cloud_node_workloads_assign_workload_to_instance**](CloudNodeWorkloadsApi.md#src_app_api_cloud_node_workloads_assign_workload_to_instance) | **POST** /api/v1/cloud-node-workloads/{uuid}/assign | Assign Workload To Instance
+[**src_app_api_cloud_node_workloads_create_workload**](CloudNodeWorkloadsApi.md#src_app_api_cloud_node_workloads_create_workload) | **POST** /api/v1/cloud-node-workloads | Create Workload
+[**src_app_api_cloud_node_workloads_delete_workload**](CloudNodeWorkloadsApi.md#src_app_api_cloud_node_workloads_delete_workload) | **DELETE** /api/v1/cloud-node-workloads/{uuid} | Delete Workload
+[**src_app_api_cloud_node_workloads_get_signed_url_for_attachment_upload**](CloudNodeWorkloadsApi.md#src_app_api_cloud_node_workloads_get_signed_url_for_attachment_upload) | **POST** /api/v1/cloud-node-workloads/{uuid}/attachments | Get Signed Url For Attachment Upload
+[**src_app_api_cloud_node_workloads_get_workload**](CloudNodeWorkloadsApi.md#src_app_api_cloud_node_workloads_get_workload) | **GET** /api/v1/cloud-node-workloads/{uuid} | Get Workload
+[**src_app_api_cloud_node_workloads_list_pending_workloads**](CloudNodeWorkloadsApi.md#src_app_api_cloud_node_workloads_list_pending_workloads) | **GET** /api/v1/cloud-node-workloads/pending | List Pending Workloads
+[**src_app_api_cloud_node_workloads_list_workloads**](CloudNodeWorkloadsApi.md#src_app_api_cloud_node_workloads_list_workloads) | **GET** /api/v1/cloud-node-workloads | List Workloads
+[**src_app_api_cloud_node_workloads_mark_workload_completed**](CloudNodeWorkloadsApi.md#src_app_api_cloud_node_workloads_mark_workload_completed) | **POST** /api/v1/cloud-node-workloads/{uuid}/complete | Mark Workload Completed
+[**src_app_api_cloud_node_workloads_mark_workload_failed**](CloudNodeWorkloadsApi.md#src_app_api_cloud_node_workloads_mark_workload_failed) | **POST** /api/v1/cloud-node-workloads/{uuid}/fail | Mark Workload Failed
+[**src_app_api_cloud_node_workloads_update_workload**](CloudNodeWorkloadsApi.md#src_app_api_cloud_node_workloads_update_workload) | **PUT** /api/v1/cloud-node-workloads/{uuid} | Update Workload
+[**src_app_api_cloud_node_workloads_workload_upload_results**](CloudNodeWorkloadsApi.md#src_app_api_cloud_node_workloads_workload_upload_results) | **POST** /api/v1/cloud-node-workloads/{uuid}/upload-results | Workload Upload Results
+
+
+# **src_app_api_cloud_node_workloads_assign_workload_to_instance**
+> CloudNodeWorkloadSchema src_app_api_cloud_node_workloads_assign_workload_to_instance(uuid, cloud_node_workload_assign_schema)
+
+Assign Workload To Instance
+
+Assign a workload to a Cloud Node instance.
+
+This also updates the workload status to ASSIGNED.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.cloud_node_workload_assign_schema import CloudNodeWorkloadAssignSchema
+from cyberwave.rest.models.cloud_node_workload_schema import CloudNodeWorkloadSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CloudNodeWorkloadsApi(api_client)
+    uuid = 'uuid_example' # str | 
+    cloud_node_workload_assign_schema = cyberwave.rest.CloudNodeWorkloadAssignSchema() # CloudNodeWorkloadAssignSchema | 
+
+    try:
+        # Assign Workload To Instance
+        api_response = api_instance.src_app_api_cloud_node_workloads_assign_workload_to_instance(uuid, cloud_node_workload_assign_schema)
+        print("The response of CloudNodeWorkloadsApi->src_app_api_cloud_node_workloads_assign_workload_to_instance:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CloudNodeWorkloadsApi->src_app_api_cloud_node_workloads_assign_workload_to_instance: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+ **cloud_node_workload_assign_schema** | [**CloudNodeWorkloadAssignSchema**](CloudNodeWorkloadAssignSchema.md)|  | 
+
+### Return type
+
+[**CloudNodeWorkloadSchema**](CloudNodeWorkloadSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_cloud_node_workloads_create_workload**
+> CloudNodeWorkloadSchema src_app_api_cloud_node_workloads_create_workload(cloud_node_workload_create_schema)
+
+Create Workload
+
+Create a new Cloud Node workload.
+
+The workload will be created in PENDING status and can later be assigned
+to an available Cloud Node instance.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.cloud_node_workload_create_schema import CloudNodeWorkloadCreateSchema
+from cyberwave.rest.models.cloud_node_workload_schema import CloudNodeWorkloadSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CloudNodeWorkloadsApi(api_client)
+    cloud_node_workload_create_schema = cyberwave.rest.CloudNodeWorkloadCreateSchema() # CloudNodeWorkloadCreateSchema | 
+
+    try:
+        # Create Workload
+        api_response = api_instance.src_app_api_cloud_node_workloads_create_workload(cloud_node_workload_create_schema)
+        print("The response of CloudNodeWorkloadsApi->src_app_api_cloud_node_workloads_create_workload:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CloudNodeWorkloadsApi->src_app_api_cloud_node_workloads_create_workload: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **cloud_node_workload_create_schema** | [**CloudNodeWorkloadCreateSchema**](CloudNodeWorkloadCreateSchema.md)|  | 
+
+### Return type
+
+[**CloudNodeWorkloadSchema**](CloudNodeWorkloadSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_cloud_node_workloads_delete_workload**
+> src_app_api_cloud_node_workloads_delete_workload(uuid)
+
+Delete Workload
+
+Delete a Cloud Node workload.
+
+Only pending or completed workloads can be deleted.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CloudNodeWorkloadsApi(api_client)
+    uuid = 'uuid_example' # str | 
+
+    try:
+        # Delete Workload
+        api_instance.src_app_api_cloud_node_workloads_delete_workload(uuid)
+    except Exception as e:
+        print("Exception when calling CloudNodeWorkloadsApi->src_app_api_cloud_node_workloads_delete_workload: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: Not defined
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_cloud_node_workloads_get_signed_url_for_attachment_upload**
+> CloudNodeWorkloadAttachmentResponseSchema src_app_api_cloud_node_workloads_get_signed_url_for_attachment_upload(uuid, cloud_node_workload_attachment_schema)
+
+Get Signed Url For Attachment Upload
+
+Generate a signed URL for uploading an attachment to a Cloud Node workload.
+
+Returns a signed URL that can be used to upload a file directly to Google Cloud Storage.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.cloud_node_workload_attachment_response_schema import CloudNodeWorkloadAttachmentResponseSchema
+from cyberwave.rest.models.cloud_node_workload_attachment_schema import CloudNodeWorkloadAttachmentSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CloudNodeWorkloadsApi(api_client)
+    uuid = 'uuid_example' # str | 
+    cloud_node_workload_attachment_schema = cyberwave.rest.CloudNodeWorkloadAttachmentSchema() # CloudNodeWorkloadAttachmentSchema | 
+
+    try:
+        # Get Signed Url For Attachment Upload
+        api_response = api_instance.src_app_api_cloud_node_workloads_get_signed_url_for_attachment_upload(uuid, cloud_node_workload_attachment_schema)
+        print("The response of CloudNodeWorkloadsApi->src_app_api_cloud_node_workloads_get_signed_url_for_attachment_upload:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CloudNodeWorkloadsApi->src_app_api_cloud_node_workloads_get_signed_url_for_attachment_upload: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+ **cloud_node_workload_attachment_schema** | [**CloudNodeWorkloadAttachmentSchema**](CloudNodeWorkloadAttachmentSchema.md)|  | 
+
+### Return type
+
+[**CloudNodeWorkloadAttachmentResponseSchema**](CloudNodeWorkloadAttachmentResponseSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_cloud_node_workloads_get_workload**
+> CloudNodeWorkloadSchema src_app_api_cloud_node_workloads_get_workload(uuid)
+
+Get Workload
+
+Get a specific Cloud Node workload by UUID.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.cloud_node_workload_schema import CloudNodeWorkloadSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CloudNodeWorkloadsApi(api_client)
+    uuid = 'uuid_example' # str | 
+
+    try:
+        # Get Workload
+        api_response = api_instance.src_app_api_cloud_node_workloads_get_workload(uuid)
+        print("The response of CloudNodeWorkloadsApi->src_app_api_cloud_node_workloads_get_workload:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CloudNodeWorkloadsApi->src_app_api_cloud_node_workloads_get_workload: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+
+### Return type
+
+[**CloudNodeWorkloadSchema**](CloudNodeWorkloadSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_cloud_node_workloads_list_pending_workloads**
+> List[CloudNodeWorkloadSchema] src_app_api_cloud_node_workloads_list_pending_workloads()
+
+List Pending Workloads
+
+List all pending Cloud Node workloads visible to the authenticated user.
+
+Useful for finding workloads that need to be assigned to instances.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.cloud_node_workload_schema import CloudNodeWorkloadSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CloudNodeWorkloadsApi(api_client)
+
+    try:
+        # List Pending Workloads
+        api_response = api_instance.src_app_api_cloud_node_workloads_list_pending_workloads()
+        print("The response of CloudNodeWorkloadsApi->src_app_api_cloud_node_workloads_list_pending_workloads:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CloudNodeWorkloadsApi->src_app_api_cloud_node_workloads_list_pending_workloads: %s\n" % e)
+```
+
+
+
+### Parameters
+
+This endpoint does not need any parameter.
+
+### Return type
+
+[**List[CloudNodeWorkloadSchema]**](CloudNodeWorkloadSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_cloud_node_workloads_list_workloads**
+> List[CloudNodeWorkloadSchema] src_app_api_cloud_node_workloads_list_workloads(status=status, profile_slug=profile_slug, workspace_uuid=workspace_uuid)
+
+List Workloads
+
+List all Cloud Node workloads visible to the authenticated user.
+
+Optionally filter by status, profile_slug, or workspace_uuid.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.cloud_node_workload_schema import CloudNodeWorkloadSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CloudNodeWorkloadsApi(api_client)
+    status = 'status_example' # str |  (optional)
+    profile_slug = 'profile_slug_example' # str |  (optional)
+    workspace_uuid = 'workspace_uuid_example' # str |  (optional)
+
+    try:
+        # List Workloads
+        api_response = api_instance.src_app_api_cloud_node_workloads_list_workloads(status=status, profile_slug=profile_slug, workspace_uuid=workspace_uuid)
+        print("The response of CloudNodeWorkloadsApi->src_app_api_cloud_node_workloads_list_workloads:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CloudNodeWorkloadsApi->src_app_api_cloud_node_workloads_list_workloads: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **status** | **str**|  | [optional] 
+ **profile_slug** | **str**|  | [optional] 
+ **workspace_uuid** | **str**|  | [optional] 
+
+### Return type
+
+[**List[CloudNodeWorkloadSchema]**](CloudNodeWorkloadSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_cloud_node_workloads_mark_workload_completed**
+> CloudNodeWorkloadSchema src_app_api_cloud_node_workloads_mark_workload_completed(uuid)
+
+Mark Workload Completed
+
+Mark a workload as completed.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.cloud_node_workload_schema import CloudNodeWorkloadSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CloudNodeWorkloadsApi(api_client)
+    uuid = 'uuid_example' # str | 
+
+    try:
+        # Mark Workload Completed
+        api_response = api_instance.src_app_api_cloud_node_workloads_mark_workload_completed(uuid)
+        print("The response of CloudNodeWorkloadsApi->src_app_api_cloud_node_workloads_mark_workload_completed:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CloudNodeWorkloadsApi->src_app_api_cloud_node_workloads_mark_workload_completed: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+
+### Return type
+
+[**CloudNodeWorkloadSchema**](CloudNodeWorkloadSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_cloud_node_workloads_mark_workload_failed**
+> CloudNodeWorkloadSchema src_app_api_cloud_node_workloads_mark_workload_failed(uuid)
+
+Mark Workload Failed
+
+Mark a workload as failed.
+
+This can be used when a workload encounters an error during execution.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.cloud_node_workload_schema import CloudNodeWorkloadSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CloudNodeWorkloadsApi(api_client)
+    uuid = 'uuid_example' # str | 
+
+    try:
+        # Mark Workload Failed
+        api_response = api_instance.src_app_api_cloud_node_workloads_mark_workload_failed(uuid)
+        print("The response of CloudNodeWorkloadsApi->src_app_api_cloud_node_workloads_mark_workload_failed:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CloudNodeWorkloadsApi->src_app_api_cloud_node_workloads_mark_workload_failed: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+
+### Return type
+
+[**CloudNodeWorkloadSchema**](CloudNodeWorkloadSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_cloud_node_workloads_update_workload**
+> CloudNodeWorkloadSchema src_app_api_cloud_node_workloads_update_workload(uuid, cloud_node_workload_update_schema)
+
+Update Workload
+
+Update a Cloud Node workload.
+
+Can be used to update status or assign/unassign an instance.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.cloud_node_workload_schema import CloudNodeWorkloadSchema
+from cyberwave.rest.models.cloud_node_workload_update_schema import CloudNodeWorkloadUpdateSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CloudNodeWorkloadsApi(api_client)
+    uuid = 'uuid_example' # str | 
+    cloud_node_workload_update_schema = cyberwave.rest.CloudNodeWorkloadUpdateSchema() # CloudNodeWorkloadUpdateSchema | 
+
+    try:
+        # Update Workload
+        api_response = api_instance.src_app_api_cloud_node_workloads_update_workload(uuid, cloud_node_workload_update_schema)
+        print("The response of CloudNodeWorkloadsApi->src_app_api_cloud_node_workloads_update_workload:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CloudNodeWorkloadsApi->src_app_api_cloud_node_workloads_update_workload: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+ **cloud_node_workload_update_schema** | [**CloudNodeWorkloadUpdateSchema**](CloudNodeWorkloadUpdateSchema.md)|  | 
+
+### Return type
+
+[**CloudNodeWorkloadSchema**](CloudNodeWorkloadSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_cloud_node_workloads_workload_upload_results**
+> src_app_api_cloud_node_workloads_workload_upload_results(uuid, cloud_node_workload_result_schema)
+
+Workload Upload Results
+
+Get the result of a Cloud Node workload.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.cloud_node_workload_result_schema import CloudNodeWorkloadResultSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CloudNodeWorkloadsApi(api_client)
+    uuid = 'uuid_example' # str | 
+    cloud_node_workload_result_schema = cyberwave.rest.CloudNodeWorkloadResultSchema() # CloudNodeWorkloadResultSchema | 
+
+    try:
+        # Workload Upload Results
+        api_instance.src_app_api_cloud_node_workloads_workload_upload_results(uuid, cloud_node_workload_result_schema)
+    except Exception as e:
+        print("Exception when calling CloudNodeWorkloadsApi->src_app_api_cloud_node_workloads_workload_upload_results: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+ **cloud_node_workload_result_schema** | [**CloudNodeWorkloadResultSchema**](CloudNodeWorkloadResultSchema.md)|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: Not defined
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+

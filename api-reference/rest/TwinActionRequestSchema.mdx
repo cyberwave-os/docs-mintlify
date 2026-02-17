@@ -1,0 +1,20 @@
+# TwinActionRequestSchema
+
+
+## Properties
+
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**action_type** | **str** |  | 
+**name** | **str** |  | [optional] 
+**plan** | [**MotionPlanSchema**](MotionPlanSchema.md) |  | [optional] 
+**joints** | **Dict[str, float]** |  | [optional] 
+**scope** | **str** |  | [optional] [default to 'auto']
+**environment_uuid** | **str** |  | [optional] 
+**execution** | **str** |  | [optional] [default to 'async']
+**preview** | **bool** |  | [optional] [default to False]
+**source_type** | **str** |  | [optional] 
+**tick_ms** | **int** |  | [optional] 
+**transition_ms** | **int** |  | [optional] 
+**hold_ms** | **int** |  | [optional] 
+
