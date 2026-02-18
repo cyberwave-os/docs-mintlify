@@ -244,7 +244,7 @@ Below are two different configurations to show how this works in practice:
 
 ```mermaid
 graph LR
-    CW["Cyberwave Cloud"] ---|"MQTT"| EDGE["Cyberwave Edge\n(Edge Core + SO101 Driver)"]
+    CW["Cyberwave Cloud"] ---|"MQTT/REST"| EDGE["Cyberwave Edge\n(Edge Core + SO101 Driver)"]
     EDGE ---|"USB-C"| LA["Leader Arm"]
     EDGE ---|"USB-C"| FA["Follower Arm"]
     EDGE ---|"USB"| CAM["Camera"]
@@ -256,7 +256,7 @@ With SO101, your laptop can be the edge. You install the Cyberwave Edge (Edge Co
 
 ```mermaid
 graph LR
-    CW["Cyberwave Cloud"] ---|"Cloud Sync"| EDGE["Cyberwave Edge\n(Edge Core + UGV Driver\non Raspberry Pi)"]
+    CW["Cyberwave Cloud"] ---|"MQTT/REST"| EDGE["Cyberwave Edge\n(Edge Core + UGV Driver\non Raspberry Pi)"]
     EDGE ---|"Serial UART"| ESP["ESP32\n(Motors, Sensors, Camera)"]
 ```
 
