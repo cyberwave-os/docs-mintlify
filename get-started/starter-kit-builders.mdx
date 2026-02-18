@@ -202,23 +202,27 @@ Now that you understand what Cyberwave is and how the edge runtime works, let's 
 
 ```mermaid
 graph TB
-    subgraph Cloud["☁ Cyberwave Cloud"]
-        direction LR
-        DT["Digital Twins"] ~~~ API["API / SDK"] ~~~ ML["ML Models & Workflows"]
+    subgraph Cloud["Cyberwave Cloud"]
+        DT["Digital Twins"]
+        API["API / SDK"]
+        ML["ML Models & Workflows"]
     end
 
-    Cloud <-->|"MQTT / REST"| Edge
+    Cloud -->|"MQTT / REST"| Edge
+    Edge -->|"MQTT / REST"| Cloud
 
-    subgraph Edge["💻 Cyberwave Edge"]
-        direction LR
-        EC["Edge Core"] ~~~ DR["Cyberwave Hardware Driver"]
+    subgraph Edge["Cyberwave Edge"]
+        EC["Edge Core"]
+        DR["Cyberwave Hardware Driver"]
     end
 
-    Edge <-->|"Serial / USB / ROS Topics"| HW
+    Edge -->|"Serial / USB / ROS Topics"| HW
+    HW -->|"Serial / USB / ROS Topics"| Edge
 
-    subgraph HW["🤖 Robot Hardware"]
-        direction LR
-        S["Sensors"] ~~~ A["Actuators"] ~~~ MC["Microcontroller"]
+    subgraph HW["Robot Hardware"]
+        S["Sensors"]
+        A["Actuators"]
+        MC["Microcontroller"]
     end
 ```
 
@@ -240,10 +244,10 @@ Below are two different configurations to show how this works in practice:
 
 ```mermaid
 graph LR
-    CW["Cyberwave Cloud"] <-->|"MQTT/REST"| EDGE["Cyberwave Edge<br>(Edge Core + SO101 Driver)</br>"]
-    EDGE <-->|"USB-C"| LA["Leader Arm"]
-    EDGE <-->|"USB-C"| FA["Follower Arm"]
-    EDGE <-->|"USB"| CAM["Camera"]
+    CW["Cyberwave Cloud"] ---|"MQTT"| EDGE["Cyberwave Edge\n(Edge Core + SO101 Driver)"]
+    EDGE ---|"USB-C"| LA["Leader Arm"]
+    EDGE ---|"USB-C"| FA["Follower Arm"]
+    EDGE ---|"USB"| CAM["Camera"]
 ```
 
 With SO101, your laptop can be the edge. You install the Cyberwave Edge (Edge Core + Cyberwave SO101 Driver) on your laptop, connect the robot arms via USB-C, and plug in a camera. The Edge Core handles identity and cloud sync, while the SO101 Driver translates Cyberwave commands into hardware control. No separate compute hardware needed — your laptop becomes the bridge between Cyberwave and the physical arms.
@@ -252,8 +256,8 @@ With SO101, your laptop can be the edge. You install the Cyberwave Edge (Edge Co
 
 ```mermaid
 graph LR
-    CW["Cyberwave Cloud"] <-->|"MQTT/REST"| EDGE["Cyberwave Edge<br>(Edge Core + UGV Driver on Raspberry Pi)</br>"]
-    EDGE <-->|"Serial UART"| ESP["ESP32<br>(Motors, Sensors, Camera)</br>"]
+    CW["Cyberwave Cloud"] ---|"Cloud Sync"| EDGE["Cyberwave Edge\n(Edge Core + UGV Driver\non Raspberry Pi)"]
+    EDGE ---|"Serial UART"| ESP["ESP32\n(Motors, Sensors, Camera)"]
 ```
 
 With the UGV Beast, the Raspberry Pi inside the rover chassis is the edge. You install the Cyberwave Edge (Edge Core + Cyberwave UGV Driver) on the Pi. The UGV Driver runs as a Docker container with ROS 2 nodes and communicates with the ESP32 microcontroller over serial for low-level motor control, IMU, and camera. The Edge Core handles authentication and syncs everything with Cyberwave Cloud over the network.
