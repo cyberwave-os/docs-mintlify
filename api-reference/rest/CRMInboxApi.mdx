@@ -1,0 +1,423 @@
+# cyberwave.rest.CRMInboxApi
+
+All URIs are relative to *http://localhost*
+
+Method | HTTP request | Description
+------------- | ------------- | -------------
+[**src_app_api_inbox_generate_suggestion**](CRMInboxApi.md#src_app_api_inbox_generate_suggestion) | **POST** /api/v1/inbox/{uuid}/suggest | Generate Suggestion
+[**src_app_api_inbox_get_submission**](CRMInboxApi.md#src_app_api_inbox_get_submission) | **GET** /api/v1/inbox/{uuid} | Get Submission
+[**src_app_api_inbox_list_submissions**](CRMInboxApi.md#src_app_api_inbox_list_submissions) | **GET** /api/v1/inbox | List Submissions
+[**src_app_api_inbox_mark_as_read**](CRMInboxApi.md#src_app_api_inbox_mark_as_read) | **POST** /api/v1/inbox/{uuid}/mark-read | Mark As Read
+[**src_app_api_inbox_update_submission**](CRMInboxApi.md#src_app_api_inbox_update_submission) | **PUT** /api/v1/inbox/{uuid} | Update Submission
+
+
+# **src_app_api_inbox_generate_suggestion**
+> ContactSubmissionAIResponseSchema src_app_api_inbox_generate_suggestion(uuid, contact_submission_ai_suggest_schema)
+
+Generate Suggestion
+
+Generate an AI-powered response suggestion for a contact submission.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.contact_submission_ai_response_schema import ContactSubmissionAIResponseSchema
+from cyberwave.rest.models.contact_submission_ai_suggest_schema import ContactSubmissionAISuggestSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CRMInboxApi(api_client)
+    uuid = 'uuid_example' # str | 
+    contact_submission_ai_suggest_schema = cyberwave.rest.ContactSubmissionAISuggestSchema() # ContactSubmissionAISuggestSchema | 
+
+    try:
+        # Generate Suggestion
+        api_response = api_instance.src_app_api_inbox_generate_suggestion(uuid, contact_submission_ai_suggest_schema)
+        print("The response of CRMInboxApi->src_app_api_inbox_generate_suggestion:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CRMInboxApi->src_app_api_inbox_generate_suggestion: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+ **contact_submission_ai_suggest_schema** | [**ContactSubmissionAISuggestSchema**](ContactSubmissionAISuggestSchema.md)|  | 
+
+### Return type
+
+[**ContactSubmissionAIResponseSchema**](ContactSubmissionAIResponseSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_inbox_get_submission**
+> ContactSubmissionSchema src_app_api_inbox_get_submission(uuid)
+
+Get Submission
+
+Get a specific contact submission by UUID.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.contact_submission_schema import ContactSubmissionSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CRMInboxApi(api_client)
+    uuid = 'uuid_example' # str | 
+
+    try:
+        # Get Submission
+        api_response = api_instance.src_app_api_inbox_get_submission(uuid)
+        print("The response of CRMInboxApi->src_app_api_inbox_get_submission:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CRMInboxApi->src_app_api_inbox_get_submission: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+
+### Return type
+
+[**ContactSubmissionSchema**](ContactSubmissionSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_inbox_list_submissions**
+> List[ContactSubmissionSchema] src_app_api_inbox_list_submissions(status=status, source=source, workspace_uuid=workspace_uuid)
+
+List Submissions
+
+List all contact submissions for workspaces the user belongs to.
+
+Query params:
+- status: Filter by status (new, read, replied, converted, archived)
+- source: Filter by source (contact_form, early_access, vendor)
+- workspace_uuid: Filter by specific workspace
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.contact_submission_schema import ContactSubmissionSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CRMInboxApi(api_client)
+    status = 'status_example' # str |  (optional)
+    source = 'source_example' # str |  (optional)
+    workspace_uuid = 'workspace_uuid_example' # str |  (optional)
+
+    try:
+        # List Submissions
+        api_response = api_instance.src_app_api_inbox_list_submissions(status=status, source=source, workspace_uuid=workspace_uuid)
+        print("The response of CRMInboxApi->src_app_api_inbox_list_submissions:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CRMInboxApi->src_app_api_inbox_list_submissions: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **status** | **str**|  | [optional] 
+ **source** | **str**|  | [optional] 
+ **workspace_uuid** | **str**|  | [optional] 
+
+### Return type
+
+[**List[ContactSubmissionSchema]**](ContactSubmissionSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_inbox_mark_as_read**
+> ContactSubmissionSchema src_app_api_inbox_mark_as_read(uuid)
+
+Mark As Read
+
+Mark a submission as read.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.contact_submission_schema import ContactSubmissionSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CRMInboxApi(api_client)
+    uuid = 'uuid_example' # str | 
+
+    try:
+        # Mark As Read
+        api_response = api_instance.src_app_api_inbox_mark_as_read(uuid)
+        print("The response of CRMInboxApi->src_app_api_inbox_mark_as_read:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CRMInboxApi->src_app_api_inbox_mark_as_read: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+
+### Return type
+
+[**ContactSubmissionSchema**](ContactSubmissionSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_inbox_update_submission**
+> ContactSubmissionSchema src_app_api_inbox_update_submission(uuid, contact_submission_update_schema)
+
+Update Submission
+
+Update a contact submission (status, notes, etc.).
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.contact_submission_schema import ContactSubmissionSchema
+from cyberwave.rest.models.contact_submission_update_schema import ContactSubmissionUpdateSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CRMInboxApi(api_client)
+    uuid = 'uuid_example' # str | 
+    contact_submission_update_schema = cyberwave.rest.ContactSubmissionUpdateSchema() # ContactSubmissionUpdateSchema | 
+
+    try:
+        # Update Submission
+        api_response = api_instance.src_app_api_inbox_update_submission(uuid, contact_submission_update_schema)
+        print("The response of CRMInboxApi->src_app_api_inbox_update_submission:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CRMInboxApi->src_app_api_inbox_update_submission: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+ **contact_submission_update_schema** | [**ContactSubmissionUpdateSchema**](ContactSubmissionUpdateSchema.md)|  | 
+
+### Return type
+
+[**ContactSubmissionSchema**](ContactSubmissionSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+

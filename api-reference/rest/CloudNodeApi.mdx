@@ -1,0 +1,779 @@
+# cyberwave.rest.CloudNodeApi
+
+All URIs are relative to *http://localhost*
+
+Method | HTTP request | Description
+------------- | ------------- | -------------
+[**src_app_api_cloud_nodes_create_instance**](CloudNodeApi.md#src_app_api_cloud_nodes_create_instance) | **POST** /api/v1/cloud-node | Create Instance
+[**src_app_api_cloud_nodes_get_instance_logs**](CloudNodeApi.md#src_app_api_cloud_nodes_get_instance_logs) | **GET** /api/v1/cloud-node/instances/{instance_uuid}/logs | Get Instance Logs
+[**src_app_api_cloud_nodes_get_instance_status**](CloudNodeApi.md#src_app_api_cloud_nodes_get_instance_status) | **GET** /api/v1/cloud-node/instances/{instance_uuid}/status | Get Instance Status
+[**src_app_api_cloud_nodes_list_instances**](CloudNodeApi.md#src_app_api_cloud_nodes_list_instances) | **GET** /api/v1/cloud-node/instances | List Instances
+[**src_app_api_cloud_nodes_mark_instance_failed**](CloudNodeApi.md#src_app_api_cloud_nodes_mark_instance_failed) | **POST** /api/v1/cloud-node/failed | Mark Instance Failed
+[**src_app_api_cloud_nodes_mark_instance_terminated**](CloudNodeApi.md#src_app_api_cloud_nodes_mark_instance_terminated) | **POST** /api/v1/cloud-node/terminated | Mark Instance Terminated
+[**src_app_api_cloud_nodes_record_heartbeat**](CloudNodeApi.md#src_app_api_cloud_nodes_record_heartbeat) | **POST** /api/v1/cloud-node/{uuid}/heartbeat | Record Heartbeat
+[**src_app_api_cloud_nodes_register_gpu_instance**](CloudNodeApi.md#src_app_api_cloud_nodes_register_gpu_instance) | **POST** /api/v1/cloud-node/{uuid}/register | Register Gpu Instance
+[**src_app_api_cloud_nodes_save_cloud_node_instance_log**](CloudNodeApi.md#src_app_api_cloud_nodes_save_cloud_node_instance_log) | **POST** /api/v1/cloud-node/log | Save Cloud Node Instance Log
+
+
+# **src_app_api_cloud_nodes_create_instance**
+> CloudNodeInstanceSchema src_app_api_cloud_nodes_create_instance(cloud_node_instance_create_request)
+
+Create Instance
+
+Create a new Cloud Node instance.
+
+The backend is the owner of the UUID and slug:
+- If slug is provided, it must be unique within the workspace
+- If slug is not provided, an auto-generated slug will be created
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.cloud_node_instance_create_request import CloudNodeInstanceCreateRequest
+from cyberwave.rest.models.cloud_node_instance_schema import CloudNodeInstanceSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CloudNodeApi(api_client)
+    cloud_node_instance_create_request = cyberwave.rest.CloudNodeInstanceCreateRequest() # CloudNodeInstanceCreateRequest | 
+
+    try:
+        # Create Instance
+        api_response = api_instance.src_app_api_cloud_nodes_create_instance(cloud_node_instance_create_request)
+        print("The response of CloudNodeApi->src_app_api_cloud_nodes_create_instance:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CloudNodeApi->src_app_api_cloud_nodes_create_instance: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **cloud_node_instance_create_request** | [**CloudNodeInstanceCreateRequest**](CloudNodeInstanceCreateRequest.md)|  | 
+
+### Return type
+
+[**CloudNodeInstanceSchema**](CloudNodeInstanceSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_cloud_nodes_get_instance_logs**
+> CloudNodeInstanceLogsResponse src_app_api_cloud_nodes_get_instance_logs(instance_uuid, log_type=log_type, limit=limit)
+
+Get Instance Logs
+
+Retrieve logs for a Cloud Node (GPU) instance.
+
+Returns log metadata and the combined content of the most recent log entries,
+limited to the last N lines (default 100).
+
+Args:
+    instance_uuid: UUID of the Cloud Node instance
+    log_type: Optional filter by log type ("stdout", "stderr", "system", "app")
+    limit: Maximum number of lines to return (default 100, max 1000)
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.cloud_node_instance_logs_response import CloudNodeInstanceLogsResponse
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CloudNodeApi(api_client)
+    instance_uuid = 'instance_uuid_example' # str | 
+    log_type = 'log_type_example' # str |  (optional)
+    limit = 100 # int |  (optional) (default to 100)
+
+    try:
+        # Get Instance Logs
+        api_response = api_instance.src_app_api_cloud_nodes_get_instance_logs(instance_uuid, log_type=log_type, limit=limit)
+        print("The response of CloudNodeApi->src_app_api_cloud_nodes_get_instance_logs:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CloudNodeApi->src_app_api_cloud_nodes_get_instance_logs: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **instance_uuid** | **str**|  | 
+ **log_type** | **str**|  | [optional] 
+ **limit** | **int**|  | [optional] [default to 100]
+
+### Return type
+
+[**CloudNodeInstanceLogsResponse**](CloudNodeInstanceLogsResponse.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_cloud_nodes_get_instance_status**
+> CloudNodeInstanceStatusResponse src_app_api_cloud_nodes_get_instance_status(instance_uuid)
+
+Get Instance Status
+
+Get the current status of a Cloud Node (GPU) instance.
+
+Used by Cloud Node (GPU) services to check their registration status and by
+monitoring systems to verify instance health.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.cloud_node_instance_status_response import CloudNodeInstanceStatusResponse
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CloudNodeApi(api_client)
+    instance_uuid = 'instance_uuid_example' # str | 
+
+    try:
+        # Get Instance Status
+        api_response = api_instance.src_app_api_cloud_nodes_get_instance_status(instance_uuid)
+        print("The response of CloudNodeApi->src_app_api_cloud_nodes_get_instance_status:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CloudNodeApi->src_app_api_cloud_nodes_get_instance_status: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **instance_uuid** | **str**|  | 
+
+### Return type
+
+[**CloudNodeInstanceStatusResponse**](CloudNodeInstanceStatusResponse.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_cloud_nodes_list_instances**
+> List[CloudNodeInstanceSchema] src_app_api_cloud_nodes_list_instances(profile_slug=profile_slug, status=status, workspace_slug=workspace_slug)
+
+List Instances
+
+List Cloud Node instances for a workspace.
+
+Optionally filter by profile_slug or status.
+If workspace_slug is provided, uses that workspace; otherwise uses the user's default.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.cloud_node_instance_schema import CloudNodeInstanceSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CloudNodeApi(api_client)
+    profile_slug = 'profile_slug_example' # str |  (optional)
+    status = 'status_example' # str |  (optional)
+    workspace_slug = 'workspace_slug_example' # str |  (optional)
+
+    try:
+        # List Instances
+        api_response = api_instance.src_app_api_cloud_nodes_list_instances(profile_slug=profile_slug, status=status, workspace_slug=workspace_slug)
+        print("The response of CloudNodeApi->src_app_api_cloud_nodes_list_instances:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CloudNodeApi->src_app_api_cloud_nodes_list_instances: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **profile_slug** | **str**|  | [optional] 
+ **status** | **str**|  | [optional] 
+ **workspace_slug** | **str**|  | [optional] 
+
+### Return type
+
+[**List[CloudNodeInstanceSchema]**](CloudNodeInstanceSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_cloud_nodes_mark_instance_failed**
+> CloudNodeFailedResponse src_app_api_cloud_nodes_mark_instance_failed(cloud_node_failed_request)
+
+Mark Instance Failed
+
+Mark a Cloud Node (GPU) instance as failed.
+
+Called by the GitHub Actions workflow when provisioning fails or
+the instance crashes unexpectedly. Any associated workloads will be re-queued.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.cloud_node_failed_request import CloudNodeFailedRequest
+from cyberwave.rest.models.cloud_node_failed_response import CloudNodeFailedResponse
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CloudNodeApi(api_client)
+    cloud_node_failed_request = cyberwave.rest.CloudNodeFailedRequest() # CloudNodeFailedRequest | 
+
+    try:
+        # Mark Instance Failed
+        api_response = api_instance.src_app_api_cloud_nodes_mark_instance_failed(cloud_node_failed_request)
+        print("The response of CloudNodeApi->src_app_api_cloud_nodes_mark_instance_failed:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CloudNodeApi->src_app_api_cloud_nodes_mark_instance_failed: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **cloud_node_failed_request** | [**CloudNodeFailedRequest**](CloudNodeFailedRequest.md)|  | 
+
+### Return type
+
+[**CloudNodeFailedResponse**](CloudNodeFailedResponse.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_cloud_nodes_mark_instance_terminated**
+> CloudNodeTerminatedResponse src_app_api_cloud_nodes_mark_instance_terminated(cloud_node_terminated_request)
+
+Mark Instance Terminated
+
+Mark a Cloud Node (GPU) instance as terminated.
+
+Called by the package (cyberwave-cloud-node) once a termination is triggered OR by the GitHub Actions workflow after Terraform has successfully (when used by us)
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.cloud_node_terminated_request import CloudNodeTerminatedRequest
+from cyberwave.rest.models.cloud_node_terminated_response import CloudNodeTerminatedResponse
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CloudNodeApi(api_client)
+    cloud_node_terminated_request = cyberwave.rest.CloudNodeTerminatedRequest() # CloudNodeTerminatedRequest | 
+
+    try:
+        # Mark Instance Terminated
+        api_response = api_instance.src_app_api_cloud_nodes_mark_instance_terminated(cloud_node_terminated_request)
+        print("The response of CloudNodeApi->src_app_api_cloud_nodes_mark_instance_terminated:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CloudNodeApi->src_app_api_cloud_nodes_mark_instance_terminated: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **cloud_node_terminated_request** | [**CloudNodeTerminatedRequest**](CloudNodeTerminatedRequest.md)|  | 
+
+### Return type
+
+[**CloudNodeTerminatedResponse**](CloudNodeTerminatedResponse.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_cloud_nodes_record_heartbeat**
+> CloudeNodeHeartbeatResponse src_app_api_cloud_nodes_record_heartbeat(uuid)
+
+Record Heartbeat
+
+Record a heartbeat from a Cloud Node (GPU) instance.
+
+Called periodically by the Cloud Node (GPU) service to signal it is alive and healthy.
+Missing heartbeats will cause the instance to be marked as stale and terminated.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.cloude_node_heartbeat_response import CloudeNodeHeartbeatResponse
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CloudNodeApi(api_client)
+    uuid = 'uuid_example' # str | 
+
+    try:
+        # Record Heartbeat
+        api_response = api_instance.src_app_api_cloud_nodes_record_heartbeat(uuid)
+        print("The response of CloudNodeApi->src_app_api_cloud_nodes_record_heartbeat:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CloudNodeApi->src_app_api_cloud_nodes_record_heartbeat: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+
+### Return type
+
+[**CloudeNodeHeartbeatResponse**](CloudeNodeHeartbeatResponse.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_cloud_nodes_register_gpu_instance**
+> CloudeNodeInstanceRegisterResponse src_app_api_cloud_nodes_register_gpu_instance(uuid, cloud_node_instance_register_request)
+
+Register Gpu Instance
+
+Register a Cloud Node (GPU) instance after it has booted and is ready to serve.
+
+Called by the Cloud Node (GPU) service once its dependencies (e.g. CUDA, etc)
+are available and the service is listening.
+
+This endpoint only registers an existing instance. The instance must have been
+created via the create endpoint first. The profile_slug can be updated during
+registration to reflect the actual running profile.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.cloud_node_instance_register_request import CloudNodeInstanceRegisterRequest
+from cyberwave.rest.models.cloude_node_instance_register_response import CloudeNodeInstanceRegisterResponse
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CloudNodeApi(api_client)
+    uuid = 'uuid_example' # str | 
+    cloud_node_instance_register_request = cyberwave.rest.CloudNodeInstanceRegisterRequest() # CloudNodeInstanceRegisterRequest | 
+
+    try:
+        # Register Gpu Instance
+        api_response = api_instance.src_app_api_cloud_nodes_register_gpu_instance(uuid, cloud_node_instance_register_request)
+        print("The response of CloudNodeApi->src_app_api_cloud_nodes_register_gpu_instance:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CloudNodeApi->src_app_api_cloud_nodes_register_gpu_instance: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+ **cloud_node_instance_register_request** | [**CloudNodeInstanceRegisterRequest**](CloudNodeInstanceRegisterRequest.md)|  | 
+
+### Return type
+
+[**CloudeNodeInstanceRegisterResponse**](CloudeNodeInstanceRegisterResponse.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_cloud_nodes_save_cloud_node_instance_log**
+> CloudNodeLogResponse src_app_api_cloud_nodes_save_cloud_node_instance_log(cloud_node_log_request)
+
+Save Cloud Node Instance Log
+
+Save a log entry for a Cloud Node (GPU) instance.
+
+Logs are stored asynchronously in GCS with metadata in the database.
+This allows Cloud Node instances to stream logs without blocking.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.cloud_node_log_request import CloudNodeLogRequest
+from cyberwave.rest.models.cloud_node_log_response import CloudNodeLogResponse
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CloudNodeApi(api_client)
+    cloud_node_log_request = cyberwave.rest.CloudNodeLogRequest() # CloudNodeLogRequest | 
+
+    try:
+        # Save Cloud Node Instance Log
+        api_response = api_instance.src_app_api_cloud_nodes_save_cloud_node_instance_log(cloud_node_log_request)
+        print("The response of CloudNodeApi->src_app_api_cloud_nodes_save_cloud_node_instance_log:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CloudNodeApi->src_app_api_cloud_nodes_save_cloud_node_instance_log: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **cloud_node_log_request** | [**CloudNodeLogRequest**](CloudNodeLogRequest.md)|  | 
+
+### Return type
+
+[**CloudNodeLogResponse**](CloudNodeLogResponse.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
