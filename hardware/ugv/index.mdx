@@ -19,12 +19,12 @@ The system is split into three layers: the **Cyberwave Platform**, the **Edge** 
 
 ```mermaid
 graph TB
-    CYB["Cyberwave Platform<br/>(Dashboard, Digital Twin, MQTT Broker)"]
+    CYB["Cyberwave Cloud<br/>(Digital Twins, API/SDK, ML Models, Workflows)"]
     CYB <-->|"MQTT"| BRIDGE
 
-    subgraph UGV["UGV Beast (Raspberry Pi)"]
-        BRIDGE["MQTT Bridge"]
-        ROS["ROS 2 Stack"]
+    subgraph UGV["Cyberwave Edge"]
+        BRIDGE["Edge Core"]
+        ROS["Cyberwave UGV Driver"]
         BRIDGE <-->|"ROS 2 Topics"| ROS
     end
 
