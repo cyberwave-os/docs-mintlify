@@ -10,27 +10,9 @@ import EarlyAccess from '/snippets/early-access.mdx';
 
 Set up your Cyberwave project, create a virtual environment, and link your physical robot to its digital twin. By the end of this phase, your hardware will be connected and mirrored in real time.
 
-### Step 1: Create Your First Project
-
 <EarlyAccess />
 
-Projects help you organize your work by grouping related environments, assets, and simulations together.
-
-- Click "New Project" from the dashboard.
-- Give it a name like "My First Robot Project".
-- Add a description of what you're building. 
-
-<Card
-  title="Go to Dashboard"
-  icon="folder-plus"
-  href="https://cyberwave.com/dashboard"
->
-  Create your first project from the dashboard
-</Card>
-
----
-
-### Step 2: Create an Environment
+### Step 1: Create an Environment
 
 Environments are 3D spaces where your robots live and interact. Think of them as virtual worlds for your physical setups.
 
@@ -39,7 +21,7 @@ Environments are 3D spaces where your robots live and interact. Think of them as
 
 ---
 
-### Step 3: Add Digital Twins
+### Step 2: Add Digital Twins
 
 Browse our catalog of digital twins or upload your own URDF files to bring these virtual replicas of your robots into the environment.
 
@@ -57,7 +39,7 @@ Browse our catalog of digital twins or upload your own URDF files to bring these
 
 ---
 
-### Step 4: Install the Cyberwave CLI
+### Step 3: Install the Cyberwave CLI
 
 If you're using an edge device (like Raspberry Pi, etc.), SSH into the edge device first. If you're not using an edge device and just your computer, open your terminal directly.
 
@@ -74,7 +56,7 @@ sudo apt update && sudo apt install cyberwave-cli
 
 ---
 
-### Step 5: Install the Edge Core
+### Step 4: Install the Edge Core
 
 Edge core is the orchestrator of your Cyberwave edge components. It runs on edge devices (Raspberry Pi, Jetson, any Linux machine) and acts as the bridge between physical hardware and the Cyberwave cloud backend. Install the edge core using the following command:
 
@@ -87,7 +69,7 @@ The `cyberwave-cli` will ask you to log in with your Cyberwave credentials and t
 
 ---
 
-### Step 6: Pair Hardware with Digital Twin
+### Step 5: Pair Hardware with Digital Twin
 
 Follow the instructions in your terminal to pair the physical hardware of your robot with the digital twin.
 
@@ -105,7 +87,7 @@ Your robot is now connected to the digital twin! The first part of the quickstar
 
 With your robot connected, record task demonstrations, build datasets, and train AI models in the cloud. Then deploy those models back to your robot for fully autonomous control.
 
-### Step 7: Record and Create Datasets
+### Step 6: Record and Create Datasets
 
 Collect training data by recording your robot operations. These datasets will be used to train AI models for autonomous behavior.
 
@@ -121,7 +103,7 @@ Record 10-15 demonstrations of the same task with slight variations for better m
 
 ---
 
-### Step 8: Export Your Dataset
+### Step 7: Export Your Dataset
 
 Process your recordings into structured datasets ready for training.
 
@@ -133,7 +115,7 @@ Process your recordings into structured datasets ready for training.
 
 ---
 
-### Step 9: Train an AI Model
+### Step 8: Train an AI Model
 
 Use your dataset to train a machine learning model that can control your robot autonomously.
 
@@ -152,7 +134,7 @@ Use your dataset to train a machine learning model that can control your robot a
 
 ---
 
-### Step 10: Deploy Your Model
+### Step 9: Deploy Your Model
 
 Deploy your trained model as a controller policy to enable autonomous robot control.
 
@@ -165,7 +147,7 @@ Deploy your trained model as a controller policy to enable autonomous robot cont
 
 ---
 
-### Step 11: Use AI to Control Your Robot
+### Step 10: Use AI to Control Your Robot
 
 Control your robot autonomously using natural language prompts powered by your deployed AI model.
 
