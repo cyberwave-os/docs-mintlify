@@ -18,9 +18,30 @@
               "pages": [
                 "get-started/index",
                 "get-started/quickstart",
+                "get-started/architecture",
                 "get-started/core-data-hierarchy",
-                "get-started/access-control",
                 "get-started/key-concepts"
+              ]
+            },
+            {
+              "group": "Hardware Quickstart",
+              "pages": [
+                {
+                  "group": "SO101",
+                  "icon": "microchip",
+                  "pages": [
+                    "hardware/so101/index",
+                    "hardware/so101/get-started"
+                  ]
+                },
+                {
+                  "group": "UGV Beast",
+                  "icon": "robot",
+                  "pages": [
+                    "hardware/ugv/index",
+                    "hardware/ugv/get-started"
+                  ]
+                }
               ]
             },
             {
@@ -55,28 +76,8 @@
                     "use-cyberwave/ml-models/overview"
                   ]
                 },
-                "use-cyberwave/environment-editor"
-              ]
-            },
-            {
-              "group": "Hardware Quickstart",
-              "pages": [
-                {
-                  "group": "SO101",
-                  "icon": "microchip",
-                  "pages": [
-                    "hardware/so101/index",
-                    "hardware/so101/get-started"
-                  ]
-                },
-                {
-                  "group": "UGV Beast",
-                  "icon": "robot",
-                  "pages": [
-                    "hardware/ugv/index",
-                    "hardware/ugv/get-started"
-                  ]
-                }
+                "use-cyberwave/environment-editor",
+                "use-cyberwave/access-control"
               ]
             },
             {  
