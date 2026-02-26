@@ -6,19 +6,19 @@ icon: "bolt"
 
 import EarlyAccess from '/snippets/early-access.mdx';
 
-## Step 1: Create Your First Project
+## Phase 1: Connect Your Robot to a Digital Twin
+
+Set up your Cyberwave project, create a virtual environment, and link your physical robot to its digital twin. By the end of this phase, your hardware will be connected and mirrored in real time.
+
+### Step 1: Create Your First Project
 
 <EarlyAccess />
 
-Projects help you organize your robotics work by grouping related environments, assets, and simulations together.
+Projects help you organize your work by grouping related environments, assets, and simulations together.
 
-<AccordionGroup>
-  <Accordion title="What you'll do" icon="check-circle">
-    - Click "New Project" from the dashboard
-    - Give it a name like "My First Robot Project"
-    - Add a description of what you're building
-  </Accordion>
-</AccordionGroup>
+- Click "New Project" from the dashboard.
+- Give it a name like "My First Robot Project".
+- Add a description of what you're building. 
 
 <Card
   title="Go to Dashboard"
@@ -30,30 +30,22 @@ Projects help you organize your robotics work by grouping related environments, 
 
 ---
 
-## Step 2: Create an Environment
+### Step 2: Create an Environment
 
-Environments are 3D spaces where your robots live and interact. Think of them as virtual worlds for your simulations.
+Environments are 3D spaces where your robots live and interact. Think of them as virtual worlds for your physical setups.
 
-<AccordionGroup>
-  <Accordion title="What you'll do" icon="check-circle">
     - Click "New Environment" from your project
     - Pick a name for your environment
-  </Accordion>
-</AccordionGroup>
 
 ---
 
-## Step 3: Add Robot Assets
+### Step 3: Add Digital Twins
 
-Browse our catalog of pre-built robots or upload your own URDF files to bring your robots into the simulation.
+Browse our catalog of digital twins or upload your own URDF files to bring these virtual replicas of your robots into the environment.
 
-<AccordionGroup>
-  <Accordion title="What you'll do" icon="check-circle">
-    - Browse the asset catalog for robots
-    - Add robots to your environment
-    - Position and configure your robots
-  </Accordion>
-</AccordionGroup>
+- Browse the digital twin catalog
+- Select the specific robot's twin and add it to your environment
+- Position and configure it accordingly
 
 <Card
   title="Browse Catalog"
@@ -65,43 +57,63 @@ Browse our catalog of pre-built robots or upload your own URDF files to bring yo
 
 ---
 
-## Step 4: Control with Python SDK
+### Step 4: Install the Cyberwave CLI
 
-Take full control of your robots using our Python SDK. Write code to move robots, read sensors, and implement complex behaviors.
+If you're using an edge device (like Raspberry Pi, etc.), SSH into the edge device first. If you're not using an edge device and just your computer, open your terminal directly.
 
-```python
-# Install the Cyberwave SDK
-pip install cyberwave
+```bash
+# Install the CLI (one time setup)
+curl -fsSL "https://packages.buildkite.com/cyberwave/cyberwave-cli/gpgkey" | sudo gpg --dearmor -o /etc/apt/keyrings/cyberwave_cyberwave-cli-archive-keyring.gpg
 
-# Control your robot
-import cyberwave as cw
+# Configure the source
+echo -e "deb [signed-by=/etc/apt/keyrings/cyberwave_cyberwave-cli-archive-keyring.gpg] https://packages.buildkite.com/cyberwave/cyberwave-cli/any/ any main\ndeb-src [signed-by=/etc/apt/keyrings/cyberwave_cyberwave-cli-archive-keyring.gpg] https://packages.buildkite.com/cyberwave/cyberwave-cli/any/ any main" | sudo tee /etc/apt/sources.list.d/buildkite-cyberwave-cyberwave-cli.list > /dev/null
 
-# Connect to your robot
-robot = cw.twin("the-robot-studio/so101")
-
-# Move the robot to a position
-robot.move(x=1.0, y=0.0, z=0.5)
-robot.rotate(yaw=90)
-
-# Actuate the robot's joint to 30 degrees
-robot.joints.set("1", 30)
+# Install the CLI
+sudo apt update && sudo apt install cyberwave-cli
 ```
 
 ---
 
-## Step 5: Record and Create Datasets
+### Step 5: Install the Edge Core
+
+Edge core is the orchestrator of your Cyberwave edge components. It runs on edge devices (Raspberry Pi, Jetson, any Linux machine) and acts as the bridge between physical hardware and the Cyberwave cloud backend. Install the edge core using the following command:
+
+```bash
+# Use the CLI to complete the edge setup
+sudo cyberwave edge install
+```
+
+The `cyberwave-cli` will ask you to log in with your Cyberwave credentials and then will proceed installing the `cyberwave-edge-core` on your edge device.
+
+---
+
+### Step 6: Pair Hardware with Digital Twin
+
+Follow the instructions in your terminal to pair the physical hardware of your robot with the digital twin.
+
+1. Select an environment
+2. Select the digital twin
+3. The driver will be installed and configured as per the given robot
+
+<Check>
+Your robot is now connected to the digital twin! The first part of the quickstart is complete.
+</Check>
+
+---
+
+## Phase 2: Train and Deploy Models
+
+With your robot connected, record task demonstrations, build datasets, and train AI models in the cloud. Then deploy those models back to your robot for fully autonomous control.
+
+### Step 7: Record and Create Datasets
 
 Collect training data by recording your robot operations. These datasets will be used to train AI models for autonomous behavior.
 
-<AccordionGroup>
-  <Accordion title="What you'll do" icon="check-circle">
-    - Switch your environment to **Live Mode**
-    - Turn on the camera to capture video feed
-    - Start recording your robot operations
-    - Perform the task you want the robot to learn multiple times
-    - Stop recording when you have enough demonstrations
-  </Accordion>
-</AccordionGroup>
+- Switch your environment to **Live Mode**
+- Turn on the camera to capture video feed
+- Start recording your robot operations
+- Perform the task you want the robot to learn multiple times
+- Stop recording when you have enough demonstrations
 
 <Tip>
 Record 10-15 demonstrations of the same task with slight variations for better model training results.
@@ -109,37 +121,29 @@ Record 10-15 demonstrations of the same task with slight variations for better m
 
 ---
 
-## Step 6: Export Your Dataset
+### Step 8: Export Your Dataset
 
 Process your recordings into structured datasets ready for training.
 
-<AccordionGroup>
-  <Accordion title="What you'll do" icon="check-circle">
-    - Review your recorded sessions
-    - Trim recordings to create episodes (one per task completion)
-    - Select quality episodes for your dataset
-    - Export the dataset
-    - Access your dataset from the **Manage Datasets** tab
-  </Accordion>
-</AccordionGroup>
+- Review your recorded sessions
+- Trim recordings to create episodes (one per task completion)
+- Select quality episodes for your dataset
+- Export the dataset
+- Access your dataset from the **Manage Datasets** tab
 
 ---
 
-## Step 7: Train an AI Model
+### Step 9: Train an AI Model
 
 Use your dataset to train a machine learning model that can control your robot autonomously.
 
-<AccordionGroup>
-  <Accordion title="What you'll do" icon="check-circle">
-    - Navigate to **AI → Training** in your environment
-    - Click **New Training**
-    - Select your exported dataset
-    - Choose model architecture (e.g., VLA model)
-    - Configure training parameters or use defaults
-    - Click **Start Training**
-    - Monitor training progress in the Training tab
-  </Accordion>
-</AccordionGroup>
+- Navigate to **AI → Training** in your environment
+- Click **New Training**
+- Select your exported dataset
+- Choose model architecture (e.g., VLA model)
+- Configure training parameters or use defaults
+- Click **Start Training**
+- Monitor training progress in the Training tab
 
 ```python
 # Training happens in the cloud - no local setup required!
@@ -148,38 +152,30 @@ Use your dataset to train a machine learning model that can control your robot a
 
 ---
 
-## Step 8: Deploy Your Model
+### Step 10: Deploy Your Model
 
 Deploy your trained model as a controller policy to enable autonomous robot control.
 
-<AccordionGroup>
-  <Accordion title="What you'll do" icon="check-circle">
-    - Go to **AI → Deployments** in your environment
-    - Click **Deploy Model**
-    - Select your trained model
-    - Give your deployment a name
-    - Configure deployment settings
-    - Click **Deploy**
-  </Accordion>
-</AccordionGroup>
+- Go to **AI → Deployments** in your environment
+- Click **Deploy Model**
+- Select your trained model
+- Give your deployment a name
+- Configure deployment settings
+- Click **Deploy**
 
 ---
 
-## Step 9: Use AI to Control Your Robot
+### Step 11: Use AI to Control Your Robot
 
 Control your robot autonomously using natural language prompts powered by your deployed AI model.
 
-<AccordionGroup>
-  <Accordion title="What you'll do" icon="check-circle">
-    - Switch to **Edit Mode** in your environment
-    - Click **Assign Controller Policy** for your robot
-    - Select your deployed model
-    - Save the configuration
-    - Switch to **Live Mode**
-    - Enter a natural language prompt (e.g., "Pick up the object")
-    - Watch your robot execute the task autonomously!
-  </Accordion>
-</AccordionGroup>
+- Switch to **Edit Mode** in your environment
+- Click **Assign Controller Policy** for your robot
+- Select your deployed model
+- Save the configuration
+- Switch to **Live Mode**
+- Enter a natural language prompt (e.g., "Pick up the object")
+- Watch your robot execute the task autonomously!
 
 <Warning>
 Ensure the workspace is clear and the robot has safe operating space before running autonomous operations.
