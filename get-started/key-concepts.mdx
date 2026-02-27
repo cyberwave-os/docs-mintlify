@@ -4,240 +4,89 @@ description: "Everything you need to get started with Cyberwave."
 icon: "lightbulb"
 ---
 
-## Workspaces and Projects
+## Key Concepts
 
 ### Workspaces
 
-A **workspace** is your team's container for all robotics projects, environments, and resources. It provides:
-- Centralized authentication and API access
-- Team collaboration and permissions
-- Resource sharing across projects
-- Billing and usage tracking
-
-### Projects
-
-**Projects** organize related robotics work within a workspace. Each project contains:
-- **Environments:** 3D spaces where your robots operate
-- **Twins:** Digital representations of your physical robots
-- **Simulations:** Physics-based testing and validation scenarios
+A **workspace** is your team's container for all environments, workflows, and resources. It provides centralized authentication, team collaboration, permissions, resource sharing across environments, and billing and usage tracking.
 
 <Tip>
-Use separate projects for different robot deployments or development stages (e.g., "Development", "Testing", "Production").
+Use separate workspaces for different teams or deployment stages (e.g., "Development", "Testing", "Production").
 </Tip>
 
 ---
 
-## Environments
+### Environments
 
-An **environment** is a 3D space where your digital twins exist and interact. It can represent:
-- Physical facilities (warehouse, factory floor, outdoor space)
-- Testing scenarios
-- Simulation environments
-
-### Environment Editor
-
-The Environment Editor allows you to:
-- **Build 3D scenes** with drag-and-drop interface
-- **Add digital twins** from the catalog or custom assets
-- **Place sensors and cameras** for data collection
-- **Export to simulation** (e.g., MuJoCo) with one click
-- **Sync with real devices** for live monitoring
-
-<Info>
-Environments support both **Edit Mode** (for designing and configuring) and **Live Mode** (for real-time operation and monitoring).
-</Info>
+An **environment** is a 3D space where your digital twins exist and interact. It can represent physical facilities (warehouse, factory floor, outdoor space), testing scenarios, or simulation environments. Environments support both **Edit Mode** (for designing and configuring) and **Live Mode** (for real-time operation and monitoring).
 
 ---
 
-## Digital Twins
+### Digital Twins
 
-A **digital twin** is a virtual replica of a physical robot that mirrors its behavior, capabilities, and state in real-time. It serves as a bridge between physical and digital worlds.
-
-### Key Components
-
-- **3D Model:** Accurate geometric representation
-- **Physics Simulation:** Realistic movement and dynamics
-- **Sensor Integration:** Virtual sensors matching physical setup
-- **Real-time Sync:** Bidirectional communication with physical robots
+A **digital twin** is a virtual replica of a physical robot that mirrors its behavior, capabilities, and state in real time. It includes an accurate 3D model, physics simulation, virtual sensors matching the physical setup, and bidirectional real-time sync with the physical robot.
 
 ---
 
-## Asset Catalog
+### Edge Node
 
-The **Asset Catalog** is Cyberwave's library of pre-configured robot assets. Each asset includes:
-- **Registry ID:** Unique identifier in `vendor/model` format (e.g., `the-robot-studio/so101`)
-- **URDF File:** Robot description with joints and links
-- **3D Model:** GLB mesh for visualization
-- **Metadata:** Category, manufacturer, version, capabilities
-- **Capabilities:** Sensors, grippers, flight control, etc.
+An **edge node** is a physical compute unit deployed at the periphery of the Cyberwave platform (e.g., industrial PC, embedded computer, Raspberry Pi), typically co-located with one or more robots. Edge nodes operate under strict latency, bandwidth, and reliability constraints and are designed to function even under degraded connectivity.
 
-### Asset Types
-
-- **Robot Arms:** Joint control, inverse kinematics, gripper operations
-- **Mobile Robots:** Position control, navigation
-- **Quadrupeds:** Leg joint control, gait patterns, camera streaming
-- **Drones:** Takeoff, landing, flight control
+The edge runtime is a hybrid system: an **Edge Core** running as a host-level service for identity, authentication, and coordination, and a set of **Runtime Services** running in isolated Docker containers for modular, vendor-isolated workloads like hardware drivers and inference engines.
 
 ---
 
-## ML Models
+### Asset Catalog
 
-**ML Models** in Cyberwave are AI models registered in your workspace that can process various inputs and integrate with robotics workflows.
-
-### Model Capabilities
-
-Each model specifies what inputs it can process:
-
-| Capability | Description | Use Cases |
-|------------|-------------|-----------|
-| `can_take_video_as_input` | Process video streams | Surveillance, teleoperation |
-| `can_take_image_as_input` | Process single images | Quality inspection, object detection |
-| `can_take_audio_as_input` | Process audio data | Voice commands, anomaly detection |
-| `can_take_text_as_input` | Process text prompts | Natural language commands (VLM) |
-| `can_take_action_as_input` | Process robot actions | Behavior cloning, RL policies |
-
-### Training and Deployment
-
-Cyberwave provides an end-to-end ML pipeline:
-1. **Collect data** through teleoperation and recording
-2. **Create datasets** from recorded episodes
-3. **Train models** using VLM or custom architectures
-4. **Deploy models** as controller policies
-5. **Execute autonomously** with natural language prompts
+The **Asset Catalog** is Cyberwave's library of pre-configured robot assets. Each asset includes a unique registry ID (e.g., `the-robot-studio/so101`), a URDF file describing joints and links, a 3D model for visualization, and metadata about capabilities. Asset types include robot arms, mobile robots, quadrupeds, and drones.
 
 ---
 
-## Workflows
+### ML Models
 
-**Workflows** let you create automated sequences of robot operations through visual orchestration. Connect nodes to build complex behaviors without writing procedural code.
-
-### Workflow Components
-
-
-### Execution
-
-Workflows can be triggered by:
-- **Manual:** On-demand execution
-- **Schedule:** Run at specific times (cron)
-- **Events:** Run when sensor data matches conditions
-- **API:** Trigger from external systems
-
-<Info>
-Workflows run on Cyberwave's cloud infrastructure, ensuring reliable execution even when your local machine is offline.
-</Info>
+**ML Models** are AI models registered in your workspace that can process various inputs (video, images, audio, text, actions) and integrate with robotics workflows. Cyberwave provides an end-to-end pipeline: collect data through teleoperation, create datasets, train models, deploy as controller policies, and execute autonomously.
 
 ---
-
-## Controller Policies
-
-A **controller policy** is a control mechanism that determines how a robot should act. Cyberwave supports multiple types of controllers:
-
-### Types of Controllers
-
-<CardGroup cols={2}>
-  <Card title="Manual Control" icon="hand">
-    Direct control through dashboard or SDK
-  </Card>
-  
-  <Card title="Teleoperation" icon="arrows-left-right">
-    Leader arm controls follower arm in real-time
-  </Card>
-  
-  <Card title="Remote Operation" icon="globe">
-    Control from Cyberwave dashboard without leader arm
-  </Card>
-  
-  <Card title="AI Models (VLM)" icon="brain">
-    Trained models execute tasks from natural language prompts
-  </Card>
-</CardGroup>
-
-### Assigning Controller Policies
-
-In Edit Mode:
-1. Click **Assign Controller Policy**
-2. Select your deployed model or controller type
-3. Save configuration
-4. Switch to Live Mode to execute
-
----
-
-## Teleoperation vs Remote Operation
-
-### Teleoperation
-
-**Teleoperation** uses a physical leader arm to control a follower arm:
-- Requires both leader and follower arms
-- Real-time joint mirroring
-- Ideal for data collection and demonstrations
-- Used for creating training datasets
-
-```bash
-so101-teleoperate \
-    --twin-uuid YOUR_SO101_TWIN_UUID \
-    --leader-port /dev/tty.usbmodem123 \
-    --follower-port /dev/tty.usbmodem456 \
-    --camera-twin-uuid YOUR_CAMERA_TWIN_UUID \
-    --fps 30
-```
-
-### Remote Operation
-
-**Remote operation** controls the follower arm directly from Cyberwave:
-- Only requires the follower arm
-- Control through dashboard interface
-- Manual joint control or scripted movements
-- Useful for testing and calibration
-
-```bash
-so101-remoteoperate \
-    --follower-port /dev/tty.usbmodem456 \
-    --twin-uuid YOUR_SO101_TWIN_UUID \
-    --token YOUR_CYBERWAVE_TOKEN
-```
-
----
-
-## Datasets and Episodes
 
 ### Datasets
 
-A **dataset** is a collection of recorded robot operations used for training ML models. Each dataset contains:
-- Multiple episodes
-- Joint positions and movements over time
-- Camera video feeds
-- Timing and sequence data
-
-### Episodes
-
-An **episode** is a single recording of the robot completing a task from start to finish. Episodes should:
-- Demonstrate one complete task execution
-- Be consistent in initial and final states
-- Focus on specific behaviors
-- Remove setup time and failed attempts
-
-### Creating Datasets
-
-1. **Record** operations during teleoperation in Live Mode
-2. **Trim** recordings into discrete episodes
-3. **Select** quality episodes for the dataset
-4. **Export** as a structured dataset
-5. **Train** ML models using the dataset
-
-<Tip>
-Record 10-15 demonstrations of the same task with slight variations to create robust datasets for better model generalization.
-</Tip>
+A **dataset** is a collection of recorded robot operations used for training ML models, containing multiple episodes with joint positions, camera feeds, and timing data.
 
 ---
 
-## Authentication
+### Episodes
 
-Cyberwave uses **API keys** or **tokens** to authenticate requests. You'll need credentials to:
-- Connect the Python SDK
-- Make REST API calls
-- Establish MQTT connections
+An **episode** is a single recording of the robot completing a task from start to finish. Record 10–15 demonstrations of the same task with slight variations for better model generalisation.
 
-### Environment Variables
+---
+
+### Workflows
+
+**Workflows** let you create automated sequences of robot operations through visual orchestration. Connect nodes to build complex behaviors without writing procedural code. Workflows can be triggered manually, on a schedule, by events, or via the API, and run on Cyberwave's cloud infrastructure.
+
+---
+
+### Controller Policies
+
+A **controller policy** determines how a robot should act. Cyberwave supports **manual control** (direct input through the dashboard or SDK), **teleoperation** (a physical leader arm controlling a follower arm in real time), **remote operation** (controlling the robot from the Cyberwave dashboard without a leader arm), and **AI models** (trained models that execute tasks from natural language prompts).
+
+---
+
+### Teleoperation
+
+**Teleoperation** uses a physical leader arm to control a follower arm in real time. It requires both a leader and follower arm and is ideal for data collection and creating training datasets.
+
+---
+
+### Remote Operation
+
+**Remote operation** controls the follower arm directly from the Cyberwave dashboard — only requires the follower arm. Useful for testing, calibration, and manual joint control without needing a physical leader arm.
+
+---
+
+### Authentication
+
+Cyberwave uses **API keys** or **tokens** to authenticate requests for the Python SDK, REST API calls, and MQTT connections.
 
 ```bash
 CYBERWAVE_API_KEY=cw_live_xxxxxxxxxxxxxxxxxxxx
@@ -254,8 +103,6 @@ Keep your API keys secure. Never commit them to version control or share them pu
 ---
 
 ## Next Steps
-
-Now that you understand the key concepts, you're ready to start building with Cyberwave:
 
 <CardGroup cols={3}>
   <Card
