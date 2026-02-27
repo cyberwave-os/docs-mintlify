@@ -6,186 +6,129 @@ icon: "sitemap"
 
 ## Overview
 
-Cyberwave uses a hierarchical data model that organizes your data from high-level organizational structure down to individual assets and simulations. Understanding this hierarchy is essential for effective team collaboration and project management.
-
----
+Cyberwave organises resources in a simple top-down hierarchy: **Organization → Workspace → Environment**. Each level scopes access, permissions, and resource isolation so teams can collaborate without stepping on each other.
 
 ## Data Hierarchy
 
+| Level | Contains | Description |
+|-------|----------|-------------|
+| **Organization** | Workspaces | Your company or team, the top-level account that owns all resources |
+| **Workspace** | Environments, Workflows | A shared space for a team or department to collaborate |
+| **Environment** | Digital Twins, Datasets, Assets | A 3D space that mirrors your real-world robot setup |
+
 ```mermaid
 graph TD
-    A[Organization] --> B[Workspace 1]
-    A --> C[Workspace 2]
-    
-    B --> D[Projects]
-    B --> E[Workflows]
-    
-    D --> F[Project 1]
-    D --> G[Project 2]
-    
-    F --> H[Environments]
-    
-    H --> I[Environment 1]
-    H --> J[Environment 2]
-    
-    I --> K[Digital Twins]
-    I --> L[Simulations]
-    I --> M[Datasets]
-    I --> N[Assets]
-    
-    style A fill:#e1f5ff
-    style B fill:#fff4e6
-    style C fill:#fff4e6
-    style F fill:#e8f5e9
-    style I fill:#f3e5f5
+    A[Organization] --> B[Workspace]
+    B --> C[Environment]
+    B --> D[Workflows]
+    C --> E[Digital Twins]
+    C --> F[Datasets]
+    C --> G[Assets]
+
+    style A fill:#d0f0fa,stroke:#7ec8e3,color:#333
+    style B fill:#e0f7fa,stroke:#80deea,color:#333
+    style C fill:#f3e5f5,stroke:#ce93d8,color:#333
+    style D fill:#fff4e6,stroke:#ffb74d,color:#333
+    style E fill:#e8f5e9,stroke:#81c784,color:#333
+    style F fill:#e8f5e9,stroke:#81c784,color:#333
+    style G fill:#e8f5e9,stroke:#81c784,color:#333
 ```
 
 ---
 
-## Hierarchy Levels
+### Organization
 
-### 1. Organization
+The top-level entity representing your company or team. All users, workspaces, and billing are managed here.
 
-The **Organization** is the top-level entity representing your company or team.
-
-**Purpose:**
-- Central management of team members
-- Billing and subscription management
+- Centralised team and member management
+- Billing, subscriptions, and usage tracking
 - Organization-wide settings and policies
 
-**Key Features:**
-- Add and manage team members
-- Control organization-level permissions
-
 ---
 
-### 2. Workspaces
+### Workspace
 
-**Workspaces** are created within an Organization and serve as containers for related projects and workflows.
+A workspace groups related environments and workflows under a shared context, typically scoped to a team, department, or deployment stage.
 
-**Purpose:**
-- Organize work by department, team, or use case
-- Isolate resources and permissions
-- Group related projects and workflows
-
-**Key Features:**
 - Multiple workspaces per organization
-- Add existing organization members to the workspace
-- Invite external users by email (they'll be added to both org and workspace)
+- Workspace-level member access and permissions
+- Invite external collaborators by email
 
 <Tip>
-Create separate workspaces for different teams (e.g., "Research", "Production", "QA") or deployment stages (e.g., "Development", "Staging", "Production").
+Create separate workspaces for different teams (e.g., "Research", "Production", "QA") or stages (e.g., "Development", "Staging").
 </Tip>
 
-**Workspace Contains:**
-
-```
-Workspace
-├── Projects
-│   ├── Project 1
-│   ├── Project 2
-│   └── Project N
-└── Workflows
-    ├── Workflow 1
-    ├── Workflow 2
-    └── Workflow N
-```
-
----
-
-### 3. Projects
-
-**Projects** exist within workspaces and organize environments, digital twins, and simulations for specific initiatives or deployments.
-
-**Purpose:**
-- Group related data groups
-- Manage environments and their assets
-- Organize digital twins and simulations
-
-**Key Features:**
-- Multiple projects per workspace
-- Project-level sharing and permissions
-- Isolated environments and resources
-
-**Project Contains:**
-- **Environments:** 3D spaces where robots operate
-- **Digital Twins:** Virtual representations of physical robots
-- **Simulations:** Physics-based testing scenarios
-
----
-
-### 4. Environments
-
-**Environments** are created within projects and represent 3D spaces where your digital twins exist and interact.
-
-**Purpose:**
-- Define the physical or simulated space for robots
-- Configure sensors, cameras, and objects
-- Set up testing and operational scenarios
-
-**Key Features:**
-- Multiple environments per project
-- **Edit Mode** for designing and configuring
-- **Live Mode** for real-time operation
-
-**Environment Contains:**
-- **Digital Twins:** Virtual replicas of robots
-- **Simulations:** Physics-enabled test scenarios
-- **Datasets:** Recorded operations and telemetry
-- **Assets:** 3D objects, sensors, cameras
-
----
-
-### 5. Workflows
-
-**Workflows** exist at the workspace level and can operate across multiple projects.
-
-**Purpose:**
-- Automate robot operations
-- Create reusable sequences of actions
-- Orchestrate complex multi-robot behaviors
-
-**Key Features:**
-- Visual node-based editor
-- Trigger-based execution (manual, scheduled, events)
-- Cross-project automation capabilities
-
 <Info>
-Unlike projects which contain environments and twins, workflows exist at the workspace level, allowing them to orchestrate operations across multiple projects and environments.
+Use **Folders** to organise related environments within a workspace. Folders are an optional grouping mechanism; they help keep things tidy as your workspace grows.
 </Info>
 
 ---
 
-## Example Scenario
+### Environment
 
-### Research Team
+An environment is a 3D virtual space that mirrors your real-world robot setup. It's where your digital twins live, sensors stream data, and controllers send commands — all in real time.
+
+- Multiple environments per workspace
+- **Edit Mode** for designing and configuring the space
+- **Live Mode** for real-time operation and data streaming
+
+**An environment contains:**
+
+<CardGroup cols={2}>
+  <Card title="Digital Twins" icon="robot">
+    Virtual replicas of physical robots — mirroring structure, joints, sensors, and behavior in real time.
+  </Card>
+
+  <Card title="Datasets" icon="database">
+    Recorded operations and telemetry data collected during robot demonstrations.
+  </Card>
+
+  <Card title="Assets" icon="cube">
+    3D objects, sensors, cameras, and other elements placed in the environment.
+  </Card>
+
+  <Card title="Simulations" icon="flask">
+    Physics-enabled test scenarios for reproducible testing and validation.
+  </Card>
+</CardGroup>
+
+---
+
+### Workflows
+
+Workflows exist at the workspace level and can orchestrate operations across multiple environments.
+
+- Visual node-based editor for building automation sequences
+- Trigger-based execution — manual, scheduled, or event-driven
+- Cross-environment automation capabilities
+
+---
+
+## Example
 
 ```
 Organization: RoboTech Industries
 └── Workspace: Research & Development
-    ├── Team: 5 researchers + 2 interns
-    ├── Projects:
-    │   ├── "Manipulation Research"
-    │   │   └── Environments:
-    │   │       ├── "Lab Setup A"
-    │   │       └── "Lab Setup B"
-    │   └── "Navigation Experiments"
-    │       └── Environments:
-    │           └── "Test Track"
+    ├── Environments:
+    │   ├── "Lab Setup A"
+    │   ├── "Lab Setup B"
+    │   └── "Test Track"
     └── Workflows:
         ├── "Data Collection Pipeline"
         └── "Model Training Workflow"
 ```
 
+---
+
 ## Next Steps
 
 <CardGroup cols={3}>
   <Card
-    title="Setup Guide"
-    icon="wrench"
-    href="/use-cyberwave/setup-cyberwave"
+    title="Architecture"
+    icon="diagram-project"
+    href="/get-started/architecture"
   >
-    Configure your API credentials
+    Understand the system architecture
   </Card>
   
   <Card
@@ -201,6 +144,6 @@ Organization: RoboTech Industries
     icon="rocket"
     href="/get-started/quickstart"
   >
-    Create your first project
+    Get started with your first environment
   </Card>
 </CardGroup>
