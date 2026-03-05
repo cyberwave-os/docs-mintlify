@@ -61,27 +61,15 @@ The Cyberwave CLI is the command-line tool used to authenticate, pair, and manag
 
     ```bash
     # Install the CLI (one time setup)
-    curl -fsSL "https://packages.buildkite.com/cyberwave/cyberwave-cli/gpgkey" | sudo gpg --dearmor -o /etc/apt/keyrings/cyberwave_cyberwave-cli-archive-keyring.gpg
-
-    # Configure the source
-    echo -e "deb [signed-by=/etc/apt/keyrings/cyberwave_cyberwave-cli-archive-keyring.gpg] https://packages.buildkite.com/cyberwave/cyberwave-cli/any/ any main\ndeb-src [signed-by=/etc/apt/keyrings/cyberwave_cyberwave-cli-archive-keyring.gpg] https://packages.buildkite.com/cyberwave/cyberwave-cli/any/ any main" | sudo tee /etc/apt/sources.list.d/buildkite-cyberwave-cyberwave-cli.list > /dev/null
-
-    # Install the CLI
-    sudo apt update && sudo apt install cyberwave-cli
+    curl -fsSL https://cyberwave.com/install.sh | bash
     ```
   </Tab>
   <Tab title="Local Computer">
     Open your terminal and run the following commands:
 
     ```bash
-    # Install the CLI (one time setup)
-    curl -fsSL "https://packages.buildkite.com/cyberwave/cyberwave-cli/gpgkey" | sudo gpg --dearmor -o /etc/apt/keyrings/cyberwave_cyberwave-cli-archive-keyring.gpg
-
-    # Configure the source
-    echo -e "deb [signed-by=/etc/apt/keyrings/cyberwave_cyberwave-cli-archive-keyring.gpg] https://packages.buildkite.com/cyberwave/cyberwave-cli/any/ any main\ndeb-src [signed-by=/etc/apt/keyrings/cyberwave_cyberwave-cli-archive-keyring.gpg] https://packages.buildkite.com/cyberwave/cyberwave-cli/any/ any main" | sudo tee /etc/apt/sources.list.d/buildkite-cyberwave-cyberwave-cli.list > /dev/null
-
-    # Install the CLI
-    sudo apt update && sudo apt install cyberwave-cli
+     # Install the CLI (one time setup)
+    curl -fsSL https://cyberwave.com/install.sh | bash
     ```
   </Tab>
 </Tabs>
@@ -113,3 +101,31 @@ Your physical robot is now paired with its digital twin and syncing in real time
 </Check>
 
 ---
+
+## Next Steps
+
+<CardGroup cols={3}>
+  <Card
+    title="Architecture"
+    icon="diagram-project"
+    href="/get-started/architecture"
+  >
+    Understand the system architecture
+  </Card>
+  
+  <Card
+    title="SO101 Quickstart"
+    icon="microchip"
+    href="/hardware/so101/get-started"
+  >
+    Get started with the SO101 robot arm
+  </Card>
+  
+  <Card
+    title="UGV Beast Quickstart"
+    icon="robot"
+    href="/hardware/ugv/get-started"
+  >
+    Get started with the UGV Beast
+  </Card>
+</CardGroup>

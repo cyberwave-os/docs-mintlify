@@ -32,8 +32,6 @@ A **digital twin** is a virtual replica of a physical robot that mirrors its beh
 
 An **edge node** is a physical compute unit deployed at the periphery of the Cyberwave platform (e.g., industrial PC, embedded computer, Raspberry Pi), typically co-located with one or more robots. Edge nodes operate under strict latency, bandwidth, and reliability constraints and are designed to function even under degraded connectivity.
 
-The edge runtime is a hybrid system: an **Edge Core** running as a host-level service for identity, authentication, and coordination, and a set of **Runtime Services** running in isolated Docker containers for modular, vendor-isolated workloads like hardware drivers and inference engines.
-
 ---
 
 ### Asset Catalog
@@ -80,7 +78,7 @@ A **controller policy** determines how a robot should act. Cyberwave supports **
 
 ### Remote Operation
 
-**Remote operation** controls the follower arm directly from the Cyberwave dashboard — only requires the follower arm. Useful for testing, calibration, and manual joint control without needing a physical leader arm.
+**Remote operation** controls the follower arm directly from the Cyberwave dashboard, only requires the follower arm. Useful for testing, calibration, and manual joint control without needing a physical leader arm.
 
 ---
 
@@ -110,46 +108,22 @@ Keep your API keys secure. Never commit them to version control or share them pu
     icon="rocket"
     href="/get-started/quickstart"
   >
-    Create your first digital twin in minutes
+    Connect your robot to a digital twin
   </Card>
   
   <Card
-    title="Setup Cyberwave"
-    icon="wrench"
-    href="/use-cyberwave/setup-cyberwave"
-  >
-    Configure API credentials and environment
-  </Card>
-  
-  <Card
-    title="Python SDK"
-    icon="python"
-    href="/sdks/python-sdk"
-  >
-    Full SDK documentation and examples
-  </Card>
-  
-  <Card
-    title="Browse Catalog"
-    icon="book-bookmark"
-    href="https://cyberwave.com/catalog"
-  >
-    Explore pre-built robot assets
-  </Card>
-  
-  <Card
-    title="Tutorials"
-    icon="graduation-cap"
-    href="/tutorials/edge-to-cloud-vlm"
-  >
-    Step-by-step guides and examples
-  </Card>
-  
-  <Card
-    title="Hardware Setup"
+    title="SO101 Quickstart"
     icon="microchip"
-    href="/hardware/so101"
+    href="/hardware/so101/get-started"
   >
-    Connect physical robots to Cyberwave
+    Get started with the SO101 robot arm
+  </Card>
+  
+  <Card
+    title="UGV Beast Quickstart"
+    icon="robot"
+    href="/hardware/ugv/get-started"
+  >
+    Get started with the UGV Beast
   </Card>
 </CardGroup>
