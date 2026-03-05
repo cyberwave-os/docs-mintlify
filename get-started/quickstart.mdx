@@ -10,31 +10,33 @@ import EarlyAccess from '/snippets/early-access.mdx';
 
 This guide walks you through connecting your physical robot to its digital twin on Cyberwave. By the end, you will have:
 
-- Set up a virtual environment and added a digital twin of your robot
-- Installed the Cyberwave edge stack on your device
+- Set up a [virtual environment](/get-started/key-concepts#environments) and added a [digital twin](/get-started/key-concepts#digital-twins) of your robot
+- Installed the [Cyberwave edge stack](/get-started/architecture#cyberwave-edge) on your device
 - Established a real-time link between your physical hardware and the digital twin
-- Assigned a controller to operate your robot and digital twin directly from the platform
 
 <EarlyAccess />
 
 ### Step 1: Create an Environment
 
-An **environment** is a 3D virtual space that mirrors your real-world robot setup. It's where your digital twins live, sensors stream data, and controllers send commands, all in real time.
+An **[environment](/get-started/key-concepts#environments)** is a 3D virtual space that mirrors your real-world robot setup. It's where your digital twins live, sensors stream data, and controllers send commands, all in real time.
 
 Follow these steps to create a new environment: 
-1. Go to the Cyberwave dashboard and click on **Create** -> **New Environment**. 
+1. Go to the Cyberwave dashboard and click on **New Environment**. 
 2. Give your environment a **name** and **description**. 
+
+![](/images/new-env.png)
 
 ---
 
 ### Step 2: Add Digital Twins
-A digital twin is a virtual replica of your physical robot, it mirrors the robot's structure, joints, sensors, and behavior in real time within your environment.
+A [digital twin](/get-started/key-concepts#digital-twins) is a virtual replica of your physical robot, it mirrors the robot's structure, joints, sensors, and behavior in real time within your environment.
 
 You can add a digital twin from the Cyberwave catalog or import your own URDF file: 
 1. Inside your environment, click **Add from Catalog** in the left panel.
 2. Browse the catalog, find your robot's digital twin, and add it to the environment.
 3. Position the twin within your environment to match your physical setup.
 
+![](/images/digital-twins-catalog.png)
 
 <Card
   title="Browse Catalog"
@@ -78,7 +80,7 @@ The Cyberwave CLI is the command-line tool used to authenticate, pair, and manag
 
 ### Step 4: Install the Edge Core
 
-The Edge Core is the orchestrator of your Cyberwave edge components. It runs on edge devices (Raspberry Pi, Jetson, any Linux machine) and acts as the bridge between your physical hardware and the Cyberwave cloud backend.
+The [Edge Core](/get-started/architecture#cyberwave-edge) is the orchestrator of your Cyberwave edge components. It runs on edge devices (Raspberry Pi, Jetson, any Linux machine) and acts as the bridge between your physical hardware and the Cyberwave cloud backend.
 
 ```bash
 sudo cyberwave edge install
