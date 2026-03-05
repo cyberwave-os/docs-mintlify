@@ -1,0 +1,129 @@
+---
+title: "MCP Server"
+description: "Use the CYBERWAVE MCP server from coding agents with safe defaults."
+icon: "plug"
+---
+
+## Overview
+
+`cyberwave-mcp-server` exposes CYBERWAVE capabilities to MCP-compatible agents with:
+
+- strict typed tool schemas
+- preview-first action tools (`execute: false` by default)
+- uniform typed errors
+- structured per-tool request logging
+
+## Tool surface (v1)
+
+### Discovery
+
+- `cw_list_workspaces`
+- `cw_list_projects`
+- `cw_list_environments`
+- `cw_list_twins`
+
+### Twin reads
+
+- `cw_get_twin`
+- `cw_get_joint_states`
+- `cw_get_schema`
+
+### Twin edits
+
+- `cw_edit_position`
+- `cw_edit_rotation`
+- `cw_set_joint`
+
+### Motion and navigation
+
+- `cw_motion_pose`
+- `cw_navigation_goto`
+- `cw_navigation_stop`
+
+## Resources (v1)
+
+- `cyberwave://env/{environment_uuid}/twins`
+- `cyberwave://twin/{twin_uuid}/schema`
+- `cyberwave://twin/{twin_uuid}/state`
+
+## Prompts (v1)
+
+- `safe_navigation`
+- `safe_manipulation`
+- `inspect_then_act`
+
+## Safety contract
+
+- Action tools default to `execute: false`.
+- Explicit `execute: true` is required for real execution.
+- Hard limits are applied for:
+  - position delta
+  - navigation distance
+  - joint delta
+- Ambiguous action targets are rejected with structured errors.
+
+Error format:
+
+```json
+{
+  "status": "error",
+  "code": "AMBIGUOUS_TARGET",
+  "retry_safe": false,
+  "details": "Twin target is ambiguous. Provide twin_uuid ..."
+}
+```
+
+## Install and run
+
+```bash
+cd cyberwave-clis/cyberwave-mcp-server
+pip install -e .
+export CYBERWAVE_API_KEY=your_api_key
+cyberwave-mcp-server
+```
+
+Optional config:
+
+- `CYBERWAVE_BASE_URL`
+- `CYBERWAVE_WORKSPACE_ID`
+- `CYBERWAVE_ENVIRONMENT_ID`
+- `CYBERWAVE_MCP_LOG_LEVEL`
+
+## Client configuration snippets
+
+### Cursor
+
+```json
+{
+  "mcpServers": {
+    "cyberwave": {
+      "command": "cyberwave-mcp-server",
+      "env": {
+        "CYBERWAVE_API_KEY": "YOUR_API_KEY"
+      }
+    }
+  }
+}
+```
+
+### Claude Desktop
+
+```json
+{
+  "mcpServers": {
+    "cyberwave": {
+      "command": "cyberwave-mcp-server",
+      "env": {
+        "CYBERWAVE_API_KEY": "YOUR_API_KEY"
+      }
+    }
+  }
+}
+```
+
+### Windsurf
+
+Use the same MCP command/env values:
+
+- command: `cyberwave-mcp-server`
+- env: `CYBERWAVE_API_KEY=YOUR_API_KEY`

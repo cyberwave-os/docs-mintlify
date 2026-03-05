@@ -1,0 +1,62 @@
+---
+title: "Agent Integration"
+description: "Agent-native CYBERWAVE integration assets and best practices."
+icon: "robot"
+---
+
+## Agent-native CYBERWAVE
+
+CYBERWAVE now exposes a machine-first context surface for coding agents (Cursor, Claude Code, Windsurf, and custom orchestrators).
+
+## Machine-readable entry points
+
+- `llms.txt`: `https://cyberwave.com/llms.txt`
+- Agent template: `https://cyberwave.com/agent.md`
+- MCP server guide: `/sdks/mcp-server`
+- Skill snippets:
+  - `https://cyberwave.com/.well-known/cyberwave/skills/navigation.md`
+  - `https://cyberwave.com/.well-known/cyberwave/skills/manipulation.md`
+  - `https://cyberwave.com/.well-known/cyberwave/skills/safety.md`
+  - `https://cyberwave.com/.well-known/cyberwave/skills/observability.md`
+
+## What agents should load first
+
+1. [API overview](/api-reference/overview)
+2. [REST API reference](/api-reference/rest/DefaultApi)
+3. [MQTT API reference](/api-reference/mqtt/main)
+4. [Python SDK](/sdks/python-sdk)
+
+## Type safety expectations
+
+- REST docs are schema-driven (request and response models are documented in Mintlify API pages).
+- Python SDK public APIs are type hinted and wrap generated schema models.
+- Agent workflows should prefer typed SDK methods and model-backed payloads instead of ad-hoc JSON.
+
+## Dry-run and low-risk planning
+
+For motion APIs, use preview mode when available:
+
+```python
+# Preview a keyframe without executing it
+result = twin.motion.asset.pose("home", preview=True, sync=True)
+```
+
+Then execute only after the preview result is acceptable.
+
+## Progressive disclosure with skills
+
+Load only one skill at a time to keep context windows small:
+
+- `navigation.md`: route/goto/path task execution
+- `manipulation.md`: joints, grippers, and motion assets
+- `safety.md`: preflight checks and failure handling
+- `observability.md`: traceable loops and reproducible logs
+
+## Recommended response contract for agent loops
+
+When building custom tool wrappers around CYBERWAVE calls:
+
+- Return structured JSON objects.
+- Include explicit status fields (`ok`, `error`, `retry_safe`).
+- Surface actionable error codes, not only human text.
+- Include request identifiers and command context for debugging.

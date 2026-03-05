@@ -1,0 +1,36 @@
+---
+title: "Writing Edge Drivers"
+description: "Edge Drivers are the best way to connect any hardware to Cyberwave"
+---
+
+# Writing Edge drivers
+
+> This page is only a stub for now. We will improve it over time.
+
+A Cyberwave driver is a Docker image that is capable of interacting with the device's hardware, sending and getting data from the Cyberwave backend. Every time the core starts a driver Docker image, the `core` does so by defining the following environment variables:
+
+- `CYBERWAVE_TWIN_UUID`
+- `CYBERWAVE_API_KEY`
+- `CYBERWAVE_TWIN_JSON_FILE`
+
+The Cyberwave twin JSON file is an absolute path to a JSON file. The JSON file is writable by the driver. It represents a complete twin object as well as its complete asset object. It represented in the same way that is it in the API, including the whole metadata field, schema and abilities. [Twin reference here](https://docs.cyberwave.com/api-reference/rest/TwinSchema), [Asset reference here](https://docs.cyberwave.com/api-reference/rest/AssetSchema).
+
+As a driver, you can change the JSON file. The core will, when connectivity is present, sync it with the one in the backend.
+
+When writing drivers, use the official Cyberwave SDK to communicate with the backend, as it will abstract a bunch of complexity in the MQTT handshake, REST API authentication, and more.
+
+Once you wrote a driver, you can add its details in the twin's metadata (or the asset's metadata if you own it). Right now the edit is manual and directly in the metadata. To edit the metadata, you can switch to Advanced editing in the environment or in the asset editing.
+
+> Note: If you change the metadata on the asset, every twin created out of that asset from that moment on will have the same metadata as the asset, as the starting point
+
+The driver object in the metadata looks like this:
+
+```json
+"drivers": {
+    "default": {
+        "docker_image":"cyberwaveos/so101-driver", // this is either a public image on the Docker hub or on your own registry
+        "version": "0.0.1", // this field is optional
+        "params" : ["--network local", "--add-host host.docker.internal:host-gateway"] // this is also optional
+    }
+}
+```

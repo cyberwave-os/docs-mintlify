@@ -1,5 +1,6 @@
 # TwinCreateSchema
 
+Schema for creating and updating a twin.
 
 ## Properties
 
@@ -9,18 +10,28 @@ Name | Type | Description | Notes
 **description** | **str** |  | [optional] 
 **asset_uuid** | **str** |  | [optional] 
 **environment_uuid** | **str** |  | [optional] 
-**position_x** | **float** |  | [optional] [default to 0.0]
-**position_y** | **float** |  | [optional] [default to 0.0]
-**position_z** | **float** |  | [optional] [default to 0.0]
-**rotation_w** | **float** |  | [optional] [default to 1.0]
-**rotation_x** | **float** |  | [optional] [default to 0.0]
-**rotation_y** | **float** |  | [optional] [default to 0.0]
-**rotation_z** | **float** |  | [optional] [default to 0.0]
-**scale_x** | **float** |  | [optional] [default to 1.0]
-**scale_y** | **float** |  | [optional] [default to 1.0]
-**scale_z** | **float** |  | [optional] [default to 1.0]
+**position_x** | **float** |  | [optional] 
+**position_y** | **float** |  | [optional] 
+**position_z** | **float** |  | [optional] 
+**rotation_w** | **float** |  | [optional] 
+**rotation_x** | **float** |  | [optional] 
+**rotation_y** | **float** |  | [optional] 
+**rotation_z** | **float** |  | [optional] 
+**scale_x** | **float** |  | [optional] 
+**scale_y** | **float** |  | [optional] 
+**scale_z** | **float** |  | [optional] 
+**kinematics_override** | **Dict[str, object]** |  | [optional] 
 **joint_calibration** | **Dict[str, object]** |  | [optional] 
 **metadata** | **Dict[str, object]** |  | [optional] 
-**capabilities** | **Dict[str, object]** |  | [optional] 
 **controller_policy_uuid** | **str** |  | [optional] 
+**attach_to_twin_uuid** | **str** |  | [optional] 
+**attach_to_link** | **str** |  | [optional] 
+**attach_offset_x** | **float** |  | [optional] 
+**attach_offset_y** | **float** |  | [optional] 
+**attach_offset_z** | **float** |  | [optional] 
+**attach_offset_rotation_w** | **float** |  | [optional] 
+**attach_offset_rotation_x** | **float** |  | [optional] 
+**attach_offset_rotation_y** | **float** |  | [optional] 
+**attach_offset_rotation_z** | **float** |  | [optional] 
+**fixed_base** | **bool** |  | [optional] 
 

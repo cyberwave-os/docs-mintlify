@@ -1,0 +1,20 @@
+---
+title: "Large asset uploads"
+description: "Stub guide for uploading large catalog assets without request size errors"
+---
+
+## Overview
+
+This page documents the large upload flow used when an asset file is too large for standard multipart requests.
+
+## Flow (stub)
+
+1. Create (or resolve) the target asset record.
+2. Request a signed upload URL from the backend through the attachment flow.
+3. Upload the file directly to object storage.
+4. Complete the attachment upload.
+5. Bind the attachment as the asset's active GLB.
+
+## Status
+
+This is a documentation stub. Full examples and SDK snippets will be added in a follow-up.

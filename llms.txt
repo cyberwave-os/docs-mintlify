@@ -1,0 +1,60 @@
+# CYBERWAVE SDK - Agent Context
+
+This file provides machine-readable context for coding agents integrating with CYBERWAVE.
+
+## Canonical references
+
+- Docs home: https://docs.cyberwave.com/get-started/index
+- API overview: https://docs.cyberwave.com/api-reference/overview
+- REST API reference (typed schemas): https://docs.cyberwave.com/api-reference/rest/DefaultApi
+- MQTT reference: https://docs.cyberwave.com/api-reference/mqtt/main
+- Python SDK: https://docs.cyberwave.com/sdks/python-sdk
+- Agent integration guide: https://docs.cyberwave.com/sdks/agent-integration
+- MCP server guide: https://docs.cyberwave.com/sdks/mcp-server
+
+## Fast path for coding agents
+
+1. Authenticate with `CYBERWAVE_API_KEY`.
+2. Initialize `Cyberwave()` from the Python SDK.
+3. Resolve or create a twin with `cw.twin("vendor/model")`.
+4. Prefer typed SDK/resource managers over manual HTTP calls.
+5. For motion actions, use `preview=True` first when available (for example: `twin.motion.asset.pose(...)`).
+6. Execute real actions only after a successful preview/simulation step.
+
+## Type safety and schemas
+
+- REST endpoints are documented with explicit request/response schemas in API reference pages.
+- Python SDK public managers and twin abstractions use Python type hints.
+- Prefer SDK methods that wrap generated schema models (for example, manager methods in `cyberwave/resources.py`) over free-form payloads.
+
+## Structured result handling
+
+When writing agent loops:
+
+- Treat return objects/dicts as structured state, not display text.
+- Branch on explicit keys (`status`, `error`, `code`, `uuid`, etc.) when present.
+- On API errors, surface status code + operation context and retry only if the operation is idempotent.
+
+## Safety and execution guidance
+
+- Start with environment/twin edits before physical control paths.
+- Use lower-risk operations first (read/list/get) before write/update/motion.
+- For mobility/manipulation requests, verify context (target twin, environment, controller policy) before command dispatch.
+- Keep source attribution explicit when possible (`source_type`).
+
+## Progressive-disclosure skill prompts
+
+Published skill snippets are available at:
+
+- https://cyberwave.com/.well-known/cyberwave/skills/navigation.md
+- https://cyberwave.com/.well-known/cyberwave/skills/manipulation.md
+- https://cyberwave.com/.well-known/cyberwave/skills/safety.md
+- https://cyberwave.com/.well-known/cyberwave/skills/observability.md
+
+Load only the skill file needed for the current task.
+
+## Agent bootstrap template
+
+Use the reusable project instruction template at:
+
+- https://cyberwave.com/agent.md

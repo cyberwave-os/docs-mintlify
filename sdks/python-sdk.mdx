@@ -70,7 +70,7 @@ from cyberwave import Cyberwave
 import asyncio
 import os
 
-token = os.getenv("CYBERWAVE_TOKEN")
+token = os.getenv("CYBERWAVE_API_KEY")
 
 client = Cyberwave(
     token=token,
@@ -104,6 +104,29 @@ finally:
     print("Stream stopped and resources cleaned up")
 ```
 
+## Uploading Large GLB Assets
+
+Use the Python SDK asset manager to upload GLB files.  
+For files larger than the standard multipart limit, the SDK automatically switches to an attachment + signed URL flow.
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+
+asset = cw.assets.create(
+    name="Large Asset Demo",
+    description="Example asset for large upload flow",
+)
+
+updated = cw.assets.upload_glb(asset.uuid, "/path/to/large_model.glb")
+print(updated.glb_file)
+```
+
+<Tip>
+  This flow is designed to avoid 413 errors when uploading large assets through the web API.
+</Tip>
+
 ## Authentication & Setup
 
 Get your API token from the Cyberwave dashboard and configure authentication:
@@ -114,7 +137,7 @@ Get your API token from the Cyberwave dashboard and configure authentication:
   </Step>
   <Step title="Set Environment Variable">
     Set your token as an environment variable: ```bash export
-    CYBERWAVE_API_TOKEN=your_token ```
+    CYBERWAVE_API_KEY=your_token ```
   </Step>
   <Step title="Initialize Client">
     The SDK will automatically use the environment variable

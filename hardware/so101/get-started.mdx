@@ -76,7 +76,7 @@ Now, retrieve your **Cyberwave API token**:
 4. Copy the generated token. 
 5. Add your token to the `.env` file:
 ```
-CYBERWAVE_TOKEN=your_token_here
+CYBERWAVE_API_KEY=your_token_here
 ```
 
 ![](/images/cyberwave-api-token.png)
@@ -84,7 +84,7 @@ CYBERWAVE_TOKEN=your_token_here
 
 Optionally, export the token as an environment variable for the current session:
 ```
-export CYBERWAVE_TOKEN=your_token_here
+export CYBERWAVE_API_KEY=your_token_here
 ```
 
 #### Step 3: Set Up the Cyberwave Environment
@@ -495,7 +495,7 @@ so101-remoteoperate \
 Replace these values:
 - `/dev/tty.usbmodem456` — Your follower arm port from Step 4
 - `YOUR_SO101_TWIN_UUID` — The SO101 Twin UUID from Step 3
-- `YOUR_CYBERWAVE_TOKEN` — Your API token from Step 2 (or use the environment variable)
+- `YOUR_CYBERWAVE_API_KEY` — Your API token from Step 2 (or use the environment variable)
 
 #### Step 4: Use the Model as a Controller Policy
 

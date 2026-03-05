@@ -1,0 +1,22 @@
+---
+title: "Large file uploads (SDKs)"
+description: "Stub documentation for SDK-assisted large uploads via signed URLs"
+---
+
+## Why this exists
+
+Large files can exceed API gateway or application multipart limits and return `413` errors.
+
+## SDK strategy (stub)
+
+- Keep small uploads on direct multipart endpoints.
+- Switch large files to signed URL uploads via attachments.
+- Finalize the uploaded attachment into the target domain object (for example, an Asset GLB).
+
+## Next steps
+
+This page is a stub and will be expanded with:
+
+- Python SDK end-to-end examples
+- JavaScript SDK examples
+- Error handling and retry recommendations

@@ -18,30 +18,9 @@
               "pages": [
                 "get-started/index",
                 "get-started/quickstart",
-                "get-started/architecture",
                 "get-started/core-data-hierarchy",
+                "get-started/access-control",
                 "get-started/key-concepts"
-              ]
-            },
-            {
-              "group": "Hardware Quickstart",
-              "pages": [
-                {
-                  "group": "SO101",
-                  "icon": "microchip",
-                  "pages": [
-                    "hardware/so101/index",
-                    "hardware/so101/get-started"
-                  ]
-                },
-                {
-                  "group": "UGV Beast",
-                  "icon": "robot",
-                  "pages": [
-                    "hardware/ugv/index",
-                    "hardware/ugv/get-started"
-                  ]
-                }
               ]
             },
             {
@@ -52,7 +31,8 @@
                   "group": "Catalog",
                   "icon": "book-bookmark",
                   "pages": [
-                    "use-cyberwave/catalog/overview"
+                    "use-cyberwave/catalog/overview",
+                    "use-cyberwave/catalog/large-asset-uploads"
                   ]
                 },
                 {
@@ -76,14 +56,37 @@
                     "use-cyberwave/ml-models/overview"
                   ]
                 },
-                "use-cyberwave/environment-editor",
-                "use-cyberwave/access-control"
+                "use-cyberwave/environment-editor"
+              ]
+            },
+            {
+              "group": "Hardware Quickstart",
+              "pages": [
+                {
+                  "group": "SO101",
+                  "icon": "microchip",
+                  "pages": [
+                    "hardware/so101/index",
+                    "hardware/so101/get-started"
+                  ]
+                },
+                {
+                  "group": "UGV Beast",
+                  "icon": "robot",
+                  "pages": [
+                    "hardware/ugv/index",
+                    "hardware/ugv/get-started"
+                  ]
+                }
               ]
             },
             {  
               "group": "SDKs",
               "pages": [
                 "sdks/python-sdk",
+                "sdks/agent-integration",
+                "sdks/mcp-server",
+                "sdks/large-file-uploads",
                 "sdks/cpp-sdk"
               ]
             },
