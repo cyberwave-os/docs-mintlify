@@ -1,0 +1,100 @@
+---
+title: "Get Started"
+description: "Connect your Unitree Go2 quadruped to Cyberwave"
+---
+
+import EarlyAccess from '/snippets/early-access.mdx';
+
+## Goals
+
+This guide walks you through connecting your **Unitree Go2** quadruped robot to its digital twin on Cyberwave. By the end, you will have:
+
+- Configured the Go2 hardware
+- Created a Cyberwave environment with a Go2 digital twin
+- Installed the Cyberwave edge stack on your Go2's onboard compute
+- Paired the physical robot with the digital twin in real time
+
+---
+
+## Set Up the Go2 Hardware
+
+Before connecting to Cyberwave, make sure your Go2 is powered on, firmware is up to date, and you have network access to its onboard computer.
+
+<Card
+  title="Go2 Hardware Setup Guide"
+  icon="book-open"
+  href="https://www.docs.quadruped.de/projects/go2/html/index.html"
+>
+  Refer to the official Unitree Go2 documentation for unboxing, firmware upgrades, and initial configuration.
+</Card>
+
+---
+
+## Phase 1: Configure Cyberwave Environment
+
+Set up your environment and add the Go2 digital twin on Cyberwave.
+
+### Step 1: Create an Environment
+
+An [environment](/get-started/key-concepts#environments) is a 3D virtual space that mirrors your real-world robot setup.
+
+1. Go to the Cyberwave dashboard and click on **New Environment**.
+2. Give your environment a **name** and **description**.
+
+### Step 2: Add the Go2 Digital Twin
+
+1. Inside your environment, click **Add from Catalog** in the left panel.
+2. Search for **Unitree Go2** in the catalog.
+3. Add the Go2 digital twin to your environment.
+4. Position it to match your physical setup.
+
+---
+
+## Phase 2: Pair the Go2 Robot
+
+Install the Cyberwave edge stack on the Go2's onboard computer to bridge the physical robot with the cloud platform.
+
+### Step 1: SSH into the Go2
+
+Connect to the Go2's onboard computer (typically a Jetson or Raspberry Pi):
+
+```bash
+ssh user@<go2-ip-address>
+```
+
+<Tip>
+Refer to the [Go2 network interface documentation](https://www.docs.quadruped.de/projects/go2/html/index.html) for details on finding the Go2's IP address and SSH credentials.
+</Tip>
+
+### Step 2: Install the Cyberwave CLI
+
+```bash
+curl -fsSL https://cyberwave.com/install.sh | bash
+```
+
+<Info>
+For more details, see [Step 3 of the Quick Start guide](/get-started/quickstart#step-3-install-the-cyberwave-cli).
+</Info>
+
+### Step 3: Install the Edge Core
+
+The [Edge Core](/get-started/architecture#cyberwave-edge) acts as the bridge between the Go2 hardware and the Cyberwave cloud backend.
+
+```bash
+sudo cyberwave edge install
+```
+
+The CLI will prompt you to log in with your Cyberwave credentials and then install the `cyberwave-edge-core` on the Go2.
+
+### Step 4: Pair the Go2 with its Digital Twin
+
+Follow the prompts in your terminal:
+
+1. Select the environment you created earlier.
+2. Select the Go2 digital twin you added to that environment.
+3. The appropriate driver will be automatically installed and configured.
+
+<Check>
+Your Unitree Go2 is now paired with its digital twin and syncing in real time.
+</Check>
+
