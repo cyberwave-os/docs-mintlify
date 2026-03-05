@@ -6,9 +6,9 @@ description: "Set up the rover, install the Cyberwave Docker image, configure cr
 ## Set up the UGV Beast
 
 ### 1. Product Assembly
-Follow the steps mentioned in this tutorial for the product assembly. This [assembly tutorial](youtube.com/watch?v=t3EXdMzEUrA&feature=youtu.be) mainly includes two parts. The first is a tutorial on installing Raspberry Pi 4B/5 for ACCE model products, and the second is a tutorial for installing lithium batteries.
+Follow the steps mentioned in this tutorial for the product assembly. This [assembly tutorial](https://youtu.be/t3EXdMzEUrA?si=9G4gX-SWyE3Cwemx) mainly includes two parts. The first is a tutorial on installing Raspberry Pi 4B/5 for ACCE model products, and the second is a tutorial for installing lithium batteries.
 
-**Precautions**: Verify correct battery polarity before powering on to avoid hardware damage. Refer to [this guide](https://www.waveshare.com/wiki/UGV_Beast_PI_ROS2) to learn more about the precautions. 
+**Precautions**: Verify correct battery polarity before powering on to avoid hardware damage. Refer to this [setup guide](https://www.waveshare.com/wiki/UGV_Beast_PI_ROS2) to learn more about the precautions. 
 
 ### 2. First Time Setup 
 For first-time use of the UGV, you'll have to configure the robot as per the instructions detailed out in this [setup guide](https://www.waveshare.com/wiki/UGV_Beast_PI_ROS2). This guide has detailed instructions to follow every phase mapped out below. Please use this guide to follow the step-by-step instructions for every phase. 
@@ -30,7 +30,7 @@ Replace `<UGV_IP>` with your UGV Beast's actual IP address, which is displayed o
 * Username: `ws`
 * Password: `ws`
 
-**SSH Troubleshooting**: In case you're unable to enable SSH with the guide instructions, [refer to this section](ugv#miscellaneous) to use an alternative way to establish a SSH connection. 
+**SSH Troubleshooting**: In case you're unable to enable SSH with the guide instructions, [refer to this section](/hardware/ugv/get-started#establish-ssh-connection) to use an alternative way to establish a SSH connection. 
 
 ### 3. End and Disable the Main Program
 When the UGV Beast is powered on, it automatically runs the Raspberry Pi's **default main program**, which occupies the serial port and camera. This prevents ROS 2 (and our custom Cyberwave stack) from accessing the hardware. Before proceeding, you need to **end and disable the main program**.
@@ -153,55 +153,37 @@ if ! systemctl is-active --quiet docker; then
 fi
 
 ################################################################################
-# STEP 1: Check for image updates
+# STEP 1: Force pull latest image from Docker Hub
 ################################################################################
-log_info "Checking for image updates..."
+log_info "Pulling latest image from Docker Hub..."
+log_info "Image: $CONTAINER_IMAGE"
+echo ""
 
-IMAGE_UPDATED=false
-
+# Check if local image exists and show digest
 if docker image inspect "$CONTAINER_IMAGE" &> /dev/null; then
     LOCAL_DIGEST=$(docker image inspect "$CONTAINER_IMAGE" --format '{{index .RepoDigests 0}}' 2>/dev/null | cut -d'@' -f2)
+    log_info "Current local digest: ${LOCAL_DIGEST:-unknown}"
+fi
+
+# Force pull the latest image
+log_info "Force pulling latest version..."
+if docker pull "$CONTAINER_IMAGE"; then
+    NEW_DIGEST=$(docker image inspect "$CONTAINER_IMAGE" --format '{{index .RepoDigests 0}}' 2>/dev/null | cut -d'@' -f2)
+    log_success "Latest image pulled successfully!"
+    log_info "New image digest: ${NEW_DIGEST:-unknown}"
     
-    log_info "Local image digest: ${LOCAL_DIGEST:-unknown}"
-    log_info "Fetching remote image info from Docker Hub..."
-    
-    if docker pull "$CONTAINER_IMAGE" --quiet > /dev/null 2>&1; then
-        REMOTE_DIGEST=$(docker image inspect "$CONTAINER_IMAGE" --format '{{index .RepoDigests 0}}' 2>/dev/null | cut -d'@' -f2)
-        log_info "Remote image digest: ${REMOTE_DIGEST:-unknown}"
-        
-        if [[ "$LOCAL_DIGEST" != "$REMOTE_DIGEST" ]] && [[ -n "$REMOTE_DIGEST" ]]; then
-            log_warning "A newer version of the image is available!"
-            echo ""
-            read -p "Do you want to update to the latest image? [y/N]: " UPDATE_RESPONSE
-            if [[ "$UPDATE_RESPONSE" =~ ^[Yy]$ ]]; then
-                log_info "Updating image..."
-                if docker pull "$CONTAINER_IMAGE"; then
-                    log_success "Image updated successfully!"
-                    IMAGE_UPDATED=true
-                else
-                    log_error "Failed to update image"
-                    exit 1
-                fi
-            else
-                log_info "Keeping current image version."
-            fi
-        else
-            log_success "Image is already up to date!"
-        fi
-    else
-        log_warning "Could not check for remote updates. Using local image."
+    if [[ -n "$LOCAL_DIGEST" ]] && [[ "$LOCAL_DIGEST" != "$NEW_DIGEST" ]]; then
+        log_success "Image was updated to newer version!"
+    elif [[ -n "$LOCAL_DIGEST" ]]; then
+        log_success "Image was already the latest version"
     fi
 else
-    log_warning "Docker image '$CONTAINER_IMAGE' not found locally."
-    log_info "Pulling image from Docker Hub..."
-    if docker pull "$CONTAINER_IMAGE"; then
-        log_success "Image pulled successfully!"
-        IMAGE_UPDATED=true
-    else
-        log_error "Failed to pull image '$CONTAINER_IMAGE'"
-        exit 1
-    fi
+    log_error "Failed to pull image '$CONTAINER_IMAGE'"
+    log_error "Check your internet connection and Docker Hub access"
+    exit 1
 fi
+
+echo ""
 
 ################################################################################
 # STEP 2: Sync container /home to local /home (without deleting local files)
@@ -236,15 +218,20 @@ merge_directories() {
         if [[ -d "$item" ]]; then
             if [[ ! -d "$dst_item" ]]; then
                 log_info "${indent}[+] Adding directory: $dst_item"
-                cp -r "$item" "$dst_item"
+                cp -r "$item" "$dst_item" || log_warning "${indent}Failed to copy directory: $dst_item"
             else
                 log_info "${indent}[~] Merging directory: $dst_item"
                 merge_directories "$item" "$dst_item" "  $indent"
             fi
         else
+            if [[ -L "$dst_item" ]] && [[ ! -e "$dst_item" ]]; then
+                log_info "${indent}[!] Removing dangling symlink: $dst_item"
+                rm -f "$dst_item"
+            fi
+            
             if [[ ! -e "$dst_item" ]]; then
                 log_info "${indent}[+] Adding file: $dst_item"
-                cp "$item" "$dst_item"
+                cp "$item" "$dst_item" || log_warning "${indent}Failed to copy file: $dst_item"
             else
                 log_info "${indent}[=] Keeping local: $dst_item"
             fi
@@ -289,26 +276,40 @@ fi
 
 log_info "Creating systemd service file..."
 
-cat > "/etc/systemd/system/${SERVICE_NAME}.service" <<SERVICEFILE
+if ! cat > "/etc/systemd/system/${SERVICE_NAME}.service" <<SERVICEFILE
 [Unit]
 Description=Cyberwave UGV Beast Docker Container
 Documentation=https://github.com/cyberwave-os/cyberwave-edge-ros
 After=docker.service network-online.target
 Requires=docker.service
 Wants=network-online.target
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
 TimeoutStartSec=300
 Restart=always
 RestartSec=10
+StartLimitBurst=5
 
-ExecStartPre=/bin/bash -c '/usr/bin/docker image inspect ${CONTAINER_IMAGE} >/dev/null 2>&1 || /usr/bin/docker pull ${CONTAINER_IMAGE}'
-ExecStartPre=-/usr/bin/docker stop ${CONTAINER_NAME}
-ExecStartPre=-/usr/bin/docker rm ${CONTAINER_NAME}
+# Force pull latest image on every start
+ExecStartPre=/bin/bash -c ' \
+    echo "Force pulling latest image: ${CONTAINER_IMAGE}"; \
+    /usr/bin/docker pull ${CONTAINER_IMAGE}; \
+    echo "Latest image pulled successfully" \
+'
 
+# Clean up any existing container (running or stopped)
+ExecStartPre=-/usr/bin/docker stop -t 5 ${CONTAINER_NAME}
+ExecStartPre=-/usr/bin/docker rm -f ${CONTAINER_NAME}
+
+# Verify Docker is responsive
+ExecStartPre=/bin/bash -c '/usr/bin/docker info >/dev/null 2>&1 || exit 1'
+
+# Start the container
 ExecStart=/usr/bin/docker run \
     --name ${CONTAINER_NAME} \
+    --rm \
     --privileged \
     --network host \
     --pid host \
@@ -324,22 +325,105 @@ ExecStart=/usr/bin/docker run \
     ${CONTAINER_IMAGE} \
     /bin/bash -c "/ssh_entrypoint.sh && exec tail -f /dev/null"
 
+# Stop the container gracefully
 ExecStop=/usr/bin/docker stop -t 10 ${CONTAINER_NAME}
-ExecStopPost=-/usr/bin/docker rm ${CONTAINER_NAME}
+
+# Cleanup (--rm handles this, but just in case)
+ExecStopPost=-/usr/bin/docker rm -f ${CONTAINER_NAME}
+
+# Health check: restart if container stops unexpectedly
+ExecReload=/usr/bin/docker restart ${CONTAINER_NAME}
 
 [Install]
 WantedBy=multi-user.target
 SERVICEFILE
+then
+    log_error "Failed to create service file"
+    exit 1
+fi
 
 log_success "Service file created: /etc/systemd/system/${SERVICE_NAME}.service"
 
-systemctl daemon-reload
+log_info "Creating health-check timer service..."
+
+# Create health check script
+cat > "/usr/local/bin/${SERVICE_NAME}-healthcheck.sh" <<'HEALTHCHECK'
+#!/bin/bash
+CONTAINER_NAME="cyb_ugv_beast"
+CONTAINER_IMAGE="cyberwaveos/cyb_ugv_beast:latest"
+
+# Check if container is running
+if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    echo "$(date): Container $CONTAINER_NAME is not running. Service should auto-restart it."
+    # Let systemd handle the restart via Restart=always
+    systemctl is-active --quiet cyb-ugv-beast.service || systemctl start cyb-ugv-beast.service
+fi
+
+# Check if container is healthy (optional - can be expanded)
+if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    # Container is running - you can add additional health checks here
+    exit 0
+else
+    exit 1
+fi
+HEALTHCHECK
+
+chmod +x "/usr/local/bin/${SERVICE_NAME}-healthcheck.sh"
+
+# Create timer service for periodic health checks
+cat > "/etc/systemd/system/${SERVICE_NAME}-healthcheck.service" <<HEALTHCHECKSERVICE
+[Unit]
+Description=Cyberwave UGV Beast Container Health Check
+After=${SERVICE_NAME}.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/${SERVICE_NAME}-healthcheck.sh
+HEALTHCHECKSERVICE
+
+cat > "/etc/systemd/system/${SERVICE_NAME}-healthcheck.timer" <<HEALTHCHECKTIMER
+[Unit]
+Description=Cyberwave UGV Beast Container Health Check Timer
+Requires=${SERVICE_NAME}.service
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+HEALTHCHECKTIMER
+
+log_success "Health-check timer created"
+
+if ! systemctl daemon-reload; then
+    log_error "Failed to reload systemd daemon"
+    exit 1
+fi
 
 log_info "Enabling service to start on boot..."
-systemctl enable "$SERVICE_NAME"
+if ! systemctl enable "$SERVICE_NAME"; then
+    log_error "Failed to enable service"
+    exit 1
+fi
+
+log_info "Enabling health-check timer..."
+if ! systemctl enable "${SERVICE_NAME}-healthcheck.timer"; then
+    log_warning "Failed to enable health-check timer (non-critical)"
+fi
+
+if ! systemctl start "${SERVICE_NAME}-healthcheck.timer"; then
+    log_warning "Failed to start health-check timer (non-critical)"
+fi
 
 log_info "Starting the service..."
-systemctl start "$SERVICE_NAME"
+if ! systemctl start "$SERVICE_NAME"; then
+    log_error "Failed to start service"
+    log_info "Checking service status:"
+    systemctl status "$SERVICE_NAME" --no-pager -l
+    exit 1
+fi
 
 log_info "Waiting for container to start..."
 for i in {1..30}; do
@@ -360,9 +444,17 @@ fi
 
 if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
     log_success "Container is running!"
+    CONTAINER_ID=$(docker ps --filter "name=^${CONTAINER_NAME}$" --format "{{.ID}}")
+    log_info "Container ID: $CONTAINER_ID"
 else
     log_warning "Container may still be starting. Check with:"
     log_info "  docker ps -a"
+fi
+
+if systemctl is-active --quiet "${SERVICE_NAME}-healthcheck.timer"; then
+    log_success "Health-check timer is active!"
+else
+    log_warning "Health-check timer is not active"
 fi
 
 echo ""
@@ -373,6 +465,24 @@ echo ""
 log_info "Service name: $SERVICE_NAME"
 log_info "Container name: $CONTAINER_NAME"
 log_info "Image: $CONTAINER_IMAGE"
+echo ""
+log_info "The container will:"
+log_info "  ✓ Start automatically on every boot"
+log_info "  ✓ Restart automatically if it crashes"
+log_info "  ✓ Be monitored by health-check every 2 minutes"
+log_info "  ✓ Always keep the latest image available"
+echo ""
+log_info "Useful commands:"
+log_info "  Check service:        sudo systemctl status $SERVICE_NAME"
+log_info "  Stop service:         sudo systemctl stop $SERVICE_NAME"
+log_info "  Start service:        sudo systemctl start $SERVICE_NAME"
+log_info "  Restart service:      sudo systemctl restart $SERVICE_NAME"
+log_info "  View service logs:    sudo journalctl -u $SERVICE_NAME -f"
+log_info "  Check health timer:   sudo systemctl status ${SERVICE_NAME}-healthcheck.timer"
+log_info "  Container logs:       docker logs -f $CONTAINER_NAME"
+log_info "  Enter container:      docker exec -it $CONTAINER_NAME /bin/bash"
+log_info "  Force health check:   sudo /usr/local/bin/${SERVICE_NAME}-healthcheck.sh"
+echo ""
 ```
 
 </Accordion>
@@ -407,13 +517,13 @@ docker logs -f cyb_ugv_beast
 
 ### Step 4: SSH into the Docker Container
 
-Once the container is running, SSH into the Docker container to configure Cyberwave credentials. This is a different SSH session from the Raspberry Pi host — it connects directly into the Docker container on **port 23**:
+Once the container is running, SSH into the Docker container to configure Cyberwave credentials. This is a different SSH session from the Raspberry Pi host, it connects directly into the Docker container on **port 23**:
 
 ```bash
-ssh root@<UGV_IP> -p 23
+ssh -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" root@<UGV_IP> -p 23
 ```
 
-Replace `<UGV_IP>` with the same IP address from the OLED screen (e.g., `ssh root@192.168.0.144 -p 23`).
+Replace `<UGV_IP>` with the same IP address from the OLED screen (e.g., `ssh root@192.168.0.144 -p 23`). This command enables you to SSH into the docker container without the need of creating any public key. 
 
 **Docker Container Credentials:**
 * Username: `root`
@@ -466,7 +576,7 @@ broker:
 ```
 
 <Tip>
-You can find your API token in the Cyberwave dashboard under **Settings → API Keys**.
+You can find your API token in the Cyberwave dashboard under **Profile → Create a new token -> Copy your token**.
 </Tip>
 
 ### Step 3: Set Your Twin UUID
