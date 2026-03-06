@@ -1,0 +1,780 @@
+---
+title: "Physical AI Agents Cookbook"
+description: "A recommended learning path for all Cyberwave builders covering Physical AI agents, agent architecture and how to design your own agent."
+icon: "rocket"
+---
+
+## Physical AI Agents
+
+A physical AI agent is an embodied intelligent system designed to interact directly with the physical world. It is equipped with sensory capabilities for **perception**, **cognitive intelligence** for reasoning and planning, and **actuation systems** for executing precise physical actions in dynamic environments.
+
+**This is not just a robot with software.**
+
+A *traditional robot* follows *programmed instructions*. A *physical AI agent* perceives, reasons, plans, acts, and adapts in a continuous loop, informed by real-time feedback from the environment.
+
+---
+
+## Robotic Hardware
+In this builder program, developers will build Physical AI systems using two robotic platforms:
+
+**SO101 Robotic Arm**
+
+Designed for:
+
+* object manipulation
+* pick & place
+* assembly
+* interaction with physical items
+
+**UGV Beast Rover**
+
+Designed for:
+
+* locomotion
+* environment monitoring
+* inspection
+* autonomous navigation
+
+Together, these platforms allow builders to explore **a wide spectrum of Physical AI applications**.
+
+---
+
+## Architecture of Physical AI Systems
+
+Most Physical AI systems follow a similar layered architecture.
+
+This architecture is useful because it separates **perception, intelligence, and execution**.
+
+```
+Input
+↓
+Perception
+↓
+World Model
+↓
+Reasoning / Planning
+↓
+Skill or Navigation Policy
+↓
+Robot Execution
+↓
+Feedback & Replanning
+```
+
+This structure is common across all industrial robotics systems.
+
+---
+
+### Layer 1: Input
+
+This layer captures the **trigger or instruction** that initiates a task.
+
+Inputs can come from:
+
+* voice commands
+* text instructions
+* API requests
+* sensor triggers
+* scheduled routines
+
+Example input:
+
+```
+"Pick up the red cube and place it in the tray"
+```
+
+or
+
+```
+"Patrol the warehouse aisle"
+```
+
+Input systems may include:
+
+* microphones
+* buttons
+* mobile apps
+* web interfaces
+* automated triggers
+
+---
+
+### Layer 2: Perception
+
+The robot must observe and understand the environment.
+
+Sensors commonly used:
+
+* RGB cameras
+* depth cameras
+* LIDAR
+* ultrasonic sensors
+* microphones
+
+Perception models extract useful information from sensor data.
+
+Examples include:
+
+* object detection
+* semantic segmentation
+* pose estimation
+* visual SLAM
+* audio recognition
+
+Example perception output:
+
+```
+red_cube → position (0.32, 0.41, 0.12)
+blue_cube → position (0.45, 0.29, 0.10)
+table_surface detected
+```
+
+For mobile robots, perception may also include:
+
+```
+obstacle detected
+corridor detected
+open path available
+```
+
+---
+
+### Layer 3: World Model
+
+Raw perception data is converted into a structured representation of the environment.
+
+This is called the **world model**.
+
+A world model represents:
+
+* object locations
+* robot position
+* environment layout
+* task context
+
+Example representation:
+
+```
+objects:
+  red_cube:
+    position: (0.25, 0.32, 0.10)
+
+  tray:
+    position: (0.55, 0.20, 0.12)
+
+robot:
+  arm_position: (0.10, 0.15, 0.40)
+```
+
+For mobile robots:
+
+```
+map:
+  corridor
+  obstacles
+  docking station
+robot_position:
+  (x,y)
+```
+
+This structured information allows reasoning systems to make decisions.
+
+---
+
+### Layer 4: Reasoning / Planning
+
+This layer decides **what the robot should do next**.
+
+Approaches include:
+
+* LLM reasoning
+* rule-based logic
+* symbolic planning
+* behavior trees
+* task graphs
+
+Example reasoning output:
+
+```
+Plan:
+1 locate red cube
+2 move arm to cube
+3 grasp cube
+4 move to tray
+5 release cube
+```
+
+For locomotion:
+
+```
+Plan:
+1 navigate to aisle 3
+2 scan shelves
+3 return to charging dock
+```
+
+---
+
+### Layer 5: Skill or Navigation Policy
+
+Robots rarely generate raw motor commands directly.
+
+Instead, they use **skills** (for manipulation) or **navigation policies** (for locomotion).
+
+These are reusable capabilities that the robot can execute.
+
+Manipulation skills:
+
+```
+pick
+place
+push
+stack
+rotate
+align
+```
+
+Locomotion skills:
+
+```
+navigate_to
+scan_area
+patrol
+dock
+avoid_obstacles
+```
+
+Skills act as an abstraction layer between reasoning and low-level control.
+
+---
+
+### Layer 6: Robot Execution
+
+At this stage the robot hardware performs actions.
+
+For the SO101 arm:
+
+```
+move_to(x,y,z)
+close_gripper()
+move_to(target)
+open_gripper()
+```
+
+For the UGV rover:
+
+```
+navigate_to(location)
+rotate(angle)
+capture_image()
+scan_environment()
+```
+
+This layer interacts with:
+
+* motors
+* actuators
+* grippers
+* wheels
+
+---
+
+### Layer 7: Feedback and Replanning
+
+Real-world environments are unpredictable.
+
+Robots must constantly verify whether actions succeed.
+
+Examples:
+
+```
+did the grasp succeed?
+did the rover reach the destination?
+is the object still visible?
+```
+
+If an action fails, the system may:
+
+* retry
+* update the world model
+* replan the task
+
+This feedback loop is critical for reliable robotics systems.
+
+---
+
+## Major Physical AI Use Cases
+
+Physical AI systems often fall into two main capability categories:
+
+---
+
+### Manipulation
+
+Manipulation involves **interacting with physical objects**. This is the primary capability of **SO101 robotic arms**.
+
+#### Typical Manipulation Tasks
+
+Examples include:
+
+* pick and place
+* sorting objects
+* stacking items
+* assembling components
+* packaging products
+* organizing items
+
+#### Manipulation Pipeline
+
+A typical manipulation system follows this architecture:
+
+```
+Input
+↓
+Object Detection
+↓
+Object Pose Estimation
+↓
+Task Planning
+↓
+Grasp Planning
+↓
+Motion Planning
+↓
+Arm Execution
+↓
+Grasp Feedback
+```
+
+#### Core Manipulation Concepts
+
+- Object Detection: Identifying objects in the workspace.
+
+- Pose Estimation: Determining an object's orientation and position.
+
+- Grasp Planning: Computing how the gripper should hold the object.
+
+- Motion Planning: Generating a safe trajectory for the robotic arm.
+
+- Collision Avoidance: Ensuring the arm does not collide with obstacles.
+
+---
+
+### Locomotion
+
+Locomotion tasks involve **moving through environments**.
+
+This capability is provided by the **UGV Beast Rover**.
+
+#### Typical Locomotion Tasks
+
+Examples include:
+
+* security patrol
+* warehouse delivery
+* inspection
+* monitoring
+* mapping
+* search operations
+
+#### Locomotion Pipeline
+
+```
+Input
+↓
+Environment Perception
+↓
+Localization
+↓
+Mapping
+↓
+Path Planning
+↓
+Motion Control
+↓
+Robot Navigation
+↓
+Sensor Feedback
+```
+
+#### Core Locomotion Concepts
+
+- Localization: Determining the robot's position.
+
+- Mapping: Creating a representation of the environment.
+
+- SLAM: Simultaneous Localization and Mapping.
+
+- Path Planning: Finding an efficient route between locations.
+
+- Obstacle Avoidance: Preventing collisions.
+
+---
+
+## AI Approaches Used in Physical AI
+
+Different AI techniques can power different layers of the system.
+
+### Classical Robotics
+
+Traditional robotics pipelines combine:
+
+```
+vision
+motion planning
+control systems
+```
+
+Common frameworks:
+
+* ROS
+* MoveIt
+* OpenCV
+
+
+### LLM-Based Planning
+
+Large Language Models can help interpret instructions and generate plans.
+
+Example:
+
+```
+User: "Sort the blocks by color"
+```
+
+LLM produces:
+
+```
+1 detect blocks
+2 classify colors
+3 pick block
+4 place in color bin
+```
+
+LLMs are useful for:
+
+* natural language interfaces
+* task decomposition
+* skill orchestration
+
+
+### Imitation Learning
+
+Robots learn from demonstrations.
+
+Workflow:
+
+```
+human demonstrates task
+robot records trajectory
+model learns policy
+```
+
+Applications:
+
+* manipulation
+* repetitive tasks
+* assembly
+
+Popular approaches include:
+
+* behavior cloning
+* ACT models
+* diffusion policies
+
+
+### Reinforcement Learning
+
+Robots learn through reward-based optimization.
+
+Example reward:
+
+```
+successful grasp = +1
+dropped object = -1
+```
+
+RL is often used for:
+
+* dexterous manipulation
+* locomotion control
+* dynamic tasks
+
+
+### Vision Language Action Models
+
+These models map:
+
+```
+vision + language → robot actions
+```
+
+Examples include:
+
+* RT-2
+* OpenVLA
+
+These models aim to create **general-purpose robot intelligence**.
+
+---
+
+# Idea Templates
+
+These templates help builders generate new ideas quickly based on a recurring pattern.
+
+### Template 1: Sorting System
+
+**Problem pattern**:
+
+```
+objects need classification and sorting
+```
+
+**Examples**:
+
+* medication sorting
+* recycling sorting
+* warehouse sorting
+* coin sorting
+
+**Robot**:
+- SO101 arm
+
+**Architecture**:
+
+```
+vision → classification → pick/place
+```
+
+---
+
+### Template 2: Monitoring System
+
+**Problem pattern**:
+
+```
+an environment must be observed regularly
+```
+
+**Examples**:
+
+* warehouse monitoring
+* crop monitoring
+* construction inspection
+* security patrol
+
+**Robot**:
+- UGV rover
+
+**Architecture**:
+
+```
+navigation → sensing → anomaly detection
+```
+
+---
+
+### Template 3: Assembly Assistant
+
+**Problem pattern**:
+
+```
+multiple parts must be assembled
+```
+
+**Examples**:
+
+* toy assembly
+* electronics assembly
+* packaging tasks
+
+**Robot**:
+- SO101 arm
+
+---
+
+### Template 4: Delivery System
+
+**Problem pattern**:
+
+```
+objects must be transported between locations
+```
+
+**Examples**:
+
+* hospital delivery robot
+* warehouse delivery rover
+* office mail robot
+
+**Robot**:
+- UGV rover
+
+---
+
+### Template 5: Interactive Demonstrator
+
+**Problem pattern**:
+
+```
+robot demonstrates physical concepts
+```
+
+**Examples**:
+
+* education robots
+* museum demonstrations
+* training simulators
+
+**Robot**:
+- SO101 arm
+- UGV Beast Rover
+
+---
+
+## Example Idea Categories
+
+Below are some industry-specific examples.
+
+### Education
+
+Problem:
+
+Teachers need interactive ways to demonstrate concepts.
+
+Idea:
+
+AI Teaching Robot
+
+Robot sorts or stacks blocks to demonstrate algorithms.
+
+Robot platform:
+
+SO101 Arm
+
+---
+
+### Healthcare
+
+Problem:
+
+Medication sorting is repetitive and error-prone.
+
+Idea:
+
+Medication Sorting Assistant
+
+Robot identifies and organizes medication packs.
+
+Robot platform:
+
+SO101 Arm
+
+---
+
+### Cooking
+
+Problem:
+
+Food preparation involves repetitive tasks.
+
+Idea:
+
+Kitchen Assistant Robot
+
+Robot assembles dishes.
+
+Robot platform:
+
+SO101 Arm
+
+---
+
+### Finance
+
+Problem:
+
+Physical currency still requires manual sorting.
+
+Idea:
+
+Currency Sorting Robot
+
+Robot identifies and sorts coins or notes.
+
+Robot platform:
+
+SO101 Arm
+
+---
+
+### Retail
+
+Problem:
+
+Store shelves must be continuously organized.
+
+Idea:
+
+Shelf Restocking Assistant
+
+Robot detects missing products and places items correctly.
+
+Robot platform:
+
+SO101 Arm
+
+---
+
+### Agriculture
+
+Problem:
+
+Farm monitoring requires frequent inspection.
+
+Idea:
+
+Crop Monitoring Rover
+
+Robot scans fields and collects crop health data.
+
+Robot platform:
+
+UGV Beast Rover
+
+---
+
+### Security
+
+Problem:
+
+Facilities require continuous surveillance.
+
+Idea:
+
+Autonomous Patrol Robot
+
+Robot monitors premises and detects anomalies.
+
+Robot platform:
+
+UGV Beast Rover
+
+---
+
+### Logistics
+
+Problem:
+
+Warehouses need efficient monitoring and delivery.
+
+Idea:
+
+Autonomous Delivery Rover
+
+Robot navigates and delivers packages.
+
+Robot platform:
+
+UGV Beast Rover
+
