@@ -1,0 +1,53 @@
+name: Sync to Monorepo
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    if: github.event.head_commit.author.email != 'ci@cyberwave.com'
+
+    steps:
+      - name: Checkout docs-mintlify
+        uses: actions/checkout@v4
+        with:
+          path: docs-mintlify
+
+      - name: Checkout monorepo
+        uses: actions/checkout@v4
+        with:
+          repository: cyberwave-os/cyberwave
+          token: ${{ secrets.GH_MONOREPO_PAT }}
+          path: cyberwave
+          ref: dev
+
+      - name: Sync docs to monorepo
+        run: |
+          rm -rf cyberwave/docs-mintlify
+          cp -r docs-mintlify cyberwave/docs-mintlify
+          rm -rf cyberwave/docs-mintlify/.git
+
+      - name: Commit, push, and open PR
+        working-directory: cyberwave
+        env:
+          GH_TOKEN: ${{ secrets.GH_MONOREPO_PAT }}
+        run: |
+          git config user.name "Cyberwave CI"
+          git config user.email "ci@cyberwave.com"
+          git add docs-mintlify/
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          BRANCH="docs-mintlify-$(date +%Y-%m-%d)"
+          git checkout -b "$BRANCH"
+          git commit -m "docs: sync docs-mintlify from ${{ github.sha }}"
+          git push origin "$BRANCH"
+          gh pr create \
+            --repo cyberwave-os/cyberwave \
+            --base dev \
+            --head "$BRANCH" \
+            --title "docs: sync docs-mintlify $(date +%Y-%m-%d)" \
+            --body "Automated sync of docs-mintlify from https://github.com/cyberwave-os/docs-mintlify/commit/${{ github.sha }}"

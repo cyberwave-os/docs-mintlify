@@ -6,15 +6,18 @@ description: "Set up the rover, install the Cyberwave Docker image, configure cr
 ## Set up the UGV Beast
 
 ### 1. Product Assembly
+
 Follow the steps mentioned in this tutorial for the product assembly. This [assembly tutorial](https://youtu.be/t3EXdMzEUrA?si=9G4gX-SWyE3Cwemx) mainly includes two parts. The first is a tutorial on installing Raspberry Pi 4B/5 for ACCE model products, and the second is a tutorial for installing lithium batteries.
 
-**Precautions**: Verify correct battery polarity before powering on to avoid hardware damage. Refer to this [setup guide](https://www.waveshare.com/wiki/UGV_Beast_PI_ROS2) to learn more about the precautions. 
+**Precautions**: Verify correct battery polarity before powering on to avoid hardware damage. Refer to this [setup guide](https://www.waveshare.com/wiki/UGV_Beast_PI_ROS2) to learn more about the precautions.
 
-### 2. First Time Setup 
-For first-time use of the UGV, you'll have to configure the robot as per the instructions detailed out in this [setup guide](https://www.waveshare.com/wiki/UGV_Beast_PI_ROS2). This guide has detailed instructions to follow every phase mapped out below. Please use this guide to follow the step-by-step instructions for every phase. 
+### 2. First Time Setup
 
-Here's a quick work through of all the phases you need to perform for first-time use: 
-1. **First Time Power On**: Insert the pre-configured TF card, connect power, and wait for the OLED screen to display the robot's IP address. 
+For first-time use of the UGV, you'll have to configure the robot as per the instructions detailed out in this [setup guide](https://www.waveshare.com/wiki/UGV_Beast_PI_ROS2). This guide has detailed instructions to follow every phase mapped out below. Please use this guide to follow the step-by-step instructions for every phase.
+
+Here's a quick work through of all the phases you need to perform for first-time use:
+
+1. **First Time Power On**: Insert the pre-configured TF card, connect power, and wait for the OLED screen to display the robot's IP address.
 2. **Connect to the Robot**: Join the robot's default Wi-Fi hotspot (AccessPopup) and open the web control interface in your browser.
 3. **Network Configuration**: Switch the robot from its default hotspot to your local Wi-Fi network using the JupyterLab terminal.
 4. **Enable SSH**: Turn on the SSH service via raspi-config so you can remotely access the Raspberry Pi from your terminal or IDE.
@@ -27,20 +30,27 @@ ssh ws@<UGV_IP> -p 22
 Replace `<UGV_IP>` with your UGV Beast's actual IP address, which is displayed on the **OLED screen** (the `W:` line). For example: `ssh ws@192.168.0.144 -p 22`.
 
 **Credentials:**
-* Username: `ws`
-* Password: `ws`
 
-**SSH Troubleshooting**: In case you're unable to enable SSH with the guide instructions, [refer to this section](/hardware/ugv/get-started#establish-ssh-connection) to use an alternative way to establish a SSH connection. 
+- Username: `ws`
+- Password: `ws`
+
+**SSH Troubleshooting**: In case you're unable to enable SSH with the guide instructions, [refer to this section](/hardware/ugv/get-started#establish-ssh-connection) to use an alternative way to establish a SSH connection.
 
 ### 3. End and Disable the Main Program
+
 When the UGV Beast is powered on, it automatically runs the Raspberry Pi's **default main program**, which occupies the serial port and camera. This prevents ROS 2 (and our custom Cyberwave stack) from accessing the hardware. Before proceeding, you need to **end and disable the main program**.
 
 Follow both steps from the official Waveshare preparation guide:
+
 1. [1.1 End the main program](https://www.waveshare.com/wiki/UGV_Beast_PI_ROS2_1._Preparation) — Stop the currently running main program to free the serial port and camera
 2. [1.2 Disable the main program from running automatically](https://www.waveshare.com/wiki/UGV_Beast_PI_ROS2_1._Preparation#:~:text=running%20automatically.-,1.2%20Disable%20the%20main%20program%20from%20running%20automatically,-Every%20time%20the) — Prevent it from starting again on reboot
 
 <Note>
-In the standard Waveshare setup, after disabling the main program you would start their Docker remote service. **Skip that step.** Instead, you'll pull and run the custom Cyberwave Docker image, which replaces the default Docker container with one that includes the MQTT Bridge, Cyberwave SDK, and pre-configured ROS 2 stack.
+  In the standard Waveshare setup, after disabling the main program you would
+  start their Docker remote service. **Skip that step.** Instead, you'll pull
+  and run the custom Cyberwave Docker image, which replaces the default Docker
+  container with one that includes the MQTT Bridge, Cyberwave SDK, and
+  pre-configured ROS 2 stack.
 </Note>
 
 ---
@@ -60,9 +70,10 @@ ssh ws@<UGV_IP> -p 22
 Replace `<UGV_IP>` with your UGV Beast's actual IP address, displayed on the **OLED screen** (the `W:` line). For example: `ssh ws@192.168.0.144 -p 22`.
 
 **Credentials:**
-* Username: `ws`
-* Password: `ws`
-* Port: `22`
+
+- Username: `ws`
+- Password: `ws`
+- Port: `22`
 
 ### Step 2: Pull the Docker Image
 
@@ -77,6 +88,7 @@ docker pull cyberwaveos/cyb_ugv_beast:latest
 To run the Cyberwave stack, you'll create a service installer script on the Raspberry Pi. This script sets up a **systemd service** that automatically manages the Docker container, starting it on boot, restarting on crash, and keeping it running unattended.
 
 **What the installer does:**
+
 1. **Checks for image updates**: Compares local and remote image versions, prompts to update if newer is available
 2. **Syncs container files**: Merges the container's `/home` to the Pi's local `/home`, adding missing files without overwriting your existing configuration
 3. **Creates a systemd service** (`cyb-ugv-beast.service`) that starts the container on boot and restarts it on crash
@@ -171,7 +183,7 @@ if docker pull "$CONTAINER_IMAGE"; then
     NEW_DIGEST=$(docker image inspect "$CONTAINER_IMAGE" --format '{{index .RepoDigests 0}}' 2>/dev/null | cut -d'@' -f2)
     log_success "Latest image pulled successfully!"
     log_info "New image digest: ${NEW_DIGEST:-unknown}"
-    
+
     if [[ -n "$LOCAL_DIGEST" ]] && [[ "$LOCAL_DIGEST" != "$NEW_DIGEST" ]]; then
         log_success "Image was updated to newer version!"
     elif [[ -n "$LOCAL_DIGEST" ]]; then
@@ -208,13 +220,13 @@ merge_directories() {
     local src="$1"
     local dst="$2"
     local indent="${3:-}"
-    
+
     for item in "$src"/*; do
         [[ -e "$item" ]] || continue
-        
+
         local basename=$(basename "$item")
         local dst_item="$dst/$basename"
-        
+
         if [[ -d "$item" ]]; then
             if [[ ! -d "$dst_item" ]]; then
                 log_info "${indent}[+] Adding directory: $dst_item"
@@ -228,7 +240,7 @@ merge_directories() {
                 log_info "${indent}[!] Removing dangling symlink: $dst_item"
                 rm -f "$dst_item"
             fi
-            
+
             if [[ ! -e "$dst_item" ]]; then
                 log_info "${indent}[+] Adding file: $dst_item"
                 cp "$item" "$dst_item" || log_warning "${indent}Failed to copy file: $dst_item"
@@ -523,14 +535,18 @@ Once the container is running, SSH into the Docker container to configure Cyberw
 ssh -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" root@<UGV_IP> -p 23
 ```
 
-Replace `<UGV_IP>` with the same IP address from the OLED screen (e.g., `ssh root@192.168.0.144 -p 23`). This command enables you to SSH into the docker container without the need of creating any public key. 
+Replace `<UGV_IP>` with the same IP address from the OLED screen (e.g., `ssh root@192.168.0.144 -p 23`). This command enables you to SSH into the docker container without the need of creating any public key.
 
 **Docker Container Credentials:**
-* Username: `root`
-* Password: `ws`
+
+- Username: `root`
+- Password: `ws`
 
 <Note>
-The Raspberry Pi host is accessible on **port 22** (for system and network tasks), while the Docker container is accessible on **port 23** (for ROS 2 and Cyberwave configuration). These are two separate SSH sessions into different environments on the same device.
+  The Raspberry Pi host is accessible on **port 22** (for system and network
+  tasks), while the Docker container is accessible on **port 23** (for ROS 2 and
+  Cyberwave configuration). These are two separate SSH sessions into different
+  environments on the same device.
 </Note>
 
 ---
@@ -547,13 +563,14 @@ Before configuring the edge, set up the digital twin on the Cyberwave platform:
 2. Create a new **Project** (or use an existing one)
 3. Create a new **Environment** within the project
 4. Click **Add Scene Object** and select **UGV Beast** from the Catalog
-![](/images/add-ugv-to-env.png)
+   ![](/images/add-ugv-to-env.png)
 
 5. The twin is added to your environment with the required capabilities pre-configured
-![](/images/ugv-in-env.png)
+   ![](/images/ugv-in-env.png)
 
 <Warning>
-**Copy the Twin UUID** — you'll need it in the next step. Hover over the three dots next to the asset in the sidebar and click **Copy Twin UUID**.
+  **Copy the Twin UUID** — you'll need it in the next step. Hover over the three
+  dots next to the asset in the sidebar and click **Copy Twin UUID**.
 </Warning>
 
 ### Step 2: Set Your Cyberwave Token
@@ -603,7 +620,7 @@ chmod +x src/mqtt_bridge/scripts/ugv_beast/clean_build_mqtt.sh
 ```
 
 <Note>
-You must rebuild the MQTT bridge every time you change the token or twin UUID.
+  You must rebuild the MQTT bridge every time you change the token or twin UUID.
 </Note>
 
 ### Step 5: Launch the UGV Beast Stack
@@ -612,14 +629,16 @@ Start the full UGV Beast ROS 2 stack with the MQTT bridge by running the launch 
 
 ```bash
 cd /home/ws/ugv_ws
-chmod +x ugv_run.sh
-./ugv_run.sh
+chmod +x ugv_services_install.sh
+sudo ./ugv_services_install.sh
 ```
 
 Once launched, the MQTT bridge establishes a connection to Cyberwave and begins streaming telemetry data from the robot to the digital twin.
 
 <Check>
-**Connection Established:** If successful, you should see the digital twin in your Cyberwave environment updating in real time with the robot's joint states and sensor data.
+  **Connection Established:** If successful, you should see the digital twin in
+  your Cyberwave environment updating in real time with the robot's joint states
+  and sensor data.
 </Check>
 
 ### Step 6: Add the Cyberwave UGV Beast Controller
@@ -630,10 +649,10 @@ Go back to your Cyberwave environment and switch to **Live Mode** to view update
 
 Add a **UGV Beast controller policy** to enable keyboard control. From here, you can:
 
-* Move the rover using keyboard input
-* Turn on the onboard camera
-* Record video datasets
-* Interact with the robot in real time
+- Move the rover using keyboard input
+- Turn on the onboard camera
+- Record video datasets
+- Interact with the robot in real time
 
 ---
 
@@ -643,10 +662,10 @@ Add a **UGV Beast controller policy** to enable keyboard control. From here, you
 
 The UGV Beast has two separate SSH hosts on the same device. Both use the UGV's IP address (displayed on the **OLED screen**, the `W:` line), but they connect to different environments on different ports:
 
-| Host | User | Port | Purpose |
-|---|---|---|---|
-| Raspberry Pi | `ws` | `22` | System administration, Docker management, network config |
-| Docker Container | `root` | `23` | ROS 2, MQTT Bridge, Cyberwave configuration |
+| Host             | User   | Port | Purpose                                                  |
+| ---------------- | ------ | ---- | -------------------------------------------------------- |
+| Raspberry Pi     | `ws`   | `22` | System administration, Docker management, network config |
+| Docker Container | `root` | `23` | ROS 2, MQTT Bridge, Cyberwave configuration              |
 
 #### Option 1: Direct SSH Commands
 
