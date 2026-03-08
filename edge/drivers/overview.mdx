@@ -1,0 +1,38 @@
+---
+title: "Drivers"
+description: "A Cyberwave driver is a Docker image that interacts with device hardware and the Cyberwave backend."
+---
+
+<Warning>
+**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
+</Warning>
+
+A Cyberwave driver is a Docker image that interacts with device hardware and the Cyberwave backend.
+
+## How to use drivers
+
+Register a driver by adding its configuration to a twin's metadata (or the catalog twin's metadata if you control the catalog twin). Use the environment view's **Advanced editing** to edit metadata.
+
+Note: changing a catalog twin's metadata affects all subsequently created digital twins derived from that catalog twin.
+
+Example driver metadata (JSON):
+
+```json
+{
+  "drivers": {
+    "default": {
+      "docker_image": "cyberwaveos/so101-driver",
+      "version": "0.0.1",
+      "params": ["--network", "local", "--add-host", "host.docker.internal:host-gateway"]
+    }
+  }
+}
+```
+
+Manage edge driver containers:
+
+| Subcommand | Description |
+| --- | --- |
+| `list` | List running driver containers (`--all` includes exited) |
+| `start` | Start a stopped driver container |
+| `stop` | Stop a running driver container |

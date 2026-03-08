@@ -1,0 +1,45 @@
+---
+title: "Writing compatible drivers"
+description: "When Edge Core starts a driver container it sets environment variables provided to the container."
+---
+
+<Warning>
+**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
+</Warning>
+
+When Edge Core starts a driver container it sets the following environment variables (provided to the container):
+
+- `CYBERWAVE_TWIN_UUID`
+- `CYBERWAVE_API_KEY`
+- `CYBERWAVE_TWIN_JSON_FILE` (writable file path)
+- `CYBERWAVE_CHILD_TWIN_UUIDS` (optional, comma-separated)
+
+`CYBERWAVE_CHILD_TWIN_UUIDS` is present when child camera twins are attached to the driver twin; drivers can use this to coordinate cameras without additional prompts.
+
+## Driver failure handling
+
+Drivers must exit with a **non-zero** code when they cannot access required hardware (for example, missing `/dev/video*` or disconnected peripherals). This allows Edge Core to detect startup failures and trigger restart logic.
+
+Edge Core alerts and behavior:
+
+- `driver_start_failure`: raised if a driver container cannot reach a stable running state.
+- `driver_restart_loop`: raised when a driver restarts more than the configured threshold (default 4 restarts within 60 seconds). The container is stopped and marked as flapping.
+
+Optional environment variables to tune restart behavior:
+
+- `CYBERWAVE_DRIVER_RESTART_LOOP_THRESHOLD` (default: `4`)
+- `CYBERWAVE_DRIVER_RESTART_LOOP_WINDOW_SECONDS` (default: `60`)
+- `CYBERWAVE_DRIVER_TROUBLESHOOTING_URL` (default: `https://docs.cyberwave.com`)
+
+## Twin JSON file
+
+`CYBERWAVE_TWIN_JSON_FILE` is an absolute path to a JSON file provided to the driver. The file contains the digital twin instance object (including its `metadata`) and the associated catalog twin data, matching the API schema: TwinSchema and AssetSchema.
+
+Drivers may modify this file; Edge Core will sync changes back to the backend when connectivity is available.
+
+## Runtime configuration for drivers
+
+Drivers and edge services should treat `metadata["edge_configs"]` as the source of truth for per-device runtime configuration.
+Edge identity should be stored at `metadata["edge_fingerprint"]` (not duplicated inside `edge_configs`).
+
+At runtime, drivers can read `edge_configs` from `CYBERWAVE_TWIN_JSON_FILE` at startup to obtain per-device settings.

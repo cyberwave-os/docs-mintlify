@@ -1,0 +1,161 @@
+# cyberwave.rest.CatalogApi
+
+All URIs are relative to *http://localhost*
+
+Method | HTTP request | Description
+------------- | ------------- | -------------
+[**src_app_api_catalog_seed_seed_catalog**](CatalogApi.md#src_app_api_catalog_seed_seed_catalog) | **POST** /api/v1/catalog/seed | Seed Catalog
+[**src_app_api_catalog_seed_seed_options**](CatalogApi.md#src_app_api_catalog_seed_seed_options) | **GET** /api/v1/catalog/seed-options | Seed Options
+
+
+# **src_app_api_catalog_seed_seed_catalog**
+> CatalogSeedResponseSchema src_app_api_catalog_seed_seed_catalog(catalog_seed_request_schema)
+
+Seed Catalog
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.catalog_seed_request_schema import CatalogSeedRequestSchema
+from cyberwave.rest.models.catalog_seed_response_schema import CatalogSeedResponseSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CatalogApi(api_client)
+    catalog_seed_request_schema = cyberwave.rest.CatalogSeedRequestSchema() # CatalogSeedRequestSchema | 
+
+    try:
+        # Seed Catalog
+        api_response = api_instance.src_app_api_catalog_seed_seed_catalog(catalog_seed_request_schema)
+        print("The response of CatalogApi->src_app_api_catalog_seed_seed_catalog:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CatalogApi->src_app_api_catalog_seed_seed_catalog: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **catalog_seed_request_schema** | [**CatalogSeedRequestSchema**](CatalogSeedRequestSchema.md)|  | 
+
+### Return type
+
+[**CatalogSeedResponseSchema**](CatalogSeedResponseSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_catalog_seed_seed_options**
+> CatalogSeedOptionsResponseSchema src_app_api_catalog_seed_seed_options()
+
+Seed Options
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.catalog_seed_options_response_schema import CatalogSeedOptionsResponseSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CatalogApi(api_client)
+
+    try:
+        # Seed Options
+        api_response = api_instance.src_app_api_catalog_seed_seed_options()
+        print("The response of CatalogApi->src_app_api_catalog_seed_seed_options:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CatalogApi->src_app_api_catalog_seed_seed_options: %s\n" % e)
+```
+
+
+
+### Parameters
+
+This endpoint does not need any parameter.
+
+### Return type
+
+[**CatalogSeedOptionsResponseSchema**](CatalogSeedOptionsResponseSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
