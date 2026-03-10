@@ -1,5 +1,6 @@
 # WorkflowSchema
 
+Workflow schema.
 
 ## Properties
 
@@ -13,8 +14,8 @@ Name | Type | Description | Notes
 **visibility** | **str** |  | 
 **created_at** | **datetime** |  | 
 **updated_at** | **datetime** |  | 
-**created_by** | **str** |  | 
-**updated_by** | **str** |  | 
+**created_by** | **str** |  | [optional] 
+**updated_by** | **str** |  | [optional] 
 **metadata** | **Dict[str, object]** |  | 
 **nodes** | [**List[WorkflowNodeSchema]**](WorkflowNodeSchema.md) |  | [optional] 
 **connections** | [**List[WorkflowConnectionSchema]**](WorkflowConnectionSchema.md) |  | [optional] 

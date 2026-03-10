@@ -1,0 +1,113 @@
+---
+title: "MCP Server (Hosted)"
+description: "Connect any MCP-compatible agent to Cyberwave's hosted MCP server."
+icon: "plug"
+---
+
+## Hosted endpoint
+
+Cyberwave provides a hosted MCP server so teams can connect agents without running local infrastructure.
+
+- **Endpoint:** `https://mcp.cyberwave.com/mcp`
+- **Transport:** `streamable-http`
+- **Protocol:** JSON-RPC 2.0 over MCP
+
+<Note>
+At the moment, the hosted endpoint does not require client-side auth headers. If your organization needs stricter access control, self-host the MCP server behind your own auth layer.
+</Note>
+
+## Quick setup
+
+### Cursor
+
+Create `.cursor/mcp.json` in your project:
+
+```json
+{
+  "mcpServers": {
+    "cyberwave": {
+      "url": "https://mcp.cyberwave.com/mcp"
+    }
+  }
+}
+```
+
+Restart Cursor after editing the file.
+
+### Claude API (remote MCP connector)
+
+```python
+import anthropic
+
+client = anthropic.Anthropic()
+
+response = client.beta.messages.create(
+    model="claude-opus-4-1",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "List available Cyberwave tools."}],
+    mcp_servers=[
+        {
+            "type": "url",
+            "name": "cyberwave",
+            "url": "https://mcp.cyberwave.com/mcp"
+        }
+    ],
+    tools=[{"type": "mcp_toolset", "mcp_server_name": "cyberwave"}],
+)
+```
+
+### OpenAI Agents SDK (Python)
+
+```python
+from agents import Agent, Runner
+from agents.mcp import MCPServerStreamableHttp
+
+mcp_server = MCPServerStreamableHttp(
+    params={"url": "https://mcp.cyberwave.com/mcp"},
+    name="cyberwave",
+)
+
+agent = Agent(
+    name="Cyberwave Assistant",
+    instructions="Use Cyberwave MCP tools to inspect before acting.",
+    mcp_servers=[mcp_server],
+)
+
+result = Runner.run_sync(agent, "List my available workspaces.")
+print(result.final_output)
+```
+
+## Best practices for hosted MCP clients
+
+These practices are aligned with the MCP transport specification and major hosted-MCP client docs:
+
+1. **Use Streamable HTTP endpoints** for hosted/serverless deployments.
+2. **If you are building a custom client, send both accepted response types** in `Accept`:
+   - `application/json`
+   - `text/event-stream`
+3. **Use retries with exponential backoff** for transient `5xx` and network errors.
+4. **Apply sensible tool call timeouts** and surface structured errors to users.
+5. **Prefer inspect-first workflows** for Cyberwave:
+   - list/get resources first
+   - run action tools with `execute=false` before `execute=true`
+6. **Track observability signals**:
+   - tool name
+   - duration
+   - status/error code
+   - endpoint latency (p95/p99)
+
+## Validation and benchmark resources
+
+- **MCP Inspector** for manual interoperability testing and tool/resource validation.
+- **MCP-Bench** for evaluating agent tool-use quality across MCP servers.
+- **Cloud Run metrics / your APM** for request rate, latency, error rate, and saturation in production.
+
+## References
+
+- MCP specification (transports): https://modelcontextprotocol.io/specification/2025-03-26/basic/transports
+- MCP Inspector: https://modelcontextprotocol.io/docs/tools/inspector
+- Cursor MCP integrations: https://cursor.com/help/customization/mcp
+- Anthropic remote MCP servers: https://docs.anthropic.com/en/docs/agents-and-tools/remote-mcp-servers
+- OpenAI Agents SDK MCP docs: https://openai.github.io/openai-agents-python/mcp/
+- Google Cloud: Host MCP servers on Cloud Run: https://docs.cloud.google.com/run/docs/host-mcp-servers
+- MCP-Bench: https://github.com/Accenture/mcp-bench

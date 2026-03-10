@@ -45,9 +45,25 @@
               ]
             },
             {
+              "group": "Cyberwave Edge",
+              "pages": [
+                "edge/overview",
+                {
+                  "group": "Drivers",
+                  "icon": "truck-ramp-box",
+                  "pages": [
+                    "edge/drivers/overview",
+                    "edge/drivers/writing-compatible-drivers",
+                    "edge/drivers/alerts"
+                  ]
+                }
+              ]
+            },
+            {
               "group": "Use Cyberwave",
               "pages": [
                 "use-cyberwave/setup-cyberwave",
+                "use-cyberwave/teleoperation-latency",
                 {
                   "group": "Catalog",
                   "icon": "book-bookmark",
@@ -84,7 +100,8 @@
               "group": "SDKs",
               "pages": [
                 "sdks/python-sdk",
-                "sdks/cpp-sdk"
+                "sdks/cpp-sdk",
+                "sdks/mcp-server"
               ]
             },
             {

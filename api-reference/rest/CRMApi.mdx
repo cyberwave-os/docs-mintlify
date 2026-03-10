@@ -1,0 +1,566 @@
+# cyberwave.rest.CRMApi
+
+All URIs are relative to *http://localhost*
+
+Method | HTTP request | Description
+------------- | ------------- | -------------
+[**src_app_api_crm_create_opportunity**](CRMApi.md#src_app_api_crm_create_opportunity) | **POST** /api/v1/crm | Create Opportunity
+[**src_app_api_crm_delete_opportunity**](CRMApi.md#src_app_api_crm_delete_opportunity) | **DELETE** /api/v1/crm/{uuid} | Delete Opportunity
+[**src_app_api_crm_get_opportunity**](CRMApi.md#src_app_api_crm_get_opportunity) | **GET** /api/v1/crm/{uuid} | Get Opportunity
+[**src_app_api_crm_get_pipeline_config**](CRMApi.md#src_app_api_crm_get_pipeline_config) | **GET** /api/v1/crm/pipeline-config | Get Pipeline Config
+[**src_app_api_crm_get_workspace_users**](CRMApi.md#src_app_api_crm_get_workspace_users) | **GET** /api/v1/crm/workspace/{workspace_uuid}/users | Get Workspace Users
+[**src_app_api_crm_list_opportunities**](CRMApi.md#src_app_api_crm_list_opportunities) | **GET** /api/v1/crm | List Opportunities
+[**src_app_api_crm_update_opportunity**](CRMApi.md#src_app_api_crm_update_opportunity) | **PUT** /api/v1/crm/{uuid} | Update Opportunity
+
+
+# **src_app_api_crm_create_opportunity**
+> OpportunitySchema src_app_api_crm_create_opportunity(opportunity_create_schema)
+
+Create Opportunity
+
+Create a new opportunity.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.opportunity_create_schema import OpportunityCreateSchema
+from cyberwave.rest.models.opportunity_schema import OpportunitySchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CRMApi(api_client)
+    opportunity_create_schema = cyberwave.rest.OpportunityCreateSchema() # OpportunityCreateSchema | 
+
+    try:
+        # Create Opportunity
+        api_response = api_instance.src_app_api_crm_create_opportunity(opportunity_create_schema)
+        print("The response of CRMApi->src_app_api_crm_create_opportunity:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CRMApi->src_app_api_crm_create_opportunity: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **opportunity_create_schema** | [**OpportunityCreateSchema**](OpportunityCreateSchema.md)|  | 
+
+### Return type
+
+[**OpportunitySchema**](OpportunitySchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_crm_delete_opportunity**
+> src_app_api_crm_delete_opportunity(uuid)
+
+Delete Opportunity
+
+Soft delete an opportunity.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CRMApi(api_client)
+    uuid = 'uuid_example' # str | 
+
+    try:
+        # Delete Opportunity
+        api_instance.src_app_api_crm_delete_opportunity(uuid)
+    except Exception as e:
+        print("Exception when calling CRMApi->src_app_api_crm_delete_opportunity: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: Not defined
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_crm_get_opportunity**
+> OpportunitySchema src_app_api_crm_get_opportunity(uuid)
+
+Get Opportunity
+
+Get a specific opportunity by UUID.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.opportunity_schema import OpportunitySchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CRMApi(api_client)
+    uuid = 'uuid_example' # str | 
+
+    try:
+        # Get Opportunity
+        api_response = api_instance.src_app_api_crm_get_opportunity(uuid)
+        print("The response of CRMApi->src_app_api_crm_get_opportunity:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CRMApi->src_app_api_crm_get_opportunity: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+
+### Return type
+
+[**OpportunitySchema**](OpportunitySchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_crm_get_pipeline_config**
+> PipelineConfigSchema src_app_api_crm_get_pipeline_config()
+
+Get Pipeline Config
+
+Get the pipeline stages configuration for all opportunity types.
+
+### Example
+
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.pipeline_config_schema import PipelineConfigSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CRMApi(api_client)
+
+    try:
+        # Get Pipeline Config
+        api_response = api_instance.src_app_api_crm_get_pipeline_config()
+        print("The response of CRMApi->src_app_api_crm_get_pipeline_config:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CRMApi->src_app_api_crm_get_pipeline_config: %s\n" % e)
+```
+
+
+
+### Parameters
+
+This endpoint does not need any parameter.
+
+### Return type
+
+[**PipelineConfigSchema**](PipelineConfigSchema.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_crm_get_workspace_users**
+> List[WorkspaceUsersSchema] src_app_api_crm_get_workspace_users(workspace_uuid)
+
+Get Workspace Users
+
+Get all users in a workspace for assignment dropdowns.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.workspace_users_schema import WorkspaceUsersSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CRMApi(api_client)
+    workspace_uuid = 'workspace_uuid_example' # str | 
+
+    try:
+        # Get Workspace Users
+        api_response = api_instance.src_app_api_crm_get_workspace_users(workspace_uuid)
+        print("The response of CRMApi->src_app_api_crm_get_workspace_users:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CRMApi->src_app_api_crm_get_workspace_users: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **workspace_uuid** | **str**|  | 
+
+### Return type
+
+[**List[WorkspaceUsersSchema]**](WorkspaceUsersSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_crm_list_opportunities**
+> List[OpportunitySchema] src_app_api_crm_list_opportunities(opportunity_type=opportunity_type, year=year, is_archived=is_archived, workspace_uuid=workspace_uuid)
+
+List Opportunities
+
+List all opportunities for workspaces the user belongs to.
+
+Query params:
+- opportunity_type: Filter by type (commercial, partnership, vendor, asset)
+- year: Filter by year (e.g., 2026)
+- is_archived: Filter by archived status (true/false). Defaults to false if not specified.
+- workspace_uuid: Filter by specific workspace
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.opportunity_schema import OpportunitySchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CRMApi(api_client)
+    opportunity_type = 'opportunity_type_example' # str |  (optional)
+    year = 56 # int |  (optional)
+    is_archived = True # bool |  (optional)
+    workspace_uuid = 'workspace_uuid_example' # str |  (optional)
+
+    try:
+        # List Opportunities
+        api_response = api_instance.src_app_api_crm_list_opportunities(opportunity_type=opportunity_type, year=year, is_archived=is_archived, workspace_uuid=workspace_uuid)
+        print("The response of CRMApi->src_app_api_crm_list_opportunities:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CRMApi->src_app_api_crm_list_opportunities: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **opportunity_type** | **str**|  | [optional] 
+ **year** | **int**|  | [optional] 
+ **is_archived** | **bool**|  | [optional] 
+ **workspace_uuid** | **str**|  | [optional] 
+
+### Return type
+
+[**List[OpportunitySchema]**](OpportunitySchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_crm_update_opportunity**
+> OpportunitySchema src_app_api_crm_update_opportunity(uuid, opportunity_update_schema)
+
+Update Opportunity
+
+Update an existing opportunity.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.opportunity_schema import OpportunitySchema
+from cyberwave.rest.models.opportunity_update_schema import OpportunityUpdateSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.CRMApi(api_client)
+    uuid = 'uuid_example' # str | 
+    opportunity_update_schema = cyberwave.rest.OpportunityUpdateSchema() # OpportunityUpdateSchema | 
+
+    try:
+        # Update Opportunity
+        api_response = api_instance.src_app_api_crm_update_opportunity(uuid, opportunity_update_schema)
+        print("The response of CRMApi->src_app_api_crm_update_opportunity:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CRMApi->src_app_api_crm_update_opportunity: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+ **opportunity_update_schema** | [**OpportunityUpdateSchema**](OpportunityUpdateSchema.md)|  | 
+
+### Return type
+
+[**OpportunitySchema**](OpportunitySchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
