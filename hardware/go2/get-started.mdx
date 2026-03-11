@@ -9,9 +9,9 @@ import EarlyAccess from '/snippets/early-access.mdx';
 
 This guide walks you through connecting your **Unitree Go2** quadruped robot to its digital twin on Cyberwave. By the end, you will have:
 
-- Configured the Go2 hardware
+- Configured the Go2 hardware and connected an edge device
 - Created a Cyberwave environment with a Go2 digital twin
-- Installed the Cyberwave edge stack on your Go2's onboard compute
+- Installed the Cyberwave edge stack on the edge device connected to the Go2
 - Paired the physical robot with the digital twin in real time
 
 ---
@@ -52,21 +52,45 @@ An [environment](/get-started/key-concepts#environments) is a 3D virtual space t
 
 ## Phase 2: Pair the Go2 Robot
 
-Install the Cyberwave edge stack on the Go2's onboard computer to bridge the physical robot with the cloud platform.
+To install the Cyberwave edge stack and pair the Go2, you need to connect an edge device (e.g., Raspberry Pi, Jetson Orin Nano, or any Linux computer) to the Go2 and then install the Cyberwave software on that device.
 
-### Step 1: SSH into the Go2
+### Step 1: Connect an Edge Device to the Go2
 
-Connect to the Go2's onboard computer (typically a Jetson or Raspberry Pi):
+The Go2 exposes an **Ethernet port** on its body that allows a direct wired connection to an external compute device. This is how your edge device communicates with the Go2's internal systems (motor controllers, sensors, cameras).
+
+**What you'll need:**
+
+- An edge device (Raspberry Pi, Jetson Orin Nano, or similar Linux computer)
+- An Ethernet cable
+
+**Connect the hardware:**
+
+1. Locate the **Ethernet port** on the Go2 (refer to the [Go2 electrical interface documentation](https://www.docs.quadruped.de/projects/go2/html/index.html) for the exact location).
+2. Connect one end of the Ethernet cable to the **Go2's Ethernet port**.
+3. Connect the other end to the **Ethernet port on your edge device** (Raspberry Pi, Orin Nano, etc.).
+4. Power on both the Go2 and the edge device.
+
+**Verify the connection:**
+
+Once connected, SSH into your edge device from your laptop or workstation and verify that the Go2 is reachable over the Ethernet link:
 
 ```bash
-ssh user@<go2-ip-address>
+ssh user@<edge-device-ip>
+```
+
+Then check connectivity to the Go2's internal network:
+
+```bash
+ping <go2-internal-ip>
 ```
 
 <Tip>
-Refer to the [Go2 network interface documentation](https://www.docs.quadruped.de/projects/go2/html/index.html) for details on finding the Go2's IP address and SSH credentials.
+The Go2 typically assigns an IP on its internal Ethernet network (e.g., `192.168.123.x`). Refer to the [Go2 network interface documentation](https://www.docs.quadruped.de/projects/go2/html/index.html) for the default IP range, SSH credentials, and network configuration details.
 </Tip>
 
 ### Step 2: Install the Cyberwave CLI
+
+With your edge device connected to the Go2 and SSH session active, install the Cyberwave CLI:
 
 ```bash
 curl -fsSL https://cyberwave.com/install.sh | bash
@@ -78,13 +102,13 @@ For more details, see [Step 3 of the Quick Start guide](/get-started/quickstart#
 
 ### Step 3: Install the Edge Core
 
-The [Edge Core](/get-started/architecture#cyberwave-edge) acts as the bridge between the Go2 hardware and the Cyberwave cloud backend.
+The [Edge Core](/get-started/architecture#cyberwave-edge) is the orchestrator of your Cyberwave edge components. It runs on the edge device and acts as the bridge between the Go2 hardware and the Cyberwave cloud backend.
 
 ```bash
 sudo cyberwave edge install
 ```
 
-The CLI will prompt you to log in with your Cyberwave credentials and then install the `cyberwave-edge-core` on the Go2.
+The CLI will prompt you to log in with your Cyberwave credentials and then install the `cyberwave-edge-core` on your edge device.
 
 ### Step 4: Pair the Go2 with its Digital Twin
 
