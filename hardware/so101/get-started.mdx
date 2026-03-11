@@ -38,133 +38,145 @@ Before you begin this quick start guide, ensure you have the following:
 
 #### Step 1: Set Up the Cyberwave Environment
 
-> This section is stil a stub
+An [environment](/get-started/key-concepts#environments) is a 3D virtual space that mirrors your real-world robot setup. It's where your digital twins live, sensors stream data, and controllers send commands, all in real time. You'll create one environment that contains both the SO101 arm and camera twins.
 
-Set up an environment that mirrors your physical environment:
+**Create the environment:**
 
-1. Log in to Cyberwave.
-2. Create a new **Environment**
+1. Go to the Cyberwave dashboard and click on **New Environment**.
+2. Give your environment a **name** (e.g., "SO101 Teleoperation Setup") and **description**.
 
-**Add the SO101 Arm:**
+**Add the SO101 digital twin:**
 
-1. In your environment, click **Add Scene Object** to add a new twin.
-2. Browse the Catalog and select **SO101**.
-3. Click **Add to Environment**.
+A [digital twin](/get-started/key-concepts#digital-twins) is a virtual replica of your physical robot, it mirrors the robot's structure, joints, sensors, and behavior in real time within your environment.
 
-**Add the Camera(s):**
+1. Inside your environment, click **Add from Catalog** in the left panel.
+2. Search for and select **SO101**.
+3. Add it to your environment and position it to match your physical setup.
 
-1. Click **Add Scene Object** again.
-2. Browse the Catalog and select **Standard Camera**.
-3. Click **Add to Environment**.
+**Add the camera twin:**
 
-<Warning>Dock the cameras under the SO101 to collect the data</Warning>
+1. Click **Add from Catalog** again.
+2. Search for and select **Standard Camera**.
+3. Add it to your environment.
 
-#### Step 2: Install the Edge core
+<Warning>
+Dock the camera under the SO101 twin in the environment, this ensures the camera feed is correctly associated with the arm for data collection.
+</Warning>
 
-> This section is a stub
+#### Step 2: Install the Cyberwave Edge
 
-SSH into the device you physically connected to the SO101 and cameras and then install the CLI:
+The [Cyberwave CLI](/get-started/quickstart#step-3-install-the-cyberwave-cli) is the command-line tool used to authenticate, pair, and manage your physical hardware with the Cyberwave platform. The [Edge Core](/get-started/architecture#cyberwave-edge) acts as the bridge between the SO101 hardware and the Cyberwave cloud backend.
+
+**SSH into your edge device:**
+
+Connect to the device that is physically connected to the SO101 arms and camera (e.g., Raspberry Pi, Jetson, or your local computer):
+
+```bash
+ssh user@<edge-device-ip>
+```
+
+**Install the CLI:**
 
 ```bash
 curl -fsSL https://cyberwave.com/install.sh | bash
 ```
 
-Once that is done, install the edge:
+**Install the Edge Core:**
 
 ```bash
 sudo cyberwave edge install
 ```
 
-The Cyberwave edge software will ask you to log in with your credentials and then select the environment you created on step 1
+The CLI will prompt you to log in with your Cyberwave credentials and then ask you to select the environment you created in Step 1. Once complete, the edge runtime is installed and your device is linked to the cloud platform.
 
-#### Step 3 Calibrate the Devices
+**Pair the hardware:**
 
-> This section needs to be reviewed as the calibraton UX changed
+Follow the terminal prompts to pair the SO101 arms and camera with their digital twins:
 
-Calibration is a **required step** before using an SO101 arm for teleoperation or control. It ensures that the software correctly understands the physical state of the robot and can accurately map commands to hardware movements.
+1. Select the environment you created.
+2. Select the SO101 digital twin.
+3. The appropriate driver will be automatically installed and configured.
+4. Repeat for the camera twin.
 
-Calibration defines:
+#### Step 3: Calibrate the Arms
 
-- The **zero (reference) position** of each joint
-- The **valid movement range** for each joint
-- The **mapping** between the physical arm and the software model
+Calibration is a **required step** before using an SO101 arm for teleoperation or control. It teaches the software where each joint's zero (reference) position is, what its valid movement range is, and how the physical arm maps to the software model. Without calibration, the robot won't know where its joints actually are and commands won't translate correctly to hardware movements.
 
 <Warning>
   You must calibrate each arm individually. If you're using a dual-arm setup
-  (leader + follower), complete calibration for both devices.
+  (leader + follower), complete calibration for both.
 </Warning>
 
-**Calibrate the Leader Arm:**
+**Calibrate via the Cyberwave Platform:**
 
-The leader arm is used for human-guided motion and does not execute commands. It captures your movements to control the follower arm.
-
-Replace `/dev/tty.usbmodem123` with your actual leader arm port from Step 4 and run the following command:
-
-```
-so101-calibrate --type leader --port /dev/tty.usbmodem123 --id leader1
-```
-
-This does the following:
-
-- Registers the device as a leader arm
-- Stores its calibration under the ID leader1
-- Prepares the arm to be moved manually by a human
-
-**Calibrate the Follower Arm:**
-
-The follower arm is the arm that executes motion commands, either by mirroring the leader or receiving direct control inputs.
-
-Replace `/dev/tty.usbmodem456` with your actual follower arm port from Step 4 and run the following command:
-
-```
-so101-calibrate --type follower --port /dev/tty.usbmodem456 --id follower1
-```
-
-This does the following:
-
-- Registers the device as a follower arm
-- Stores its calibration under the ID follower1
-- Prepares the arm to receive and execute control commands
-
-**During Calibration:**
-
-The calibration process is interactive. You may be asked to:
-
-- Move one or more joints to specific positions
-- Hold the arm steady for a short period
-- Confirm that joints are aligned correctly
+1. Open the **Cyberwave dashboard** and navigate to your environment.
+2. Select the SO101 twin, you'll see an option to **Calibrate** both arms (leader and follower).
+3. Click **Calibrate** and follow the on-screen prompts.
+4. **Manually move every joint** of the leader arm through its full range when prompted.
+5. Repeat for the **follower arm**.
+6. Once both arms are calibrated, the platform will confirm the calibration is complete.
 
 <Tip>
-  Follow the on-screen instructions carefully and complete each step before
-  continuing. Take your time to ensure accurate calibration, this will improve
-  control precision during operation.
+  Take your time during calibration, move each joint slowly and through its full range. Accurate calibration directly improves control precision during teleoperation.
 </Tip>
 
 #### Step 4: Set Up Teleoperation
 
-Teleoperation enables you to control the follower arm using the leader arm in real-time. The leader arm captures your manual movements, and the follower arm mirrors those movements instantly, creating an intuitive way to control the robot.
+**Teleoperation** lets you control the follower arm using the leader arm in real time. When you physically move the leader arm, the follower arm mirrors those movements instantly, giving you an intuitive, hands-on way to operate the robot. This is the primary method for performing tasks, collecting training data, and demonstrating behaviors to the system.
 
-**How Teleoperation Works:**
+**How Teleoperation Works**:
 
 The teleoperation system creates a synchronized connection between:
-
-1. **Physical leader arm** → captures human-guided joint movements
-2. **Physical follower arm** → executes the movements in real-time
-3. **Digital twin** → receives telemetry data from both arms for monitoring and recording
+- **Physical leader arm** → captures human-guided joint movements
+- **Physical follower arm** → executes the movements in real-time
+- **Digital twin** → receives telemetry data from both arms for monitoring and recording
 
 Both the leader and follower arms send real-time joint data to their corresponding SO101 digital twin in Cyberwave (identified by the twin UUID). The camera also streams data to its digital twin for visual feedback and dataset recording.
 
 **Start Teleoperation:**
 
-> This section is a stub
+1. Open your environment in the Cyberwave dashboard.
+2. Click the **Assign Controller** button.
+3. Select **Local Teleop** from the list of available controllers.
+4. The teleoperation session will start, the follower arm is now linked to the leader arm.
 
-Select the controller from the left and pick "Local teleop"
+<Check>
+  Teleoperation is active. Try moving the leader arm — the follower arm will replicate your movements in real time.
+</Check>
+
+---
+
+### Set Up Remote Operation
+
+**Remote operation** lets you control the follower arm without a physical leader arm. Instead, you assign an external controller to the robot's digital twin and send commands directly from the Cyberwave platform. This is useful when you want to control the arm from a distance, test different control strategies, or run autonomous policies.
+
+**How Remote Operation Works:**
+
+In teleoperation, the leader arm drives the follower. In remote operation, a **controller** takes the place of the leader arm. The controller can be anything, a keyboard, a gamepad, a scripted sequence, or an AI model (like a VLA). You assign the controller to the SO101 digital twin, and it sends commands to the physical follower arm in real time via the edge runtime.
+
+**Set Up Remote Operation:**
+
+1. Open your environment in the Cyberwave dashboard.
+2. Click the **Assign Controller** button on the SO101 twin.
+3. Select a controller from the list, for example:
+   - **Keyboard** — control individual joints using keyboard keys
+   - **VLA Model** — a trained vision-language-action model that executes tasks from prompts
+   - **Custom Controller** — any controller you've registered in the platform
+4. Once assigned, the follower arm will respond to commands from the selected controller.
+
+<Check>
+  Remote operation is active. The follower arm is now being controlled by the assigned controller, no leader arm needed.
+</Check>
 
 ---
 
 ### Create and Export Datasets
 
 Once teleoperation is set up and working, you can create datasets by recording episodes of the robot performing specific tasks. These datasets can later be used to train machine learning models for autonomous operation.
+
+<Info>
+For recording datasets with the SO101, we recommend using **teleoperation** rather than remote operation. Controlling the follower arm with a physical leader arm gives you finer, more intuitive control resulting in smoother demonstrations and higher-quality training data.
+</Info>
 
 A **dataset** consists of multiple **episodes**, individual recordings of the robot completing a task. Each episode captures:
 
@@ -358,36 +370,7 @@ Once training completes successfully, deploy the model to make it available as a
   and ready to control the robot autonomously.
 </Check>
 
-#### Step 4: Set Up Remote Operation
-
-Remote operation allows you to control the SO101 follower arm directly from Cyberwave without using a physical leader arm. This is useful for testing, calibration, or when you only have a single follower arm.
-
-**How Remote Operation Works:**
-
-Unlike teleoperation (which uses a leader arm to control the follower), remote operation:
-
-- Connects only the **follower arm** to Cyberwave
-- Allows control through the **Cyberwave dashboard** in your browser
-- Enables **manual joint control** or **scripted movements**
-- Streams real-time feedback to the digital twin
-
-**Start Remote Operation:**
-
-Run the following command in your terminal, replacing the placeholders with your actual values:
-
-```
-so101-remoteoperate \
-    --follower-port /dev/tty.usbmodem456 \
-    --twin-uuid YOUR_SO101_TWIN_UUID
-```
-
-Replace these values:
-
-- `/dev/tty.usbmodem456` — Your follower arm port from Step 4
-- `YOUR_SO101_TWIN_UUID` — The SO101 Twin UUID from Step 3
-- `YOUR_CYBERWAVE_TOKEN` — Your API token from Step 2 (or use the environment variable)
-
-#### Step 4: Use the Model as a Controller Policy
+#### Step 3: Use the Model as a Controller Policy
 
 Now use your trained model to autonomously control the physical SO101 robot.
 
@@ -415,3 +398,27 @@ Now use your trained model to autonomously control the physical SO101 robot.
   **Autonomous Control Active:** Your SO101 is now controlled by AI using
   natural language prompts!
 </Check>
+
+---
+
+### Manual Calibration (CLI)
+
+If you prefer to calibrate the arms via the command line instead of the Cyberwave platform, you can use the `so101-calibrate` command directly.
+
+**Calibrate the Leader Arm:**
+
+```bash
+so101-calibrate --type leader --port /dev/tty.usbmodem123 --id leader1
+```
+
+Replace `/dev/tty.usbmodem123` with your actual leader arm port. This registers the device as a leader arm, stores its calibration under the ID `leader1`, and prepares it to capture your manual movements.
+
+**Calibrate the Follower Arm:**
+
+```bash
+so101-calibrate --type follower --port /dev/tty.usbmodem456 --id follower1
+```
+
+Replace `/dev/tty.usbmodem456` with your actual follower arm port. This registers the device as a follower arm, stores its calibration under the ID `follower1`, and prepares it to receive and execute control commands.
+
+The calibration process is interactive — follow the on-screen prompts to move joints to specific positions and confirm alignment.
