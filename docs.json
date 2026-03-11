@@ -41,6 +41,22 @@
                     "hardware/ugv/index",
                     "hardware/ugv/get-started"
                   ]
+                },
+                {
+                  "group": "Unitree Go2",
+                  "icon": "dog",
+                  "pages": [
+                    "hardware/go2/index",
+                    "hardware/go2/get-started"
+                  ]
+                },
+                {
+                  "group": "Camera",
+                  "icon": "camera",
+                  "pages": [
+                    "hardware/camera/index",
+                    "hardware/camera/get-started"
+                  ]
                 }
               ]
             },

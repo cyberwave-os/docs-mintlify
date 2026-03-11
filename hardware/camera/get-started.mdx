@@ -1,0 +1,128 @@
+---
+title: "Get Started"
+description: "Connect a webcam or laptop camera to Cyberwave"
+---
+
+import EarlyAccess from '/snippets/early-access.mdx';
+
+## Goals
+
+This guide walks you through connecting a physical camera (external webcam or laptop webcam) to its digital twin on Cyberwave. By the end, you will have:
+
+- Created a Cyberwave environment with a camera digital twin
+- Installed the Cyberwave edge stack on your device
+- Paired the physical camera with the digital twin and streaming video in real time
+
+---
+
+## Prerequisites
+
+- A USB webcam or a laptop with a built-in camera
+- The camera should be connected and recognised by your operating system
+- Verify your camera is detected:
+
+```bash
+ls /dev/video*
+```
+
+You should see at least one device (e.g., `/dev/video0`).
+
+---
+
+## Phase 1: Configure Cyberwave Environment
+
+Set up your environment and add a camera digital twin on Cyberwave.
+
+### Step 1: Create an Environment
+
+An [environment](/get-started/key-concepts#environments) is a 3D virtual space that mirrors your real-world setup.
+
+1. Go to the Cyberwave dashboard and click on **New Environment**.
+2. Give your environment a **name** and **description**.
+
+<Info>
+For more details, see [Step 1 of the Quick Start guide](/get-started/quickstart#step-1-create-an-environment).
+</Info>
+
+### Step 2: Add the Camera Digital Twin
+
+1. Inside your environment, click **Add from Catalog** in the left panel.
+2. Search for **Camera** in the catalog.
+3. Add the camera digital twin to your environment.
+
+<Card
+  title="Browse Catalog"
+  icon="book-open"
+  href="https://cyberwave.com/catalog"
+>
+  Explore our robot catalog
+</Card>
+
+---
+
+## Phase 2: Install the Cyberwave Edge
+
+Install the Cyberwave edge stack on the device your camera is connected to.
+
+<Tabs>
+  <Tab title="Edge Device (Raspberry Pi, Jetson, etc.)">
+    ### Step 3: SSH into Your Edge Device
+
+    ```bash
+    ssh user@<edge-device-ip>
+    ```
+
+    ### Step 4: Install the Cyberwave CLI
+
+    ```bash
+    curl -fsSL https://cyberwave.com/install.sh | bash
+    ```
+
+    ### Step 5: Install the Edge Core
+
+    ```bash
+    sudo cyberwave edge install
+    ```
+
+    The CLI will prompt you to log in with your Cyberwave credentials and then install the `cyberwave-edge-core` on your device.
+  </Tab>
+  <Tab title="Local Computer (Laptop Webcam)">
+    ### Step 3: Open Your Terminal
+
+    Open a terminal on your laptop where the webcam is connected.
+
+    ### Step 4: Install the Cyberwave CLI
+
+    ```bash
+    curl -fsSL https://cyberwave.com/install.sh | bash
+    ```
+
+    ### Step 5: Install the Edge Core
+
+    ```bash
+    sudo cyberwave edge install
+    ```
+
+    The CLI will prompt you to log in with your Cyberwave credentials and then install the `cyberwave-edge-core` on your machine.
+  </Tab>
+</Tabs>
+
+<Info>
+For more details on CLI and Edge Core installation, see [Steps 3–4 of the Quick Start guide](/get-started/quickstart#step-3-install-the-cyberwave-cli).
+</Info>
+
+---
+
+## Phase 3: Pair the Camera
+
+### Step 6: Pair the Camera with its Digital Twin
+
+Follow the prompts in your terminal:
+
+1. Select the environment you created earlier.
+2. Select the camera digital twin you added to that environment.
+3. The camera driver will be automatically installed and configured.
+
+<Check>
+Your camera is now paired with its digital twin and streaming video to Cyberwave in real time.
+</Check>
