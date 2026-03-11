@@ -4,8 +4,162 @@ All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
+[**src_users_api_profile_change_password**](ProfileApi.md#src_users_api_profile_change_password) | **PUT** /api/v1/users/@me/password/ | Change Password
+[**src_users_api_profile_complete_onboarding**](ProfileApi.md#src_users_api_profile_complete_onboarding) | **POST** /api/v1/users/@me/onboarding/complete/ | Complete Onboarding
 [**src_users_api_profile_update_profile**](ProfileApi.md#src_users_api_profile_update_profile) | **PATCH** /api/v1/users/@me/profile/ | Update Profile
 
+
+# **src_users_api_profile_change_password**
+> src_users_api_profile_change_password(password_change_schema)
+
+Change Password
+
+Change the current user's password.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.password_change_schema import PasswordChangeSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.ProfileApi(api_client)
+    password_change_schema = cyberwave.rest.PasswordChangeSchema() # PasswordChangeSchema | 
+
+    try:
+        # Change Password
+        api_instance.src_users_api_profile_change_password(password_change_schema)
+    except Exception as e:
+        print("Exception when calling ProfileApi->src_users_api_profile_change_password: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **password_change_schema** | [**PasswordChangeSchema**](PasswordChangeSchema.md)|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: Not defined
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_users_api_profile_complete_onboarding**
+> OnboardingCompletionSchema src_users_api_profile_complete_onboarding()
+
+Complete Onboarding
+
+Mark the current user onboarding flow as completed.
+
+### Example
+
+* Api Key Authentication (CustomTokenAuthentication):
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.onboarding_completion_schema import OnboardingCompletionSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: CustomTokenAuthentication
+configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.ProfileApi(api_client)
+
+    try:
+        # Complete Onboarding
+        api_response = api_instance.src_users_api_profile_complete_onboarding()
+        print("The response of ProfileApi->src_users_api_profile_complete_onboarding:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling ProfileApi->src_users_api_profile_complete_onboarding: %s\n" % e)
+```
+
+
+
+### Parameters
+
+This endpoint does not need any parameter.
+
+### Return type
+
+[**OnboardingCompletionSchema**](OnboardingCompletionSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **src_users_api_profile_update_profile**
 > ProfileResponseSchema src_users_api_profile_update_profile(profile_update_schema)

@@ -1,0 +1,44 @@
+---
+title: "Alerts"
+description: "Alerts notify operators that action is needed."
+---
+
+<Warning>
+**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
+</Warning>
+
+Alerts notify operators that action is needed. They are displayed prominently in the UI (environment view, twin detail, etc.).
+
+Examples:
+
+- A robot needs calibration.
+- A robot got stuck and needs remote takeover.
+- A sensor reading is out of expected range.
+
+## Model
+
+Every alert belongs to a workspace and must be attached to at least one of: twin, environment, or workflow.
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `name` | string | Human-readable title |
+| `description` | text | Optional details |
+| `alert_type` | string | Machine-readable code (e.g. `calibration_needed`, `robot_stuck`) |
+| `severity` | enum | `info`, `warning`, `error`, `critical` (default: `warning`) |
+| `status` | enum | `active`, `acknowledged`, `resolved`, `silenced` (default: `active`) |
+| `source_type` | enum | `edge`, `cloud`, `workflow` (default: `edge`) |
+
+## Lifecycle
+
+- **Active**: new alert, requires attention.
+- **Acknowledged**: an operator has seen it but the issue is not yet fixed.
+- **Resolved**: the root cause has been addressed (by edge device or operator).
+- **Silenced**: suppressed workspace-wide without resolving the root cause.
+
+## MQTT
+
+Edge devices create and resolve alerts via MQTT. Topic pattern:
+
+```text
+cyberwave/twin/{twin_uuid}/alert
+```

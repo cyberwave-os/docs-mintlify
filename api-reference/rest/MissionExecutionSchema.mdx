@@ -1,0 +1,26 @@
+# MissionExecutionSchema
+
+Schema for Mission execution response.
+
+## Properties
+
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**uuid** | **str** |  | 
+**mission_uuid** | **str** |  | 
+**twin_uuid** | **str** |  | 
+**task_sequence_snapshot** | **List[Optional[Dict[str, object]]]** |  | 
+**parameters** | **Dict[str, object]** |  | 
+**priority** | **int** |  | [optional] 
+**start_at** | **datetime** |  | [optional] 
+**dry_run** | **bool** |  | 
+**idempotency_key** | **str** |  | 
+**current_step** | **int** |  | 
+**status** | **str** |  | 
+**needs_cancelled** | **bool** |  | 
+**created_at** | **datetime** |  | 
+**started_at** | **datetime** |  | [optional] 
+**completed_at** | **datetime** |  | [optional] 
+**timeout** | **int** |  | [optional] 
+**result** | **Dict[str, object]** |  | 
+

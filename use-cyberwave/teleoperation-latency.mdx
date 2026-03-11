@@ -1,0 +1,36 @@
+---
+title: "Live Teleoperation Latency"
+description: "Expected and unavoidable latency during live teleoperation."
+---
+
+<Warning>
+**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
+</Warning>
+
+## Why delay can appear in live teleoperation
+
+In **Live** teleoperation, a small delay between:
+- operator input and physical robot motion,
+- digital twin motion in the dashboard, and
+- camera/video stream
+
+is expected and, in practice, unavoidable.
+
+## Why this happens
+
+These data paths are real-time but not identical:
+- Robot commands and telemetry pass through edge compute, network transport, and cloud update pipelines.
+- Video passes through capture, encoding, transport, decoding, and rendering.
+- Browser rendering uses independent frame timing and buffering for 3D state and video.
+
+Because each path has different buffering and jitter behavior, perfect frame-by-frame alignment is not guaranteed.
+
+## What to expect
+
+- The platform is optimized for stable real-time operation, not perfect visual sync between all streams.
+- Minor offset between twin motion and video can appear during normal operation.
+- Network conditions, compute load, and stream settings can increase or reduce visible delay.
+
+## Current status
+
+This behavior is currently considered **expected** for Live teleoperation workflows.

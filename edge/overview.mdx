@@ -1,0 +1,36 @@
+---
+title: "Overview"
+description: "Cyberwave Edge Core acts as the orchestrator of Cyberwave edge drivers."
+---
+
+<Warning>
+**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
+</Warning>
+
+Cyberwave Edge Core acts as the orchestrator of Cyberwave edge drivers.
+
+Public repository: [cyberwave-os/cyberwave-edge-core](https://github.com/cyberwave-os/cyberwave-edge-core)
+
+## Use Cyberwave Edge with the CLI
+
+SSH to the edge device where you want to install Edge Core, then install the Cyberwave CLI and run the installer:
+
+```bash
+# Install the Cyberwave CLI (one-time setup)
+curl -fsSL https://cyberwave.com/install.sh | bash
+
+# Run the edge installer (interactive)
+sudo cyberwave edge install
+```
+
+Manage the edge node service lifecycle, configuration, and monitoring:
+
+| Subcommand | Description |
+| --- | --- |
+| `install` | Install cyberwave-edge-core and register systemd service |
+| `start` | Start the edge node |
+| `stop` | Stop the edge node |
+| `restart` | Restart the edge node (systemd or process) |
+| `status` | Check if the edge node is running |
+| `logs` | Show edge node logs |
+| `driver` | Manage edge driver containers (subgroup) |

@@ -1,0 +1,73 @@
+# cyberwave.rest.ContactApi
+
+All URIs are relative to *http://localhost*
+
+Method | HTTP request | Description
+------------- | ------------- | -------------
+[**src_app_api_contact_contact_form**](ContactApi.md#src_app_api_contact_contact_form) | **POST** /api/v1/contact/ | Contact Form
+
+
+# **src_app_api_contact_contact_form**
+> src_app_api_contact_contact_form(contact_form_schema)
+
+Contact Form
+
+### Example
+
+
+```python
+import cyberwave.rest
+from cyberwave.rest.models.contact_form_schema import ContactFormSchema
+from cyberwave.rest.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cyberwave.rest.Configuration(
+    host = "http://localhost"
+)
+
+
+# Enter a context with an instance of the API client
+with cyberwave.rest.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cyberwave.rest.ContactApi(api_client)
+    contact_form_schema = cyberwave.rest.ContactFormSchema() # ContactFormSchema | 
+
+    try:
+        # Contact Form
+        api_instance.src_app_api_contact_contact_form(contact_form_schema)
+    except Exception as e:
+        print("Exception when calling ContactApi->src_app_api_contact_contact_form: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **contact_form_schema** | [**ContactFormSchema**](ContactFormSchema.md)|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: Not defined
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
