@@ -41,7 +41,9 @@ jobs:
             echo "No changes to commit"
             exit 0
           fi
-          BRANCH="docs-mintlify-$(date +%Y-%m-%d)"
+          SHORT_SHA="${{ github.sha }}"
+          SHORT_SHA="${SHORT_SHA:0:7}"
+          BRANCH="docs-mintlify-$(date +%Y-%m-%d)-${SHORT_SHA}"
           git checkout -b "$BRANCH"
           git commit -m "docs: sync docs-mintlify from ${{ github.sha }}"
           git push origin "$BRANCH"
