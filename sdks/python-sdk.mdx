@@ -42,18 +42,36 @@ pip install cyberwave
 Make your robot go BRRRRRRR:
 
 ```python
-import cyberwave as cw
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+
+# Declare whether commands should affect the simulation or the real robot
+cw.affect("simulation")   # or cw.affect("real-world")
 
 # Connect to your digital twin
 robot = cw.twin("the-robot-studio/so101")
 
-# Move the robot to a position
+# Move the twin's position in the environment editor
 robot.edit_position(x=1.0, y=0.0, z=0.5)
 robot.edit_rotation(yaw=90)
+
+# For locomotion twins, send navigation commands (use the affect() target set above)
+rover = cw.twin("unitree/go2")
+rover.move_forward(distance=1.0)
+rover.turn_left(angle=1.57)
 
 # Actuate the robot's joint to 30 degrees
 robot.joints.set("1", 30)
 ```
+
+<Note>
+  Use `cw.affect("simulation")` to target the digital twin in Cyberwave, or
+  `cw.affect("real-world")` to drive the physical robot. Individual calls can
+  still override this with an explicit `source_type` argument.
+</Note>
+
+`move()` and `rotate()` are deprecated for locomotion control. Use `move_forward()`, `move_backward()`, `turn_left()`, and `turn_right()` instead.
 
 ## Stream Video
 

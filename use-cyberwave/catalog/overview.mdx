@@ -22,12 +22,12 @@ Use the Python SDK to create a digital twin from any catalog asset:
 ```python
 import cyberwave as cw
 
-# Create a twin from an asset registry ID
-robot = cw.twin("the-robot-studio/so101")
+# Create a locomotion twin from an asset registry ID
+robot = cw.twin("unitree/go2")
 
 # The twin is ready to use
-robot.move(x=1, y=0, z=0.5)
-robot.rotate(yaw=90)
+robot.move_forward(distance=1.0, source_type="sim")
+robot.turn_left(angle=1.57, source_type="sim")
 ```
 
 The `cw.twin()` function handles everything:

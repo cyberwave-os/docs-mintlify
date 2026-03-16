@@ -1,45 +1,99 @@
 ---
 title: "Writing compatible drivers"
-description: "When Edge Core starts a driver container it sets environment variables provided to the container."
+description: "A driver bridges your hardware's native API and the Cyberwave platform, exposing it as a digital twin."
 ---
 
-<Warning>
-**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
-</Warning>
+## What is a compatible driver?
 
-When Edge Core starts a driver container it sets the following environment variables (provided to the container):
+A compatible driver creates the connection between a hardware device's own API and the Cyberwave platform. It is responsible for translating the device's native protocol into the twin model that the rest of the platform understands.
 
-- `CYBERWAVE_TWIN_UUID`
-- `CYBERWAVE_API_KEY`
-- `CYBERWAVE_TWIN_JSON_FILE` (writable file path)
-- `CYBERWAVE_CHILD_TWIN_UUIDS` (optional, comma-separated)
+Drivers can run anywhere — on a dedicated edge device, directly on the robot hardware, in the cloud, or on a developer laptop. In production, they typically run on edge hardware co-located with the device they control.
 
-`CYBERWAVE_CHILD_TWIN_UUIDS` is present when child camera twins are attached to the driver twin; drivers can use this to coordinate cameras without additional prompts.
+Each driver is packaged as a **Docker container image**. Edge Core pulls and runs that image, injecting the environment variables described below. This means you can develop and test your driver locally using the same image that will run in production.
+
+## Quickstart: scaffold with the Claude skill
+
+The fastest way to get started is the **Cyberwave Driver skill** for [Claude Code](https://claude.ai/claude-code). It asks you a few questions about your hardware and scaffolds a complete, production-ready driver project — including the Dockerfile, local dev setup, and a working twin connection.
+
+**Install the skill:**
+
+```bash
+git clone https://github.com/cyberwave-os/driver-skill ~/.claude/skills/cyberwave-driver
+```
+
+Then in any Claude Code session:
+
+```
+/cyberwave-driver
+```
+
+Claude will generate the full project tree and walk you through connecting it to a real twin locally. The skill source is open source at [cyberwave-os/driver-skill](https://github.com/cyberwave-os/driver-skill).
+
+---
+
+## Quickstart: use the SDK
+
+The fastest way to write a compatible driver is to use one of the official SDKs:
+
+- **Python SDK** — [`cyberwave-sdk`](https://pypi.org/project/cyberwave-sdk/)
+- **C++ SDK** — see the [C++ SDK docs](/edge/sdk/cpp)
+
+The SDKs handle twin synchronization, file I/O, reconnection logic, and more, so you can focus on the hardware integration.
+
+## Environment variables
+
+When Edge Core starts a driver container it injects the following environment variables. You can develop your driver assuming these are always set to valid values — no need to handle the case where they are absent.
+
+| Variable                     | Description                                                                                                       |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `CYBERWAVE_TWIN_UUID`        | UUID of the twin instance this driver manages                                                                     |
+| `CYBERWAVE_API_KEY`          | API key scoped to this driver for authenticating platform calls                                                   |
+| `CYBERWAVE_TWIN_JSON_FILE`   | Absolute path to a writable JSON file containing the twin's current state (see [Twin JSON file](#twin-json-file)) |
+| `CYBERWAVE_CHILD_TWIN_UUIDS` | _(optional)_ Comma-separated UUIDs of child twins (e.g. cameras) attached to this driver                          |
+
+`CYBERWAVE_CHILD_TWIN_UUIDS` is set when child twins are attached to the driver twin. Drivers can use this to coordinate child devices (for example, multiple cameras) without additional configuration.
+
+### Restart behavior tuning
+
+The following optional variables let you override Edge Core's restart defaults:
+
+| Variable                                       | Default                      | Description                                                |
+| ---------------------------------------------- | ---------------------------- | ---------------------------------------------------------- |
+| `CYBERWAVE_DRIVER_RESTART_LOOP_THRESHOLD`      | `4`                          | Number of restarts before the driver is marked as flapping |
+| `CYBERWAVE_DRIVER_RESTART_LOOP_WINDOW_SECONDS` | `60`                         | Time window (seconds) used to count restarts               |
+| `CYBERWAVE_DRIVER_TROUBLESHOOTING_URL`         | `https://docs.cyberwave.com` | URL surfaced in platform alerts for operator guidance      |
 
 ## Driver failure handling
 
-Drivers must exit with a **non-zero** code when they cannot access required hardware (for example, missing `/dev/video*` or disconnected peripherals). This allows Edge Core to detect startup failures and trigger restart logic.
+Drivers must exit with a **non-zero** code when they cannot access required hardware (for example, a missing `/dev/video*` device or a disconnected peripheral). This allows Edge Core to detect startup failures and trigger restart logic.
 
-Edge Core alerts and behavior:
+Edge Core raises the following alerts:
 
-- `driver_start_failure`: raised if a driver container cannot reach a stable running state.
-- `driver_restart_loop`: raised when a driver restarts more than the configured threshold (default 4 restarts within 60 seconds). The container is stopped and marked as flapping.
-
-Optional environment variables to tune restart behavior:
-
-- `CYBERWAVE_DRIVER_RESTART_LOOP_THRESHOLD` (default: `4`)
-- `CYBERWAVE_DRIVER_RESTART_LOOP_WINDOW_SECONDS` (default: `60`)
-- `CYBERWAVE_DRIVER_TROUBLESHOOTING_URL` (default: `https://docs.cyberwave.com`)
+- `driver_start_failure` — raised when a driver container cannot reach a stable running state.
+- `driver_restart_loop` — raised when a driver exceeds the restart threshold within the window. The container is stopped and marked as flapping.
 
 ## Twin JSON file
 
-`CYBERWAVE_TWIN_JSON_FILE` is an absolute path to a JSON file provided to the driver. The file contains the digital twin instance object (including its `metadata`) and the associated catalog twin data, matching the API schema: TwinSchema and AssetSchema.
+`CYBERWAVE_TWIN_JSON_FILE` points to a JSON file on disk that contains the digital twin instance (including its `metadata`) and the associated catalog twin data, matching the `TwinSchema` and `AssetSchema` API schemas.
 
-Drivers may modify this file; Edge Core will sync changes back to the backend when connectivity is available.
+Drivers may read and modify this file. Edge Core syncs any changes back to the backend when connectivity is available.
 
-## Runtime configuration for drivers
+## Runtime configuration
 
-Drivers and edge services should treat `metadata["edge_configs"]` as the source of truth for per-device runtime configuration.
-Edge identity should be stored at `metadata["edge_fingerprint"]` (not duplicated inside `edge_configs`).
+Drivers should treat `metadata["edge_configs"]` as the source of truth for per-device runtime configuration, and `metadata["edge_fingerprint"]` as the edge identity (not duplicated inside `edge_configs`).
 
-At runtime, drivers can read `edge_configs` from `CYBERWAVE_TWIN_JSON_FILE` at startup to obtain per-device settings.
+Read `edge_configs` from `CYBERWAVE_TWIN_JSON_FILE` at startup to obtain per-device settings without hardcoding them in the image.
+
+## Licensing your driver
+
+You own your driver code. There are two common paths:
+
+- **Open source** — publish your driver as a public repository on GitHub under the [Apache 2.0 license](https://www.apache.org/licenses/LICENSE-2.0). This is our recommended default and makes it easier for the community to contribute and reuse your work.
+- **Closed source** — keep your driver proprietary. In this case, we recommend obfuscating your code before distributing the image and including a clear license file that reflects your distribution terms. Interested in writing a closed-source driver? [Reach out to us](mailto:info@cyberwave.com).
+
+## Example drivers
+
+The following open-source drivers are good starting points and reference implementations:
+
+- **Camera driver** — [cyberwave-os/cyberwave-edge-camera-driver](https://github.com/cyberwave-os/cyberwave-edge-camera-driver): integrates a USB/RTSP camera as a Cyberwave twin.
+- **SO-101 arm driver** — [cyberwave-os/cyberwave-edge-so101](https://github.com/cyberwave-os/cyberwave-edge-so101): integrates the SO-101 robotic arm.
