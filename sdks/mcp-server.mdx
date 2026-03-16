@@ -8,10 +8,10 @@ icon: "plug"
 
 You can connect to Cyberwave MCP in two ways:
 
-1. **Hosted** (`https://mcp.cyberwave.com/mcp`)  
+1. **Hosted** (`https://mcp.cyberwave.com/mcp`)
    - No infrastructure to manage
    - Best for most users
-2. **Self-hosted** (run your own `cyberwave-mcp-server`)  
+2. **Self-hosted** (run your own `cyberwave-mcp-server`)
    - Full control over auth/networking/policies
    - Recommended for strict enterprise requirements
 
@@ -31,9 +31,32 @@ Use your API key from `https://cyberwave.com/profile` and send one of:
 
 ### Hosted quick setup
 
+You can grab your token at [https://cyberwave.com/profile](Your profile page)
+
+#### VS Code
+
+Add to your VS Code `settings.json` file:
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "cyberwave": {
+        "url": "https://mcp.cyberwave.com/mcp",
+        "headers": {
+          "Authorization": "Bearer ${env:CYBERWAVE_API_KEY}"
+        }
+      }
+    }
+  }
+}
+```
+
+Replace `${env:CYBERWAVE_API_KEY}` with your API key, or set the `CYBERWAVE_API_KEY` environment variable and restart VS Code.
+
 #### Cursor
 
-Create `.cursor/mcp.json`:
+Edit your Cursor `mcp.json` configuration file to add the Cyberwave MCP server:
 
 ```json
 {
@@ -41,37 +64,44 @@ Create `.cursor/mcp.json`:
     "cyberwave": {
       "url": "https://mcp.cyberwave.com/mcp",
       "headers": {
-        "Authorization": "Bearer ${env:CYBERWAVE_API_KEY}"
+        "Authorization": "Bearer <CYBERWAVE_API_KEY>"
       }
     }
   }
 }
 ```
 
-##### How to set `CYBERWAVE_API_KEY` for Cursor
+Replace `<CYBERWAVE_API_KEY>` with your API key from your [profile page](https://cyberwave.com/profile).
 
-Cursor reads environment variables from the process it runs in. Ensure `CYBERWAVE_API_KEY`
-is available to the Cursor app, then restart Cursor.
+#### Gemini CLI
 
-- **Linux**
-  ```bash
-  export CYBERWAVE_API_KEY="cw_live_..."
-  cursor .
-  ```
-- **macOS (GUI launch)**
-  ```bash
-  launchctl setenv CYBERWAVE_API_KEY "cw_live_..."
-  ```
-  Then fully quit and reopen Cursor.
-- **Windows (PowerShell)**
-  ```powershell
-  setx CYBERWAVE_API_KEY "cw_live_..."
-  ```
-  Then restart Cursor.
+```bash
+gemini mcp add -t http cyberwave https://mcp.cyberwave.com/mcp \
+  --header "Authorization: Bearer <CYBERWAVE_API_KEY>"
+```
 
-<Note>
-Prefer storing this config in global `~/.cursor/mcp.json` so secrets are not committed in project files.
-</Note>
+Replace `<CYBERWAVE_API_KEY>` with your API key from your [profile page](https://cyberwave.com/profile).
+
+#### Claude Code
+
+```bash
+claude mcp add cyberwave -t http https://mcp.cyberwave.com/mcp \
+  -H "Authorization: Bearer <CYBERWAVE_API_KEY>"
+```
+
+Replace `<CYBERWAVE_API_KEY>` with your API key from your [profile page](https://cyberwave.com/profile).
+
+#### Codex CLI
+
+Edit your `~/.codex/config.toml` and include the following:
+
+```toml
+[mcp_servers.cyberwave]
+command = "npx"
+args = ["-y", "mcp-remote@latest", "https://mcp.cyberwave.com/mcp", "--header", "Authorization: Bearer <CYBERWAVE_API_KEY>"]
+```
+
+Replace `<CYBERWAVE_API_KEY>` with your API key from your [profile page](https://cyberwave.com/profile).
 
 #### Claude API (remote MCP connector)
 
@@ -148,6 +178,10 @@ You can authenticate backend calls in three main ways:
 If you want to strictly require request tokens in self-hosted HTTP mode, set:
 
 `CYBERWAVE_MCP_REQUIRE_REQUEST_API_KEY=true`
+
+## What is MCP?
+
+TODO
 
 ## Best practices
 
