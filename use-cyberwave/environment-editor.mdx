@@ -72,6 +72,18 @@ Expected cores are derived from the unique edge fingerprints configured on twins
 
 ---
 
+## Clone an environment
+
+Use **File → Make a copy** to duplicate the current environment.
+
+- The copy includes the environment and all of its twins.
+- Historical telemetry/session data is not copied.
+- Lineage references are stored in metadata for future tracking:
+  - environment settings include `cloned_from_environment_uuid`
+  - each twin metadata includes `cloned_from_twin_uuid`
+
+---
+
 ## Ready to Build?
 
 Start creating immersive environments for your robots and unlock the full potential of simulation-based development.
