@@ -1,0 +1,33 @@
+---
+title: "Environment Preview API (Stub)"
+description: "Generate static PNG previews for environments from the Python SDK."
+icon: "image"
+---
+
+## Status
+
+This page is a **stub** and will be expanded with complete examples.
+
+## Python SDK method
+
+Use:
+
+- `cw.environments.create_preview(environment_id)`
+
+This calls `POST /api/v1/environments/{uuid}/preview` and returns an attachment
+object containing the generated PNG metadata (including `file_url`).
+
+## Minimal example
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+preview = cw.environments.create_preview("YOUR_ENVIRONMENT_UUID")
+print(preview.file_url)
+```
+
+## Notes
+
+- The endpoint requires write access to the target environment.
+- The image is generated using the screenshot service and stored as an attachment.

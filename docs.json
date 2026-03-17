@@ -116,6 +116,7 @@
               "group": "SDKs",
               "pages": [
                 "sdks/python-sdk",
+                "sdks/environment-preview",
                 "sdks/cpp-sdk",
                 "sdks/mcp-server"
               ]
