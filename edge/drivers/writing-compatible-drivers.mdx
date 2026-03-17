@@ -84,8 +84,6 @@ Drivers should treat `metadata["edge_configs"]` as the source of truth for per-d
 
 Read `edge_configs` from `CYBERWAVE_TWIN_JSON_FILE` at startup to obtain per-device settings without hardcoding them in the image.
 
-When testing a driver **outside** Edge Core, remember that some drivers expect the injected `CYBERWAVE_TWIN_JSON_FILE` to exist. For local development, provide a minimal twin snapshot containing the asset identity, metadata, and capabilities that the driver needs at startup.
-
 ## Licensing your driver
 
 You own your driver code. There are two common paths:
