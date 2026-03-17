@@ -84,38 +84,6 @@ Drivers should treat `metadata["edge_configs"]` as the source of truth for per-d
 
 Read `edge_configs` from `CYBERWAVE_TWIN_JSON_FILE` at startup to obtain per-device settings without hardcoding them in the image.
 
-### Camera and RTSP example
-
-The stock camera driver can be used for both local cameras and RTSP sources. A common pattern is:
-
-- use one twin per camera stream
-- set the driver image in `metadata.drivers.default`
-- store the stream URL in `metadata.edge_configs.video_device`
-
-Example twin metadata:
-
-```json
-{
-  "drivers": {
-    "default": {
-      "docker_image": "cyberwaveos/camera-driver"
-    }
-  },
-  "video_device": "rtsp://user:password@nvr.local:554/unicast/c1/s1/live",
-  "edge_configs": {
-    "video_device": "rtsp://user:password@nvr.local:554/unicast/c1/s1/live",
-    "source_type": "rtsp",
-    "channel": 1
-  }
-}
-```
-
-This is especially useful for:
-
-- standalone IP cameras
-- one twin per NVR channel
-- phased rollouts where you validate a single stream before mapping the rest of the fleet
-
 When testing a driver **outside** Edge Core, remember that some drivers expect the injected `CYBERWAVE_TWIN_JSON_FILE` to exist. For local development, provide a minimal twin snapshot containing the asset identity, metadata, and capabilities that the driver needs at startup.
 
 ## Licensing your driver

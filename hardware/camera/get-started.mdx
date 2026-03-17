@@ -160,6 +160,19 @@ For IP cameras and NVR-backed channels, configure the twin metadata so the stand
 Treat `metadata.edge_configs` as the source of truth for runtime configuration. Keeping `video_device` there makes it available to custom drivers and to any tooling that reads the injected twin JSON file.
 </Info>
 
+Recommended pattern:
+
+- use one twin per camera stream
+- set the driver image in `metadata.drivers.default`
+- store the stream URL in `metadata.edge_configs.video_device`
+- if you are using the current stock camera driver, also mirror the same RTSP URL in top-level `metadata.video_device` for compatibility
+
+This is especially useful for:
+
+- standalone IP cameras
+- one twin per NVR channel
+- phased rollouts where you validate a single stream before mapping the rest of the fleet
+
 ---
 
 ## Phase 3: Pair the Camera
