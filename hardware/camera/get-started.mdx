@@ -173,6 +173,20 @@ This is especially useful for:
 - one twin per NVR channel
 - phased rollouts where you validate a single stream before mapping the rest of the fleet
 
+### Configure in the Web UI
+
+You can set this up directly in the dashboard without using the SDK:
+
+1. Open the target environment in the environment view.
+2. Select the camera twin you want to bind to an RTSP stream.
+3. Open **Advanced editing** for that twin.
+4. Add the driver image under `metadata.drivers.default`.
+5. Set `metadata.edge_configs.video_device` to the RTSP URL for that camera or NVR channel.
+6. If you are using the current stock camera driver, also mirror that same URL in top-level `metadata.video_device` for compatibility.
+7. Save the twin metadata and return to **Live** mode to verify the edge core status indicator turns green and the stream appears.
+
+For NVR deployments, repeat this once per channel so each RTSP stream maps to its own camera twin.
+
 ---
 
 ## Phase 3: Pair the Camera
