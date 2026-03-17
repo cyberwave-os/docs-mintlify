@@ -1,13 +1,13 @@
 ---
 title: "Get Started"
-description: "Connect a webcam or laptop camera to Cyberwave"
+description: "Connect a webcam, RTSP/IP camera, or NVR channel to Cyberwave"
 ---
 
 import EarlyAccess from '/snippets/early-access.mdx';
 
 ## Goals
 
-This guide walks you through connecting a physical camera (external webcam or laptop webcam) to its digital twin on Cyberwave. By the end, you will have:
+This guide walks you through connecting a physical camera to its digital twin on Cyberwave. By the end, you will have:
 
 - Created a Cyberwave environment with a camera digital twin
 - Installed the Cyberwave edge stack on your device
@@ -17,15 +17,35 @@ This guide walks you through connecting a physical camera (external webcam or la
 
 ## Prerequisites
 
-- A USB webcam or a laptop with a built-in camera
-- The camera should be connected and recognised by your operating system
-- Verify your camera is detected:
+<Tabs>
+  <Tab title="USB or Laptop Camera">
+    - A USB webcam or a laptop with a built-in camera
+    - The camera should be connected and recognised by your operating system
+    - Verify your camera is detected:
 
-```bash
-ls /dev/video*
-```
+    ```bash
+    ls /dev/video*
+    ```
 
-You should see at least one device (e.g., `/dev/video0`).
+    You should see at least one device (for example, `/dev/video0`).
+  </Tab>
+  <Tab title="IP Camera or NVR (RTSP)">
+    - A reachable RTSP stream from the same network as your edge node
+    - Credentials for the camera or NVR channel
+    - A known RTSP URL for the stream you want to bind to the twin
+
+    Example patterns:
+
+    ```text
+    rtsp://user:password@camera.local:554/stream1
+    rtsp://user:password@nvr.local:554/unicast/c1/s1/live
+    ```
+
+    <Warning>
+      URL-encode special characters in usernames and passwords before placing them in the RTSP URL.
+    </Warning>
+  </Tab>
+</Tabs>
 
 ---
 
@@ -49,6 +69,10 @@ For more details, see [Step 1 of the Quick Start guide](/get-started/quickstart#
 1. Inside your environment, click **Add from Catalog** in the left panel.
 2. Search for **Camera** in the catalog.
 3. Add the camera digital twin to your environment.
+
+<Info>
+For IP camera or NVR deployments, create **one camera twin per RTSP stream**. For example, an 8-channel NVR should usually be represented by 8 camera twins.
+</Info>
 
 <Card
   title="Browse Catalog"
@@ -111,11 +135,63 @@ Install the Cyberwave edge stack on the device your camera is connected to.
 For more details on CLI and Edge Core installation, see [Steps 3–4 of the Quick Start guide](/get-started/quickstart#step-3-install-the-cyberwave-cli).
 </Info>
 
+### Step 6: Configure the Camera Source
+
+For local webcams, the default camera driver can auto-discover `/dev/video*` devices.
+
+For IP cameras and NVR-backed channels, configure the twin metadata so the standard camera driver opens the RTSP stream directly:
+
+```json
+{
+  "drivers": {
+    "default": {
+      "docker_image": "cyberwaveos/camera-driver"
+    }
+  },
+  "video_device": "rtsp://user:password@nvr.local:554/unicast/c1/s1/live",
+  "edge_configs": {
+    "video_device": "rtsp://user:password@nvr.local:554/unicast/c1/s1/live",
+    "source_type": "rtsp"
+  }
+}
+```
+
+<Info>
+Treat `metadata.edge_configs` as the source of truth for runtime configuration. Keeping `video_device` there makes it available to custom drivers and to any tooling that reads the injected twin JSON file.
+</Info>
+
+Recommended pattern:
+
+- use one twin per camera stream
+- set the driver image in `metadata.drivers.default`
+- store the stream URL in `metadata.edge_configs.video_device`
+- if you are using the current stock camera driver, also mirror the same RTSP URL in top-level `metadata.video_device` for compatibility
+
+This is especially useful for:
+
+- standalone IP cameras
+- one twin per NVR channel
+- phased rollouts where you validate a single stream before mapping the rest of the fleet
+
+### Configure in the Web UI
+
+You can set this up directly in the dashboard without using the SDK:
+
+1. Open the target environment in the environment view.
+2. Select the camera twin you want to bind to an RTSP stream.
+3. Open **Advanced editing** for that twin.
+4. Add the driver image under `metadata.drivers.default`.
+5. Set `metadata.edge_configs.video_device` to the RTSP URL for that camera or NVR channel.
+6. If you are using the current stock camera driver, also mirror that same URL in top-level `metadata.video_device` for compatibility.
+7. Save the twin metadata and return to **Live** mode to verify the edge core status indicator turns green and the stream appears.
+
+For NVR deployments, repeat this once per channel so each RTSP stream maps to its own camera twin.
+
 ---
 
 ## Phase 3: Pair the Camera
 
-### Step 6: Pair the Camera with its Digital Twin
+### Step 7: Pair the Camera with its Digital Twin
 
 Follow the prompts in your terminal:
 
@@ -126,3 +202,9 @@ Follow the prompts in your terminal:
 <Check>
 Your camera is now paired with its digital twin and streaming video to Cyberwave in real time.
 </Check>
+
+## Validation Tips
+
+- Validate one RTSP stream first before rolling out all NVR channels
+- If you are testing the driver outside Edge Core, remember that the driver expects `CYBERWAVE_TWIN_JSON_FILE` to be present
+- Prefer validating the live stream in the environment viewer first; image-based downstream workflows depend on the latest-frame backend path being available as well

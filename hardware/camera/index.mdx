@@ -11,5 +11,24 @@ Cyberwave supports a wide range of cameras:
 
 - **USB webcams** (Logitech, generic UVC-compatible cameras)
 - **Laptop built-in webcams**
+- **RTSP/IP cameras**
+- **NVR-backed camera channels** exposed as RTSP streams
 
 Once connected, your camera feed is available across the platform, in the environment viewer, for dataset recording, and as input to ML models.
+
+## IP Cameras and NVRs
+
+Cyberwave camera twins can also represent IP cameras and NVR-backed channels, not just local USB devices.
+
+- Use **one camera twin per RTSP stream**
+- For NVR setups, map each channel to its own twin
+- Configure the stream source with the camera driver's `video_device` runtime setting
+
+Typical examples:
+
+```text
+rtsp://user:password@camera.local:554/stream1
+rtsp://user:password@nvr.local:554/unicast/c1/s1/live
+```
+
+In production, prefer running these streams through **Cyberwave Edge Core** so the driver receives the full twin context and lifecycle management automatically.
