@@ -117,9 +117,9 @@
               "group": "SDKs",
               "pages": [
                 "sdks/python-sdk",
+                "sdks/mcp-server",
                 "sdks/environment-preview",
-                "sdks/cpp-sdk",
-                "sdks/mcp-server"
+                "sdks/cpp-sdk"
               ]
             },
             {
