@@ -192,6 +192,21 @@ TODO
 5. Use inspect-first workflows (`list/get` first, then `execute=false`, then `execute=true`).
 6. After changing an environment (for example `cw_create_twin`, `cw_edit_position`, `cw_edit_rotation`), call `cw_render_environment_preview` to visually verify the final layout.
 
+## Area editing tools
+
+The MCP server can edit environment areas through the same `environment.settings.areas` model used by the web editor.
+
+- `cw_list_areas(environment_uuid?)`
+- `cw_create_area(...)`
+- `cw_resize_area(area_id, environment_uuid?, x?, y?, z?, execute=false)`
+- `cw_set_area_image(area_id, environment_uuid?, image_url?, image_base64?, remove_image?, execute=false)`
+
+Notes:
+
+- Mutating tools are preview-first and require `execute=true` to persist changes.
+- Area images can be attached either by providing a direct `image_url` or Base64 image bytes (`image_base64` + `image_mime_type`), which are stored as a `data:` URL.
+- Because area images are stored in environment settings today, larger images should preferably be hosted externally and referenced via `image_url`.
+
 ## Environment preview tool for agent verification
 
 Use `cw_render_environment_preview(environment_uuid?)` when an agent needs to **see the result** of environment edits.
@@ -203,7 +218,7 @@ Use `cw_render_environment_preview(environment_uuid?)` when an agent needs to **
 Recommended sequence for environment-editing tasks:
 
 1. Resolve the target environment (`cw_list_environments`, `cw_list_twins`)
-2. Apply edits (`cw_create_twin`, `cw_edit_position`, `cw_edit_rotation`, etc.)
+2. Apply edits (`cw_create_twin`, `cw_edit_position`, `cw_edit_rotation`, `cw_create_area`, `cw_resize_area`, `cw_set_area_image`, etc.)
 3. Call `cw_render_environment_preview`
 4. Compare the rendered preview with the expected outcome before continuing
 
