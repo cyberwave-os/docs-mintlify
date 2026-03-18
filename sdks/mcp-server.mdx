@@ -1,109 +1,225 @@
 ---
-title: "MCP Server (Hosted + Self-hosted)"
-description: "Connect MCP clients to Cyberwave using either the hosted endpoint or your own deployment."
+title: "MCP Server"
+description: "Let AI agents manage your robotics infrastructure through the Model Context Protocol"
 icon: "plug"
 ---
 
-## Choose your deployment mode
+import EarlyAccess from "/snippets/early-access.mdx";
 
-You can connect to Cyberwave MCP in two ways:
+<EarlyAccess />
 
-1. **Hosted** (`https://mcp.cyberwave.com/mcp`)
-   - No infrastructure to manage
-   - Best for most users
-2. **Self-hosted** (run your own `cyberwave-mcp-server`)
-   - Full control over auth/networking/policies
-   - Recommended for strict enterprise requirements
+## Overview
 
-## Hosted MCP (`mcp.cyberwave.com`)
+The Cyberwave MCP Server exposes Cyberwave platform operations as **tools** that AI agents can discover and call autonomously. Instead of manually clicking through the dashboard or writing Python scripts, an AI model (Claude, GPT, Gemini, or any MCP-compatible client) can inspect your environments, create digital twins, position robots, and verify the result visually — all through natural language.
 
-- **Endpoint:** `https://mcp.cyberwave.com/mcp`
-- **Transport:** `streamable-http`
-- **Protocol:** JSON-RPC 2.0 over MCP
+| | |
+|---|---|
+| **Protocol** | JSON-RPC 2.0 over [Model Context Protocol](https://modelcontextprotocol.io/) |
+| **Transport** | Streamable HTTP |
+| **Hosted endpoint** | `https://mcp.cyberwave.com/mcp` |
+| **Authentication** | `Authorization: Bearer <CYBERWAVE_API_KEY>` |
 
-### Hosted authentication (required for user-scoped access)
+---
 
-The official hosted deployment (`mcp.cyberwave.com`) expects a request token.
-Use your API key from `https://cyberwave.com/profile` and send one of:
+## What is MCP?
 
-- `Authorization: Bearer <CYBERWAVE_API_KEY>` (recommended)
-- `X-Cyberwave-Api-Key: <CYBERWAVE_API_KEY>`
+The **Model Context Protocol (MCP)** is an open standard that defines how AI models discover and invoke external tools. It works like a universal adapter — any MCP-compatible AI client can connect to any MCP server and immediately know what operations are available, what parameters they accept, and what they return.
 
-### Hosted quick setup
+When you connect the Cyberwave MCP server to an AI agent:
 
-You can grab your token at [https://cyberwave.com/profile](Your profile page)
+1. The agent sends a **tool discovery** request and receives a list of all available Cyberwave tools with their schemas
+2. Based on your natural language instruction, the agent decides which tools to call and in what order
+3. Each tool call is a **JSON-RPC 2.0** request sent over HTTP to the MCP endpoint
+4. The MCP server translates the tool call into the corresponding Cyberwave REST API operation
+5. Results are returned to the agent, which can reason about them and decide what to do next
 
-#### VS Code
+```
+You (natural language)
+    │
+    ▼
+AI Agent (Claude, GPT, Gemini, Cursor, etc.)
+    │
+    │  JSON-RPC 2.0 tool calls
+    ▼
+Cyberwave MCP Server
+    │
+    │  REST API (HTTPS)
+    ▼
+Cyberwave Cloud Backend
+    │
+    │  MQTT
+    ▼
+Edge Core → Robot Hardware
+```
 
-Add to your VS Code `settings.json` file:
+---
 
-```json
-{
-  "mcp": {
-    "servers": {
-      "cyberwave": {
-        "url": "https://mcp.cyberwave.com/mcp",
-        "headers": {
-          "Authorization": "Bearer ${env:CYBERWAVE_API_KEY}"
+## Available Tools
+
+### Read Operations
+
+| Tool | Description |
+|---|---|
+| `cw_list_environments` | List all environments in your workspace |
+| `cw_list_twins` | List digital twins within a specific environment |
+| `cw_list_areas` | List areas (zones/regions) defined in an environment |
+| `cw_render_environment_preview` | Render a PNG snapshot of the environment — multimodal agents can visually inspect the 3D scene |
+
+### Write Operations
+
+| Tool | Description |
+|---|---|
+| `cw_create_twin` | Create a new digital twin from the asset catalog |
+| `cw_edit_position` | Move a twin to specific x, y, z coordinates |
+| `cw_edit_rotation` | Rotate a twin in the environment |
+| `cw_create_area` | Create a new area/zone in the environment |
+| `cw_resize_area` | Resize an area by setting new dimensions |
+| `cw_set_area_image` | Attach a background image to an area (via URL or Base64) |
+
+### The Preview-First Safety Pattern
+
+All mutating tools support a two-phase execution model to prevent agents from making blind changes:
+
+- **`execute=false`** (default) — the server calculates the result but does **not** persist it. The agent sees what would happen.
+- **`execute=true`** — the change is committed to the platform.
+
+This gives agents (and the humans supervising them) a chance to verify before committing.
+
+**Recommended sequence for environment edits:**
+
+<Steps>
+  <Step title="Inspect">
+    Call `cw_list_environments` and `cw_list_twins` to understand the current state.
+  </Step>
+  <Step title="Preview">
+    Call mutating tools with `execute=false` to see what the change would look like.
+  </Step>
+  <Step title="Commit">
+    Call the same tool with `execute=true` to persist the change.
+  </Step>
+  <Step title="Verify">
+    Call `cw_render_environment_preview` to render a PNG snapshot. Multimodal agents can visually confirm the layout matches expectations.
+  </Step>
+</Steps>
+
+---
+
+## Deployment Modes
+
+<Tabs>
+  <Tab title="Hosted (Recommended)">
+    Cyberwave runs the MCP server for you. No infrastructure to manage.
+
+    - **Endpoint:** `https://mcp.cyberwave.com/mcp`
+    - **Transport:** Streamable HTTP
+    - **Auth:** Pass your API key with every request
+
+    ```
+    Authorization: Bearer <CYBERWAVE_API_KEY>
+    ```
+
+    Alternatively: `X-Cyberwave-Api-Key: <CYBERWAVE_API_KEY>`
+
+    Generate your API key from your [profile page](https://cyberwave.com/profile).
+  </Tab>
+  <Tab title="Self-Hosted (Enterprise)">
+    Run your own MCP server for full control over networking, auth policies, and rate limiting.
+
+    ```bash
+    cd cyberwave-clis/cyberwave-mcp-server
+    pip install -e .
+    cyberwave-mcp-server
+    ```
+
+    **Authentication options:**
+
+    | Method | Configuration |
+    |---|---|
+    | Environment variable (preferred) | `CYBERWAVE_API_KEY=<token>` or `CYBERWAVE_TOKEN=<token>` |
+    | Credentials file | `/etc/cyberwave/credentials.json`, `~/.cyberwave/credentials.json`, or `CYBERWAVE_CREDENTIALS_FILE=/path` |
+    | Per-request passthrough | Client sends `Authorization: Bearer <token>` and the server forwards it |
+
+    To enforce per-request authentication in HTTP mode:
+
+    ```bash
+    CYBERWAVE_MCP_REQUIRE_REQUEST_API_KEY=true
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Client Setup
+
+Connect the Cyberwave MCP server to your preferred AI client. All examples use the hosted endpoint — replace `<CYBERWAVE_API_KEY>` with your key from the [profile page](https://cyberwave.com/profile).
+
+<Tabs>
+  <Tab title="Cursor">
+    Edit your Cursor `mcp.json` configuration file:
+
+    ```json
+    {
+      "mcpServers": {
+        "cyberwave": {
+          "url": "https://mcp.cyberwave.com/mcp",
+          "headers": {
+            "Authorization": "Bearer <CYBERWAVE_API_KEY>"
+          }
         }
       }
     }
-  }
-}
-```
+    ```
+  </Tab>
+  <Tab title="VS Code">
+    Add to your VS Code `settings.json`:
 
-Replace `${env:CYBERWAVE_API_KEY}` with your API key, or set the `CYBERWAVE_API_KEY` environment variable and restart VS Code.
-
-#### Cursor
-
-Edit your Cursor `mcp.json` configuration file to add the Cyberwave MCP server:
-
-```json
-{
-  "mcpServers": {
-    "cyberwave": {
-      "url": "https://mcp.cyberwave.com/mcp",
-      "headers": {
-        "Authorization": "Bearer <CYBERWAVE_API_KEY>"
+    ```json
+    {
+      "mcp": {
+        "servers": {
+          "cyberwave": {
+            "url": "https://mcp.cyberwave.com/mcp",
+            "headers": {
+              "Authorization": "Bearer ${env:CYBERWAVE_API_KEY}"
+            }
+          }
+        }
       }
     }
-  }
-}
-```
+    ```
 
-Replace `<CYBERWAVE_API_KEY>` with your API key from your [profile page](https://cyberwave.com/profile).
+    Set the `CYBERWAVE_API_KEY` environment variable and restart VS Code, or replace `${env:CYBERWAVE_API_KEY}` with your key directly.
+  </Tab>
+  <Tab title="Claude Code">
+    ```bash
+    claude mcp add cyberwave -t http https://mcp.cyberwave.com/mcp \
+      -H "Authorization: Bearer <CYBERWAVE_API_KEY>"
+    ```
+  </Tab>
+  <Tab title="Gemini CLI">
+    ```bash
+    gemini mcp add -t http cyberwave https://mcp.cyberwave.com/mcp \
+      --header "Authorization: Bearer <CYBERWAVE_API_KEY>"
+    ```
+  </Tab>
+  <Tab title="Codex CLI">
+    Edit `~/.codex/config.toml`:
 
-#### Gemini CLI
+    ```toml
+    [mcp_servers.cyberwave]
+    command = "npx"
+    args = ["-y", "mcp-remote@latest", "https://mcp.cyberwave.com/mcp", "--header", "Authorization: Bearer <CYBERWAVE_API_KEY>"]
+    ```
+  </Tab>
+</Tabs>
 
-```bash
-gemini mcp add -t http cyberwave https://mcp.cyberwave.com/mcp \
-  --header "Authorization: Bearer <CYBERWAVE_API_KEY>"
-```
+---
 
-Replace `<CYBERWAVE_API_KEY>` with your API key from your [profile page](https://cyberwave.com/profile).
+## Programmatic Agent Integration
 
-#### Claude Code
+Use the MCP server to build autonomous AI agents that manage Cyberwave infrastructure from your backend code.
 
-```bash
-claude mcp add cyberwave -t http https://mcp.cyberwave.com/mcp \
-  -H "Authorization: Bearer <CYBERWAVE_API_KEY>"
-```
-
-Replace `<CYBERWAVE_API_KEY>` with your API key from your [profile page](https://cyberwave.com/profile).
-
-#### Codex CLI
-
-Edit your `~/.codex/config.toml` and include the following:
-
-```toml
-[mcp_servers.cyberwave]
-command = "npx"
-args = ["-y", "mcp-remote@latest", "https://mcp.cyberwave.com/mcp", "--header", "Authorization: Bearer <CYBERWAVE_API_KEY>"]
-```
-
-Replace `<CYBERWAVE_API_KEY>` with your API key from your [profile page](https://cyberwave.com/profile).
-
-#### Claude API (remote MCP connector)
+### Claude API
 
 ```python
 import anthropic
@@ -113,20 +229,23 @@ client = anthropic.Anthropic()
 response = client.beta.messages.create(
     model="claude-opus-4-1",
     max_tokens=1024,
-    messages=[{"role": "user", "content": "List available Cyberwave tools."}],
-    mcp_servers=[
-        {
-            "type": "url",
-            "name": "cyberwave",
-            "url": "https://mcp.cyberwave.com/mcp",
-            "authorization_token": "YOUR_CYBERWAVE_API_KEY"
-        }
-    ],
+    messages=[{
+        "role": "user",
+        "content": "Create an environment with an SO101 arm positioned at x=1, y=0, z=0.5"
+    }],
+    mcp_servers=[{
+        "type": "url",
+        "name": "cyberwave",
+        "url": "https://mcp.cyberwave.com/mcp",
+        "authorization_token": "YOUR_CYBERWAVE_API_KEY"
+    }],
     tools=[{"type": "mcp_toolset", "mcp_server_name": "cyberwave"}],
 )
 ```
 
-#### OpenAI Agents SDK (Python)
+Claude discovers the available Cyberwave tools, plans the sequence of operations (create environment, add twin, set position), executes them through the MCP server, and can verify the result visually with `cw_render_environment_preview`.
+
+### OpenAI Agents SDK
 
 ```python
 from agents import Agent, Runner
@@ -150,90 +269,111 @@ result = Runner.run_sync(agent, "List my available workspaces.")
 print(result.final_output)
 ```
 
-## Self-hosted MCP
+---
 
-Run your own server with:
+## Tool Reference
 
-```bash
-cd cyberwave-clis/cyberwave-mcp-server
-pip install -e .
-cyberwave-mcp-server
-```
+### Area Editing
 
-### Self-hosted authentication options
+The MCP server can manage environment areas through the same `environment.settings.areas` model used by the web editor.
 
-You can authenticate backend calls in three main ways:
+| Tool | Parameters |
+|---|---|
+| `cw_list_areas` | `environment_uuid?` |
+| `cw_create_area` | Area configuration parameters |
+| `cw_resize_area` | `area_id`, `environment_uuid?`, `x?`, `y?`, `z?`, `execute=false` |
+| `cw_set_area_image` | `area_id`, `environment_uuid?`, `image_url?`, `image_base64?`, `remove_image?`, `execute=false` |
 
-1. **Server token via environment**
-   - `CYBERWAVE_API_KEY=<token>` (preferred)
-   - or `CYBERWAVE_TOKEN=<token>`
-2. **Credentials file fallback** (same format used by `cyberwave-cli`)
-   - `/etc/cyberwave/credentials.json`
-   - `~/.cyberwave/credentials.json`
-   - or explicit `CYBERWAVE_CREDENTIALS_FILE=/path/to/credentials.json`
-3. **Per-request token passthrough (HTTP transport)**
-   - Client sends `Authorization: Bearer <token>`
-   - Server uses that token for that request
+Area images can be attached via a direct `image_url` (recommended for large images) or inline as `image_base64` bytes with a `image_mime_type`. Images are stored in environment settings.
 
-If you want to strictly require request tokens in self-hosted HTTP mode, set:
+### Environment Preview
 
-`CYBERWAVE_MCP_REQUIRE_REQUEST_API_KEY=true`
+`cw_render_environment_preview(environment_uuid?)` renders a static PNG snapshot of the environment.
 
-## What is MCP?
+- Calls the same backend endpoint as the web app: `POST /api/v1/environments/{uuid}/preview`
+- Returns attachment metadata (`type=environment_preview`) and a Base64 PNG payload that multimodal models can inspect directly
+- If `environment_uuid` is omitted and only one environment is visible, it resolves automatically
 
-TODO
+---
 
-## Best practices
+## Best Practices
 
-1. Use Streamable HTTP for hosted/serverless deployments.
-2. For custom clients, send both `Accept: application/json` and `Accept: text/event-stream`.
-3. Use retries with exponential backoff for transient `5xx` and network failures.
-4. Set tool timeouts and surface structured MCP error codes to users.
-5. Use inspect-first workflows (`list/get` first, then `execute=false`, then `execute=true`).
-6. After changing an environment (for example `cw_create_twin`, `cw_edit_position`, `cw_edit_rotation`), call `cw_render_environment_preview` to visually verify the final layout.
+<AccordionGroup>
+  <Accordion title="Always inspect before mutating">
+    Use `cw_list_environments` and `cw_list_twins` before making changes. This gives the agent full context about the current state and prevents accidental overwrites.
+  </Accordion>
+  <Accordion title="Use the preview-first pattern">
+    Call mutating tools with `execute=false` first, then `execute=true`. After committing, call `cw_render_environment_preview` to let the agent visually verify the result.
+  </Accordion>
+  <Accordion title="Use Streamable HTTP transport">
+    For hosted and serverless deployments, always use Streamable HTTP. For custom clients, send both `Accept: application/json` and `Accept: text/event-stream` headers.
+  </Accordion>
+  <Accordion title="Handle errors with retries">
+    Use retries with exponential backoff for transient `5xx` responses and network failures. Set tool-level timeouts and surface structured MCP error codes to users.
+  </Accordion>
+  <Accordion title="Host large images externally">
+    When using `cw_set_area_image`, prefer `image_url` over `image_base64` for large images. Base64-encoded images are stored inline in environment settings, which can impact performance.
+  </Accordion>
+</AccordionGroup>
 
-## Area editing tools
+---
 
-The MCP server can edit environment areas through the same `environment.settings.areas` model used by the web editor.
+## Testing and Validation
 
-- `cw_list_areas(environment_uuid?)`
-- `cw_create_area(...)`
-- `cw_resize_area(area_id, environment_uuid?, x?, y?, z?, execute=false)`
-- `cw_set_area_image(area_id, environment_uuid?, image_url?, image_base64?, remove_image?, execute=false)`
+| Tool | Purpose |
+|---|---|
+| [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) | Manual interoperability testing — discover tools, send test requests, validate responses |
+| [MCP-Bench](https://github.com/Accenture/mcp-bench) | Evaluate agent tool-use quality across MCP servers |
+| Cloud Run metrics / APM | Monitor request rate, latency, error rate, and saturation in production (self-hosted) |
 
-Notes:
-
-- Mutating tools are preview-first and require `execute=true` to persist changes.
-- Area images can be attached either by providing a direct `image_url` or Base64 image bytes (`image_base64` + `image_mime_type`), which are stored as a `data:` URL.
-- Because area images are stored in environment settings today, larger images should preferably be hosted externally and referenced via `image_url`.
-
-## Environment preview tool for agent verification
-
-Use `cw_render_environment_preview(environment_uuid?)` when an agent needs to **see the result** of environment edits.
-
-- Renders the same backend endpoint used by the web app: `POST /api/v1/environments/{uuid}/preview`
-- Returns attachment metadata (`type=environment_preview`) and, when available, a Base64 PNG payload for direct model inspection
-- Supports session context resolution: if `environment_uuid` is omitted and only one environment is visible, it is resolved automatically
-
-Recommended sequence for environment-editing tasks:
-
-1. Resolve the target environment (`cw_list_environments`, `cw_list_twins`)
-2. Apply edits (`cw_create_twin`, `cw_edit_position`, `cw_edit_rotation`, `cw_create_area`, `cw_resize_area`, `cw_set_area_image`, etc.)
-3. Call `cw_render_environment_preview`
-4. Compare the rendered preview with the expected outcome before continuing
-
-## Validation and benchmark resources
-
-- **MCP Inspector** for manual interoperability testing and tool/resource validation.
-- **MCP-Bench** for evaluating agent tool-use quality across MCP servers.
-- **Cloud Run metrics / your APM** for request rate, latency, error rate, and saturation in production.
+---
 
 ## References
 
-- MCP specification (transports): https://modelcontextprotocol.io/specification/2025-03-26/basic/transports
-- MCP Inspector: https://modelcontextprotocol.io/docs/tools/inspector
-- Cursor MCP integrations: https://cursor.com/help/customization/mcp
-- Anthropic remote MCP servers: https://docs.anthropic.com/en/docs/agents-and-tools/remote-mcp-servers
-- OpenAI Agents SDK MCP docs: https://openai.github.io/openai-agents-python/mcp/
-- Google Cloud: Host MCP servers on Cloud Run: https://docs.cloud.google.com/run/docs/host-mcp-servers
-- MCP-Bench: https://github.com/Accenture/mcp-bench
+<CardGroup cols={3}>
+  <Card
+    title="MCP Specification"
+    icon="book"
+    href="https://modelcontextprotocol.io/specification/2025-03-26/basic/transports"
+  >
+    Protocol and transport specification
+  </Card>
+  <Card
+    title="MCP Inspector"
+    icon="magnifying-glass"
+    href="https://modelcontextprotocol.io/docs/tools/inspector"
+  >
+    Test and debug MCP servers
+  </Card>
+  <Card
+    title="Cursor MCP Docs"
+    icon="message-bot"
+    href="https://cursor.com/help/customization/mcp"
+  >
+    Configure MCP in Cursor
+  </Card>
+</CardGroup>
+
+<CardGroup cols={3}>
+  <Card
+    title="Anthropic MCP Docs"
+    icon="robot"
+    href="https://docs.anthropic.com/en/docs/agents-and-tools/remote-mcp-servers"
+  >
+    Remote MCP servers with Claude
+  </Card>
+  <Card
+    title="OpenAI Agents SDK"
+    icon="bolt"
+    href="https://openai.github.io/openai-agents-python/mcp/"
+  >
+    MCP integration for OpenAI agents
+  </Card>
+  <Card
+    title="MCP-Bench"
+    icon="chart-bar"
+    href="https://github.com/Accenture/mcp-bench"
+  >
+    Benchmark agent tool-use quality
+  </Card>
+</CardGroup>
