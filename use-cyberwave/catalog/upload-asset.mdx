@@ -1,0 +1,103 @@
+---
+title: "Upload a new asset (URDF ZIP)"
+description: "How to package and upload a URDF asset from the UI or API"
+---
+
+## What is a URDF?
+
+URDF (**Unified Robot Description Format**) is the standard XML format used in ROS to describe a robot's links, joints, visuals, and collisions.
+
+Useful open-source references:
+
+- [ROS 2 URDF documentation](https://docs.ros.org/en/rolling/Tutorials/Intermediate/URDF/URDF-Main.html)
+- [ROS Wiki: URDF](https://wiki.ros.org/urdf)
+- [urdfdom (URDF parser library)](https://github.com/ros/urdfdom)
+
+---
+
+## Prepare your ZIP file correctly
+
+Before uploading, create a folder that contains:
+
+1. One main `.urdf` file
+2. Every file referenced by that URDF (meshes, textures, materials)
+
+Then zip that folder.
+
+```text
+my-robot/
+  urdf/
+    robot.urdf
+  meshes/
+    base_link.stl
+    arm_collision.stl
+    arm_visual.obj
+  textures/
+    arm_albedo.png
+```
+
+### File references inside URDF
+
+Your URDF can reference other files, for example:
+
+- **STL** files for collision geometry
+- **OBJ** files for visual geometry / textured visuals
+- Texture image files used by materials (for example PNG/JPG)
+
+<Info>
+Use relative paths that match your ZIP structure. If the URDF references `meshes/arm_visual.obj`, that file must exist in the ZIP.
+</Info>
+
+---
+
+## Upload from the UI
+
+1. Sign in (or sign up)
+2. Go to [cyberwave.com/catalog](https://cyberwave.com/catalog)
+3. Click **Upload Asset**
+4. Fill in required fields and upload your URDF ZIP
+5. (Optional) Open **Advanced** for extra fields
+
+### Advanced form fields
+
+- **Main URDF File Path**
+  - If your ZIP has only one URDF file, you can leave this empty
+  - If your ZIP has multiple URDF files, set the path (for example `urdf/robot.urdf`)
+- **Thumbnail**
+  - Optional
+  - If you do not upload one, Cyberwave can generate a thumbnail automatically
+
+---
+
+## Upload from the API (`create-with-urdf`)
+
+Use:
+
+- `POST /api/v1/assets/create-with-urdf`
+
+Example:
+
+```bash
+curl -X POST "https://cyberwave.com/api/v1/assets/create-with-urdf" \
+  -H "Authorization: Bearer $CYBERWAVE_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "file_url": "https://example.com/my-robot.zip",
+    "force_name": "my-robot",
+    "main_file_path": "urdf/robot.urdf",
+    "description": "My robot uploaded from URDF ZIP"
+  }'
+```
+
+API payload fields:
+
+- `file_url`: URL to your ZIP file
+- `force_name`: Name for the asset
+- `main_file_path`: Main URDF path in the ZIP
+- `description` (optional)
+- `subfolder` (optional)
+- `branch` (optional)
+
+<Tip>
+For API uploads, make sure `file_url` is reachable by Cyberwave and points to the final ZIP file.
+</Tip>

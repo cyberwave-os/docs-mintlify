@@ -52,6 +52,9 @@ cw.affect("simulation")   # or cw.affect("real-world")
 # Connect to your digital twin
 robot = cw.twin("the-robot-studio/so101")
 
+# If no default environment is configured, this auto-creates a "Quickstart Environment"
+# and places the twin there.
+
 # Move the twin's position in the environment editor
 robot.edit_position(x=1.0, y=0.0, z=0.5)
 robot.edit_rotation(yaw=90)
@@ -72,6 +75,25 @@ robot.joints.set("1", 30)
 </Note>
 
 `move()` and `rotate()` are deprecated for locomotion control. Use `move_forward()`, `move_backward()`, `turn_left()`, and `turn_right()` instead.
+
+## Move a Twin to Another Environment
+
+If you create a robot first and later decide to place it in a different environment:
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+robot = cw.twin("the-robot-studio/so101")
+
+robot.add_to_environment("TARGET_ENVIRONMENT_UUID")
+```
+
+`add_to_environment()` will:
+
+- create a deep copy of the twin in the target environment
+- mark the original twin as deleted
+- delete the source environment if it has no twins left
 
 ## Stream Video
 

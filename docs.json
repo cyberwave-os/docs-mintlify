@@ -84,7 +84,8 @@
                   "group": "Catalog",
                   "icon": "book-bookmark",
                   "pages": [
-                    "use-cyberwave/catalog/overview"
+                    "use-cyberwave/catalog/overview",
+                    "use-cyberwave/catalog/upload-asset"
                   ]
                 },
                 {

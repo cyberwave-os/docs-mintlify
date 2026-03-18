@@ -190,6 +190,22 @@ TODO
 3. Use retries with exponential backoff for transient `5xx` and network failures.
 4. Set tool timeouts and surface structured MCP error codes to users.
 5. Use inspect-first workflows (`list/get` first, then `execute=false`, then `execute=true`).
+6. After changing an environment (for example `cw_create_twin`, `cw_edit_position`, `cw_edit_rotation`), call `cw_render_environment_preview` to visually verify the final layout.
+
+## Environment preview tool for agent verification
+
+Use `cw_render_environment_preview(environment_uuid?)` when an agent needs to **see the result** of environment edits.
+
+- Renders the same backend endpoint used by the web app: `POST /api/v1/environments/{uuid}/preview`
+- Returns attachment metadata (`type=environment_preview`) and, when available, a Base64 PNG payload for direct model inspection
+- Supports session context resolution: if `environment_uuid` is omitted and only one environment is visible, it is resolved automatically
+
+Recommended sequence for environment-editing tasks:
+
+1. Resolve the target environment (`cw_list_environments`, `cw_list_twins`)
+2. Apply edits (`cw_create_twin`, `cw_edit_position`, `cw_edit_rotation`, etc.)
+3. Call `cw_render_environment_preview`
+4. Compare the rendered preview with the expected outcome before continuing
 
 ## Validation and benchmark resources
 
