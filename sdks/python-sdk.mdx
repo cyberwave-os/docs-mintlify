@@ -10,6 +10,8 @@ import EarlyAccess from "/snippets/early-access.mdx";
 
 The Cyberwave Python SDK provides a powerful, easy-to-use interface for controlling robots, running simulations, and managing digital twins programmatically. Perfect for automation, testing, and advanced robotics applications.
 
+> stub
+
 <CardGroup cols={3}>
   <Card title="Robot Control" icon="robot">
     Direct robot manipulation
@@ -44,9 +46,10 @@ Make your robot go BRRRRRRR:
 ```python
 from cyberwave import Cyberwave
 
-cw = Cyberwave()
+cw = Cyberwave(mode="simulation")
 
-# Declare whether commands should affect the simulation or the real robot
+# mode="simulation" gives simulator-friendly defaults for state publishing
+# and cw.affect(...) switches locomotion/control targets when needed
 cw.affect("simulation")   # or cw.affect("real-world")
 
 # Connect to your digital twin
@@ -72,6 +75,13 @@ robot.joints.set("1", 30)
   Use `cw.affect("simulation")` to target the digital twin in Cyberwave, or
   `cw.affect("real-world")` to drive the physical robot. Individual calls can
   still override this with an explicit `source_type` argument.
+</Note>
+
+<Note>
+  Runtime defaults: live clients publish state as `edge`, simulation clients
+  publish state as `sim`, and locomotion/control helpers target `tele` or
+  `sim_tele`. Legacy `source_type="sim"` control calls are still accepted for
+  compatibility.
 </Note>
 
 `move()` and `rotate()` are deprecated for locomotion control. Use `move_forward()`, `move_backward()`, `turn_left()`, and `turn_right()` instead.
