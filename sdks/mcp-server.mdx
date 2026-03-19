@@ -10,12 +10,12 @@ import EarlyAccess from "/snippets/early-access.mdx";
 
 ## Overview
 
-The Cyberwave MCP Server exposes Cyberwave platform operations as **tools** that AI agents can discover and call autonomously. Instead of manually clicking through the dashboard or writing Python scripts, an AI model (Claude, GPT, Gemini, or any MCP-compatible client) can inspect your environments, create digital twins, position robots, and verify the result visually — all through natural language.
+The Cyberwave MCP Server exposes Cyberwave platform operations as **tools** that AI agents can discover and call autonomously. Instead of manually clicking through the dashboard or writing Python scripts, an **AI model** (Claude, GPT, Gemini, or any MCP-compatible client) can inspect your environments, create digital twins, position robots, capture camera frames, trigger workflows, and verify results visually, all through natural language.
 
 | | |
 |---|---|
 | **Protocol** | JSON-RPC 2.0 over [Model Context Protocol](https://modelcontextprotocol.io/) |
-| **Transport** | Streamable HTTP |
+| **Transports** | `stdio` (local/self-hosted default), Streamable HTTP (hosted) |
 | **Hosted endpoint** | `https://mcp.cyberwave.com/mcp` |
 | **Authentication** | `Authorization: Bearer <CYBERWAVE_API_KEY>` |
 
@@ -23,13 +23,13 @@ The Cyberwave MCP Server exposes Cyberwave platform operations as **tools** that
 
 ## What is MCP?
 
-The **Model Context Protocol (MCP)** is an open standard that defines how AI models discover and invoke external tools. It works like a universal adapter — any MCP-compatible AI client can connect to any MCP server and immediately know what operations are available, what parameters they accept, and what they return.
+The **Model Context Protocol (MCP)** is an open standard that defines how AI models discover and invoke external tools. It works like a universal adapter, any MCP-compatible AI client can connect to any MCP server and immediately know what operations are available, what parameters they accept, and what they return.
 
 When you connect the Cyberwave MCP server to an AI agent:
 
 1. The agent sends a **tool discovery** request and receives a list of all available Cyberwave tools with their schemas
 2. Based on your natural language instruction, the agent decides which tools to call and in what order
-3. Each tool call is a **JSON-RPC 2.0** request sent over HTTP to the MCP endpoint
+3. Each tool call is a **JSON-RPC 2.0** request sent to the MCP endpoint
 4. The MCP server translates the tool call into the corresponding Cyberwave REST API operation
 5. Results are returned to the agent, which can reason about them and decide what to do next
 
@@ -56,32 +56,77 @@ Edge Core → Robot Hardware
 
 ## Available Tools
 
-### Read Operations
+The MCP server exposes 27 tools across six categories.
+
+### Discovery
 
 | Tool | Description |
 |---|---|
-| `cw_list_environments` | List all environments in your workspace |
-| `cw_list_twins` | List digital twins within a specific environment |
-| `cw_list_areas` | List areas (zones/regions) defined in an environment |
+| `cw_list_workspaces` | List available workspaces |
+| `cw_list_projects` | List projects, optionally filtered by workspace |
+| `cw_list_environments` | List environments, optionally filtered by project |
+| `cw_list_twins` | List digital twins, optionally filtered by environment |
+| `cw_list_assets` | List assets, optionally filtered by workspace |
+| `cw_list_areas` | List areas (zones/regions) in an environment |
+
+### Inspect
+
+| Tool | Description |
+|---|---|
+| `cw_get_twin` | Get a twin by UUID or session-resolved twin |
+| `cw_get_joint_states` | Get current joint states for a twin |
+| `cw_get_schema` | Get a twin's universal schema at a JSON Pointer path |
 | `cw_render_environment_preview` | Render a PNG snapshot of the environment — multimodal agents can visually inspect the 3D scene |
 
-### Write Operations
+### Vision
 
 | Tool | Description |
 |---|---|
-| `cw_create_twin` | Create a new digital twin from the asset catalog |
-| `cw_edit_position` | Move a twin to specific x, y, z coordinates |
-| `cw_edit_rotation` | Rotate a twin in the environment |
-| `cw_create_area` | Create a new area/zone in the environment |
-| `cw_resize_area` | Resize an area by setting new dimensions |
-| `cw_set_area_image` | Attach a background image to an area (via URL or Base64) |
+| `cw_capture_frame` | Capture the latest camera frame from a twin (returns Base64 JPEG) |
+| `cw_capture_frames` | Capture multiple frames (up to 10) with configurable interval |
 
-### The Preview-First Safety Pattern
+### Twin Actions
+
+All action tools default to `execute=false` (preview mode). Set `execute=true` to commit the change.
+
+| Tool | Description |
+|---|---|
+| `cw_edit_position` | Move a twin to specific x, y, z coordinates |
+| `cw_edit_rotation` | Rotate a twin (Euler angles or quaternion) |
+| `cw_set_joint` | Set a single joint position (degrees or radians) |
+| `cw_motion_pose` | Apply a named motion pose or a custom joint map |
+| `cw_navigation_goto` | Navigate a twin to a waypoint position |
+| `cw_navigation_stop` | Stop an active navigation command |
+
+### Environment & Area Management
+
+| Tool | Description |
+|---|---|
+| `cw_create_environment` | Create a new environment in a workspace/project |
+| `cw_create_twin` | Create a new digital twin from the asset catalog |
+| `cw_create_area` | Create a new area/zone in an environment |
+| `cw_resize_area` | Resize an area by setting new dimensions |
+| `cw_set_area_image` | Attach or remove a background image on an area (via URL or Base64) |
+
+### Workflows
+
+| Tool | Description |
+|---|---|
+| `cw_list_workflows` | List workflows visible to the current user |
+| `cw_get_workflow` | Get a workflow by UUID (nodes, connections, config) |
+| `cw_trigger_workflow` | Trigger a workflow run with optional input parameters |
+| `cw_list_workflow_runs` | List workflow runs, optionally filtered by workflow or status |
+| `cw_get_workflow_run` | Get a specific workflow run by UUID |
+| `cw_cancel_workflow_run` | Cancel an active workflow run |
+
+---
+
+## Safety Pattern
 
 All mutating tools support a two-phase execution model to prevent agents from making blind changes:
 
-- **`execute=false`** (default) — the server calculates the result but does **not** persist it. The agent sees what would happen.
-- **`execute=true`** — the change is committed to the platform.
+- **`execute=false`** (default): the server calculates the result but does **not** persist it. The agent sees what would happen.
+- **`execute=true`**: the change is committed to the platform.
 
 This gives agents (and the humans supervising them) a chance to verify before committing.
 
@@ -101,6 +146,66 @@ This gives agents (and the humans supervising them) a chance to verify before co
     Call `cw_render_environment_preview` to render a PNG snapshot. Multimodal agents can visually confirm the layout matches expectations.
   </Step>
 </Steps>
+
+---
+
+## Safety Limits
+
+Action tools enforce safety guardrails before executing. These limits can be configured via environment variables on self-hosted deployments.
+
+| Limit | Default | Env var |
+|---|---|---|
+| Max position delta | 2.0 m | `CYBERWAVE_MCP_MAX_POSITION_DELTA_M` |
+| Max navigation distance | 5.0 m | `CYBERWAVE_MCP_MAX_NAV_DISTANCE_M` |
+| Max joint delta | 0.7 rad | `CYBERWAVE_MCP_MAX_JOINT_DELTA_RAD` |
+
+If a tool call exceeds these limits, the server returns an error with code `POSITION_DELTA_TOO_LARGE`, `NAV_DISTANCE_TOO_LARGE`, or `JOINT_DELTA_TOO_LARGE` instead of executing the action.
+
+---
+
+## Session Context
+
+The MCP server maintains session context to reduce verbosity. When you interact with a workspace, environment, or twin, the server remembers your last selection.
+
+- **Twins:** If `twin_uuid` is omitted, the server uses the last twin from session context set by a previous `cw_get_twin` or any action tool call. If no twin has been used yet, the tool returns an `AMBIGUOUS_TARGET` error prompting the agent to resolve the twin first.
+- **Environments:** If `environment_uuid` is omitted, it falls back to session context or the `CYBERWAVE_ENVIRONMENT_ID` env var. Some tools (like `cw_list_areas` and `cw_render_environment_preview`) additionally auto-resolve when only one environment is visible to the user.
+- **Workspaces:** If `workspace_uuid` is omitted, it falls back to session context or `CYBERWAVE_WORKSPACE_ID`. Tools that require a workspace auto-resolve when only one workspace is visible.
+
+This means agents can say "capture a frame" without specifying UUIDs after they've already inspected a twin with `cw_get_twin`.
+
+---
+
+## Resources
+
+MCP resources provide read-only data URIs that agents can fetch directly without calling tools.
+
+| URI | MIME Type | Description |
+|---|---|---|
+| `cyberwave://env/{environment_uuid}/areas` | `application/json` | All areas defined in an environment |
+| `cyberwave://env/{environment_uuid}/twins` | `application/json` | All twins in an environment |
+| `cyberwave://twin/{twin_uuid}/schema` | `application/json` | Twin universal schema (URDF-derived structure) |
+| `cyberwave://twin/{twin_uuid}/state` | `application/json` | Twin state plus current joint states |
+
+Resources are useful when agents need to read structured data without triggering tool calls — for example, fetching the full joint schema before deciding which joints to move.
+
+---
+
+## Prompts
+
+The MCP server ships with reusable prompt templates that guide agents toward safe, structured behavior.
+
+| Prompt | Description | When to use |
+|---|---|---|
+| `safe_navigation` | Plans navigation with safety checks and execute gating | Moving twins to waypoints |
+| `safe_manipulation` | Plans joint manipulation with delta checks and preview-first flow | Setting joints or applying poses |
+| `inspect_then_act` | General policy: always inspect context before any actions | Default policy for any task |
+
+Agents can request a prompt before executing a task. For example, `safe_manipulation` instructs the agent to:
+
+1. Inspect the twin schema and current joint states
+2. Call `cw_set_joint` with `execute=false` first
+3. Keep joint deltas small and verify each step
+4. Execute only after explicit confirmation
 
 ---
 
@@ -131,6 +236,12 @@ This gives agents (and the humans supervising them) a chance to verify before co
     cyberwave-mcp-server
     ```
 
+    By default the server runs in **stdio** mode (for local IDE use). To switch to HTTP for remote clients:
+
+    ```bash
+    CYBERWAVE_MCP_TRANSPORT=streamable-http cyberwave-mcp-server
+    ```
+
     **Authentication options:**
 
     | Method | Configuration |
@@ -151,7 +262,7 @@ This gives agents (and the humans supervising them) a chance to verify before co
 
 ## Client Setup
 
-Connect the Cyberwave MCP server to your preferred AI client. All examples use the hosted endpoint — replace `<CYBERWAVE_API_KEY>` with your key from the [profile page](https://cyberwave.com/profile).
+Connect the Cyberwave MCP server to your preferred AI client. All examples use the hosted endpoint, replace `<CYBERWAVE_API_KEY>` with your key from the [profile page](https://cyberwave.com/profile).
 
 <Tabs>
   <Tab title="Cursor">
@@ -273,18 +384,54 @@ print(result.final_output)
 
 ## Tool Reference
 
-### Area Editing
+### Vision Tools
 
-The MCP server can manage environment areas through the same `environment.settings.areas` model used by the web editor.
+| Tool | Parameters |
+|---|---|
+| `cw_capture_frame` | `twin_uuid?`, `sensor_id?`, `mock?` (default `false`) |
+| `cw_capture_frames` | `twin_uuid?`, `count` (1–10, default 1), `interval_ms` (0–5000, default 0), `sensor_id?`, `mock?` |
+
+Frame data is returned as Base64-encoded JPEG. Multimodal models can inspect it directly. When `mock=true`, a placeholder frame is returned for testing.
+
+### Twin Action Tools
+
+| Tool | Parameters |
+|---|---|
+| `cw_edit_position` | `twin_uuid?`, `x?`, `y?`, `z?` (at least one required), `execute=false` |
+| `cw_edit_rotation` | `twin_uuid?`, `yaw?`, `pitch?`, `roll?`, `quaternion?` (Euler or quaternion, not both), `execute=false` |
+| `cw_set_joint` | `twin_uuid?`, `joint_name` (required), `position`, `degrees` (default `true`), `execute=false` |
+| `cw_motion_pose` | `twin_uuid?`, `name?`, `joints?` (name or joints required), `scope` (`asset`/`twin`/`environment`), `environment_uuid?`, `sync`, `transition_ms?`, `hold_ms?`, `execute=false` |
+| `cw_navigation_goto` | `twin_uuid?`, `position` (required, `[x, y, z]`), `yaw?`, `rotation?` (`[w, x, y, z]`, mutually exclusive with yaw), `environment_uuid?`, `execute=false` |
+| `cw_navigation_stop` | `twin_uuid?`, `environment_uuid?`, `execute=false` |
+
+### Environment & Twin Creation
+
+| Tool | Parameters |
+|---|---|
+| `cw_create_environment` | `name` (required), `workspace_uuid?`, `project_uuid?`, `description?`, `execute=false` |
+| `cw_create_twin` | `name` (required), `asset_uuid` (required), `environment_uuid?`, `description?`, `metadata?`, `execute=false` |
+
+### Area Tools
 
 | Tool | Parameters |
 |---|---|
 | `cw_list_areas` | `environment_uuid?` |
-| `cw_create_area` | Area configuration parameters |
-| `cw_resize_area` | `area_id`, `environment_uuid?`, `x?`, `y?`, `z?`, `execute=false` |
-| `cw_set_area_image` | `area_id`, `environment_uuid?`, `image_url?`, `image_base64?`, `remove_image?`, `execute=false` |
+| `cw_create_area` | `name`, `environment_uuid?`, `area_id?`, `position?` (`[x,y,z]`), `size?` (`[x,y,z]`), `rotation?`, `image_url?`, `image_base64?`, `image_mime_type`, `keep_proportions`, `opacity`, `color`, `locked`, `visible`, `execute=false` |
+| `cw_resize_area` | `area_id` (required), `environment_uuid?`, `x?`, `y?`, `z?` (at least one, must be > 0), `execute=false` |
+| `cw_set_area_image` | `area_id` (required), `environment_uuid?`, `image_url?`, `image_base64?`, `image_mime_type`, `keep_proportions?`, `remove_image?` (exactly one of remove/url/base64), `execute=false` |
 
-Area images can be attached via a direct `image_url` (recommended for large images) or inline as `image_base64` bytes with a `image_mime_type`. Images are stored in environment settings.
+Area images can be attached via a direct `image_url` (recommended for large images) or inline as `image_base64` bytes with `image_mime_type`. Images are stored in environment settings.
+
+### Workflow Tools
+
+| Tool | Parameters |
+|---|---|
+| `cw_list_workflows` | *(none)* |
+| `cw_get_workflow` | `workflow_uuid` (required) |
+| `cw_trigger_workflow` | `workflow_uuid` (required), `inputs?` (dict), `execute=false` |
+| `cw_list_workflow_runs` | `workflow_uuid?`, `status?` |
+| `cw_get_workflow_run` | `run_uuid` (required) |
+| `cw_cancel_workflow_run` | `run_uuid` (required), `execute=false` |
 
 ### Environment Preview
 
@@ -293,38 +440,6 @@ Area images can be attached via a direct `image_url` (recommended for large imag
 - Calls the same backend endpoint as the web app: `POST /api/v1/environments/{uuid}/preview`
 - Returns attachment metadata (`type=environment_preview`) and a Base64 PNG payload that multimodal models can inspect directly
 - If `environment_uuid` is omitted and only one environment is visible, it resolves automatically
-
----
-
-## Best Practices
-
-<AccordionGroup>
-  <Accordion title="Always inspect before mutating">
-    Use `cw_list_environments` and `cw_list_twins` before making changes. This gives the agent full context about the current state and prevents accidental overwrites.
-  </Accordion>
-  <Accordion title="Use the preview-first pattern">
-    Call mutating tools with `execute=false` first, then `execute=true`. After committing, call `cw_render_environment_preview` to let the agent visually verify the result.
-  </Accordion>
-  <Accordion title="Use Streamable HTTP transport">
-    For hosted and serverless deployments, always use Streamable HTTP. For custom clients, send both `Accept: application/json` and `Accept: text/event-stream` headers.
-  </Accordion>
-  <Accordion title="Handle errors with retries">
-    Use retries with exponential backoff for transient `5xx` responses and network failures. Set tool-level timeouts and surface structured MCP error codes to users.
-  </Accordion>
-  <Accordion title="Host large images externally">
-    When using `cw_set_area_image`, prefer `image_url` over `image_base64` for large images. Base64-encoded images are stored inline in environment settings, which can impact performance.
-  </Accordion>
-</AccordionGroup>
-
----
-
-## Testing and Validation
-
-| Tool | Purpose |
-|---|---|
-| [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) | Manual interoperability testing — discover tools, send test requests, validate responses |
-| [MCP-Bench](https://github.com/Accenture/mcp-bench) | Evaluate agent tool-use quality across MCP servers |
-| Cloud Run metrics / APM | Monitor request rate, latency, error rate, and saturation in production (self-hosted) |
 
 ---
 
@@ -344,36 +459,5 @@ Area images can be attached via a direct `image_url` (recommended for large imag
     href="https://modelcontextprotocol.io/docs/tools/inspector"
   >
     Test and debug MCP servers
-  </Card>
-  <Card
-    title="Cursor MCP Docs"
-    icon="message-bot"
-    href="https://cursor.com/help/customization/mcp"
-  >
-    Configure MCP in Cursor
-  </Card>
-</CardGroup>
-
-<CardGroup cols={3}>
-  <Card
-    title="Anthropic MCP Docs"
-    icon="robot"
-    href="https://docs.anthropic.com/en/docs/agents-and-tools/remote-mcp-servers"
-  >
-    Remote MCP servers with Claude
-  </Card>
-  <Card
-    title="OpenAI Agents SDK"
-    icon="bolt"
-    href="https://openai.github.io/openai-agents-python/mcp/"
-  >
-    MCP integration for OpenAI agents
-  </Card>
-  <Card
-    title="MCP-Bench"
-    icon="chart-bar"
-    href="https://github.com/Accenture/mcp-bench"
-  >
-    Benchmark agent tool-use quality
   </Card>
 </CardGroup>
