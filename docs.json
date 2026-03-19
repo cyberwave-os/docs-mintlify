@@ -52,7 +52,13 @@
               ]
             },
             {
-              "group": "Use Cyberwave",
+              "group": "Tutorials",
+              "pages": [
+                "tutorials/edge-to-cloud-vlm"
+              ]
+            },
+            {
+              "group": "Reference Features",
               "pages": [
                 "use-cyberwave/setup-cyberwave",
                 "use-cyberwave/catalog",
@@ -62,12 +68,6 @@
                 "use-cyberwave/environment-editor",
                 "use-cyberwave/access-control",
                 "use-cyberwave/teleoperation-latency"
-              ]
-            },
-            {
-              "group": "Tutorials",
-              "pages": [
-                "tutorials/edge-to-cloud-vlm"
               ]
             }
           ]
