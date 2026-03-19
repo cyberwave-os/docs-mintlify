@@ -4,7 +4,7 @@ description: "Overview of all hardware platforms supported by Cyberwave"
 icon: "microchip"
 ---
 
-Cyberwave supports a range of robotic hardware — from articulated arms to mobile rovers, quadrupeds, and standalone cameras. Each platform integrates with Cyberwave through a digital twin, giving you real-time control, telemetry streaming, dataset recording, and AI model deployment from a single interface.
+Cyberwave supports a range of robotic hardware from articulated arms to mobile rovers, quadrupeds, and standalone cameras. Each platform integrates with Cyberwave through a digital twin, giving you real-time control, telemetry streaming, dataset recording, and AI model deployment from a single interface.
 
 ---
 
@@ -14,17 +14,17 @@ The **SO101** is an open-source, 6-degree-of-freedom (6-DOF) robotic arm set des
 
 ### Physical Components
 
-- **6-DOF articulated arm** — compact manipulator for close-range, desk-based operations
-- **Servo-driven joints** — position-controlled motors for real-time joint movement
-- **Gripper end-effector** — suitable for basic pick-and-place tasks
-- **Leader-follower configuration (optional)** — dual-arm setup where the leader captures human motion and the follower mirrors it in real time
-- **USB control** — direct connection from a laptop or SBC (Raspberry Pi) over USB/serial
+- **6-DOF articulated arm**: compact manipulator for close-range, desk-based operations
+- **Servo-driven joints**: position-controlled motors for real-time joint movement
+- **Gripper end-effector**: suitable for basic pick-and-place tasks
+- **Leader-follower configuration (optional)**: dual-arm setup where the leader captures human motion and the follower mirrors it in real time
+- **USB control**: direct connection from a laptop or SBC (Raspberry Pi) over USB/serial
 
 ### What You Can Do with Cyberwave
 
 - Onboard from the catalog and create a digital twin automatically
 - Teleoperate using a physical leader arm with joint-level mirroring
-- Remote operate without a leader arm — control directly from the dashboard, SDK, or API
+- Remote operate without a leader arm and control directly from the dashboard, SDK, or API
 - Assign controller policies (keyboard, gamepad, VLA models)
 - Record and export episodic datasets for training
 - Train ML models and deploy them as autonomous controller policies
@@ -58,9 +58,9 @@ graph TB
 
 The system operates in three layers:
 
-- **Cyberwave Cloud** — hosts the digital twin, dashboard, MQTT broker, and backend APIs for monitoring, commanding, and training
-- **Cyberwave Edge (Raspberry Pi)** — runs the ROS 2 stack and MQTT bridge inside a Docker container, translating between ROS 2 topics and Cyberwave MQTT
-- **Robotic Hardware (ESP32)** — handles low-level motor control, sensors, camera pan-tilt, and LEDs over serial UART
+- **Cyberwave Cloud**: hosts the digital twin, dashboard, MQTT broker, and backend APIs for monitoring, commanding, and training
+- **Cyberwave Edge (Raspberry Pi)**: runs the ROS 2 stack and MQTT bridge inside a Docker container, translating between ROS 2 topics and Cyberwave MQTT
+- **Robotic Hardware (ESP32)**: handles low-level motor control, sensors, camera pan-tilt, and LEDs over serial UART
 
 ### What You Can Do with Cyberwave
 
@@ -94,11 +94,11 @@ The **Unitree Go2** is an intelligent quadruped robot designed for research, exp
 
 ### Core Capabilities
 
-- **4D LiDAR perception** — hemispherical FOV with 0.05m minimum detection for all-terrain navigation
-- **AI-powered locomotion** — trained via large-scale simulation for obstacle climbing, recovery, and adaptive gaits
-- **3D mapping and autonomy** — point cloud mapping and path planning using built-in LiDAR
-- **Intelligent side-follow (ISS 2.0)** — wireless vector positioning with obstacle avoidance
-- **OTA updates** — continuous firmware improvements via the cloud
+- **4D LiDAR perception**: hemispherical FOV with 0.05m minimum detection for all-terrain navigation
+- **AI-powered locomotion**: trained via large-scale simulation for obstacle climbing, recovery, and adaptive gaits
+- **3D mapping and autonomy**: point cloud mapping and path planning using built-in LiDAR
+- **Intelligent side-follow (ISS 2.0)**: wireless vector positioning with obstacle avoidance
+- **OTA updates**: continuous firmware improvements via the cloud
 
 <Info>
 For detailed hardware specifications and assembly instructions, refer to the [official Unitree Go2 documentation](https://www.docs.quadruped.de/projects/go2/html/index.html).
@@ -119,7 +119,7 @@ A **camera twin** is a digital representation of a physical camera within your C
 - **USB webcams** (Logitech, generic UVC-compatible cameras)
 - **Laptop built-in webcams**
 
-Once connected, your camera feed is available across the platform — in the environment viewer, for dataset recording, and as input to ML models and workflows.
+Once connected, your camera feed is available across the platform in the environment viewer, for dataset recording, and as input to ML models and workflows.
 
 <Card title="Camera Setup Guide" icon="play" href="/hardware/camera/get-started">
   Connect a webcam or laptop camera to Cyberwave

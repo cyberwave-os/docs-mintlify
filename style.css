@@ -1,0 +1,6 @@
+/* Disable C++ SDK sidebar link (Coming Soon) */
+#sidebar a[href="/sdks/cpp-sdk"] {
+  pointer-events: none;
+  opacity: 0.5;
+  cursor: default;
+}

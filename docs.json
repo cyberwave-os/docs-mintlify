@@ -55,38 +55,13 @@
               "group": "Use Cyberwave",
               "pages": [
                 "use-cyberwave/setup-cyberwave",
-                "use-cyberwave/teleoperation-latency",
-                {
-                  "group": "Catalog",
-                  "icon": "book-bookmark",
-                  "pages": [
-                    "use-cyberwave/catalog/overview",
-                    "use-cyberwave/catalog/upload-asset"
-                  ]
-                },
-                {
-                  "group": "Digital Twins",
-                  "icon": "clone",
-                  "pages": [
-                    "use-cyberwave/digital-twins/overview"
-                  ]
-                },
-                {
-                  "group": "Workflows",
-                  "icon": "diagram-project",
-                  "pages": [
-                    "use-cyberwave/workflows/overview"
-                  ]
-                },
-                {
-                  "group": "ML Models",
-                  "icon": "brain",
-                  "pages": [
-                    "use-cyberwave/ml-models/overview"
-                  ]
-                },
+                "use-cyberwave/catalog",
+                "use-cyberwave/digital-twins",
+                "use-cyberwave/workflows",
+                "use-cyberwave/ml-models",
                 "use-cyberwave/environment-editor",
-                "use-cyberwave/access-control"
+                "use-cyberwave/access-control",
+                "use-cyberwave/teleoperation-latency"
               ]
             },
             {

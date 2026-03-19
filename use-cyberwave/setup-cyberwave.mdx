@@ -6,14 +6,16 @@ icon: "wrench"
 
 ## Overview
 
-Cyberwave uses API keys or tokens to authenticate requests. You'll need credentials to:
+Cyberwave uses API tokens to authenticate requests. You'll need a token to:
 - Connect the Python SDK
 - Make REST API calls
 - Establish MQTT connections
 
+Each token is scoped to a specific workspace, giving you isolated access per workspace.
+
 ---
 
-## Getting Your API Key
+## Creating an API Token
 
 <Steps>
   <Step title="Sign in to Cyberwave">
@@ -24,25 +26,25 @@ Cyberwave uses API keys or tokens to authenticate requests. You'll need credenti
     Click your profile icon and select **Profile** or go directly to [cyberwave.com/profile](https://cyberwave.com/profile).
   </Step>
   
-  <Step title="Generate API Key">
-    In the API Keys section, click **Generate New Key**. Copy the key immediately—it won't be shown again.
+  <Step title="Create a Token">
+    In the **API Tokens** section, click **Create Token**. Select the workspace you want the token scoped to, then copy the token immediately — it won't be shown again.
   </Step>
 </Steps>
 
 <Warning>
-Keep your API key secure. Don't commit it to version control or share it publicly.
+Keep your API token secure. Don't commit it to version control or share it publicly.
 </Warning>
 
 ---
 
-## Using Your API Key
+## Using Your API Token
 
 ### Environment Variable (Recommended)
 
-Set your API key as an environment variable:
+Set your API token as an environment variable:
 
 ```bash
-export CYBERWAVE_API_KEY="your_api_key_here"
+export CYBERWAVE_API_KEY="cw_your_token_here"
 ```
 
 The SDK automatically reads this variable:
@@ -56,23 +58,12 @@ robot = cw.twin("the-robot-studio/so101")
 
 ### Direct Configuration
 
-Pass the API key directly when initializing the client:
+Pass the API token directly when initializing the client:
 
 ```python
 from cyberwave import Cyberwave
 
-client = Cyberwave(api_key="your_api_key_here")
-```
-
-### Using Tokens
-
-For short-lived sessions, you can use tokens instead of API keys:
-
-```python
-from cyberwave import Cyberwave
-
-# Token-based authentication
-client = Cyberwave(token="your_bearer_token")
+client = Cyberwave(api_key="cw_your_token_here")
 ```
 
 ---
@@ -83,17 +74,18 @@ The SDK supports these environment variables:
 
 | Variable | Description |
 |----------|-------------|
-| `CYBERWAVE_API_KEY` | Your API key for authentication |
-| `CYBERWAVE_TOKEN` | Bearer token (alternative to API key) |
+| `CYBERWAVE_API_KEY` | Your API token for authentication |
 | `CYBERWAVE_BASE_URL` | API base URL (default: `https://api.cyberwave.com`) |
-| `CYBERWAVE_ENVIRONMENT_ID` | Default environment ID |
-| `CYBERWAVE_WORKSPACE_ID` | Default workspace ID |
+| `CYBERWAVE_ENVIRONMENT_ID` | Default environment UUID |
+| `CYBERWAVE_WORKSPACE_ID` | Default workspace UUID |
+| `CYBERWAVE_MQTT_HOST` | MQTT broker host (default: `mqtt.cyberwave.com`) |
+| `CYBERWAVE_MQTT_PORT` | MQTT broker port (default: `8883`) |
 
 ### Example `.env` File
 
 ```bash
-CYBERWAVE_API_KEY=cw_live_xxxxxxxxxxxxxxxxxxxx
-CYBERWAVE_ENVIRONMENT_ID=env_xxxxxxxxxxxxxxxxxxxx
+CYBERWAVE_API_KEY=cw_a1b2c3d4e5f6...
+CYBERWAVE_ENVIRONMENT_ID=1e48b1a5-ff2b-45ba-a854-a2c2df561852
 ```
 
 Load with [python-dotenv](https://pypi.org/project/python-dotenv/):
@@ -110,17 +102,19 @@ robot = cw.twin("the-robot-studio/so101")
 
 ## MQTT Authentication
 
-For real-time features (video streaming, live updates), the SDK connects to MQTT automatically using your API credentials.
+For real-time features (video streaming, teleoperation, live joint updates), the SDK connects to MQTT automatically using your API token. The MQTT connection is lazily initialized — it connects on the first call that requires it (e.g., subscribing to joint updates).
 
 ```python
 from cyberwave import Cyberwave
 
-client = Cyberwave(api_key="your_api_key")
+client = Cyberwave(api_key="cw_your_token_here")
 
-# MQTT connection uses the same credentials
 robot = client.twin("the-robot-studio/so101")
+# MQTT connects automatically on the first subscription
 robot.subscribe_joints(lambda data: print(f"Joints: {data}"))
 ```
+
+The default MQTT connection uses TLS on port 8883.
 
 ### Custom MQTT Settings
 
@@ -128,9 +122,9 @@ Override MQTT connection settings if needed:
 
 ```python
 client = Cyberwave(
-    api_key="your_api_key",
+    api_key="cw_your_token_here",
     mqtt_host="mqtt.cyberwave.com",
-    mqtt_port=1883
+    mqtt_port=8883
 )
 ```
 
@@ -138,12 +132,14 @@ client = Cyberwave(
 
 ## REST API Authentication
 
-For direct REST API calls, include your API key in the `Authorization` header:
+For direct REST API calls, include your API token in the `Authorization` header:
 
 ```bash
-curl -X GET "https://api.cyberwave.com/api/assets/" \
-  -H "Authorization: Bearer your_api_key_here"
+curl -X GET "https://api.cyberwave.com/api/v1/assets/" \
+  -H "Authorization: Bearer cw_your_token_here"
 ```
+
+Both `Bearer` and `Token` prefixes are accepted.
 
 ---
 
@@ -151,9 +147,9 @@ curl -X GET "https://api.cyberwave.com/api/assets/" \
 
 <AccordionGroup>
   <Accordion title="Authentication failed: Invalid or missing credentials">
-    - Verify your API key is correct
+    - Verify your API token is correct and hasn't been revoked
     - Check that the environment variable is set: `echo $CYBERWAVE_API_KEY`
-    - Ensure the key hasn't expired—generate a new one if needed
+    - Generate a new token from your [profile page](https://cyberwave.com/profile) if needed
   </Accordion>
   
   <Accordion title="No CYBERWAVE_API_KEY found">
@@ -163,33 +159,11 @@ curl -X GET "https://api.cyberwave.com/api/assets/" \
   </Accordion>
   
   <Accordion title="MQTT connection failed">
-    - Check your network allows outbound connections on port 1883
-    - Verify your API key has MQTT permissions
-    - Try reconnecting: `client.mqtt.connect()`
+    - Check your network allows outbound connections on port **8883** (TLS)
+    - Verify your API token is valid and not revoked
+    - The MQTT client connects lazily — call a subscription method to trigger the connection
   </Accordion>
 </AccordionGroup>
-
----
-
-## Security Best Practices
-
-<CardGroup cols={2}>
-  <Card title="Use Environment Variables" icon="terminal">
-    Never hardcode API keys in your source code
-  </Card>
-  
-  <Card title="Rotate Keys Regularly" icon="rotate">
-    Generate new keys periodically and revoke old ones
-  </Card>
-  
-  <Card title="Limit Permissions" icon="shield">
-    Use workspace-scoped keys when possible
-  </Card>
-  
-  <Card title="Audit Access" icon="eye">
-    Monitor API usage in your dashboard
-  </Card>
-</CardGroup>
 
 ---
 
@@ -199,7 +173,7 @@ curl -X GET "https://api.cyberwave.com/api/assets/" \
   <Card
     title="Quick Start"
     icon="rocket"
-    href="/quickstart"
+    href="/get-started/quickstart"
   >
     Create your first digital twin
   </Card>
@@ -212,4 +186,3 @@ curl -X GET "https://api.cyberwave.com/api/assets/" \
     Full SDK documentation
   </Card>
 </CardGroup>
-
