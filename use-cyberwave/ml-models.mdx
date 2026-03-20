@@ -1,0 +1,160 @@
+---
+title: "ML Models"
+description: "Register and deploy AI models for robotics workflows"
+icon: "brain"
+---
+
+## What are ML Models?
+
+ML Models in Cyberwave are AI models registered in your workspace that can process various inputs — video, images, audio, text, or robot actions. They integrate with workflows and can run in the cloud or on edge devices.
+
+<Info>
+ML Models define **what the model can do** (input types) and **where it runs** (provider). The actual inference happens through the model provider's API or on your edge device.
+</Info>
+
+---
+
+## Model Capabilities
+
+Each ML Model specifies what inputs it can process:
+
+| Capability | Description | Example Use Cases |
+|---|---|---|
+| `can_take_video_as_input` | Process video streams | Surveillance, teleoperation |
+| `can_take_image_as_input` | Process single images | Quality inspection, object detection |
+| `can_take_audio_as_input` | Process audio data | Voice commands, anomaly detection |
+| `can_take_text_as_input` | Process text prompts | Natural language commands |
+| `can_take_action_as_input` | Process robot actions | Behavior cloning, RL policies |
+
+---
+
+## Model Providers
+
+Models can run through different providers:
+
+<CardGroup cols={2}>
+  <Card title="Local / Edge" icon="microchip">
+    Run on your edge devices using ONNX, TensorRT, or custom inference
+  </Card>
+  <Card title="Cloud APIs" icon="cloud">
+    Use OpenAI, Anthropic, or other cloud AI services
+  </Card>
+  <Card title="Hugging Face" icon="face-smile">
+    Deploy models from Hugging Face Hub
+  </Card>
+  <Card title="Custom" icon="code">
+    Your own inference servers and endpoints
+  </Card>
+</CardGroup>
+
+---
+
+## Registering a Model
+
+<Tabs>
+  <Tab title="Dashboard">
+    <Steps>
+      <Step title="Navigate">
+        Go to **ML Models** in your workspace.
+      </Step>
+      <Step title="Add model">
+        Click **Add Model**.
+      </Step>
+      <Step title="Configure">
+        Fill in the model details: name, description, external ID (model identifier for the provider), provider name (e.g. `openai`, `local`, `huggingface`), and input capabilities.
+      </Step>
+      <Step title="Create">
+        Click **Create**.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="Python SDK">
+    ```python
+    from cyberwave import Cyberwave
+
+    cw = Cyberwave(api_key="your_api_key")
+
+    model = cw.api.create_mlmodel({
+        "name": "Object Detector",
+        "description": "YOLOv8 model for detecting warehouse items",
+        "model_external_id": "yolov8n",
+        "model_provider_name": "local",
+        "can_take_image_as_input": True,
+        "can_take_video_as_input": True,
+        "visibility": "private",
+        "tags": ["vision", "detection", "warehouse"]
+    })
+
+    print(f"Model UUID: {model.uuid}")
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Model Visibility
+
+| Visibility | Who Can Access |
+|---|---|
+| `private` | Only your workspace members |
+| `workspace` | All workspace members |
+| `public` | Anyone (admin-only to create) |
+
+---
+
+## Using Models in Workflows
+
+ML Models integrate with workflow nodes for automated processing:
+
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│ Capture     │───▶│ ML Model:   │───▶│ Condition:  │
+│ Image       │    │ Detect      │    │ Found?      │
+└─────────────┘    │ Objects     │    └─────────────┘
+                   └─────────────┘           │
+                                    ┌───────┴───────┐
+                                    ▼               ▼
+                             ┌───────────┐   ┌───────────┐
+                             │ Pick      │   │ Alert     │
+                             │ Object    │   │ Operator  │
+                             └───────────┘   └───────────┘
+```
+
+---
+
+## Running Inference
+
+<Tabs>
+  <Tab title="Cloud Models">
+    For cloud-based models, Cyberwave routes requests to the provider:
+
+    ```python
+    response = cw.api.vlm_generation({
+        "model_uuid": model.uuid,
+        "prompt": "What objects do you see? How should the robot pick them up?",
+        "image_url": "https://..."
+    })
+    ```
+  </Tab>
+  <Tab title="Edge Models">
+    For local models, run inference on your edge device using your preferred framework (PyTorch, ONNX, TensorRT) and publish results back to Cyberwave via MQTT or the SDK.
+  </Tab>
+</Tabs>
+
+---
+
+## Listing Models
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave(api_key="your_api_key")
+
+models = cw.api.list_mlmodels()
+
+for model in models:
+    print(f"{model.name} ({model.model_provider_name})")
+    print(f"  Video: {model.can_take_video_as_input}")
+    print(f"  Image: {model.can_take_image_as_input}")
+    print(f"  Text: {model.can_take_text_as_input}")
+```

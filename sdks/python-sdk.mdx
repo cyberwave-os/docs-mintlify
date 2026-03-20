@@ -1,194 +1,720 @@
 ---
 title: "Python SDK"
-description: "Programmatically control your robots and simulations using our comprehensive Python SDK"
+description: "Programmatic interface for controlling robots, managing digital twins, and streaming sensor data through the Cyberwave platform"
 icon: "python"
 ---
 
 import EarlyAccess from "/snippets/early-access.mdx";
 
-## What is the Cyberwave Python SDK?
-
-The Cyberwave Python SDK provides a powerful, easy-to-use interface for controlling robots, running simulations, and managing digital twins programmatically. Perfect for automation, testing, and advanced robotics applications.
-
-<CardGroup cols={3}>
-  <Card title="Robot Control" icon="robot">
-    Direct robot manipulation
-  </Card>
-  <Card title="Simulation" icon="desktop">
-    Run automated simulations
-  </Card>
-  <Card title="Data Analytics" icon="bolt">
-    Collect and analyze data
-  </Card>
-</CardGroup>
-
-## Installation
-
 <EarlyAccess />
 
-Install the Cyberwave Python SDK using pip:
+## Overview
+
+The Cyberwave Python SDK (`cyberwave`) is a unified client that wraps both the Cyberwave **REST API** and **MQTT API** into a single Python interface. It handles authentication, protocol negotiation, and message serialization so you can interact with digital twins, control physical robots, stream video, manage workflows, and handle alerts, all using Python.
+
+| Capability | Protocol | Description |
+|---|---|---|
+| Digital Twin management | REST | Create, query, move, and configure digital twins |
+| Joint control | MQTT | Send real-time joint position commands (degrees or radians) |
+| Position, rotation, scale | MQTT | Update a twin's 3D pose in the environment |
+| Video streaming | WebRTC + MQTT | Stream camera feeds (standard + RealSense) to the cloud |
+| Frame capture | WebRTC | Grab individual frames as files, numpy arrays, PIL images, or raw bytes |
+| Asset catalog | REST | Search, create, and upload robot assets (including large GLB files) |
+| Workspace and project management | REST | List workspaces, create projects and environments |
+| Edge management | REST | Register, update, and delete edge devices |
+| Workflows | REST | List, trigger, and monitor workflow executions |
+| Alerts | REST | Create, acknowledge, resolve, and manage twin alerts |
+
+---
+
+## Installation
 
 ```bash
 pip install cyberwave
 ```
 
-<Note>
-  **Requirements:** - Python 3.11 or higher - API token (generated from your
-  Profile page after getting Private Beta access)
-</Note>
+For camera streaming, install the optional extras:
 
-## Quick Start Example
+<Tabs>
+  <Tab title="Standard Cameras (OpenCV)">
+    ```bash
+    pip install cyberwave[camera]
+    ```
+  </Tab>
+  <Tab title="Intel RealSense (RGB + Depth)">
+    ```bash
+    pip install cyberwave[realsense]
+    ```
 
-Make your robot go BRRRRRRR:
+    <Info>
+    On ARM64/Raspberry Pi, you'll also need the `librealsense` SDK installed on your system. On x86_64, install it via `sudo apt install librealsense2` or use pre-built wheels. On Raspberry Pi OS (ARM64), you must build librealsense from source.
+    </Info>
+  </Tab>
+</Tabs>
 
-```python
-from cyberwave import Cyberwave
-
-cw = Cyberwave()
-
-# Declare whether commands should affect the simulation or the real robot
-cw.affect("simulation")   # or cw.affect("real-world")
-
-# Connect to your digital twin
-robot = cw.twin("the-robot-studio/so101")
-
-# If no default environment is configured, this auto-creates a "Quickstart Environment"
-# and places the twin there.
-
-# Move the twin's position in the environment editor
-robot.edit_position(x=1.0, y=0.0, z=0.5)
-robot.edit_rotation(yaw=90)
-
-# For locomotion twins, send navigation commands (use the affect() target set above)
-rover = cw.twin("unitree/go2")
-rover.move_forward(distance=1.0)
-rover.turn_left(angle=1.57)
-
-# Actuate the robot's joint to 30 degrees
-robot.joints.set("1", 30)
-```
-
-<Note>
-  Use `cw.affect("simulation")` to target the digital twin in Cyberwave, or
-  `cw.affect("real-world")` to drive the physical robot. Individual calls can
-  still override this with an explicit `source_type` argument.
-</Note>
-
-`move()` and `rotate()` are deprecated for locomotion control. Use `move_forward()`, `move_backward()`, `turn_left()`, and `turn_right()` instead.
-
-## Move a Twin to Another Environment
-
-If you create a robot first and later decide to place it in a different environment:
-
-```python
-from cyberwave import Cyberwave
-
-cw = Cyberwave()
-robot = cw.twin("the-robot-studio/so101")
-
-robot.add_to_environment("TARGET_ENVIRONMENT_UUID")
-```
-
-`add_to_environment()` will:
-
-- create a deep copy of the twin in the target environment
-- mark the original twin as deleted
-- delete the source environment if it has no twins left
-
-## Stream Video
-
-Install the additional dependencies for camera streaming:
+Video streaming also requires **FFMPEG**:
 
 ```bash
-pip install cyberwave[camera]
+# macOS
+brew install ffmpeg pkg-config
+
+# Ubuntu
+sudo apt-get install ffmpeg
 ```
 
-Now you can stream real time video data from your robot or sensor:
+<Note>
+**Requirements:**
+- Python 3.10 or higher
+- A Cyberwave API key (generate one from your [Profile page](https://cyberwave.com/profile))
+</Note>
+
+---
+
+## Quick Start
 
 ```python
 from cyberwave import Cyberwave
-import asyncio
-import os
+import math, asyncio
 
-token = os.getenv("CYBERWAVE_TOKEN")
+cw = Cyberwave(api_key="your_api_key_here")
 
-client = Cyberwave(
-    token=token,
+# ──────────────────────────────────────────────
+# 1. Create a digital twin from the asset catalog
+# ──────────────────────────────────────────────
+
+robot = cw.twin("the-robot-studio/so101")
+
+# Target a specific environment (optional)
+# robot = cw.twin("the-robot-studio/so101", environment_id="ENV_UUID")
+
+# ──────────────────────────────────────────────
+# 2. Position, rotate, and scale the twin
+# ──────────────────────────────────────────────
+
+robot.edit_position(x=1.0, y=0.0, z=0.5)
+robot.edit_rotation(yaw=90)
+robot.edit_scale(x=1.5, y=1.5, z=1.5)
+
+# ──────────────────────────────────────────────
+# 3. Control joints (degrees or radians)
+# ──────────────────────────────────────────────
+
+robot.joints.set("shoulder_joint", 45, degrees=True)
+robot.joints.set("elbow_joint", math.pi / 4, degrees=False)
+
+angle = robot.joints.get("shoulder_joint")
+all_joints = robot.joints.get_all()
+print(f"Joint names: {robot.joints.list()}")
+
+# ──────────────────────────────────────────────
+# 4. Capture a camera frame (no streaming setup needed)
+# ──────────────────────────────────────────────
+
+path  = robot.capture_frame()           # save temp JPEG, returns path
+frame = robot.capture_frame("numpy")    # numpy BGR array
+image = robot.capture_frame("pil")      # PIL.Image object
+
+# ──────────────────────────────────────────────
+# 5. Search the asset catalog
+# ──────────────────────────────────────────────
+
+for asset in cw.assets.search("unitree"):
+    print(f"{asset.registry_id}: {asset.name}")
+
+# ──────────────────────────────────────────────
+# 6. Manage workspaces, projects, and environments
+# ──────────────────────────────────────────────
+
+workspaces = cw.workspaces.list()
+project = cw.projects.create(name="My Project", description="Quickstart project", workspace_id=workspaces[0].uuid)
+env = cw.environments.create(name="Lab Setup", description="Test environment", project_id=project.uuid)
+
+# ──────────────────────────────────────────────
+# 7. Trigger a workflow and wait for completion
+# ──────────────────────────────────────────────
+
+run = cw.workflows.trigger("workflow-uuid", inputs={"speed": 0.5})
+run.wait(timeout=60)
+print(f"Workflow finished: {run.status}")
+
+# ──────────────────────────────────────────────
+# 8. Create and manage alerts on a twin
+# ──────────────────────────────────────────────
+
+alert = robot.alerts.create(
+    name="Calibration needed",
+    description="Joint 3 drifting beyond tolerance",
+    severity="warning",
+    alert_type="calibration_needed",
 )
+alert.acknowledge()
+alert.resolve()
 
-# Get or create a twin to stream to
-twin_uuid = os.getenv("TWIN_UUID")
+# ──────────────────────────────────────────────
+# 9. Stream live video (async)
+# ──────────────────────────────────────────────
 
-# Create camera streamer
-streamer = client.video_stream(
-    twin_uuid=twin_uuid,
-    camera_id=0,  # Default camera (change if you have multiple cameras)
-    fps=10,  # Frames per second, optional
-)
+camera = cw.twin("cyberwave/standard-cam")
 
-try:
-    await streamer.start()
-    print("Stream is active. Press Ctrl+C to stop...")
+async def stream():
+    await camera.stream_video_background()
+    try:
+        while True:
+            await asyncio.sleep(1)
+    finally:
+        await camera.stop_streaming()
+        cw.disconnect()
 
-    # Keep streaming until interrupted
-    while True:
-        await asyncio.sleep(1)
+# asyncio.run(stream())
 
-except KeyboardInterrupt:
-    print("Stopping stream...")
-except Exception as e:
-    print(f"Error during streaming: {e}")
-finally:
-    await streamer.stop()
-    client.disconnect()
-    print("Stream stopped and resources cleaned up")
+# ──────────────────────────────────────────────
+# 10. Manage edge devices
+# ──────────────────────────────────────────────
+
+for edge in cw.edges.list():
+    print(f"{edge.name} — {edge.uuid}")
 ```
 
-## Authentication & Setup
+---
 
-Get your API token from the Cyberwave dashboard and configure authentication:
+## Authentication
+
+The SDK authenticates using an API key. You can provide it in two ways:
+
+**Option 1: Environment variable (recommended):**
+
+```bash
+export CYBERWAVE_API_KEY=your_api_key_here
+```
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+```
+
+**Option 2: Explicit API key:**
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave(api_key="your_api_key_here")
+```
+
+You can also set a default environment so `cw.twin()` always targets the same environment:
+
+```bash
+export CYBERWAVE_API_KEY="your_api_key_here"
+export CYBERWAVE_ENVIRONMENT_ID="your_environment_uuid"
+```
+
+With both set, `cw.twin("the-robot-studio/so101")` will return the first SO101 twin in that environment, or create one if it doesn't exist.
 
 <Steps>
-  <Step title="Generate Token">
-    Go to Dashboard → Profile → API Tokens to generate your token
+  <Step title="Generate an API key">
+    Go to the Cyberwave dashboard → **Profile** → **API Tokens** and create a new key.
   </Step>
-  <Step title="Set Environment Variable">
-    Set your token as an environment variable: ```bash export
-    CYBERWAVE_API_TOKEN=your_token ```
+  <Step title="Set the environment variable">
+    Export `CYBERWAVE_API_KEY` in your shell or add it to your `.env` file.
   </Step>
-  <Step title="Initialize Client">
-    The SDK will automatically use the environment variable
+  <Step title="Initialize the client">
+    Call `Cyberwave()`, the SDK picks up the key and establishes connections to both the REST and MQTT endpoints.
   </Step>
 </Steps>
 
-## Ready to Code?
+---
 
-Start building powerful robotics applications with the Cyberwave Python SDK. Explore our examples and documentation.
+## Data Source Types
 
-## Related (Stub)
+By default, the SDK sends data marked as arriving from the **real world**. You can change this behavior by setting `source_type` at initialization:
 
-- [Environment Preview API (Stub)](/sdks/environment-preview)
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave(source_type="sim")
+```
+
+| Source Type | Description |
+|---|---|
+| *(default)* | Data is marked as real-world — commands are sent to physical hardware via the Edge Core |
+| `"sim"` | Data is marked as simulated — commands update the digital twin in the Cyberwave 3D environment |
+| `"edit"` | SDK acts as a client of the environment editor — appears as another editor session in the web app |
+| `"tele"` | SDK acts as a remote teleoperator — sends control commands to the physical device from the cloud |
+
+---
+
+## Digital Twins
+
+### Create or Retrieve a Twin
+
+`cw.twin()` is the primary method for working with digital twins. Pass an asset registry ID (`vendor/model`) to create or retrieve a twin:
+
+```python
+robot = cw.twin("the-robot-studio/so101")
+```
+
+This method:
+
+1. Queries the **Asset Catalog** (REST) to resolve the asset by registry ID
+2. Creates a new twin instance in your environment, or retrieves an existing one
+3. Returns a **capability-specific Twin class** based on the asset's metadata
+
+You can also target a specific environment or retrieve a twin by UUID:
+
+```python
+robot = cw.twin("the-robot-studio/so101", environment_id="YOUR_ENVIRONMENT_UUID")
+
+twin = cw.twin(twin_id="YOUR_TWIN_UUID")
+```
+
+If no default environment is configured (via `CYBERWAVE_ENVIRONMENT_ID` or `environment_id` parameter), the SDK auto-creates a "Quickstart Environment" and places the twin there.
+
+### Position, Rotation, and Scale
+
+Update a twin's 3D pose in the environment:
+
+```python
+robot.edit_position(x=1.0, y=0.0, z=0.5)
+robot.edit_position([1.0, 0.5, 0.0])
+
+robot.edit_rotation(yaw=90)
+
+robot.edit_scale(x=1.5, y=1.5, z=1.5)
+```
+
+Both keyword arguments and list format are supported for `edit_position`.
+
+### Move a Twin Between Environments
+
+```python
+robot.add_to_environment("TARGET_ENVIRONMENT_UUID")
+```
+
+This operation:
+
+- Creates a deep copy of the twin in the target environment
+- Marks the original twin as deleted
+- Deletes the source environment if it has no remaining twins
+
+---
+
+## Joint Control
+
+Send real-time joint commands to a robot arm or any articulated twin. You can use **degrees** or **radians**:
+
+```python
+import math
+
+robot = cw.twin("the-robot-studio/so101")
+
+robot.joints.set("shoulder_joint", 45, degrees=True)
+
+robot.joints.set("elbow_joint", math.pi/4, degrees=False)
+
+angle = robot.joints.get("shoulder_joint")
+
+joint_names = robot.joints.list()
+
+all_joints = robot.joints.get_all()
+```
+
+| Method | Description |
+|---|---|
+| `joints.set(name, value, degrees=True)` | Set a joint to a target position |
+| `joints.get(name)` | Get the current position of a specific joint |
+| `joints.list()` | List all joint names for the twin |
+| `joints.get_all()` | Get all joint states at once |
+
+---
+
+## Frame Capture
+
+Capture the latest camera frame from a twin without setting up a full video stream:
+
+```python
+robot = cw.twin("the-robot-studio/so101")
+
+path = robot.capture_frame()                    # temp JPEG file path
+frame = robot.capture_frame("numpy")            # numpy BGR array (requires numpy + opencv-python)
+image = robot.capture_frame("pil")              # PIL.Image (requires Pillow)
+raw = robot.capture_frame("bytes")              # raw JPEG bytes
+```
+
+Batch capture multiple frames:
+
+```python
+folder = robot.capture_frames(5, interval_ms=200)            # folder of JPEGs
+frames = robot.capture_frames(5, format="numpy")              # list of numpy arrays
+```
+
+For multi-camera twins, specify a sensor:
+
+```python
+wrist = robot.capture_frame("numpy", sensor_id="wrist_cam")
+```
+
+There's also a `camera` namespace with convenience methods:
+
+```python
+frame = robot.camera.read()               # numpy array (default)
+path  = robot.camera.snapshot()            # save JPEG to temp file
+path  = robot.camera.snapshot("out.jpg")   # save to a specific path
+```
+
+---
+
+## Video Streaming (WebRTC)
+
+Stream live camera feeds to digital twins using WebRTC. The streaming is initiated directly from the twin object.
+
+### Standard Camera
+
+```python
+import asyncio
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+camera = cw.twin("cyberwave/standard-cam")
+
+async def main():
+    try:
+        print(f"Streaming to twin {camera.uuid}...")
+        await camera.stream_video_background()
+
+        while True:
+            await asyncio.sleep(1)
+    except (KeyboardInterrupt, asyncio.CancelledError):
+        pass
+    finally:
+        await camera.stop_streaming()
+        cw.disconnect()
+
+asyncio.run(main())
+```
+
+### Intel RealSense (RGB + Depth)
+
+For depth cameras, change the twin name — the SDK handles the rest:
+
+```python
+import asyncio
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+camera = cw.twin("intel/realsensed455")
+
+async def main():
+    try:
+        await camera.stream_video_background()
+
+        while True:
+            await asyncio.sleep(1)
+    except (KeyboardInterrupt, asyncio.CancelledError):
+        pass
+    finally:
+        await camera.stop_streaming()
+        cw.disconnect()
+
+asyncio.run(main())
+```
+
+### Camera Discovery
+
+Discover cameras attached to your device:
+
+```python
+from cyberwave.sensor import CV2VideoTrack, CameraConfig, Resolution
+
+supported = CV2VideoTrack.get_supported_resolutions(camera_id=0)
+info = CV2VideoTrack.get_camera_info(camera_id=0)
+
+config = CameraConfig(resolution=Resolution.HD, fps=30, camera_id=0)
+```
+
+For RealSense devices:
+
+```python
+from cyberwave.sensor import RealSenseDiscovery, RealSenseConfig, Resolution
+
+if RealSenseDiscovery.is_available():
+    devices = RealSenseDiscovery.list_devices()
+    for dev in devices:
+        print(f"{dev.name} (SN: {dev.serial_number})")
+
+    info = RealSenseDiscovery.get_device_info()
+    print(f"Color resolutions: {info.get_color_resolutions()}")
+    print(f"Depth resolutions: {info.get_depth_resolutions()}")
+```
+
+---
+
+## Workspaces, Projects, and Environments
+
+```python
+cw = Cyberwave()
+
+workspaces = cw.workspaces.list()
+print(f"Found {len(workspaces)} workspaces")
+
+project = cw.projects.create(
+    name="My Robotics Project",
+    description="Main robotics project",
+    workspace_id=workspaces[0].uuid
+)
+
+environment = cw.environments.create(
+    name="Development",
+    description="Dev environment for testing",
+    project_id=project.uuid
+)
+```
+
+---
+
+## Asset Catalog
+
+Search and browse pre-built robot assets:
+
+```python
+assets = cw.assets.search("so101")
+
+for asset in assets:
+    print(f"{asset.registry_id}: {asset.name}")
+
+robot = cw.twin(assets[0].registry_id)
+```
+
+The search returns both public assets (available at [cyberwave.com/catalog](https://cyberwave.com/catalog)) and private assets belonging to your organization.
+
+### Upload GLB Assets
+
+The SDK supports large GLB uploads by automatically switching to a signed URL flow when files exceed the standard upload limit:
+
+```python
+asset = cw.assets.create(
+    name="Warehouse Shelf",
+    description="Large GLB upload example",
+)
+
+updated_asset = cw.assets.upload_glb(asset.uuid, "/path/to/warehouse_shelf.glb")
+print(updated_asset.glb_file)
+```
+
+---
+
+## Edge Management
+
+Manage edge devices (Raspberry Pi, Jetson, etc.) that run the Cyberwave Edge Core:
+
+```python
+cw = Cyberwave()
+
+edges = cw.edges.list()
+for edge in edges:
+    print(edge.uuid, edge.name, edge.fingerprint)
+
+edge = cw.edges.get("your-edge-uuid")
+
+edge = cw.edges.create(
+    fingerprint="linux-a1b2c3d4e5f60000",
+    name="lab-rpi-001",
+    workspace_id="your-workspace-uuid",
+    metadata={"location": "lab-shelf-2"},
+)
+
+edge = cw.edges.update(edge.uuid, {"name": "lab-rpi-001-renamed"})
+
+cw.edges.delete(edge.uuid)
+```
+
+The `fingerprint` is a stable hardware identifier derived from hostname, OS, architecture, and MAC address. The Edge Core generates and persists it automatically at `/etc/cyberwave/fingerprint.json` on first boot.
+
+---
+
+## Workflows
+
+List, trigger, and monitor workflows programmatically:
+
+```python
+cw = Cyberwave()
+
+for wf in cw.workflows.list():
+    print(f"{wf.name} ({wf.uuid}) — {wf.status}")
+
+run = cw.workflows.trigger(
+    "workflow-uuid",
+    inputs={"target_position": [1.0, 2.0, 0.0], "speed": 0.5},
+)
+
+run.wait(timeout=60)
+print(run.status, run.result)
+```
+
+You can also start from a Workflow object:
+
+```python
+wf = cw.workflows.get("workflow-uuid")
+run = wf.trigger(inputs={"speed": 1.0})
+run.wait()
+```
+
+List and filter past runs:
+
+```python
+runs = cw.workflow_runs.list(workflow_id="workflow-uuid", status="error")
+for r in runs:
+    print(r.uuid, r.status, r.error)
+```
+
+---
+
+## Alerts
+
+Create, manage, and respond to alerts on a twin. Alerts notify operators that action is needed (e.g., a robot needs calibration or a sensor reading is out of range).
+
+```python
+twin = cw.twin(twin_id="your_twin_uuid")
+
+alert = twin.alerts.create(
+    name="Calibration needed",
+    description="Joint 3 is drifting beyond tolerance",
+    severity="warning",
+    alert_type="calibration_needed",
+    source_type="edge",
+)
+```
+
+| Severity | Description |
+|---|---|
+| `info` | Informational notice |
+| `warning` | Requires attention |
+| `error` | Something is wrong |
+| `critical` | Immediate action needed |
+
+Manage alert lifecycle:
+
+```python
+for a in twin.alerts.list(status="active"):
+    print(a.name, a.severity, a.status)
+
+alert.acknowledge()
+alert.resolve()
+alert.silence()
+alert.update(severity="critical")
+alert.delete()
+```
+
+To bypass backend deduplication and always create a new alert:
+
+```python
+alert = twin.alerts.create(
+    name="Calibration needed",
+    alert_type="calibration_needed",
+    force=True,
+)
+```
+
+---
+
+## Environment Previews
+
+Render a static PNG snapshot of an environment:
+
+```python
+preview = cw.environments.create_preview("ENVIRONMENT_UUID")
+print(preview.file_url)
+```
+
+This calls `POST /api/v1/environments/{uuid}/preview` and returns attachment metadata including the rendered image URL.
+
+---
+
+## SDK Architecture
+
+The SDK operates across two communication layers:
+
+```
+┌─────────────────────────────────────────┐
+│             Your Python Code            │
+│         from cyberwave import ...       │
+└──────────────┬──────────┬───────────────┘
+               │          │
+       ┌───────▼──┐  ┌────▼──────┐
+       │ REST API │  │ MQTT API  │
+       │ (HTTPS)  │  │ (TCP)     │
+       └───────┬──┘  └────┬──────┘
+               │          │
+       ┌───────▼──────────▼───────────────┐
+       │        Cyberwave Cloud           │
+       │  Twins · Catalog · Workflows     │
+       └──────────────┬──────────────────-┘
+                      │ MQTT
+       ┌──────────────▼───────────────────┐
+       │        Cyberwave Edge Core       │
+       │   Hardware Drivers · Runtime     │
+       └──────────────┬──────────────────-┘
+                      │ Serial / USB / ROS
+       ┌──────────────▼───────────────────┐
+       │        Robot Hardware            │
+       │  Actuators · Sensors · MCU       │
+       └──────────────────────────────────┘
+```
+
+| Layer | Protocol | Operations |
+|---|---|---|
+| SDK → Cloud (REST) | HTTPS | CRUD for twins, assets, models, environments, edges, workflows, alerts |
+| SDK → Cloud (MQTT) | TCP/MQTT | Joint updates, position/rotation/scale, WebRTC signaling, health pings |
+| Cloud → Edge | MQTT | Command forwarding when real-world source type is active |
+| Edge → Hardware | Serial / USB / ROS | Physical actuation and sensor reading |
+
+---
+
+## Related Resources
 
 <CardGroup cols={3}>
   <Card
-    title="Get API Token"
-    icon="terminal"
+    title="API Key"
+    icon="key"
     href="https://cyberwave.com/profile"
   >
-    Generate your API token from your profile page
+    Generate your API key
   </Card>
   <Card
-    title="View on PyPI"
+    title="PyPI"
     icon="download"
     href="https://pypi.org/project/cyberwave/"
   >
     View the package on PyPI
   </Card>
   <Card
-    title="Check on Github"
+    title="GitHub"
     icon="github"
     href="https://github.com/cyberwave-os/cyberwave-python"
   >
-    Clone the repo from Github
+    Source code and examples
+  </Card>
+</CardGroup>
+
+<CardGroup cols={3}>
+  <Card
+    title="REST API Reference"
+    icon="code"
+    href="/api-reference/overview"
+  >
+    Full REST endpoint documentation
+  </Card>
+  <Card
+    title="MQTT API Reference"
+    icon="bolt"
+    href="/api-reference/mqtt/main"
+  >
+    Real-time messaging specification
+  </Card>
+  <Card
+    title="Edge VLM Tutorial"
+    icon="video"
+    href="/tutorials/edge-to-cloud-vlm"
+  >
+    Build an edge-to-cloud vision pipeline
   </Card>
 </CardGroup>

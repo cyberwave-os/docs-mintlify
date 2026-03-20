@@ -1,0 +1,178 @@
+---
+title: "Catalog"
+description: "Browse pre-built robot assets and upload your own to create digital twins"
+icon: "book-bookmark"
+---
+
+## What is the Asset Catalog?
+
+The Asset Catalog is Cyberwave's library of pre-configured robot assets. Each asset includes a 3D model, kinematic definition (URDF), and metadata that lets you create digital twins with a single line of code.
+
+<Info>
+Assets in the catalog are identified by a **registry ID** in the format `vendor/model`, such as `the-robot-studio/so101` or `unitree/go2`.
+</Info>
+
+---
+
+## Using Catalog Assets
+
+### Create a Twin from an Asset
+
+Use the Python SDK to create a digital twin from any catalog asset:
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave(api_key="your_api_key")
+
+robot = cw.twin("unitree/go2")
+```
+
+The `cw.twin()` function handles everything:
+- Finds the asset in the catalog
+- Creates (or retrieves) a digital twin in your environment
+- Returns an appropriate Twin class based on the asset's capabilities
+
+### Search the Catalog
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave(api_key="your_api_key")
+
+for asset in cw.assets.search("unitree"):
+    print(f"{asset.registry_id}: {asset.name}")
+```
+
+### Browse the Web Interface
+
+Browse assets at [cyberwave.com/catalog](https://cyberwave.com/catalog):
+- Filter by category (arms, mobile robots, quadrupeds, drones)
+- Search by manufacturer or model name
+- View 3D previews and specifications
+
+---
+
+## Asset Capabilities
+
+Assets in the catalog have different capabilities based on their type:
+
+<CardGroup cols={2}>
+  <Card title="Robot Arms" icon="robot-astromech">
+    Joint control, inverse kinematics, gripper operations
+  </Card>
+  <Card title="Mobile Robots" icon="car">
+    Position control, rotation, navigation
+  </Card>
+  <Card title="Quadrupeds" icon="dog">
+    Leg joint control, gait patterns, camera streaming
+  </Card>
+  <Card title="Drones" icon="plane">
+    Takeoff, landing, hover, flight control
+  </Card>
+</CardGroup>
+
+The SDK automatically returns the right Twin class based on capabilities:
+
+```python
+arm = cw.twin("the-robot-studio/so101")
+arm.joints.set("shoulder", 45, degrees=True)
+
+camera = cw.twin("cyberwave/standard-cam")
+await camera.stream_video_background()
+
+dog = cw.twin("unitree/go2")
+```
+
+---
+
+## Asset Structure
+
+Each catalog asset contains:
+
+| Component | Description |
+|---|---|
+| **Registry ID** | Unique identifier (`vendor/model`) |
+| **URDF File** | Robot description with joints and links |
+| **3D Model** | GLB mesh for visualization |
+| **Metadata** | Category, manufacturer, version, tags |
+| **Capabilities** | Sensors, grippers, flight, etc. |
+
+---
+
+## Upload a New Asset
+
+### What is a URDF?
+
+URDF (**Unified Robot Description Format**) is the standard XML format used in ROS to describe a robot's links, joints, visuals, and collisions. References:
+
+- [ROS 2 URDF documentation](https://docs.ros.org/en/rolling/Tutorials/Intermediate/URDF/URDF-Main.html)
+- [ROS Wiki: URDF](https://wiki.ros.org/urdf)
+- [urdfdom (URDF parser library)](https://github.com/ros/urdfdom)
+
+### Prepare Your ZIP File
+
+Create a folder that contains one main `.urdf` file and every file it references (meshes, textures, materials), then zip the folder.
+
+```text
+my-robot/
+  urdf/
+    robot.urdf
+  meshes/
+    base_link.stl
+    arm_collision.stl
+    arm_visual.obj
+  textures/
+    arm_albedo.png
+```
+
+<Info>
+Use relative paths inside the URDF that match your ZIP structure. If the URDF references `meshes/arm_visual.obj`, that file must exist at that path in the ZIP.
+</Info>
+
+### Upload from the UI
+
+<Steps>
+  <Step title="Sign in">
+    Sign in to [cyberwave.com](https://cyberwave.com) (or sign up).
+  </Step>
+  <Step title="Open the catalog">
+    Navigate to [cyberwave.com/catalog](https://cyberwave.com/catalog) and click **Upload Asset**.
+  </Step>
+  <Step title="Fill in details">
+    Enter the required fields and upload your URDF ZIP file.
+  </Step>
+  <Step title="Configure advanced options (optional)">
+    - **Main URDF File Path** — if your ZIP has multiple URDF files, set the path (e.g. `urdf/robot.urdf`). Leave empty if there's only one.
+    - **Thumbnail** — optional. Cyberwave can generate one automatically.
+  </Step>
+</Steps>
+
+### Upload from the API
+
+```bash
+curl -X POST "https://cyberwave.com/api/v1/assets/create-with-urdf" \
+  -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "file_url": "https://example.com/my-robot.zip",
+    "force_name": "my-robot",
+    "main_file_path": "urdf/robot.urdf",
+    "description": "My robot uploaded from URDF ZIP"
+  }'
+```
+
+| Field | Description |
+|---|---|
+| `file_url` | URL to your ZIP file (must be reachable by Cyberwave) |
+| `force_name` | Name for the asset |
+| `main_file_path` | Path to the main URDF file inside the ZIP |
+| `description` | Optional description |
+| `subfolder` | Optional subfolder within the ZIP |
+| `branch` | Optional version/branch identifier |
+
+### Upload via Python SDK
+
+```python
+cw.assets.upload_glb("path/to/model.glb", name="My Robot", description="Custom robot model")
+```

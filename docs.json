@@ -20,112 +20,54 @@
                 "get-started/quickstart",
                 "get-started/architecture",
                 "get-started/core-data-hierarchy",
+                "get-started/supported-hardware",
                 "get-started/key-concepts"
               ]
             },
             {
-              "group": "Hardware Quickstart",
+              "group": "Hardware Guide",
               "pages": [
-                {
-                  "group": "SO101",
-                  "icon": "microchip",
-                  "pages": [
-                    "hardware/so101/index",
-                    "hardware/so101/get-started"
-                  ]
-                },
-                {
-                  "group": "UGV Beast",
-                  "icon": "robot",
-                  "pages": [
-                    "hardware/ugv/index",
-                    "hardware/ugv/get-started"
-                  ]
-                },
-                {
-                  "group": "Unitree Go2",
-                  "icon": "dog",
-                  "pages": [
-                    "hardware/go2/index",
-                    "hardware/go2/get-started"
-                  ]
-                },
-                {
-                  "group": "Camera",
-                  "icon": "camera",
-                  "pages": [
-                    "hardware/camera/index",
-                    "hardware/camera/get-started"
-                  ]
-                }
+                "hardware/so101/get-started",
+                "hardware/ugv/get-started",
+                "hardware/go2/get-started",
+                "hardware/camera/get-started"
               ]
             },
-            {
-              "group": "Cyberwave Edge",
+            {  
+              "group": "SDKs and Tools",
               "pages": [
-                "edge/overview",
+                "sdks/python-sdk",
+                "sdks/mcp-server",
                 {
-                  "group": "Drivers",
-                  "icon": "truck-ramp-box",
+                  "group": "Cyberwave Edge",
+                  "icon": "microchip",
                   "pages": [
+                    "edge/overview",
                     "edge/drivers/overview",
                     "edge/drivers/writing-compatible-drivers",
                     "edge/drivers/alerts"
                   ]
-                }
-              ]
-            },
-            {
-              "group": "Use Cyberwave",
-              "pages": [
-                "use-cyberwave/setup-cyberwave",
-                "use-cyberwave/teleoperation-latency",
-                {
-                  "group": "Catalog",
-                  "icon": "book-bookmark",
-                  "pages": [
-                    "use-cyberwave/catalog/overview",
-                    "use-cyberwave/catalog/upload-asset"
-                  ]
                 },
-                {
-                  "group": "Digital Twins",
-                  "icon": "clone",
-                  "pages": [
-                    "use-cyberwave/digital-twins/overview"
-                  ]
-                },
-                {
-                  "group": "Workflows",
-                  "icon": "diagram-project",
-                  "pages": [
-                    "use-cyberwave/workflows/overview"
-                  ]
-                },
-                {
-                  "group": "ML Models",
-                  "icon": "brain",
-                  "pages": [
-                    "use-cyberwave/ml-models/overview"
-                  ]
-                },
-                "use-cyberwave/environment-editor",
-                "use-cyberwave/access-control"
-              ]
-            },
-            {  
-              "group": "SDKs",
-              "pages": [
-                "sdks/python-sdk",
-                "sdks/environment-preview",
-                "sdks/cpp-sdk",
-                "sdks/mcp-server"
+                "sdks/cpp-sdk"
               ]
             },
             {
               "group": "Tutorials",
               "pages": [
                 "tutorials/edge-to-cloud-vlm"
+              ]
+            },
+            {
+              "group": "Reference Features",
+              "pages": [
+                "use-cyberwave/setup-cyberwave",
+                "use-cyberwave/catalog",
+                "use-cyberwave/digital-twins",
+                "use-cyberwave/workflows",
+                "use-cyberwave/ml-models",
+                "use-cyberwave/environment-editor",
+                "use-cyberwave/access-control",
+                "use-cyberwave/teleoperation-latency"
               ]
             }
           ]
@@ -231,18 +173,7 @@
         }
       ],
       "global": {
-        "anchors": [
-          {
-            "anchor": "Dashboard",
-            "href": "https://cyberwave.com/dashboard",
-            "icon": "book-open-cover"
-          },
-          {
-            "anchor": "Blog",
-            "href": "https://cyberwave.com/blog",
-            "icon": "newspaper"
-          }
-        ]
+        "anchors": []
       }
     },
     "logo": {
@@ -251,6 +182,10 @@
     },
     "navbar": {
       "links": [
+        {
+          "label": "Blog",
+          "href": "https://cyberwave.com/blog"
+        },
         {
           "label": "Contact",
           "href": "https://cyberwave.com/contact-us"
