@@ -24,8 +24,12 @@ Before you begin this quick start guide, ensure you have the following:
   <Tab title="Hardware">
     - SO101 robot arm set (leader and follower arms) *([Contact us](mailto:info@cyberwave.com) if you want access to this hardware)*
     - External camera (USB or IP camera) to record video feeds for datasets
-    - Computer or single-board computer (SBC, e.g., Raspberry Pi)
+    - Computer or single-board computer (SBC, e.g., Raspberry Pi with **64-bit OS**)
     - USB or serial connection to the SO101 devices
+
+    <Warning>
+    The Cyberwave CLI and Edge Core require a **64-bit architecture** (arm64/aarch64) on Raspberry Pi. If you are using a 32-bit OS or architecture, please wait for an updated version.
+    </Warning>
   </Tab>
 
   <Tab title="Credentials">
@@ -61,20 +65,34 @@ A [digital twin](/get-started/key-concepts#digital-twins) is a virtual replica o
 2. Search for and select **Standard Camera**.
 3. Add it to your environment.
 
-<Warning>
-Dock the camera under the SO101 twin in the environment, this ensures the camera feed is correctly associated with the arm for data collection.
-</Warning>
+**Dock the camera to the SO101 twin:**
+
+1. Click on the **Standard Camera** twin and switch to **Edit Mode**.
+2. In the **Dock to Twin** option, select the **SO101** twin.
+3. In the **Parent Root** dropdown, select **wrist**.
+
+The camera twin should now appear nested under the SO101 twin in the hierarchy.
+
+![](/images/so1o1_env.png)
+
+<Info>
+Docking the camera to the wrist angle means the camera physically follows the arm's end-effector. This is essential for manipulation tasks where the camera needs to see what the gripper is doing, the resulting video feed stays aligned with the arm's workspace during teleoperation and dataset recording.
+</Info>
 
 #### Step 2: Install the Cyberwave Edge
 
 The [Cyberwave CLI](/get-started/quickstart#step-3-install-the-cyberwave-cli) is the command-line tool used to authenticate, pair, and manage your physical hardware with the Cyberwave platform. The [Edge Core](/get-started/architecture#cyberwave-edge) acts as the bridge between the SO101 hardware and the Cyberwave cloud backend.
+
+<Warning>
+The Cyberwave CLI and Edge Core are currently only compatible with **64-bit architecture** on Raspberry Pi (arm64/aarch64). If you are using a 32-bit Raspberry Pi OS or any other non-64-bit architecture, please wait for an updated version.
+</Warning>
 
 **SSH into your edge device:**
 
 Connect to the device that is physically connected to the SO101 arms and camera (e.g., Raspberry Pi, Jetson, or your local computer):
 
 ```bash
-ssh user@<edge-device-ip>
+ssh <edge-device-username>@<edge-device-ip>
 ```
 
 **Install the CLI:**
