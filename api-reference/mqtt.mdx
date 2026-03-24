@@ -1,1 +1,38 @@
-TODO
+---
+title: "MQTT"
+description: "Stub reference for Cyberwave MQTT topics and source types"
+---
+
+## MQTT Overview
+
+> stub
+
+Cyberwave uses MQTT for real-time twin state, teleoperation, and simulator control flows.
+
+## Source Types
+
+The most relevant source types for external users are:
+
+- `edge`: state published from physical robots or edge nodes
+- `tele`: live teleoperation/control commands for physical robots
+- `sim`: simulator state published from simulated twins
+- `sim_tele`: control commands intended for simulators
+- `edit`: editor-mode updates
+
+## Simulation Rule
+
+Use different source types for simulator state and simulator control:
+
+- publish simulator state as `sim`
+- send simulator control commands as `sim_tele`
+
+This avoids feeding simulator state echoes back into command handlers on shared topics.
+
+## SDK Guidance
+
+If you are using the Python SDK, prefer runtime mode helpers over raw MQTT values:
+
+- `Cyberwave(mode="simulation")` for simulator-first clients
+- `cw.affect("simulation")` or `cw.affect("real-world")` to switch control targets
+
+See the [Python SDK](/sdks/python-sdk) page for the higher-level workflow.
