@@ -11,14 +11,14 @@ import EarlyAccess from '/snippets/early-access.mdx';
 This guide takes you from zero to a working Physical AI application. You will:
 
 1. Create a virtual environment and add a digital twin of your robot
-2. Build applications using the Python SDK, MCP server, or REST API from your laptop, with no hardware required
+2. Install the Python SDK and control the twin in simulation from your laptop
 3. Connect real hardware so the same code drives a physical robot
 
 <EarlyAccess />
 
 ---
 
-## Part 1: Develop in Simulation
+## Part 1 — Develop in simulation
 
 Start here. No hardware required.
 
@@ -35,7 +35,7 @@ An **[environment](/get-started/key-concepts#environments)** is a 3D virtual spa
 
 ### Step 2: Add a Digital Twin
 
-A [digital twin](/get-started/key-concepts#digital-twins) is a virtual replica of your physical robot, it mirrors the robot's structure, joints, sensors, and behavior in real time within your environment.
+A [digital twin](/get-started/key-concepts#digital-twins) is a virtual replica of your physical robot — it mirrors the robot's structure, joints, sensors, and behavior in real time within your environment.
 
 1. Inside your environment, click **Add from Catalog** in the left panel.
 2. Browse the catalog, find your robot, and add it to the environment.
@@ -53,105 +53,58 @@ A [digital twin](/get-started/key-concepts#digital-twins) is a virtual replica o
 
 ---
 
-### Step 3: Build Your Application
+### Step 3: Install the Python SDK
 
-With your environment and digital twin ready, you can start building immediately. Your application code runs **anywhere**, laptop, cloud server, CI pipeline and talks to Cyberwave Cloud over the API.
-
-<CardGroup cols={3}>
-  <Card title="Python SDK" icon="code" href="/sdks/python-sdk">
-    Control twins, capture frames, trigger workflows, and manage infrastructure programmatically
-  </Card>
-  <Card title="MCP Server" icon="plug" href="/sdks/mcp-server">
-    Let AI agents (Claude, GPT, Cursor) manage your robotics setup through natural language
-  </Card>
-  <Card title="REST API" icon="brackets-curly" href="/api-reference/rest/DefaultApi">
-    Direct HTTP access to every Cyberwave operation from any language
-  </Card>
-</CardGroup>
-
-**Install the Python SDK** on your development machine:
+On your development machine:
 
 ```bash
 pip install cyberwave
 ```
 
-Generate an API key at **Dashboard → Profile → API Keys** and export it:
+Then generate an API token at **Dashboard → Profile → API Tokens** and export it:
 
 ```bash
-export CYBERWAVE_API_KEY=your_api_key
+export CYBERWAVE_API_TOKEN=your_token
 ```
 
 ---
 
-### Step 4: Control Your Twin in Simulation
+### Step 4: Control your twin in simulation
 
-You can control your digital twin in simulation in two ways: through the **dashboard UI** or through **code**.
+Run this from your laptop — no physical robot needed. The SDK targets the digital twin in simulation by default.
 
-<Tabs>
-  <Tab title="Dashboard UI">
-    Control your twin directly from the Cyberwave platform, no code needed.
+```python
+from cyberwave import Cyberwave
 
-    1. Open your environment in the Cyberwave dashboard.
-    2. Switch to **Simulation** mode.
-    3. Click the **Assign Controller** button on your twin.
-    4. Select a controller from the list, for example:
-       - **Keyboard**: control individual joints using keyboard keys
-    5. Start moving the twin using the assigned controller. You'll see the digital twin responding in the 3D environment in real time.
+cw = Cyberwave(mode="simulation")
+cw.affect("simulation")
 
-    <Check>
-    Your twin is being controlled in simulation. Use this to explore how the robot behaves before writing any code or connecting real hardware.
-    </Check>
-  </Tab>
-  <Tab title="Python SDK">
-    Run this from your laptop no physical robot needed. The SDK targets the digital twin in simulation by default.
+robot = cw.twin("the-robot-studio/so101")
 
-    ```python
-    from cyberwave import Cyberwave
+robot.edit_position(x=1.0, y=0.0, z=0.5)
+robot.joints.set("1", 30)
+```
 
-    cw = Cyberwave(api_key="your_api_key", source_type="sim")
+Open the Cyberwave dashboard — you should see your twin moving in the environment as the script runs.
 
-    robot = cw.twin("the-robot-studio/so101")
-
-    robot.edit_position(x=1.0, y=0.0, z=0.5)
-    robot.joints.set("shoulder_joint", 45, degrees=True)
-
-    frame = robot.capture_frame("numpy")
-    ```
-
-    Open the Cyberwave dashboard, you should see your twin moving in the environment as the script runs.
-
-    <Check>
-    Your application is running against a live digital twin in simulation. Iterate freely here before touching real hardware.
-    </Check>
-
-    <Info>
-    The `source_type` parameter tells the backend how to route your commands: `"sim"` for simulation, `"tele"` for teleoperation, or `"edit"` for the environment editor. You can also omit it and the SDK will use the default.
-    </Info>
-  </Tab>
-</Tabs>
+<Check>
+  Your application is running against a live digital twin in simulation. Iterate freely here before touching real hardware.
+</Check>
 
 ---
 
-## Part 2: Connect Real Hardware
+## Part 2 — Connect real hardware
 
-Once your application works in simulation, connect it to the physical robot. These steps run on the machine that is physically connected to the robot, an edge device (Raspberry Pi, Jetson) or your laptop if the robot is plugged in directly via USB.
+Once your application works in simulation, connect it to the physical robot. This part runs on the machine that is physically connected to the robot (an edge device like a Raspberry Pi or Jetson, or your laptop if the robot is plugged in directly via USB).
 
-<Info>
-If you're only working in simulation or building application code, you can skip Part 2 for now and come back when you're ready to connect hardware.
-</Info>
-
-### Step 5: Install the Cyberwave CLI
-
-<Warning>
-    The Cyberwave CLI and Edge Core require a **64-bit architecture** (arm64/aarch64) on Raspberry Pi. If you are using a 32-bit OS or architecture, please wait for an updated version.
-</Warning>
+### Step 5: Install the Cyberwave CLI on the robot's machine
 
 <Tabs>
-  <Tab title="Remote Edge Device (Raspberry Pi, Jetson, etc.)">
+  <Tab title="Remote edge device (Raspberry Pi, Jetson, etc.)">
     SSH into your edge device:
 
     ```bash
-    ssh <edge-device-username>@<edge-device-ip>
+    ssh user@<edge-device-ip>
     ```
 
     Then install the CLI:
@@ -160,8 +113,8 @@ If you're only working in simulation or building application code, you can skip 
     curl -fsSL https://cyberwave.com/install.sh | bash
     ```
   </Tab>
-  <Tab title="Robot Connected Directly to This Machine">
-    If your robot is connected via USB or serial (e.g. an SO101 arm plugged into your laptop), install the CLI on the same machine:
+  <Tab title="Robot connected directly to this machine">
+    If your robot is connected via USB or serial (e.g. an SO101 arm plugged into your laptop), install the CLI on that same machine:
 
     ```bash
     curl -fsSL https://cyberwave.com/install.sh | bash
@@ -183,7 +136,7 @@ The CLI will prompt you to log in and install `cyberwave-edge-core`.
 
 ---
 
-### Step 7: Pair Hardware with the Digital Twin
+### Step 7: Pair hardware with the digital twin
 
 Follow the prompts in your terminal:
 
@@ -192,13 +145,13 @@ Follow the prompts in your terminal:
 3. The appropriate driver will be automatically installed and configured for your robot.
 
 <Check>
-Your physical robot is now paired with its digital twin and syncing in real time.
+  Your physical robot is now paired with its digital twin and syncing in real time.
 </Check>
 
-Your application code from Part 1 now drives the physical robot, switch the source type to target real hardware:
+Switch your application to target real hardware with a single line change:
 
 ```python
-cw = Cyberwave(api_key="your_api_key", source_type="tele")
+cw.affect("real-world")  # was: cw.affect("simulation")
 ```
 
 ---
@@ -211,44 +164,22 @@ cw = Cyberwave(api_key="your_api_key", source_type="tele")
     icon="diagram-project"
     href="/get-started/architecture"
   >
-    Understand the full system architecture
+    Understand the system architecture
   </Card>
+
   <Card
     title="Python SDK"
-    icon="code"
+    icon="python"
     href="/sdks/python-sdk"
   >
-    Full SDK reference and examples
+    Full SDK reference
   </Card>
-  <Card
-    title="MCP Server"
-    icon="plug"
-    href="/sdks/mcp-server"
-  >
-    Let AI agents manage your infrastructure
-  </Card>
-</CardGroup>
 
-<CardGroup cols={3}>
   <Card
-    title="SO101 Robot Arms"
+    title="SO101 Quickstart"
     icon="microchip"
     href="/hardware/so101/get-started"
   >
-    Set up teleoperation and datasets
-  </Card>
-  <Card
-    title="UGV Beast"
-    icon="robot"
-    href="/hardware/ugv/get-started"
-  >
-    Get started with the UGV Beast
-  </Card>
-  <Card
-    title="Unitree Go2"
-    icon="dog"
-    href="/hardware/go2/get-started"
-  >
-    Connect the Go2 quadruped
+    Get started with the SO101 robot arm
   </Card>
 </CardGroup>

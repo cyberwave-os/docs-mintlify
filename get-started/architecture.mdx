@@ -14,22 +14,15 @@ It connects robots, sensors, and actuators to their digital twins and provides a
 
 | Layer | Description |
 |-------|-------------|
-| **Your Applications** | Your Python scripts, SDK integrations, MCP agents, and custom automation code. **Runs anywhere**: local laptop, cloud server, or even on the edge device itself. Communicates with Cyberwave Cloud via the REST API and Python SDK. |
-| **Cyberwave Cloud** | Digital twins, API, workflow orchestration, model training and deployment, observability dashboard |
-| **Cyberwave Edge** | The Cyberwave runtime stack installed on your edge compute (Raspberry Pi, Jetson, any Linux machine). Contains the Edge Core and hardware-specific drivers that bridge Cyberwave to the physical robot. |
-| **Robot Hardware** | Sensors, actuators, motor controllers, microcontrollers, and power systems |
+| **Layer 1: Cyberwave Cloud** | Digital twins, API / SDK, workflow orchestration, model training and deployment, observability dashboard |
+| **Layer 2: Cyberwave Edge** | The Cyberwave stack installed on your edge compute (Raspberry Pi, Jetson, laptop). Contains the Edge Core (identity, security, device registration) and a hardware-specific driver (e.g., Cyberwave UGV Driver) that bridges Cyberwave to the physical robot. |
+| **Layer 3: Robot Hardware** | Sensors, actuators, motor controllers, microcontrollers, and power systems |
 
 ```mermaid
 graph TD
-  subgraph app["Your Applications"]
-    sdk["Python SDK"]
-    mcp["MCP Agents"]
-    custom["Custom Scripts / CI"]
-  end
-
   subgraph cloud["Cyberwave Cloud"]
     dt["Digital Twins"]
-    api["API"]
+    api["API / SDK"]
     models["Models & Workflows"]
   end
 
@@ -44,38 +37,15 @@ graph TD
     mcu["Microcontroller"]
   end
 
-  app <-- "REST API / WebSocket" --> cloud
   cloud <-- "MQTT / REST" --> edge
   edge <-- "Serial / USB / ROS Topics" --> hw
 ```
 
 ## System Components
 
-### Your Applications
-
-This is where **your code** lives. Whether it's a Python script on your laptop, an MCP-powered AI agent in your IDE, a backend service in the cloud, or automation in a CI pipeline, your application connects to Cyberwave Cloud via the REST API and Python SDK.
-
-<AccordionGroup>
-  <Accordion title="Python SDK" icon="code">
-    The primary programmatic interface. Create twins, control joints, capture frames, trigger workflows, and manage infrastructure. Runs on any machine with Python 3.10+: your laptop, a cloud VM, a Jupyter notebook, or even the edge device itself.
-  </Accordion>
-
-  <Accordion title="MCP Agents" icon="plug">
-    AI agents (Claude, GPT, Gemini, Cursor) that discover and call Cyberwave tools autonomously through the Model Context Protocol. They connect to the hosted MCP server or a self-hosted instance.
-  </Accordion>
-
-  <Accordion title="Custom Scripts and Integrations" icon="terminal">
-    Direct REST API calls, webhook handlers, CI/CD pipelines, or any custom code that interacts with the Cyberwave API. No SDK required; any language that can make HTTP requests works.
-  </Accordion>
-</AccordionGroup>
-
-<Info>
-Your application code is **location-independent**. It does not need to run on the same device as the edge runtime or the robot. The SDK communicates with Cyberwave Cloud over HTTPS, so it works from anywhere with internet access.
-</Info>
-
 ### Cyberwave Cloud
 
-The cloud layer is the central control plane of the Cyberwave platform. It provides the backend services and compute infrastructure required to manage robots, digital twins, simulations, and AI models at scale. Your applications and the edge runtime both connect to the cloud.
+The cloud layer is the central control plane of the Cyberwave platform. It provides the interfaces, backend services, and compute infrastructure required to manage robots, digital twins, simulations, and AI models at scale.
 
 <AccordionGroup>
   <Accordion title="Control Plane" icon="server">
@@ -114,13 +84,9 @@ The physical layer consists of the robot's hardware components:
 
 ## Communication Protocols
 
-### Applications ↔ Cyberwave Cloud: REST API / WebSocket
-
-Your application code communicates with the Cyberwave cloud over **HTTPS REST APIs** for all CRUD operations (twins, environments, workflows, assets, alerts) and **WebSocket** connections for real-time features (video streaming, live state updates). The Python SDK and MCP server both use these protocols under the hood.
-
 ### Cyberwave Cloud ↔ Edge: MQTT / REST
 
-The edge runtime maintains a persistent connection to the Cyberwave cloud via **MQTT** for real-time bidirectional messaging (telemetry, commands, state sync) and **REST APIs** for request-response operations (registration, pairing, config). This hybrid approach ensures low-latency streaming alongside reliable transactional operations.
+The edge runtime maintains a persistent connection to the Cyberwave cloud via **MQTT** for real-time bidirectional messaging (telemetry, commands, state sync) and **REST APIs** for request-response operations. This hybrid approach ensures low-latency streaming alongside reliable transactional operations.
 
 ### Edge ↔ Robot Hardware: Serial / USB / ROS Topics
 
