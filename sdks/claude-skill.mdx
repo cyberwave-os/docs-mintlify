@@ -1,0 +1,45 @@
+---
+title: "Cyberwave Claude Skill"
+description: "Build Physical AI applications with Claude Code using the Cyberwave skill."
+icon: "sparkles"
+---
+
+## Overview (Stub)
+
+The Cyberwave Claude skill guides you through building a Physical AI application — controlling robots, reading sensors, managing digital twins, and streaming video.
+
+When invoked, it walks you through three paths:
+
+- **Python SDK** (recommended) — installation, authentication, twin connection, joint control, camera capture, video streaming, workflows, and alerts
+- **C++ SDK** — coming soon; redirects to Python SDK or raw APIs in the meantime
+- **APIs directly** — REST (HTTPS, Bearer token) and MQTT (real-time joint control, telemetry, WebRTC signalling) for any language
+
+## Installation
+
+**Global** (available in all projects):
+
+```bash
+git clone https://github.com/cyberwave-os/cyberwave-skill ~/.claude/skills/cyberwave
+```
+
+**Project-local:**
+
+```bash
+git clone https://github.com/cyberwave-os/cyberwave-skill .claude/skills/cyberwave
+```
+
+## Usage
+
+In any Claude Code session, run:
+
+```
+/cyberwave
+```
+
+Describe what you want to build and Claude will guide you through environment setup, interface selection, and implementation.
+
+## Requirements
+
+- [Claude Code](https://claude.ai/claude-code)
+- A Cyberwave account — [sign up](https://cyberwave.com)
+- Python 3.11+ and FFMPEG (for the Python SDK path)
