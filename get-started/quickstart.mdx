@@ -8,33 +8,38 @@ import EarlyAccess from '/snippets/early-access.mdx';
 
 ## Goals
 
-This guide walks you through setting up your Cyberwave environment, adding digital twins, and connecting everything, whether you're building applications or linking physical hardware. By the end, you will have:
+This guide takes you from zero to a working Physical AI application. You will:
 
-- Set up a [virtual environment](/get-started/key-concepts#environments) and added a [digital twin](/get-started/key-concepts#digital-twins) of your robot
-- Understood how to build applications with Cyberwave using the [Python SDK](/sdks/python-sdk), [MCP server](/sdks/mcp-server), or [REST API](/api-reference/rest/DefaultApi)
-- Installed the [Cyberwave edge stack](/get-started/architecture#cyberwave-edge) on your device and paired physical hardware
+1. Create a virtual environment and add a digital twin of your robot
+2. Build applications using the Python SDK, MCP server, or REST API from your laptop, with no hardware required
+3. Connect real hardware so the same code drives a physical robot
 
 <EarlyAccess />
+
+---
+
+## Part 1: Develop in Simulation
+
+Start here. No hardware required.
 
 ### Step 1: Create an Environment
 
 An **[environment](/get-started/key-concepts#environments)** is a 3D virtual space that mirrors your real-world robot setup. It's where your digital twins live, sensors stream data, and controllers send commands, all in real time.
 
-Follow these steps to create a new environment: 
-1. Go to the Cyberwave dashboard and click on **New Environment**. 
-2. Give your environment a **name** and **description**. 
+1. Go to the Cyberwave dashboard and click **New Environment**.
+2. Give your environment a **name** and **description**.
 
 ![](/images/new-env.png)
 
 ---
 
-### Step 2: Add Digital Twins
+### Step 2: Add a Digital Twin
+
 A [digital twin](/get-started/key-concepts#digital-twins) is a virtual replica of your physical robot, it mirrors the robot's structure, joints, sensors, and behavior in real time within your environment.
 
-You can add a digital twin from the Cyberwave catalog or import your own URDF file: 
 1. Inside your environment, click **Add from Catalog** in the left panel.
-2. Browse the catalog, find your robot's digital twin, and add it to the environment.
-3. Position the twin within your environment to match your physical setup.
+2. Browse the catalog, find your robot, and add it to the environment.
+3. Position the twin to match your physical setup.
 
 ![](/images/digital-twins-catalog.png)
 
@@ -48,9 +53,9 @@ You can add a digital twin from the Cyberwave catalog or import your own URDF fi
 
 ---
 
-### Step 3: Build Applications with Cyberwave
+### Step 3: Build Your Application
 
-With your environment and digital twins set up, you can start building applications immediately, **no physical hardware required**. Your code can run anywhere (laptop, cloud server, CI pipeline) and communicates with Cyberwave Cloud over the API.
+With your environment and digital twin ready, you can start building immediately. Your application code runs **anywhere**, laptop, cloud server, CI pipeline and talks to Cyberwave Cloud over the API.
 
 <CardGroup cols={3}>
   <Card title="Python SDK" icon="code" href="/sdks/python-sdk">
@@ -64,38 +69,86 @@ With your environment and digital twins set up, you can start building applicati
   </Card>
 </CardGroup>
 
-**Quick example: create a twin and control it with the Python SDK:**
+**Install the Python SDK** on your development machine:
 
-```python
-from cyberwave import Cyberwave
-
-cw = Cyberwave(api_key="your_api_key")
-
-robot = cw.twin("the-robot-studio/so101")
-robot.edit_position(x=1.0, y=0.0, z=0.5)
-robot.joints.set("shoulder_joint", 45, degrees=True)
-
-frame = robot.capture_frame("numpy")
+```bash
+pip install cyberwave
 ```
 
-<Info>
-You don't need physical hardware to get started. The SDK works with digital twins in simulation, control joints, capture frames, run workflows, and build your full application logic before connecting a real robot.
-</Info>
+Generate an API key at **Dashboard → Profile → API Keys** and export it:
+
+```bash
+export CYBERWAVE_API_KEY=your_api_key
+```
 
 ---
 
-## Connect Physical Hardware
+### Step 4: Control Your Twin in Simulation
 
-The following steps walk you through installing the Cyberwave edge stack and pairing your physical robot with the digital twin you created above. If you're only working in simulation or building application code, you can skip these steps for now.
-
----
-
-### Step 1: Install the Cyberwave CLI
-The Cyberwave CLI is the command-line tool used to authenticate, pair, and manage your physical hardware with the Cyberwave platform.
+You can control your digital twin in simulation in two ways: through the **dashboard UI** or through **code**.
 
 <Tabs>
-  <Tab title="Edge Device (Raspberry Pi, Jetson, etc.)">
-    First, SSH into your edge device:
+  <Tab title="Dashboard UI">
+    Control your twin directly from the Cyberwave platform, no code needed.
+
+    1. Open your environment in the Cyberwave dashboard.
+    2. Switch to **Simulation** mode.
+    3. Click the **Assign Controller** button on your twin.
+    4. Select a controller from the list, for example:
+       - **Keyboard**: control individual joints using keyboard keys
+    5. Start moving the twin using the assigned controller. You'll see the digital twin responding in the 3D environment in real time.
+
+    <Check>
+    Your twin is being controlled in simulation. Use this to explore how the robot behaves before writing any code or connecting real hardware.
+    </Check>
+  </Tab>
+  <Tab title="Python SDK">
+    Run this from your laptop no physical robot needed. The SDK targets the digital twin in simulation by default.
+
+    ```python
+    from cyberwave import Cyberwave
+
+    cw = Cyberwave(api_key="your_api_key", source_type="sim")
+
+    robot = cw.twin("the-robot-studio/so101")
+
+    robot.edit_position(x=1.0, y=0.0, z=0.5)
+    robot.joints.set("shoulder_joint", 45, degrees=True)
+
+    frame = robot.capture_frame("numpy")
+    ```
+
+    Open the Cyberwave dashboard, you should see your twin moving in the environment as the script runs.
+
+    <Check>
+    Your application is running against a live digital twin in simulation. Iterate freely here before touching real hardware.
+    </Check>
+
+    <Info>
+    The `source_type` parameter tells the backend how to route your commands: `"sim"` for simulation, `"tele"` for teleoperation, or `"edit"` for the environment editor. You can also omit it and the SDK will use the default.
+    </Info>
+  </Tab>
+</Tabs>
+
+---
+
+## Part 2: Connect Real Hardware
+
+Once your application works in simulation, connect it to the physical robot. These steps run on the machine that is physically connected to the robot, an edge device (Raspberry Pi, Jetson) or your laptop if the robot is plugged in directly via USB.
+
+<Info>
+If you're only working in simulation or building application code, you can skip Part 2 for now and come back when you're ready to connect hardware.
+</Info>
+
+### Step 5: Install the Cyberwave CLI
+
+<Warning>
+    The Cyberwave CLI and Edge Core require a **64-bit architecture** (arm64/aarch64) on Raspberry Pi. If you are using a 32-bit OS or architecture, please wait for an updated version.
+</Warning>
+
+<Tabs>
+  <Tab title="Remote Edge Device (Raspberry Pi, Jetson, etc.)">
+    SSH into your edge device:
 
     ```bash
     ssh <edge-device-username>@<edge-device-ip>
@@ -104,15 +157,13 @@ The Cyberwave CLI is the command-line tool used to authenticate, pair, and manag
     Then install the CLI:
 
     ```bash
-    # Install the CLI (one time setup)
     curl -fsSL https://cyberwave.com/install.sh | bash
     ```
   </Tab>
-  <Tab title="Local Computer">
-    Open your terminal and run the following commands:
+  <Tab title="Robot Connected Directly to This Machine">
+    If your robot is connected via USB or serial (e.g. an SO101 arm plugged into your laptop), install the CLI on the same machine:
 
     ```bash
-     # Install the CLI (one time setup)
     curl -fsSL https://cyberwave.com/install.sh | bash
     ```
   </Tab>
@@ -120,29 +171,35 @@ The Cyberwave CLI is the command-line tool used to authenticate, pair, and manag
 
 ---
 
-### Step 2: Install the Edge Core
+### Step 6: Install the Edge Core
 
-The [Edge Core](/get-started/architecture#cyberwave-edge) is the orchestrator of your Cyberwave edge components. It runs on edge devices (Raspberry Pi, Jetson, any Linux machine) and acts as the bridge between your physical hardware and the Cyberwave cloud backend.
+The [Edge Core](/get-started/architecture#cyberwave-edge) runs on the robot's machine and bridges your physical hardware to the Cyberwave cloud.
 
 ```bash
 sudo cyberwave edge install
 ```
 
-The CLI will prompt you to log in with your Cyberwave credentials and then install the `cyberwave-edge-core` on your device.
+The CLI will prompt you to log in and install `cyberwave-edge-core`.
 
 ---
 
-### Step 3: Pair Hardware with Digital Twin
+### Step 7: Pair Hardware with the Digital Twin
 
-The CLI will walk you through pairing your physical robot with its digital twin. Follow the prompts in your terminal:
+Follow the prompts in your terminal:
 
-1. Select the environment you created earlier.
-2. Select the digital twin you added to that environment.
+1. Select the environment you created in Step 1.
+2. Select the digital twin you added in Step 2.
 3. The appropriate driver will be automatically installed and configured for your robot.
 
 <Check>
 Your physical robot is now paired with its digital twin and syncing in real time.
 </Check>
+
+Your application code from Part 1 now drives the physical robot, switch the source type to target real hardware:
+
+```python
+cw = Cyberwave(api_key="your_api_key", source_type="tele")
+```
 
 ---
 
@@ -156,15 +213,13 @@ Your physical robot is now paired with its digital twin and syncing in real time
   >
     Understand the full system architecture
   </Card>
-  
   <Card
     title="Python SDK"
     icon="code"
     href="/sdks/python-sdk"
   >
-    Build applications with the Python SDK
+    Full SDK reference and examples
   </Card>
-  
   <Card
     title="MCP Server"
     icon="plug"
@@ -182,7 +237,6 @@ Your physical robot is now paired with its digital twin and syncing in real time
   >
     Set up teleoperation and datasets
   </Card>
-  
   <Card
     title="UGV Beast"
     icon="robot"
@@ -190,7 +244,6 @@ Your physical robot is now paired with its digital twin and syncing in real time
   >
     Get started with the UGV Beast
   </Card>
-  
   <Card
     title="Unitree Go2"
     icon="dog"
