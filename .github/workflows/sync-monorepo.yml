@@ -21,7 +21,7 @@ jobs:
           repository: cyberwave-os/cyberwave
           token: ${{ secrets.GH_MONOREPO_PAT }}
           path: cyberwave
-          ref: dev
+          ref: production
 
       - name: Sync docs to monorepo
         run: |
@@ -49,7 +49,7 @@ jobs:
           git push origin "$BRANCH"
           gh pr create \
             --repo cyberwave-os/cyberwave \
-            --base dev \
+            --base production \
             --head "$BRANCH" \
             --title "docs: sync docs-mintlify $(date +%Y-%m-%d)" \
             --body "Automated sync of docs-mintlify from https://github.com/cyberwave-os/docs-mintlify/commit/${{ github.sha }}"
