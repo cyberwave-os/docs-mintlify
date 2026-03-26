@@ -136,12 +136,13 @@ You can control your digital twin in simulation in two ways: through the **dashb
     </Check>
   </Tab>
   <Tab title="Python SDK">
-    Run this from your laptop no physical robot needed. The SDK targets the digital twin in simulation by default.
+    Run this from your laptop, no physical robot needed. Use `affect("simulation")` to make your actions impact the digital twin instead of live hardware.
 
     ```python
     from cyberwave import Cyberwave
 
-    cw = Cyberwave(api_key="your_api_key", source_type="sim")
+    cw = Cyberwave(api_key="your_api_key")
+    cw.affect("simulation")
 
     robot = cw.twin("the-robot-studio/so101")
 
@@ -158,7 +159,7 @@ You can control your digital twin in simulation in two ways: through the **dashb
     </Check>
 
     <Info>
-    The `source_type` parameter tells the backend how to route your commands: `"sim"` for simulation, `"tele"` for teleoperation, or `"edit"` for the environment editor. You can also omit it and the SDK will use the default.
+    Use `cw.affect("simulation")` while building against the digital twin, then switch to `cw.affect("live")` when you're ready for the physical robot.
     </Info>
   </Tab>
 </Tabs>
@@ -228,10 +229,11 @@ Follow the prompts in your terminal:
 Your physical robot is now paired with its digital twin and syncing in real time.
 </Check>
 
-Your application code from Part 1 now drives the physical robot, switch the source type to target real hardware:
+Your application code from Part 1 now drives the physical robot. Switch the SDK to live control so your actions affect the real robot:
 
 ```python
-cw = Cyberwave(api_key="your_api_key", source_type="tele")
+cw = Cyberwave(api_key="your_api_key")
+cw.affect("live")
 ```
 
 ---
