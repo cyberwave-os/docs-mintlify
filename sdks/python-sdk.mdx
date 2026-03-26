@@ -224,22 +224,33 @@ With both set, `cw.twin("the-robot-studio/so101")` will return the first SO101 t
 
 ---
 
-## Data Source Types
+## Affect Simulation vs Live Environment
 
-By default, the SDK sends data marked as arriving from the **real world**. You can change this behavior by setting `source_type` at initialization:
+Use `cw.affect()` to decide whether high-level robot actions should impact the simulation or the live robot.
 
 ```python
 from cyberwave import Cyberwave
 
-cw = Cyberwave(source_type="sim")
+cw = Cyberwave()
+
+cw.affect("simulation")
+rover = cw.twin("unitree/go2")
+rover.move_forward(distance=1.0)   # moves the digital twin
+
+cw.affect("live")
+rover.move_forward(distance=1.0)   # moves the physical robot
 ```
 
-| Source Type | Description |
+Accepted values are:
+
+| Value | Effect |
 |---|---|
-| *(default)* | Data is marked as real-world — commands are sent to physical hardware via the Edge Core |
-| `"sim"` | Data is marked as simulated — commands update the digital twin in the Cyberwave 3D environment |
-| `"edit"` | SDK acts as a client of the environment editor — appears as another editor session in the web app |
-| `"tele"` | SDK acts as a remote teleoperator — sends control commands to the physical device from the cloud |
+| `"simulation"` | Sends high-level actions to the simulator and updates the digital twin in the Cyberwave environment |
+| `"live"` | Sends high-level actions to the live robot through Cyberwave's live control path |
+
+`"real-world"` is also accepted as an alias for `"live"`.
+
+`affect()` is chainable, so you can also write `cw.affect("simulation").twin("unitree/go2")`.
 
 ---
 
@@ -305,6 +316,7 @@ Send real-time joint commands to a robot arm or any articulated twin. You can us
 ```python
 import math
 
+cw.affect("simulation")
 robot = cw.twin("the-robot-studio/so101")
 
 robot.joints.set("shoulder_joint", 45, degrees=True)
@@ -580,7 +592,6 @@ alert = twin.alerts.create(
     description="Joint 3 is drifting beyond tolerance",
     severity="warning",
     alert_type="calibration_needed",
-    source_type="edge",
 )
 ```
 
@@ -664,7 +675,7 @@ The SDK operates across two communication layers:
 |---|---|---|
 | SDK → Cloud (REST) | HTTPS | CRUD for twins, assets, models, environments, edges, workflows, alerts |
 | SDK → Cloud (MQTT) | TCP/MQTT | Joint updates, position/rotation/scale, WebRTC signaling, health pings |
-| Cloud → Edge | MQTT | Command forwarding when real-world source type is active |
+| Cloud → Edge | MQTT | Command forwarding when live robot control is active |
 | Edge → Hardware | Serial / USB / ROS | Physical actuation and sensor reading |
 
 ---
