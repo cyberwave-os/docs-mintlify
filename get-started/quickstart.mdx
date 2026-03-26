@@ -6,23 +6,56 @@ icon: "bolt"
 
 import EarlyAccess from '/snippets/early-access.mdx';
 
-## Goals
+<EarlyAccess />
 
-This guide takes you from zero to a working Physical AI application. You will:
+## Try a Real Robot Live
+
+Get hands-on with Cyberwave in under 2 minutes; no setup, no hardware, no code. Control a real SO101 robot arm live in our robotics lab from your browser.
+
+<Steps>
+  <Step title="Sign up for Cyberwave">
+    Create an account at [cyberwave.com](https://cyberwave.com) or [request early access](https://cyberwave.com/request-early-access) if you don't have one yet.
+  </Step>
+  <Step title="Click 'Try a Real Robot'">
+    From the dashboard, click **Try a Real Robot**. You'll be connected to a live SO101 robot arm with a camera in the Cyberwave robotics lab.
+    ![](/images/try-a-real-robot.png)
+  </Step>
+  <Step title="Control the robot (Switch to Live Mode)">
+    A **keyboard controller** is already assigned, start moving the arm immediately in the **live mode** from your browser. You'll see the live camera feed from the lab as you control the robot in real time.
+    ![](/images/try-robot-live.png)  
+  </Step>
+</Steps>
+
+**What's connected:**
+
+The live demo environment has an SO101 robot arm with a camera mounted on the wrist, streaming directly from the Milan lab.
+
+**What you can do:**
+
+- **Control the arm**: a keyboard controller is pre-assigned, use it to move individual joints in real time
+- **Watch the live camera feed**: see what the robot sees from the wrist-mounted camera in the Milan lab
+- **Record datasets**: start a recording session to capture arm movements and camera footage, just like you would in your own setup
+- **Want a specific use case?** [reach out to the team](mailto:info@cyberwave.com) and we can configure a custom demo for your needs
+
+<Check>
+You're controlling a physical robot from your browser. Everything you see here, joint control, camera streaming, dataset recording is the same experience you get with your own hardware.
+</Check>
+
+---
+
+## Build Your Own Setup
+
+Ready to go beyond the demo? This guide takes you from zero to a working Physical AI application. You will:
 
 1. Create a virtual environment and add a digital twin of your robot
 2. Build applications using the Python SDK, MCP server, or REST API from your laptop, with no hardware required
 3. Connect real hardware so the same code drives a physical robot
 
-<EarlyAccess />
-
----
-
-## Part 1: Develop in Simulation
+### Part 1: Develop in Simulation
 
 Start here. No hardware required.
 
-### Step 1: Create an Environment
+#### Step 1: Create an Environment
 
 An **[environment](/get-started/key-concepts#environments)** is a 3D virtual space that mirrors your real-world robot setup. It's where your digital twins live, sensors stream data, and controllers send commands, all in real time.
 
@@ -33,7 +66,7 @@ An **[environment](/get-started/key-concepts#environments)** is a 3D virtual spa
 
 ---
 
-### Step 2: Add a Digital Twin
+#### Step 2: Add a Digital Twin
 
 A [digital twin](/get-started/key-concepts#digital-twins) is a virtual replica of your physical robot, it mirrors the robot's structure, joints, sensors, and behavior in real time within your environment.
 
@@ -53,7 +86,7 @@ A [digital twin](/get-started/key-concepts#digital-twins) is a virtual replica o
 
 ---
 
-### Step 3: Build Your Application
+#### Step 3: Build Your Application
 
 With your environment and digital twin ready, you can start building immediately. Your application code runs **anywhere**, laptop, cloud server, CI pipeline and talks to Cyberwave Cloud over the API.
 
@@ -83,7 +116,7 @@ export CYBERWAVE_API_KEY=your_api_key
 
 ---
 
-### Step 4: Control Your Twin in Simulation
+#### Step 4: Control Your Twin in Simulation
 
 You can control your digital twin in simulation in two ways: through the **dashboard UI** or through **code**.
 
@@ -132,7 +165,7 @@ You can control your digital twin in simulation in two ways: through the **dashb
 
 ---
 
-## Part 2: Connect Real Hardware
+### Part 2: Connect Real Hardware
 
 Once your application works in simulation, connect it to the physical robot. These steps run on the machine that is physically connected to the robot, an edge device (Raspberry Pi, Jetson) or your laptop if the robot is plugged in directly via USB.
 
@@ -140,7 +173,7 @@ Once your application works in simulation, connect it to the physical robot. The
 If you're only working in simulation or building application code, you can skip Part 2 for now and come back when you're ready to connect hardware.
 </Info>
 
-### Step 5: Install the Cyberwave CLI
+#### Step 5: Install the Cyberwave CLI
 
 <Warning>
     The Cyberwave CLI and Edge Core require a **64-bit architecture** (arm64/aarch64) on Raspberry Pi. If you are using a 32-bit OS or architecture, please wait for an updated version.
@@ -171,7 +204,7 @@ If you're only working in simulation or building application code, you can skip 
 
 ---
 
-### Step 6: Install the Edge Core
+#### Step 6: Install the Edge Core
 
 The [Edge Core](/get-started/architecture#cyberwave-edge) runs on the robot's machine and bridges your physical hardware to the Cyberwave cloud.
 
@@ -183,7 +216,7 @@ The CLI will prompt you to log in and install `cyberwave-edge-core`.
 
 ---
 
-### Step 7: Pair Hardware with the Digital Twin
+#### Step 7: Pair Hardware with the Digital Twin
 
 Follow the prompts in your terminal:
 
