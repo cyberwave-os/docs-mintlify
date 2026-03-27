@@ -37,6 +37,7 @@
               "group": "SDKs and Tools",
               "pages": [
                 "sdks/python-sdk",
+                "sdks/claude-skill",
                 "sdks/mcp-server",
                 {
                   "group": "Cyberwave Edge",
