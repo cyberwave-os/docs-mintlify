@@ -67,7 +67,8 @@
                 "use-cyberwave/ml-models",
                 "use-cyberwave/environment-editor",
                 "use-cyberwave/access-control",
-                "use-cyberwave/teleoperation-latency"
+                "use-cyberwave/teleoperation-latency",
+                "use-cyberwave/docker-registry"
               ]
             }
           ]
