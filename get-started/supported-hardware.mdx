@@ -1,148 +1,132 @@
 ---
 title: "Supported Hardware"
-description: "Overview of all hardware platforms supported by Cyberwave"
+description: "80+ devices supported out of the box, with full ROS compatibility and an extensible driver architecture"
 icon: "microchip"
 ---
 
-Cyberwave supports a range of robotic hardware from articulated arms to mobile rovers, quadrupeds, and standalone cameras. Each platform integrates with Cyberwave through a digital twin, giving you real-time control, telemetry streaming, dataset recording, and AI model deployment from a single interface.
+Cyberwave connects to **80+ robotic devices** out of the box through its [hardware catalog](https://cyberwave.com/catalog). Every device in the catalog has a pre-built driver that is automatically installed when you pair hardware with a digital twin — no manual integration required.
+
+Beyond the catalog, Cyberwave's open driver architecture means **any device with an API, serial interface, or network protocol can be connected**. You can write a driver in Python or C++ using our SDKs, or use our AI scaffolding tool to generate one in minutes.
 
 ---
 
-## SO101 Robot Arms
+## How It Works
 
-The **SO101** is an open-source, 6-degree-of-freedom (6-DOF) robotic arm set designed for desk-based manipulation. Built from 3D-printed parts and standard servo motors, it offers a low-cost entry point into real robotic hardware.
+Every hardware connection follows the same pattern:
 
-### Physical Components
+1. **Add a digital twin** from the catalog (or create a custom one)
+2. **Install the Cyberwave edge stack** on a device connected to your hardware
+3. **Pair** — the driver is installed automatically and your hardware starts syncing in real time
 
-- **6-DOF articulated arm**: compact manipulator for close-range, desk-based operations
-- **Servo-driven joints**: position-controlled motors for real-time joint movement
-- **Gripper end-effector**: suitable for basic pick-and-place tasks
-- **Leader-follower configuration (optional)**: dual-arm setup where the leader captures human motion and the follower mirrors it in real time
-- **USB control**: direct connection from a laptop or SBC (Raspberry Pi) over USB/serial
+The [Edge Core](/edge/overview) orchestrates drivers on the edge device and bridges all communication to the Cyberwave cloud over MQTT.
 
-### What You Can Do with Cyberwave
+---
 
-- Onboard from the catalog and create a digital twin automatically
-- Teleoperate using a physical leader arm with joint-level mirroring
-- Remote operate without a leader arm and control directly from the dashboard, SDK, or API
-- Assign controller policies (keyboard, gamepad, VLA models)
-- Record and export episodic datasets for training
-- Train ML models and deploy them as autonomous controller policies
-- Test in simulation, then deploy to the physical arm without code changes
+## Featured Hardware
 
-<Card title="SO101 Setup Guide" icon="play" href="/hardware/so101/get-started">
-  Connect, calibrate, and start using the SO101 with Cyberwave
+These platforms have dedicated setup guides with step-by-step instructions.
+
+<CardGroup cols={2}>
+  <Card title="SO101 Robot Arms" icon="hand" href="/hardware/so101/get-started">
+    Open-source 6-DOF manipulator arms for desk-based manipulation, teleoperation, and imitation learning.
+  </Card>
+  <Card title="UGV Beast Rover" icon="truck-monster" href="/hardware/ugv/get-started">
+    Off-road tracked rover with a Raspberry Pi + ESP32 dual-controller architecture and ROS 2 stack.
+  </Card>
+  <Card title="Unitree Go2" icon="dog" href="/hardware/go2/get-started">
+    Intelligent quadruped with 4D LiDAR, AI-powered locomotion, and autonomous navigation.
+  </Card>
+  <Card title="Universal Robot UR7e" icon="robot" href="/hardware/universal-robot-7/get-started">
+    Industrial collaborative arm connected via a Raspberry Pi running ROS 2 and an MQTT bridge.
+  </Card>
+  <Card title="Boston Dynamics Spot" icon="dog" href="/hardware/boston-dynamics/get-started">
+    Quadruped robot for inspection, patrol, and autonomous missions.
+  </Card>
+  <Card title="Camera" icon="camera" href="/hardware/camera/get-started">
+    USB webcams and laptop cameras for live streaming, vision workflows, and dataset recording.
+  </Card>
+</CardGroup>
+
+For devices not listed above, see the [Other Hardware](/hardware/other-hardware/get-started) guide.
+
+---
+
+## Full ROS Compatibility
+
+Cyberwave is fully compatible with **ROS 1** and **ROS 2**. The open-source [cyberwave-os](https://github.com/cyberwave-os) GitHub organization provides SDKs and reference implementations for bridging ROS topics with Cyberwave's MQTT-based digital twin layer.
+
+A typical ROS integration uses the **MQTT bridge** pattern: a lightweight node subscribes to ROS topics (joint states, odometry, camera feeds) and publishes them to the Cyberwave MQTT broker. Commands flow in the opposite direction — from the dashboard or API, through MQTT, and into ROS action servers or publishers.
+
+<Card title="Custom Integrations" icon="plug" href="/hardware/other-hardware/custom-hardware">
+  Integrate with ROS, VDA5050, OPC UA, Modbus, and other industrial protocols
 </Card>
 
 ---
 
-## UGV Beast Rover
+## Industrial Protocol Support
 
-The **UGV Beast** is an off-road tracked open-source AI robot with a dual-controller architecture: a **Raspberry Pi** for high-level tasks (planning, perception, AI) and an **ESP32** microcontroller for low-level motor control (motors, encoders, IMU, LEDs).
+Cyberwave's driver architecture is not limited to ROS. The same pattern works with any protocol your hardware speaks:
 
-### Architecture
+| Protocol | Use Case |
+|---|---|
+| **ROS 1 / ROS 2** | Robot arms, mobile robots, sensor stacks |
+| **VDA5050** | AGV and AMR fleet communication |
+| **OPC UA** | Industrial automation and PLC connectivity |
+| **Modbus TCP/RTU** | Sensor and actuator networks |
+| **gRPC / REST** | Custom services and microservice architectures |
+| **Serial / USB** | Direct device control (servos, microcontrollers) |
 
-```mermaid
-graph TB
-    CYB["Cyberwave Cloud<br/>(Digital Twins, API/SDK, ML Models, Workflows)"]
-    CYB <-->|"MQTT"| BRIDGE
-
-    subgraph UGV["Cyberwave Edge"]
-        BRIDGE["Edge Core"]
-        ROS["Cyberwave UGV Driver"]
-        BRIDGE <-->|"ROS 2 Topics"| ROS
-    end
-
-    ROS <-->|"Serial UART"| ESP["Robotic Hardware (ESP32)<br/>(Motors, Sensors, Camera)"]
-```
-
-The system operates in three layers:
-
-- **Cyberwave Cloud**: hosts the digital twin, dashboard, MQTT broker, and backend APIs for monitoring, commanding, and training
-- **Cyberwave Edge (Raspberry Pi)**: runs the ROS 2 stack and MQTT bridge inside a Docker container, translating between ROS 2 topics and Cyberwave MQTT
-- **Robotic Hardware (ESP32)**: handles low-level motor control, sensors, camera pan-tilt, and LEDs over serial UART
-
-### What You Can Do with Cyberwave
-
-- Add a UGV Beast from the catalog and start streaming telemetry immediately
-- Control the rover in real time via keyboard from the dashboard
-- Stream the onboard camera feed to the digital twin
-- Record driving sessions (camera, IMU, controls) into episodic datasets
-- Train navigation models and deploy them as autonomous policies
-- Test in simulation, then deploy to the physical rover
-
-<Card title="UGV Beast Setup Guide" icon="play" href="/hardware/ugv/get-started">
-  Install the Cyberwave Docker image and launch the stack on your rover
-</Card>
+Each protocol is bridged to Cyberwave through a driver — a Docker container managed by the Edge Core that translates between your device's native interface and Cyberwave's MQTT layer.
 
 ---
 
-## Unitree Go2 Quadruped
+## Extend Cyberwave with Custom Drivers
 
-The **Unitree Go2** is an intelligent quadruped robot designed for research, exploration, and real-world applications. It combines AI-driven locomotion with robust mechanical performance.
+If your hardware isn't in the catalog, you can write a compatible driver and connect it in minutes. A driver is a Docker container that translates between your device's native API and Cyberwave's MQTT interface.
 
-### Key Specifications
+<CardGroup cols={2}>
+  <Card title="Writing Compatible Drivers" icon="code" href="/edge/drivers/writing-compatible-drivers">
+    Full guide on driver architecture, environment variables, and packaging
+  </Card>
+  <Card title="Driver Overview" icon="puzzle-piece" href="/edge/drivers/overview">
+    How drivers are registered and managed by Edge Core
+  </Card>
+  <Card title="Python SDK" icon="python" href="/sdks/python-sdk">
+    Build drivers and applications with the Cyberwave Python SDK
+  </Card>
+  <Card title="C++ SDK" icon="microchip" href="/sdks/cpp-sdk">
+    High-performance SDK for embedded and latency-sensitive drivers
+  </Card>
+</CardGroup>
 
-| Spec | Detail |
-|------|--------|
-| **Recognition System** | Ultra-wide 4D LiDAR L1 (360° x 90° FOV) |
-| **Max Speed** | ~5 m/s |
-| **Peak Joint Torque** | ~45 N·m |
-| **Wireless** | Wi-Fi 6, Bluetooth, 4G |
-| **Battery** | 8,000 mAh (standard) / 15,000 mAh (extended) |
-| **Endurance** | ~2–4 hours depending on configuration |
+You can also use the [Cyberwave Driver Skill](https://github.com/cyberwave-os/driver-skill) to scaffold a complete driver project interactively with AI assistance.
 
-### Core Capabilities
+### Reference Implementations
 
-- **4D LiDAR perception**: hemispherical FOV with 0.05m minimum detection for all-terrain navigation
-- **AI-powered locomotion**: trained via large-scale simulation for obstacle climbing, recovery, and adaptive gaits
-- **3D mapping and autonomy**: point cloud mapping and path planning using built-in LiDAR
-- **Intelligent side-follow (ISS 2.0)**: wireless vector positioning with obstacle avoidance
-- **OTA updates**: continuous firmware improvements via the cloud
+These open-source drivers are good starting points:
 
-<Info>
-For detailed hardware specifications and assembly instructions, refer to the [official Unitree Go2 documentation](https://www.docs.quadruped.de/projects/go2/html/index.html).
-</Info>
-
-<Card title="Go2 Setup Guide" icon="play" href="/hardware/go2/get-started">
-  Connect an edge device to the Go2 and pair it with Cyberwave
-</Card>
-
----
-
-## Camera
-
-A **camera twin** is a digital representation of a physical camera within your Cyberwave environment. It streams live video into the platform, enabling real-time monitoring, data recording, and AI-powered vision workflows.
-
-### Supported Camera Types
-
-- **USB webcams** (Logitech, generic UVC-compatible cameras)
-- **Laptop built-in webcams**
-
-Once connected, your camera feed is available across the platform in the environment viewer, for dataset recording, and as input to ML models and workflows.
-
-<Card title="Camera Setup Guide" icon="play" href="/hardware/camera/get-started">
-  Connect a webcam or laptop camera to Cyberwave
-</Card>
+| Driver | Repository |
+|---|---|
+| Camera | [cyberwave-os/cyberwave-edge-camera-driver](https://github.com/cyberwave-os/cyberwave-edge-camera-driver) |
+| SO-101 arm | [cyberwave-os/cyberwave-edge-so101](https://github.com/cyberwave-os/cyberwave-edge-so101) |
 
 ---
 
-## Other Hardware
+## What You Can Do Once Connected
 
-Cyberwave is not limited to the platforms above. Any device that can run a [compatible driver](/edge/drivers/writing-compatible-drivers) can connect to the platform as a digital twin. If your hardware isn't listed here, follow the generic guide to connect it.
+Regardless of which hardware you connect, every digital twin on Cyberwave gives you access to the same platform capabilities:
 
-<Card title="Other Hardware Setup Guide" icon="play" href="/hardware/other-hardware/get-started">
-  Connect any robotic hardware to Cyberwave
-</Card>
+- **Real-time teleoperation** — control your hardware from the dashboard, SDK, or API
+- **Live telemetry streaming** — monitor sensor data, joint states, camera feeds, and more
+- **Dataset recording** — capture episodic datasets for training and evaluation
+- **ML model training and deployment** — train models on recorded data and deploy them as autonomous controller policies
+- **Simulation** — test in a browser-based 3D environment before deploying to physical hardware
+- **Workflows and automation** — chain actions, models, and logic into repeatable workflows
 
 ---
 
-## Hardware at a Glance
+## Browse the Catalog
 
-| Platform | Type | Connection | Use Cases |
-|---|---|---|---|
-| **SO101** | 6-DOF robot arm | USB/serial | Manipulation, teleoperation, imitation learning |
-| **UGV Beast** | Tracked rover | Wi-Fi (MQTT) | Navigation, mapping, autonomous driving |
-| **Unitree Go2** | Quadruped | Ethernet to edge device | Locomotion, patrol, inspection |
-| **Camera** | Visual sensor | USB | Monitoring, vision workflows, dataset recording |
-| **Other** | Any hardware | Any | Anything with a compatible driver |
+<Card title="Hardware Catalog" icon="grid-2" href="https://cyberwave.com/catalog">
+  Browse all 80+ supported devices and add them to your environment
+</Card>
