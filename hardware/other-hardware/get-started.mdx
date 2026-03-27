@@ -1,0 +1,157 @@
+---
+title: "Other Hardware"
+sidebarTitle: "Other Hardware"
+description: "Connect any robotic hardware to Cyberwave using the driver architecture"
+icon: "puzzle-piece"
+---
+
+Cyberwave is compatible with [80+ devices](https://cyberwave.com/catalog) out of the box — but it's not limited to those. Any device that can run a [compatible driver](/edge/drivers/writing-compatible-drivers) can become a digital twin on the platform — robot arms, mobile robots, drones, custom rigs, or anything else with an API or serial interface.
+
+The general process is the same regardless of what you're connecting:
+
+1. Set up a Cyberwave environment and add a digital twin
+2. Connect an edge device to your hardware
+3. Install the Cyberwave edge stack
+4. Pair the hardware with its digital twin — using an existing driver or one you write yourself
+
+---
+
+## Prerequisites
+
+- A Cyberwave account ([Request Early Access](https://cyberwave.com/request-early-access))
+- API token from your dashboard (**Profile → API Keys**)
+- An edge device connected to your hardware (Raspberry Pi, Jetson, industrial PC, or any Linux computer)
+- Network access (Wi-Fi or Ethernet) from the edge device to the internet
+
+<Info>
+The edge device is the machine that is physically connected to your hardware — over USB, serial, Ethernet, or any other interface. It can also be your laptop if the device is plugged in directly.
+</Info>
+
+{/* TODO: add image showing the generic edge device → hardware → cloud architecture */}
+
+---
+
+## Phase 1: Configure Cyberwave Environment
+
+### Step 1: Create an Environment
+
+An [environment](/get-started/key-concepts#environments) is a 3D virtual space that mirrors your real-world setup.
+
+1. Go to the Cyberwave dashboard and click **New Environment**.
+2. Give your environment a **name** and **description**.
+
+### Step 2: Add a Digital Twin
+
+You have two options depending on whether your hardware already exists in the catalog:
+
+<Tabs>
+  <Tab title="Hardware is in the catalog">
+    1. Inside your environment, click **Add from Catalog** in the left panel.
+    2. Search for your hardware and add it.
+    3. Position the twin to match your physical setup.
+  </Tab>
+  <Tab title="Hardware is not in the catalog">
+    If your hardware isn't in the catalog yet, you can create a custom asset and digital twin. [Contact us](mailto:info@cyberwave.com) for guidance on uploading a custom URDF or 3D model, or use the REST API to create an asset programmatically.
+  </Tab>
+</Tabs>
+
+---
+
+## Phase 2: Install the Cyberwave Edge
+
+### Step 3: Connect to Your Edge Device
+
+SSH into the device that is physically connected to your hardware:
+
+```bash
+ssh <username>@<edge-device-ip>
+```
+
+### Step 4: Install the Cyberwave CLI
+
+```bash
+curl -fsSL https://cyberwave.com/install.sh | bash
+```
+
+<Warning>
+The Cyberwave CLI and Edge Core require a **64-bit architecture** (arm64/aarch64) on Raspberry Pi. If you are using a 32-bit OS or architecture, please wait for an updated version.
+</Warning>
+
+### Step 5: Install the Edge Core
+
+The [Edge Core](/edge/overview) is the orchestrator that runs on your edge device and bridges your hardware to the Cyberwave cloud.
+
+```bash
+sudo cyberwave edge install
+```
+
+The CLI will prompt you to log in with your Cyberwave credentials and select the environment you created in Phase 1.
+
+<Info>
+Depending on your connection, the initial download may take a few minutes. Check status with `cyberwave edge logs`.
+</Info>
+
+---
+
+## Phase 3: Pair Your Hardware
+
+### Step 6: Pair with the Digital Twin
+
+Follow the prompts in your terminal:
+
+1. Select the environment you created.
+2. Select the digital twin you added.
+3. If a compatible driver exists for your hardware, it will be **automatically installed and configured**.
+
+<Check>
+Your hardware is now paired with its digital twin and syncing in real time.
+</Check>
+
+---
+
+## No Driver Available? Write Your Own
+
+If Cyberwave doesn't have a pre-built driver for your hardware, you can write a compatible driver yourself. A driver is a Docker container that translates between your device's native API and the Cyberwave platform.
+
+<CardGroup cols={2}>
+  <Card title="Writing Compatible Drivers" icon="code" href="/edge/drivers/writing-compatible-drivers">
+    Full guide on driver architecture, environment variables, and packaging
+  </Card>
+  <Card title="Driver Overview" icon="puzzle-piece" href="/edge/drivers/overview">
+    How drivers are registered and managed by Edge Core
+  </Card>
+</CardGroup>
+
+You can scaffold a driver project in minutes using one of these approaches:
+
+- **Claude Skill** — run the [Cyberwave Driver skill](https://github.com/cyberwave-os/driver-skill) in Claude Code to generate a complete driver project interactively
+- **Python SDK** — use [`cyberwave-sdk`](https://pypi.org/project/cyberwave/) to handle twin synchronization and focus on your hardware integration
+- **C++ SDK** — use the [C++ SDK](/sdks/cpp-sdk) for performance-critical or embedded drivers
+
+### Reference Implementations
+
+These open-source drivers are good starting points:
+
+| Driver | Repository |
+|--------|-----------|
+| Camera | [cyberwave-os/cyberwave-edge-camera-driver](https://github.com/cyberwave-os/cyberwave-edge-camera-driver) |
+| SO-101 arm | [cyberwave-os/cyberwave-edge-so101](https://github.com/cyberwave-os/cyberwave-edge-so101) |
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Custom Integrations" icon="plug" href="/hardware/other-hardware/custom-hardware">
+    Integrate with ROS, VDA5050, and other robotics frameworks
+  </Card>
+  <Card title="Supported Hardware" icon="microchip" href="/get-started/supported-hardware">
+    See all officially supported hardware platforms
+  </Card>
+  <Card title="Edge Core" icon="server" href="/edge/overview">
+    Learn how the edge orchestrator works
+  </Card>
+  <Card title="Python SDK" icon="code" href="/sdks/python-sdk">
+    Build applications against your digital twin
+  </Card>
+</CardGroup>

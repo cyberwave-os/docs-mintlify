@@ -1,0 +1,82 @@
+---
+title: "Custom Integrations"
+sidebarTitle: "Custom Integrations"
+description: "Integrate Cyberwave with ROS, VDA5050, and other robotics frameworks"
+icon: "plug"
+---
+
+{/* stub */}
+
+Cyberwave is designed to work alongside the tools and protocols your team already uses. Whether you run a ROS-based stack, operate AGVs over VDA5050, or use another industrial framework, you can integrate it with Cyberwave's digital twin infrastructure.
+
+---
+
+## ROS Compatibility
+
+Cyberwave is fully compatible with **ROS 1** and **ROS 2**. The open-source [cyberwave-os](https://github.com/cyberwave-os) GitHub organization provides dedicated SDKs and frameworks for bridging ROS topics with Cyberwave's MQTT-based digital twin layer.
+
+### Key Resources
+
+<CardGroup cols={2}>
+  <Card title="Python Edge SDK" icon="python" href="https://github.com/cyberwave-os/cyberwave-edge-python">
+    Python SDK for connecting ROS nodes and edge devices to Cyberwave
+  </Card>
+  <Card title="Edge Core" icon="server" href="https://github.com/cyberwave-os/cyberwave-edge-core">
+    The edge orchestrator that bridges ROS topics to Cyberwave MQTT
+  </Card>
+  <Card title="Driver Skill" icon="wand-magic-sparkles" href="https://github.com/cyberwave-os/driver-skill">
+    AI-assisted scaffolding for new ROS-compatible Cyberwave drivers
+  </Card>
+  <Card title="Python SDK" icon="code" href="https://github.com/cyberwave-os/cyberwave-python">
+    High-level Python SDK for the Cyberwave platform API
+  </Card>
+</CardGroup>
+
+### How It Works
+
+A typical ROS integration uses the **MQTT bridge** pattern: a lightweight node subscribes to ROS topics (joint states, odometry, camera feeds) and publishes them to Cyberwave's MQTT broker, where they are routed to the corresponding digital twin. Commands flow in the opposite direction — from the Cyberwave dashboard or API, through MQTT, and into ROS action servers or topic publishers.
+
+See the [UR7e guide](/hardware/universal-robot-7/get-started) for a complete example of a ROS 2-based integration.
+
+---
+
+## VDA5050 and Industrial Protocols
+
+Cyberwave supports integration with **VDA5050**, the open standard for communication between AGVs/AMRs and fleet management systems. The same driver architecture used for ROS applies here: a Cyberwave driver container translates between the VDA5050 JSON protocol and Cyberwave's MQTT topics.
+
+This approach extends to other industrial protocols:
+
+- **VDA5050** — AGV/AMR fleet communication over MQTT
+- **OPC UA** — industrial automation and PLC connectivity
+- **Modbus TCP/RTU** — sensor and actuator networks
+- **gRPC / REST** — custom services and microservice architectures
+
+To connect hardware over any of these protocols, [write a compatible driver](/edge/drivers/writing-compatible-drivers) that bridges between the protocol and Cyberwave's MQTT interface. The driver runs as a Docker container managed by the [Edge Core](/edge/overview).
+
+---
+
+## Open Source Resources
+
+All integration libraries and reference drivers are available under the [cyberwave-os](https://github.com/cyberwave-os) GitHub organization:
+
+| Repository | Description |
+|---|---|
+| [cyberwave-edge-core](https://github.com/cyberwave-os/cyberwave-edge-core) | Edge orchestrator |
+| [cyberwave-edge-python](https://github.com/cyberwave-os/cyberwave-edge-python) | Python Edge SDK |
+| [cyberwave-python](https://github.com/cyberwave-os/cyberwave-python) | Python platform SDK |
+| [cyberwave-edge-camera-driver](https://github.com/cyberwave-os/cyberwave-edge-camera-driver) | Reference camera driver |
+| [cyberwave-edge-so101](https://github.com/cyberwave-os/cyberwave-edge-so101) | Reference SO-101 arm driver |
+| [driver-skill](https://github.com/cyberwave-os/driver-skill) | AI scaffolding skill for new drivers |
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Writing Compatible Drivers" icon="code" href="/edge/drivers/writing-compatible-drivers">
+    Full guide on driver architecture, environment variables, and packaging
+  </Card>
+  <Card title="Other Hardware Setup" icon="puzzle-piece" href="/hardware/other-hardware/get-started">
+    Step-by-step guide for connecting any hardware to Cyberwave
+  </Card>
+</CardGroup>

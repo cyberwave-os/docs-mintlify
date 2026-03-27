@@ -1,0 +1,376 @@
+---
+title: "Universal Robot UR7e"
+sidebarTitle: "Universal Robot UR7e"
+description: "Connect your Universal Robot UR7e to Cyberwave using a Raspberry Pi edge device with ROS 2."
+icon: "robot"
+---
+
+{/* stub */}
+
+## Goals
+
+This guide walks you through connecting a **Universal Robot UR7e** industrial arm to its digital twin on Cyberwave via a Raspberry Pi running ROS 2. By the end, you will have:
+
+- Flashed a pre-configured ROS 2 image onto a Raspberry Pi
+- Created a Cyberwave environment with a UR7e digital twin
+- Connected the Raspberry Pi to the UR7e over Ethernet
+- Installed the Cyberwave edge stack and paired the robot
+- Launched the UR robot driver and MQTT bridge for real-time control
+
+---
+
+## Prerequisites
+
+<Tabs>
+  <Tab title="Hardware">
+    - **Universal Robot UR7e** arm, powered on and in **Remote Control** mode
+    - **Raspberry Pi 4 or 5** (4 GB+ RAM recommended)
+    - **SD card**: 32 GB minimum, 64 GB+ recommended
+    - **Ethernet cable** connecting the Raspberry Pi to the UR7e
+    - Monitor, keyboard, and mouse for initial Pi setup
+  </Tab>
+
+  <Tab title="Software Image">
+    The Raspberry Pi runs a pre-configured **Ubuntu 24.04 ARM64** image that includes:
+    - ROS 2 Jazzy Jalisco (latest LTS)
+    - UR Robot Driver for the UR7e
+    - MQTT Bridge for remote control via Cyberwave
+    - EPick Gripper support (optional)
+
+    Contact your Cyberwave representative to obtain the image file.
+  </Tab>
+
+  <Tab title="Credentials">
+    - A Cyberwave account
+      ([Request Early Access](https://cyberwave.com/request-early-access))
+    - API token from your dashboard
+      *(Cyberwave → Settings → API Keys)*
+  </Tab>
+</Tabs>
+
+---
+
+## Phase 1: Flash the Raspberry Pi
+
+Write the pre-configured ROS 2 image to your SD card.
+
+### Option A: Raspberry Pi Imager (recommended)
+
+1. Download and install [Raspberry Pi Imager](https://www.raspberrypi.com/software/).
+2. Launch the imager, click **Choose OS** → **Use custom**, and select the `.img.xz` image file.
+3. Click **Choose Storage** and select your SD card.
+4. Click **Write**. No need to extract the `.xz` file first.
+5. Wait 10–20 minutes, then safely eject the SD card.
+
+### Option B: Command line (Linux / macOS)
+
+```bash
+# Identify your SD card device
+lsblk
+
+# Unmount if mounted (replace sdX with your device)
+sudo umount /dev/sdX*
+
+# Write the image
+sudo sh -c 'xzcat <image-file>.img.xz | dd of=/dev/sdX bs=4M status=progress conv=fsync'
+sync
+```
+
+<Warning>
+Double-check the device name before writing. Using the wrong device will erase that disk.
+</Warning>
+
+---
+
+## Phase 2: First Boot and Network Setup
+
+### Step 1: Boot the Raspberry Pi
+
+1. Insert the SD card into the Raspberry Pi.
+2. Connect an HDMI monitor, USB keyboard, and Ethernet cable (to the same network as the UR7e).
+3. Power on and wait 2–3 minutes for the first boot to complete.
+
+### Step 2: Log in and expand the filesystem
+
+```bash
+# Default credentials
+# Username: edgeros
+# Password: provided with the image
+
+# If your SD card is larger than 32 GB, expand the filesystem:
+sudo raspi-config
+# Navigate to: 6 Advanced Options → A1 Expand Filesystem → Reboot
+```
+
+### Step 3: Verify network connectivity to the UR7e
+
+```bash
+ip addr show
+ping 192.168.1.102   # Replace with your UR7e's IP address
+```
+
+If the robot is not reachable, configure a static IP on the same subnet:
+
+```yaml
+# /etc/netplan/50-cloud-init.yaml
+network:
+  version: 2
+  ethernets:
+    eth0:
+      dhcp4: no
+      addresses:
+        - 192.168.1.100/24
+      routes:
+        - to: default
+          via: 192.168.1.1
+      nameservers:
+        addresses: [8.8.8.8, 8.8.4.4]
+```
+
+```bash
+sudo netplan apply
+```
+
+<Tip>
+Change the default password with `passwd` before proceeding.
+</Tip>
+
+---
+
+## Phase 3: Configure the Cyberwave Environment
+
+### Step 1: Create an environment
+
+An [environment](/get-started/key-concepts#environments) is a 3D virtual space that mirrors your real-world robot setup.
+
+1. Go to the Cyberwave dashboard and click **New Environment**.
+2. Give it a **name** (e.g., "UR7e Workstation") and **description**.
+
+### Step 2: Add the UR7e digital twin
+
+1. Inside your environment, click **Add from Catalog** in the left panel.
+2. Search for **UR7e** in the catalog.
+3. Add the UR7e digital twin and position it to match your physical setup.
+
+---
+
+## Phase 4: Install the Cyberwave Edge and Pair
+
+### Step 1: Install the Cyberwave CLI
+
+SSH into the Raspberry Pi and install the CLI:
+
+```bash
+ssh edgeros@<raspberry-pi-ip>
+curl -fsSL https://cyberwave.com/install.sh | bash
+```
+
+<Info>
+For more details, see [Step 3 of the Quick Start guide](/get-started/quickstart#step-3-install-the-cyberwave-cli).
+</Info>
+
+### Step 2: Install the Edge Core
+
+The [Edge Core](/get-started/architecture#cyberwave-edge) bridges the UR7e hardware and the Cyberwave cloud via MQTT.
+
+```bash
+sudo cyberwave edge install
+```
+
+The CLI will prompt you to log in with your Cyberwave credentials and install the edge runtime on the Raspberry Pi.
+
+### Step 3: Pair the UR7e with its digital twin
+
+Follow the terminal prompts:
+
+1. Select the environment you created.
+2. Select the UR7e digital twin.
+3. The appropriate driver will be automatically installed and configured.
+
+<Check>
+Your Universal Robot UR7e is now paired with its digital twin and syncing in real time.
+</Check>
+
+---
+
+## Phase 5: Launch the Robot Driver
+
+Before Cyberwave can send commands, the ROS 2 driver must be running on the Raspberry Pi.
+
+### Verify the ROS 2 installation
+
+```bash
+source /opt/ros/jazzy/setup.bash
+ros2 --version
+```
+
+### Rebuild the workspace (recommended on first boot)
+
+```bash
+cd ~/workspace/ros_ur_driver
+source /opt/ros/jazzy/setup.bash
+
+rm -rf build/ install/ log/
+colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release
+source install/setup.bash
+```
+
+<Tip>
+Add these lines to `~/.bashrc` so the environment is sourced automatically on every login:
+
+```bash
+echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
+echo "source ~/workspace/ros_ur_driver/install/setup.bash" >> ~/.bashrc
+```
+</Tip>
+
+### Start the UR robot driver
+
+Make sure the UR7e is powered on and in **Remote Control** mode, then:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source ~/workspace/ros_ur_driver/install/setup.bash
+
+ros2 launch ur_robot_driver ur_control.launch.py \
+    ur_type:=ur7e \
+    robot_ip:=192.168.1.102 \
+    use_fake_hardware:=false
+```
+
+Verify the connection in a second terminal:
+
+```bash
+source ~/workspace/ros_ur_driver/install/setup.bash
+ros2 topic echo /joint_states
+```
+
+You should see real-time joint data streaming from the UR7e.
+
+### Start the MQTT bridge
+
+The MQTT bridge connects the ROS 2 driver to Cyberwave's MQTT broker. First, configure the broker:
+
+```bash
+nano ~/workspace/ros_ur_driver/src/mqtt_bridge/config/bridge_params.yaml
+```
+
+Update the broker settings to point to the Cyberwave MQTT broker:
+
+```yaml
+mqtt_bridge:
+  ros__parameters:
+    broker:
+      host: "your-mqtt-broker-hostname"
+      port: 1883
+      username: "your-username"
+      password: "your-password"
+```
+
+Then launch the bridge:
+
+```bash
+ros2 launch mqtt_bridge bridge_launch.py
+```
+
+<Check>
+The UR7e is now streaming data to Cyberwave and accepting commands through MQTT.
+</Check>
+
+---
+
+## EPick Gripper Setup (Optional)
+
+If your UR7e is equipped with a Robotiq EPick vacuum gripper, configure it on the UR teach pendant first:
+
+1. **Installation → URCaps → EPick** on the teach pendant.
+2. Add a Modbus output register named `epick_cmd` at address `1000` with slave ID `9`, baud rate `115200`.
+
+Then launch the gripper controllers:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source ~/workspace/ros_ur_driver/install/setup.bash
+
+ros2 launch epick_controllers epick_controller.launch.py
+```
+
+Test grip and release:
+
+```bash
+ros2 service call /grip_cmd std_srvs/srv/SetBool "{data: true}"    # Grip
+ros2 service call /grip_cmd std_srvs/srv/SetBool "{data: false}"   # Release
+```
+
+---
+
+## Auto-Start on Boot (Optional)
+
+To have the MQTT bridge start automatically when the Raspberry Pi boots, create a systemd service:
+
+```ini
+# /etc/systemd/system/mqtt-bridge.service
+[Unit]
+Description=ROS 2 MQTT Bridge
+After=network.target
+
+[Service]
+Type=simple
+User=edgeros
+Environment="HOME=/home/edgeros"
+ExecStart=/bin/bash -c "source /opt/ros/jazzy/setup.bash && source /home/edgeros/workspace/ros_ur_driver/install/setup.bash && ros2 launch mqtt_bridge bridge_launch.py"
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable mqtt-bridge.service
+sudo systemctl start mqtt-bridge.service
+```
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="ros2: command not found">
+    Source the ROS 2 environment before running any `ros2` command:
+
+    ```bash
+    source /opt/ros/jazzy/setup.bash
+    source ~/workspace/ros_ur_driver/install/setup.bash
+    ```
+  </Accordion>
+
+  <Accordion title="Cannot reach the UR7e over the network">
+    1. Verify the Ethernet cable is connected.
+    2. Check the robot's IP matches your configuration: `ping 192.168.1.102`.
+    3. Ensure the robot is in **Remote Control** mode on the teach pendant.
+    4. Review your netplan config and run `sudo netplan apply`.
+  </Accordion>
+
+  <Accordion title="Build fails with missing dependencies">
+    ```bash
+    cd ~/workspace/ros_ur_driver
+    source /opt/ros/jazzy/setup.bash
+    rosdep install --from-paths src --ignore-src -r -y
+    rm -rf build/ install/ log/
+    colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release
+    ```
+  </Accordion>
+
+  <Accordion title="MQTT bridge won't connect">
+    Verify broker connectivity:
+
+    ```bash
+    ping your-mqtt-broker-hostname
+    mosquitto_sub -h your-mqtt-broker-hostname -t "#" -v
+    ```
+
+    Check the `bridge_params.yaml` for correct host, port, and credentials.
+  </Accordion>
+</AccordionGroup>

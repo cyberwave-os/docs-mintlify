@@ -30,7 +30,11 @@
                 "hardware/so101/get-started",
                 "hardware/ugv/get-started",
                 "hardware/go2/get-started",
-                "hardware/camera/get-started"
+                "hardware/camera/get-started",
+                "hardware/universal-robot-7/get-started",
+                "hardware/boston-dynamics/get-started",
+                "hardware/other-hardware/get-started",
+                "hardware/other-hardware/custom-hardware"
               ]
             },
             {  

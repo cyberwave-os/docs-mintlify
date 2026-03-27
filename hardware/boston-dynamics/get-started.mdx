@@ -1,0 +1,140 @@
+---
+title: "Boston Dynamics Spot"
+sidebarTitle: "Boston Dynamics Spot"
+description: "Connect your Boston Dynamics Spot to Cyberwave"
+icon: "dog"
+---
+
+{/* stub */}
+
+## Goals
+
+This guide walks you through connecting your **Boston Dynamics Spot** quadruped robot to its digital twin on Cyberwave. By the end, you will have:
+
+- Configured the Spot hardware and connected an edge device
+- Created a Cyberwave environment with a Spot digital twin
+- Installed the Cyberwave edge stack on the edge device connected to Spot
+- Paired the physical robot with the digital twin in real time
+
+---
+
+## Set Up the Spot Hardware
+
+Before connecting to Cyberwave, make sure your Spot is powered on, firmware is up to date, and you have network access to its onboard computer.
+
+<Card
+  title="Spot Developer Documentation"
+  icon="book-open"
+  href="https://dev.bostondynamics.com/docs/concepts/readme"
+>
+  Refer to the official Boston Dynamics developer documentation for hardware setup, networking, and initial configuration.
+</Card>
+
+---
+
+## Phase 1: Configure Cyberwave Environment
+
+Set up your environment and add the Spot digital twin on Cyberwave.
+
+### Step 1: Create an Environment
+
+An [environment](/get-started/key-concepts#environments) is a 3D virtual space that mirrors your real-world robot setup.
+
+1. Go to the Cyberwave dashboard and click on **New Environment**.
+2. Give your environment a **name** and **description**.
+
+### Step 2: Add the Spot Digital Twin
+
+1. Inside your environment, click **Add from Catalog** in the left panel.
+2. Search for **Boston Dynamics Spot** in the catalog.
+3. Add the Spot digital twin to your environment.
+4. Position it to match your physical setup.
+
+---
+
+## Phase 2: Pair the Spot Robot
+
+To install the Cyberwave edge stack and pair Spot, you need to connect an edge device (e.g., a Spot CORE I/O payload, Raspberry Pi, Jetson Orin Nano, or any Linux computer) to Spot and then install the Cyberwave software on that device.
+
+### Step 1: Connect an Edge Device to Spot
+
+Spot supports two primary ways to connect an external compute device:
+
+<Tabs>
+  <Tab title="Spot CORE I/O (recommended)">
+    The **Spot CORE I/O** is a payload that mounts directly on Spot's back and connects to the robot's internal network automatically.
+
+    1. Mount the Spot CORE I/O payload on the **back payload port**.
+    2. Power on Spot — the payload boots and connects to Spot's internal network.
+    3. SSH into the CORE I/O from your workstation over Wi-Fi or Ethernet.
+
+    Refer to the [Spot CORE I/O documentation](https://dev.bostondynamics.com/docs/payload/spot_core_cockpit) for mounting and SSH details.
+  </Tab>
+  <Tab title="External edge device via Ethernet">
+    If you are not using the Spot CORE I/O, you can connect any Linux device to Spot's **rear Ethernet payload port**.
+
+    **What you'll need:**
+
+    - An edge device (Raspberry Pi, Jetson Orin Nano, or similar Linux computer)
+    - An Ethernet cable
+
+    **Connect the hardware:**
+
+    1. Locate the **rear payload Ethernet port** on Spot (refer to the [Spot payload electrical interface](https://dev.bostondynamics.com/docs/payload/payload_configuration_requirements) for the exact location).
+    2. Connect one end of the Ethernet cable to **Spot's payload port**.
+    3. Connect the other end to the **Ethernet port on your edge device**.
+    4. Power on both Spot and the edge device.
+  </Tab>
+</Tabs>
+
+**Verify the connection:**
+
+Once connected, SSH into your edge device from your laptop or workstation and verify that Spot is reachable:
+
+```bash
+ssh user@<edge-device-ip>
+```
+
+Then check connectivity to Spot's onboard computer:
+
+```bash
+ping 192.168.80.3
+```
+
+<Tip>
+Spot's onboard computer is typically reachable at `192.168.80.3` on its internal payload network. Your edge device should receive an IP in the `192.168.80.x` range via DHCP. Refer to the [Spot networking guide](https://dev.bostondynamics.com/docs/concepts/networking) for details on the default IP scheme and network configuration.
+</Tip>
+
+### Step 2: Install the Cyberwave CLI
+
+With your edge device connected to Spot and SSH session active, install the Cyberwave CLI:
+
+```bash
+curl -fsSL https://cyberwave.com/install.sh | bash
+```
+
+<Info>
+For more details, see [Step 3 of the Quick Start guide](/get-started/quickstart#step-3-install-the-cyberwave-cli).
+</Info>
+
+### Step 3: Install the Edge Core
+
+The [Edge Core](/get-started/architecture#cyberwave-edge) is the orchestrator of your Cyberwave edge components. It runs on the edge device and acts as the bridge between the Spot hardware and the Cyberwave cloud backend.
+
+```bash
+sudo cyberwave edge install
+```
+
+The CLI will prompt you to log in with your Cyberwave credentials and then install the `cyberwave-edge-core` on your edge device.
+
+### Step 4: Pair Spot with its Digital Twin
+
+Follow the prompts in your terminal:
+
+1. Select the environment you created earlier.
+2. Select the Spot digital twin you added to that environment.
+3. The appropriate driver will be automatically installed and configured.
+
+<Check>
+Your Boston Dynamics Spot is now paired with its digital twin and syncing in real time.
+</Check>
