@@ -63,9 +63,11 @@
             ]
           },
           {
-            "group": "Tutorials",
+            "group": "Video Tutorials",
             "pages": [
-              "tutorials/edge-to-cloud-vlm"
+              "tutorials/edge-to-cloud-vlm",
+              "tutorials/rover-ai-mission",
+              "tutorials/go2-digital-to-physical"
             ]
           },
           {
