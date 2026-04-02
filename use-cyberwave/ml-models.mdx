@@ -106,18 +106,12 @@ Models can run through different providers:
 
 ML Models integrate with workflow nodes for automated processing:
 
-```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│ Capture     │───▶│ ML Model:   │───▶│ Condition:  │
-│ Image       │    │ Detect      │    │ Found?      │
-└─────────────┘    │ Objects     │    └─────────────┘
-                   └─────────────┘           │
-                                    ┌───────┴───────┐
-                                    ▼               ▼
-                             ┌───────────┐   ┌───────────┐
-                             │ Pick      │   │ Alert     │
-                             │ Object    │   │ Operator  │
-                             └───────────┘   └───────────┘
+```mermaid
+flowchart LR
+    A[Capture Image] --> B[ML Model: Detect Objects]
+    B --> C{Found?}
+    C -->|Yes| D[Pick Object]
+    C -->|No| E[Alert Operator]
 ```
 
 ---
