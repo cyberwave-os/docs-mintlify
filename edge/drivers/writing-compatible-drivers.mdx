@@ -214,3 +214,25 @@ The following open-source drivers are good starting points and reference impleme
 
 - **Camera driver** — [cyberwave-os/cyberwave-edge-camera-driver](https://github.com/cyberwave-os/cyberwave-edge-camera-driver): integrates a USB/RTSP camera as a Cyberwave twin.
 - **SO-101 arm driver** — [cyberwave-os/cyberwave-edge-so101](https://github.com/cyberwave-os/cyberwave-edge-so101): integrates the SO-101 robotic arm.
+
+## Advanced topics
+
+Once you have a working driver, these guides cover the platform features your driver can leverage:
+
+<CardGroup cols={2}>
+  <Card title="Edge Workers" icon="microchip-ai" href="/edge/drivers/edge-workers">
+    Hook-based worker modules for on-device ML inference and event-driven processing.
+  </Card>
+  <Card title="Data Wire Format" icon="binary" href="/edge/drivers/data-wire-format">
+    SDK header encoding, key expressions, and the on-wire contract for edge data channels.
+  </Card>
+  <Card title="Data Fusion Primitives" icon="merge" href="/edge/drivers/data-fusion">
+    Time-aware sensor fusion: interpolated point reads and time-window queries.
+  </Card>
+  <Card title="Synchronized Multi-Channel Hooks" icon="clock" href="/edge/drivers/data-synchronized-hooks">
+    Approximate time synchronizer that fires when samples from all listed channels arrive within tolerance.
+  </Card>
+  <Card title="Record & Replay" icon="circle-play" href="/edge/drivers/data-record-replay">
+    Capture live edge data to disk and replay it for deterministic debugging.
+  </Card>
+</CardGroup>
