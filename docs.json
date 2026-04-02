@@ -54,12 +54,7 @@
                 ]
               },
               "sdks/cloud-node",
-              "sdks/cpp-sdk",
-              "sdks/data-wire-format",
-              "sdks/data-record-replay",
-              "sdks/data-fusion",
-              "sdks/data-synchronized-hooks",
-              "sdks/edge-workers"
+              "sdks/cpp-sdk"
             ]
           },
           {
