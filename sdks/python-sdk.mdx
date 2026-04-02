@@ -95,10 +95,6 @@ robot.edit_position(x=1.0, y=0.0, z=0.5)
 robot.edit_rotation(yaw=90)
 robot.edit_scale(x=1.5, y=1.5, z=1.5)
 
-# stub: assets can also expose a short registry ID alias for ergonomic lookup.
-# Example: if a standard camera asset has alias "camera", this resolves too.
-camera = cw.twin("camera")
-
 # ──────────────────────────────────────────────
 # 3. Control joints (degrees or radians)
 # ──────────────────────────────────────────────
@@ -648,31 +644,14 @@ This calls `POST /api/v1/environments/{uuid}/preview` and returns attachment met
 
 The SDK operates across two communication layers:
 
-```
-┌─────────────────────────────────────────┐
-│             Your Python Code            │
-│         from cyberwave import ...       │
-└──────────────┬──────────┬───────────────┘
-               │          │
-       ┌───────▼──┐  ┌────▼──────┐
-       │ REST API │  │ MQTT API  │
-       │ (HTTPS)  │  │ (TCP)     │
-       └───────┬──┘  └────┬──────┘
-               │          │
-       ┌───────▼──────────▼───────────────┐
-       │        Cyberwave Cloud           │
-       │  Twins · Catalog · Workflows     │
-       └──────────────┬──────────────────-┘
-                      │ MQTT
-       ┌──────────────▼───────────────────┐
-       │        Cyberwave Edge Core       │
-       │   Hardware Drivers · Runtime     │
-       └──────────────┬──────────────────-┘
-                      │ Serial / USB / ROS
-       ┌──────────────▼───────────────────┐
-       │        Robot Hardware            │
-       │  Actuators · Sensors · MCU       │
-       └──────────────────────────────────┘
+```mermaid
+flowchart TB
+    A["Your Python Code\nfrom cyberwave import ..."] --> B["REST API (HTTPS)"]
+    A --> C["MQTT API (TCP)"]
+    B --> D["Cyberwave Cloud\nTwins · Catalog · Workflows"]
+    C --> D
+    D -->|MQTT| E["Cyberwave Edge Core\nHardware Drivers · Runtime"]
+    E -->|Serial / USB / ROS| F["Robot Hardware\nActuators · Sensors · MCU"]
 ```
 
 | Layer | Protocol | Operations |
@@ -733,3 +712,11 @@ The SDK operates across two communication layers:
     Build an edge-to-cloud vision pipeline
   </Card>
 </CardGroup>
+
+<Card
+  title="Live Teleoperation"
+  icon="gamepad"
+  href="/use-cyberwave/teleoperation"
+>
+  Control physical robots in real time via the SDK
+</Card>

@@ -11,12 +11,13 @@ description: "SDK header encoding, key expressions, and on-wire contract for edg
 
 Every sample on the Cyberwave data bus (Zenoh or filesystem) uses one framing:
 
-```
-┌──────────────────┬───────────┬───────────┬─────────────────────┬─────────────────┐
-│ header_len (u32) │ ts (f64)  │ seq (i64) │ header JSON (UTF-8) │ payload (bytes) │
-│  4 bytes, LE     │ 8 bytes   │ 8 bytes   │ variable length     │ variable length │
-└──────────────────┴───────────┴───────────┴─────────────────────┴─────────────────┘
-```
+| Field | Type | Size |
+|---|---|---|
+| `header_len` | u32, LE | 4 bytes |
+| `ts` | f64, LE | 8 bytes |
+| `seq` | i64, LE | 8 bytes |
+| header JSON | UTF-8 | variable |
+| payload | bytes | variable |
 
 - `header_len` — 4-byte LE uint32 covering `ts` + `seq` + JSON.
 - `ts` — 8-byte LE float64, acquisition timestamp (Unix epoch seconds). Binary-packed for O(1) read.

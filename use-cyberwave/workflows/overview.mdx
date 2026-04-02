@@ -141,18 +141,12 @@ for node_execution in execution.node_executions:
 
 A typical inspection workflow might include:
 
-```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│ Move to     │───▶│ Capture     │───▶│ Analyze     │
-│ Position 1  │    │ Image       │    │ Image       │
-└─────────────┘    └─────────────┘    └─────────────┘
-                                             │
-                         ┌───────────────────┴───────────────────┐
-                         ▼                                       ▼
-                  ┌─────────────┐                         ┌─────────────┐
-                  │ Pass:       │                         │ Fail:       │
-                  │ Move Next   │                         │ Alert       │
-                  └─────────────┘                         └─────────────┘
+```mermaid
+flowchart LR
+    A[Move to Position 1] --> B[Capture Image]
+    B --> C[Analyze Image]
+    C -->|Pass| D[Move Next]
+    C -->|Fail| E[Alert]
 ```
 
 ---

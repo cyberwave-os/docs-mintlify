@@ -185,22 +185,19 @@ The CI API key is a normal Cyberwave API key whose workspace membership grants W
 
 The registry uses [Harbor](https://goharbor.io/) with a Cyberwave-managed token service. When Docker needs to authenticate, the flow is:
 
-```
-Docker client
-    │
-    │  1. docker pull / push
-    ▼
-Harbor (registry.cyberwave.com)
-    │
-    │  2. returns 401 with token endpoint URL
-    ▼
-Cyberwave Token Service (api.cyberwave.com/registry/token)
-    │
-    │  3. validates CYBERWAVE_API_KEY
-    │  4. resolves workspace role
-    │  5. returns scoped JWT (pull, push, delete)
-    ▼
-Docker client retries with JWT → Harbor serves the request
+```mermaid
+sequenceDiagram
+    participant D as Docker Client
+    participant H as Harbor (registry.cyberwave.com)
+    participant T as Cyberwave Token Service
+
+    D->>H: 1. docker pull / push
+    H-->>D: 2. 401 + token endpoint URL
+    D->>T: 3. Request token with CYBERWAVE_API_KEY
+    T->>T: 4. Validate key & resolve workspace role
+    T-->>D: 5. Scoped JWT (pull, push, delete)
+    D->>H: 6. Retry with JWT
+    H-->>D: 7. Serve the request
 ```
 
 The token service is a standard Docker Registry v2 token endpoint backed by the Cyberwave auth and ACL system. Harbor handles image storage, vulnerability scanning, replication, and retention policies.
