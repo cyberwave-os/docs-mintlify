@@ -78,6 +78,31 @@ stub: In **Edit** mode, changing a twin joint updates the scene immediately, pub
 
 ---
 
+## Twin position quick actions
+
+stub: In the environment editor transform panel, **Center** resets a twin to the origin. **Above** keeps the current X and Y values and only moves the twin to `z = 1` for fast vertical placement.
+
+---
+
+## Simulate tab playground physics
+
+stub: In **Simulate → Playground**, Cyberwave now applies lightweight frontend physics with gravity and basic rigid collisions. URDF twins use their `<collision>` geometry as collision sources when available, and a fallback collider is used when collision metadata is missing.
+
+---
+
+## Start assistant from the Edit menu
+
+stub: In the 3D editor, open **Edit → Editor Assistant** to launch a built-in MCP assistant chat. The assistant can inspect and act on your environment via Cyberwave MCP tools.
+
+- The assistant automatically provisions a workspace-scoped API key for the session so you can start chatting immediately.
+- The assistant displays a **Used tools** line for each response so you can verify which MCP tools were invoked.
+
+## Live point cloud alignment
+
+stub: In **Live** mode, depth-camera point clouds now keep the viewer's existing camera-local basis (`X` lateral, `Z` depth) while still honoring the sensor pose and offset, so RealSense clouds stay vertically aligned in front of the sensor after refresh and axis migrations.
+
+---
+
 ## Clone an environment
 
 Use **File → Make a copy** to duplicate the current environment.

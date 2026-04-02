@@ -84,6 +84,123 @@ Drivers should treat `metadata["edge_configs"]` as the source of truth for per-d
 
 Read `edge_configs` from `CYBERWAVE_TWIN_JSON_FILE` at startup to obtain per-device settings without hardcoding them in the image.
 
+## Sensor data output (stub)
+
+If your driver produces sensor data (video frames, depth maps, audio, joint states, etc.), it should write that data to the **sensor data convention path** so that edge scripts and ML models can consume it locally — with zero network overhead.
+
+### The convention
+
+Write sensor data to a subfolder of the config directory that Edge Core already mounts into your container:
+
+```
+$CYBERWAVE_EDGE_CONFIG_DIR/data/{twin_uuid}/{channel}/{sensor_name}/
+```
+
+`CYBERWAVE_EDGE_CONFIG_DIR` is always set by Edge Core (defaults to `/app/.cyberwave`). `CYBERWAVE_TWIN_UUID` gives you the twin UUID.
+
+### Ring buffer (for stream data)
+
+Use this pattern for high-frequency data like video frames, depth maps, audio chunks, or point clouds.
+
+```
+data/{twin_uuid}/frames/default/
+├── ring/
+│   ├── 000000.npy
+│   ├── 000001.npy
+│   └── ...         # numbered slots, wraps around
+└── meta.json       # write pointer + format info
+```
+
+**Rules:**
+- Write `.npy` files (numpy format) to numbered slots: `{slot:06d}.npy`
+- Slot index = `write_count % buffer_size` (default buffer size: 120)
+- **Atomic writes**: write to `{slot}.npy.tmp`, then `rename()` to `{slot}.npy`
+- Update `meta.json` after each write with at least: `write_idx`, `size`, `shape`, `dtype`
+
+**Python example (camera driver):**
+
+```python
+import os, json, numpy as np
+from pathlib import Path
+
+config_dir = os.getenv("CYBERWAVE_EDGE_CONFIG_DIR", "/app/.cyberwave")
+twin_uuid = os.getenv("CYBERWAVE_TWIN_UUID")
+data_dir = Path(config_dir) / "data" / twin_uuid / "frames" / "default"
+ring_dir = data_dir / "ring"
+ring_dir.mkdir(parents=True, exist_ok=True)
+
+BUFFER_SIZE = 120
+write_idx = 0
+
+def on_frame(frame: np.ndarray, frame_count: int):
+    global write_idx
+    slot = write_idx % BUFFER_SIZE
+    tmp = ring_dir / f"{slot:06d}.npy.tmp"
+    target = ring_dir / f"{slot:06d}.npy"
+    np.save(tmp, frame)
+    tmp.rename(target)
+    meta = {"write_idx": write_idx, "size": BUFFER_SIZE,
+            "shape": list(frame.shape), "dtype": str(frame.dtype)}
+    (data_dir / "meta.json.tmp").write_text(json.dumps(meta))
+    (data_dir / "meta.json.tmp").rename(data_dir / "meta.json")
+    write_idx += 1
+```
+
+### Latest value (for state data)
+
+Use this pattern for low-frequency state data like joint positions, robot pose, or telemetry.
+
+```
+data/{twin_uuid}/joint_states/
+└── latest.json     # overwritten each update
+```
+
+**Rules:**
+- Write a single JSON file: `latest.json`
+- **Atomic writes**: write to `latest.json.tmp`, then `rename()`
+- Include a `timestamp` field
+
+**Python example (robot driver):**
+
+```python
+import os, json, time
+from pathlib import Path
+
+config_dir = os.getenv("CYBERWAVE_EDGE_CONFIG_DIR", "/app/.cyberwave")
+twin_uuid = os.getenv("CYBERWAVE_TWIN_UUID")
+data_dir = Path(config_dir) / "data" / twin_uuid / "joint_states"
+data_dir.mkdir(parents=True, exist_ok=True)
+
+def publish_joints(positions, velocities):
+    payload = {"positions": positions, "velocities": velocities,
+               "timestamp": time.time()}
+    tmp = data_dir / "latest.json.tmp"
+    tmp.write_text(json.dumps(payload))
+    tmp.rename(data_dir / "latest.json")
+```
+
+### Supported channels
+
+| Channel | Data type | Pattern | Recommended buffer size |
+|---|---|---|---|
+| `frames` | Video frames (numpy BGR uint8) | Ring buffer | 120 (~4s at 30fps) |
+| `depth` | Depth maps (numpy uint16) | Ring buffer | 120 |
+| `audio` | Audio chunks (numpy float32) | Ring buffer | 300 |
+| `pointcloud` | Point clouds (numpy Nx3 float32) | Ring buffer | 30 |
+| `joint_states` | Joint positions/velocities | Latest value | — |
+| `position` | 3D pose | Latest value | — |
+| `telemetry` | Device metrics | Latest value | — |
+
+You can define custom channels by picking any channel name and following either the ring buffer or latest value pattern.
+
+### Why this matters
+
+Edge scripts and ML models read from these exact paths to do local inference — detecting objects in camera frames, fusing depth + RGB data, monitoring joint states, etc. By following this convention your driver automatically becomes compatible with the edge scripting system, without any coupling to specific ML frameworks or script logic.
+
+### Language-agnostic
+
+This is a **filesystem convention**, not a Python API. C++, Rust, or any other language can write `.npy` files and JSON to the same paths. The Python SDK provides optional helpers (`SharedVolumeWriter`, `LatestValueWriter`) but they are not required.
+
 ## Licensing your driver
 
 You own your driver code. There are two common paths:

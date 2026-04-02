@@ -36,3 +36,26 @@ Manage edge driver containers:
 | `list` | List running driver containers (`--all` includes exited) |
 | `start` | Start a stopped driver container |
 | `stop` | Stop a running driver container |
+
+## macOS hardware bridge (stub)
+
+When Edge Core runs on macOS, Linux `--device` mappings in Docker params cannot
+directly expose host camera/serial hardware to driver containers. Use a host
+bridge process and forward into Docker via `host.docker.internal`.
+
+- Optional host hook env var:
+  - `CYBERWAVE_MACOS_DEVICE_BRIDGE_COMMAND`
+- Command template variables:
+  - `{host_device}`, `{container_device}`, `{twin_uuid}`, `{container_name}`, `{config_dir}`
+- Bridge command can return a resolved source (`resolved_device=...` or JSON) so
+  Edge Core can inject `CYBERWAVE_METADATA_VIDEO_DEVICE` automatically.
+- Optional macOS behavior:
+  - `CYBERWAVE_MACOS_STRIP_VIDEO_DEVICE_PARAMS=true` removes Linux-only
+    `--device /dev/video*` mappings before container start when a non-`/dev`
+    source is resolved.
+- For camera twins, Edge Core can derive default macOS camera bridge candidates
+  even without explicit `--device` params, enabling minimal default driver
+  metadata to work.
+- Use platform-specific driver keys in `metadata.drivers` (for example
+  `darwin-arm64`, `darwin`, `macos`) to provide macOS-specific params while
+  keeping `default` for Linux.

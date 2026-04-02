@@ -1,0 +1,100 @@
+---
+title: "Data Wire Format"
+description: "SDK header encoding, key expressions, and on-wire contract for edge data channels"
+---
+
+<Note>
+**stub** — This page will be curated before publishing. Content below reflects the current implementation.
+</Note>
+
+## Wire frame layout
+
+Every sample on the Cyberwave data bus (Zenoh or filesystem) uses one framing:
+
+```
+┌──────────────────┬───────────┬───────────┬─────────────────────┬─────────────────┐
+│ header_len (u32) │ ts (f64)  │ seq (i64) │ header JSON (UTF-8) │ payload (bytes) │
+│  4 bytes, LE     │ 8 bytes   │ 8 bytes   │ variable length     │ variable length │
+└──────────────────┴───────────┴───────────┴─────────────────────┴─────────────────┘
+```
+
+- `header_len` — 4-byte LE uint32 covering `ts` + `seq` + JSON.
+- `ts` — 8-byte LE float64, acquisition timestamp (Unix epoch seconds). Binary-packed for O(1) read.
+- `seq` — 8-byte LE int64, per-channel sequence number for drop detection.
+- Header JSON — compact UTF-8 JSON with at least `content_type` and channel-specific metadata.
+- Payload — raw bytes (numpy buffer) or UTF-8 JSON.
+
+The `HeaderTemplate` class pre-encodes the JSON once and splices only `ts`/`seq` per sample (&lt;500 ns overhead).
+
+## Key expression pattern
+
+```
+cw/{twin_uuid}/data/{channel}/{sensor_name}
+```
+
+| Segment       | Description                                           |
+|---------------|-------------------------------------------------------|
+| `cw`          | Prefix (configurable via `BackendConfig.key_prefix`). |
+| `twin_uuid`   | UUID-4 of the digital twin.                           |
+| `data`        | Fixed literal.                                        |
+| `channel`     | Channel name (`frames`, `joint_states`, etc.).        |
+| `sensor_name` | Optional qualifier (`default`, `wrist`, `left_arm`).  |
+
+## Usage
+
+### Encoding / decoding with HeaderTemplate (hot path)
+
+```python
+from cyberwave.data import HeaderTemplate, decode
+
+tmpl = HeaderTemplate("numpy/ndarray", shape=(480, 640, 3), dtype="uint8")
+wire = tmpl.pack(frame_bytes, ts=time.time())  # <500ns header overhead
+
+header, payload = decode(wire)
+```
+
+### One-shot encode / decode
+
+```python
+from cyberwave.data import HeaderMeta, encode, decode
+
+hdr = HeaderMeta(content_type="application/json", ts=time.time())
+wire = encode(hdr, b'{"x": 1.0}')
+header, payload = decode(wire)
+```
+
+### Building and parsing key expressions
+
+```python
+from cyberwave.data import build_key, parse_key, is_valid_key
+
+key = build_key("550e8400-e29b-41d4-a716-446655440000", "frames", "default")
+# → "cw/550e8400-e29b-41d4-a716-446655440000/data/frames/default"
+
+ke = parse_key(key)
+assert ke.channel == "frames"
+assert ke.is_stream is True
+
+assert is_valid_key(key)
+```
+
+## Well-known channels
+
+| Channel             | Pattern      | Encoding |
+|---------------------|-------------|----------|
+| `frames`            | Stream       | binary   |
+| `depth`             | Stream       | binary   |
+| `audio`             | Stream       | binary   |
+| `pointcloud`        | Stream       | binary   |
+| `imu`               | Stream       | JSON     |
+| `force_torque`      | Stream       | JSON     |
+| `joint_states`      | Latest value | JSON     |
+| `position`          | Latest value | JSON     |
+| `attitude`          | Latest value | JSON     |
+| `gps`               | Latest value | JSON     |
+| `end_effector_pose` | Latest value | JSON     |
+| `gripper_state`     | Latest value | JSON     |
+| `map`               | Latest value | binary   |
+| `battery`           | Latest value | JSON     |
+| `temperature`       | Latest value | JSON     |
+| `telemetry`         | Latest value | JSON     |

@@ -1,0 +1,137 @@
+---
+title: "Prepare Your Raspberry Pi"
+sidebarTitle: "Raspberry Pi Setup"
+description: "Flash the Cyberwave OS image to an SD card, configure Wi-Fi via the captive portal, and SSH into your Pi."
+icon: "microchip"
+---
+
+<Warning>
+**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
+</Warning>
+
+The Cyberwave Raspberry Pi image is a pre-built SD card image based on Raspberry Pi OS Lite (Bookworm) with Wi-Fi onboarding, SSH, Docker, and mDNS pre-configured out of the box. Insert the SD card and power on — the Pi is ready to use without any manual setup.
+
+**What's included:**
+
+- Raspberry Pi OS Lite (Bookworm) — available for **64-bit (arm64)** and **32-bit (armhf)**
+- SSH enabled on first boot (`pi` / `cyberwave`)
+- Hostname `cyberwave`, reachable at `cyberwave.local` via mDNS
+- Docker Engine pre-installed
+- Wi-Fi captive portal onboarding ([WiFi Connect](https://github.com/balena-os/wifi-connect))
+
+---
+
+## Step 1: Download and Flash
+
+Choose the variant that matches your Raspberry Pi model:
+
+| Variant | Compatible models |
+|---------|-------------------|
+| **arm64** (64-bit) | Raspberry Pi 4, 5, Zero 2 W |
+| **armhf** (32-bit) | Raspberry Pi 3, Zero W, Zero 2 W |
+
+<Tabs>
+  <Tab title="UI (Raspberry Pi Imager)">
+    The Raspberry Pi Imager handles downloading, flashing, and verification in one step. Works on macOS, Windows, and Linux.
+
+    1. Download and install [Raspberry Pi Imager](https://www.raspberrypi.com/software/).
+    2. In your browser download the image for your board:
+       - [Raspberry Pi 4, 5, Zero 2 W]("https://static.cyberwave.com/iso_images/cyberwave-rpi-arm64-latest.img.xz")
+       - [Raspberry Pi 3, Zero W]("https://static.cyberwave.com/iso_images/cyberwave-rpi-armhf-latest.img.xz")
+    3. Insert your SD card.
+    4. Open Raspberry Pi Imager.
+    5. Click **Choose OS** → scroll to the bottom → **Use custom**, then select the `.img.xz` file you downloaded. No need to decompress it first.
+    6. Click **Choose Storage** and select your SD card.
+    7. Click **Next**. When asked about OS customisation, choose **No** — the Cyberwave image already has SSH and a default user pre-configured.
+    8. Click **Write** and wait for the flash and verification to complete.
+
+    <Warning>
+    Double-check the storage device before writing. All data on the selected device will be permanently erased.
+    </Warning>
+  </Tab>
+
+  <Tab title="Terminal">
+    Download the image with `wget`, decompress it, then write it to the SD card with `dd`.
+
+    ```bash
+    # 64-bit — Raspberry Pi 4 / 5 / Zero 2 W
+    wget -O cyberwave-rpi-arm64.img.xz "https://static.cyberwave.com/iso_images/cyberwave-rpi-arm64-latest.img.xz"
+
+    # 32-bit — Raspberry Pi 3 / Zero W
+    wget -O cyberwave-rpi-armhf.img.xz "https://static.cyberwave.com/iso_images/cyberwave-rpi-armhf-latest.img.xz"
+    ```
+
+    Decompress the image:
+
+    ```bash
+    xz -d cyberwave-rpi-arm64.img.xz   # or armhf
+    ```
+
+    **macOS:**
+
+    ```bash
+    # Identify your SD card by size
+    diskutil list
+
+    sudo diskutil unmountDisk /dev/diskN
+    sudo dd if=cyberwave-rpi-arm64.img of=/dev/rdiskN bs=4m
+    ```
+
+    **Linux:**
+
+    ```bash
+    # Identify your SD card by size
+    lsblk
+
+    sudo dd if=cyberwave-rpi-arm64.img of=/dev/sdX bs=4M status=progress conv=fsync
+    ```
+
+    Replace `/dev/diskN` (macOS) or `/dev/sdX` (Linux) with your actual SD card device.
+
+    <Warning>
+    Using the wrong device will overwrite that disk entirely. Confirm the device name carefully before running `dd`.
+    </Warning>
+  </Tab>
+</Tabs>
+
+---
+
+## Step 2: Configure Wi-Fi
+
+1. Insert the SD card into the Raspberry Pi and power it on.
+2. **If the Pi already knows a Wi-Fi network** it will join it automatically — skip to Step 4.
+3. Otherwise the Pi creates a setup hotspot:
+   - **SSID:** `Cyberwave-Setup`
+   - **Password:** `cyberwave`
+4. Connect your laptop or phone to `Cyberwave-Setup`.
+5. The captive portal opens automatically on most phones. On a laptop, open a browser and go to `http://192.168.50.1`.
+
+   <Tip>
+   Use **Safari** or **Firefox** for this step. Chrome blocks local HTTP pages when the active network has no internet, which prevents the portal from loading. On macOS, a **"Sign in to network"** notification may appear — clicking it opens the portal directly.
+   </Tip>
+
+6. Select your Wi-Fi network from the list and enter the password.
+7. The Pi connects, then reboots automatically.
+
+---
+
+## Step 3: SSH into the Pi
+
+After the reboot, the Pi is on your local network and reachable via mDNS:
+
+```bash
+ssh pi@cyberwave.local
+# Password: cyberwave
+```
+
+<Note>
+If `cyberwave.local` does not resolve, look up the Pi's IP address in your router's DHCP table and connect directly:
+
+```bash
+ssh pi@<pi-ip-address>
+```
+</Note>
+
+<Check>
+You are now connected to your Raspberry Pi. Docker is installed and running, SSH is open, and the Pi is reachable at `cyberwave.local` on your local network.
+</Check>

@@ -95,6 +95,10 @@ robot.edit_position(x=1.0, y=0.0, z=0.5)
 robot.edit_rotation(yaw=90)
 robot.edit_scale(x=1.5, y=1.5, z=1.5)
 
+# stub: assets can also expose a short registry ID alias for ergonomic lookup.
+# Example: if a standard camera asset has alias "camera", this resolves too.
+camera = cw.twin("camera")
+
 # ──────────────────────────────────────────────
 # 3. Control joints (degrees or radians)
 # ──────────────────────────────────────────────

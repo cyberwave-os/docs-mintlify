@@ -1,5 +1,7 @@
 # AssetUpdateSchema
 
+> stub: Admins can set `registry_id_alias` to define a short asset identifier such as `camera`.
+
 
 ## Properties
 
@@ -11,5 +13,6 @@ Name | Type | Description | Notes
 **workspace_uuid** | **str** |  | [optional] 
 **metadata** | **Dict[str, object]** |  | [optional] 
 **registry_id** | **str** |  | [optional] 
+**registry_id_alias** | **str** | Short alias slug resolved anywhere an asset identifier is accepted. Admin-only. | [optional] 
 **universal_schema** | **Dict[str, object]** |  | [optional] 
 

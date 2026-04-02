@@ -1,0 +1,38 @@
+---
+title: "CLI Shell Completion (Stub)"
+description: "Enable persistent bash/zsh autocompletion for cyberwave-cli."
+icon: "terminal"
+---
+
+## Status
+
+This page is a **stub** and will be expanded with complete shell-specific examples.
+
+## One-step setup
+
+```bash
+cyberwave completion install
+```
+
+This command auto-detects `bash` or `zsh`, writes an idempotent completion block
+to your shell RC file, and prints the file to source.
+
+## Explicit shell setup
+
+```bash
+cyberwave completion install --shell bash
+cyberwave completion install --shell zsh
+```
+
+## Script generation
+
+```bash
+cyberwave completion generate --shell bash
+cyberwave completion generate --shell zsh
+```
+
+## Troubleshooting
+
+- Shell not detected: pass `--shell bash` or `--shell zsh`.
+- RC file not writable: use `--rc-file <path>` and source it manually.
+- Existing setup: installer is idempotent and reports when already configured.
