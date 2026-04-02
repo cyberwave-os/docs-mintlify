@@ -53,6 +53,7 @@
                     "edge/drivers/alerts"
                   ]
                 },
+                "sdks/cloud-node",
                 "sdks/cpp-sdk"
               ]
             },

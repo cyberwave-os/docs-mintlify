@@ -1,0 +1,399 @@
+---
+title: "Cloud Node"
+description: "Turn any GPU machine into a Cyberwave-ready compute node for inference, training, and simulation"
+icon: "cloud"
+---
+
+import EarlyAccess from "/snippets/early-access.mdx";
+
+<EarlyAccess />
+
+## Overview
+
+The Cyberwave Cloud Node turns any computer into a managed compute instance that receives inference, training, and simulation commands from the Cyberwave platform. It connects outbound to the Cyberwave MQTT broker, so there is no need to expose ports, configure public URLs, or punch holes in firewalls.
+
+| | |
+|---|---|
+| **Communication** | Outbound MQTT — works behind NAT and firewalls |
+| **Workload model** | Each command runs as an independent OS process that survives node restarts |
+| **Configuration** | `cyberwave.yml` at the root of your repo, or environment variables |
+| **Identity** | Backend-assigned UUID and slug, persisted locally for re-registration |
+
+---
+
+## Installation
+
+<Tabs>
+  <Tab title="pip (Python package)">
+    ```bash
+    pip install cyberwave-cloud-node
+    ```
+  </Tab>
+  <Tab title="apt (compiled binary)">
+    ```bash
+    curl -fsSL https://cyberwave.com/install-cloud-node.sh | sudo bash
+    ```
+
+    This adds the Cyberwave APT repository and installs the `cyberwave-cloud-node` package.
+  </Tab>
+</Tabs>
+
+---
+
+## Quick Start
+
+<Steps>
+  <Step title="Add a cyberwave.yml to your repo">
+    Create a `cyberwave.yml` at the root of your project:
+
+    ```yaml
+    cyberwave-cloud-node:
+      install_script: ./install.sh
+      inference: python ./inference.py --params {body}
+      simulate: python ./simulate.py --params {body}
+      training: python ./training.py --params {body}
+      profile_slug: gpu-a100
+      heartbeat_interval: 30
+    ```
+
+    The `{body}` placeholder is replaced at runtime with the JSON parameters received from MQTT.
+  </Step>
+  <Step title="Set your API key">
+    ```bash
+    export CYBERWAVE_API_KEY=your-token-here
+    ```
+  </Step>
+  <Step title="Start the node">
+    ```bash
+    cyberwave-cloud-node start
+    ```
+  </Step>
+</Steps>
+
+The Cloud Node will:
+
+1. Run the `install_script` and report failures
+2. Register with the backend to get a UUID and slug
+3. Connect to MQTT and start accepting commands
+4. Send periodic heartbeats
+5. Execute workloads as independent OS processes and collect results on completion
+
+---
+
+## Authentication
+
+The Cloud Node needs an API key to communicate with Cyberwave. Credentials are resolved in this order:
+
+1. **Environment variable** — `CYBERWAVE_API_KEY`
+2. **`.env` file** in the current directory
+3. **`.env` file** at `~/.cyberwave/.env` (shared config)
+4. **Stored credentials** from `cyberwave-cli` login (`~/.cyberwave/credentials.json`)
+
+```bash
+# .env
+CYBERWAVE_API_KEY=your-token
+CYBERWAVE_WORKSPACE_SLUG=my-workspace
+```
+
+If you have already logged in with `cyberwave-cli`, the Cloud Node uses those credentials automatically.
+
+<Note>
+Generate an API key from your [Profile page](https://cyberwave.com/profile) → **API Tokens**.
+</Note>
+
+---
+
+## Configuration
+
+### cyberwave.yml
+
+Place this file at the root of your project. All fields except the command templates are optional.
+
+```yaml
+cyberwave-cloud-node:
+  install_script: ./install.sh          # runs once on startup
+  inference: python ./inference.py --params {body}
+  simulate: python ./simulate.py --params {body}
+  training: python ./training.py --params {body}
+  profile_slug: gpu-a100                # default: "default"
+  heartbeat_interval: 30                # seconds, default: 30
+  mqtt_host: mqtt.cyberwave.com         # default: mqtt.cyberwave.com
+  mqtt_port: 1883                       # default: 1883
+```
+
+### Environment Variables
+
+All settings can also be provided via environment variables. They override `cyberwave.yml` values.
+
+**Required:**
+
+| Variable | Description |
+|---|---|
+| `CYBERWAVE_API_KEY` | Your Cyberwave API token |
+
+**API and Workspace:**
+
+| Variable | Default | Description |
+|---|---|---|
+| `CYBERWAVE_WORKSPACE_SLUG` | — | Workspace slug |
+| `CYBERWAVE_INSTANCE_SLUG` | — | Slug hint for automated deployments |
+| `CYBERWAVE_BASE_URL` | `https://api.cyberwave.com` | API base URL |
+
+**MQTT:**
+
+| Variable | Default | Description |
+|---|---|---|
+| `CYBERWAVE_MQTT_HOST` | `mqtt.cyberwave.com` | MQTT broker host |
+| `CYBERWAVE_MQTT_PORT` | `1883` | MQTT broker port |
+| `CYBERWAVE_MQTT_USERNAME` | — | MQTT username if required |
+| `CYBERWAVE_MQTT_PASSWORD` | — | MQTT password if required |
+| `CYBERWAVE_ENVIRONMENT` | — | Environment prefix for MQTT topics |
+
+**Commands (alternative to cyberwave.yml):**
+
+| Variable | Description |
+|---|---|
+| `CYBERWAVE_INSTALL_SCRIPT` | Install script command |
+| `CYBERWAVE_INFERENCE_CMD` | Inference command template |
+| `CYBERWAVE_SIMULATE_CMD` | Simulation command template |
+| `CYBERWAVE_TRAINING_CMD` | Training command template |
+| `CYBERWAVE_PROFILE_SLUG` | Node profile slug |
+| `CYBERWAVE_HEARTBEAT_INTERVAL` | Heartbeat interval in seconds |
+
+---
+
+## CLI Usage
+
+```bash
+# Start with defaults (reads cyberwave.yml)
+cyberwave-cloud-node start
+
+# With a slug hint (backend may assign a different one)
+cyberwave-cloud-node start --slug my-gpu-node
+
+# Custom config file
+cyberwave-cloud-node start --config ./path/to/cyberwave.yml
+
+# Override profile
+cyberwave-cloud-node start --profile gpu-a100
+
+# Custom MQTT broker
+cyberwave-cloud-node start --mqtt-host localhost --mqtt-port 1883
+
+# Verbose logging
+cyberwave-cloud-node start -v
+```
+
+<Info>
+The `--slug` parameter is a hint. The backend owns identity assignment and may use your hint or assign a different slug.
+</Info>
+
+---
+
+## Programmatic Usage
+
+```python
+from cyberwave_cloud_node import CloudNode, CloudNodeConfig
+
+# From config file (recommended)
+node = CloudNode.from_config_file()
+node.run()
+
+# With a slug hint
+node = CloudNode.from_config_file(slug="my-gpu-node")
+node.run()
+
+# From environment variables
+node = CloudNode.from_env()
+node.run()
+
+# Fully programmatic
+config = CloudNodeConfig(
+    install_script="./install.sh",
+    inference="python inference.py --params {body}",
+    training="python train.py --params {body}",
+    profile_slug="gpu-a100",
+    heartbeat_interval=30,
+    mqtt_host="mqtt.cyberwave.com",
+    mqtt_port=1883,
+)
+node = CloudNode(config=config, slug="my-gpu-node")
+node.run()
+```
+
+---
+
+## Process-Based Workloads
+
+Training and inference jobs run as **independent OS processes** that survive Cloud Node restarts. This means you can upgrade or restart the Cloud Node without killing a running training job.
+
+### Lifecycle
+
+1. **Command arrives** via MQTT — Cloud Node spawns a detached subprocess (`start_new_session=True`)
+2. **Output streams** to log files in `~/.cyberwave/workload_logs/`
+3. **Monitor loop** checks every 5 seconds, collects results when the process finishes, and publishes status back via MQTT
+4. **On shutdown** (Ctrl+C / SIGTERM) — the node stops accepting new commands and exits immediately; running workloads continue in the background
+
+### Output Files
+
+```
+~/.cyberwave/workload_logs/
+├── training_<request_id>.stdout.log
+├── training_<request_id>.stderr.log
+├── inference_<request_id>.stdout.log
+└── inference_<request_id>.stderr.log
+```
+
+Logs are also streamed to the backend in real-time for live monitoring.
+
+---
+
+## Instance Identity
+
+After registration, the backend assigns a UUID and slug. This identity is persisted at `~/.cyberwave/instance_identity.json` so the node can re-register with the same identity after a restart.
+
+---
+
+## MQTT Topics
+
+**Command topics** (the node subscribes to these):
+
+| Topic | Description |
+|---|---|
+| `cyberwave/cloud-node/{instance_uuid}/command` | Commands addressed by UUID |
+| `cyberwave/cloud-node/{slug}/command` | Commands addressed by slug |
+
+**Response topic** (the node publishes to):
+
+| Topic | Description |
+|---|---|
+| `cyberwave/cloud-node/{instance_uuid}/response` | Command responses and workload results |
+
+---
+
+## Commands
+
+### Sending a Command
+
+```json
+{
+  "command": "inference",
+  "request_id": "unique-request-id",
+  "params": {
+    "model": "gpt-4",
+    "input": "Hello world"
+  }
+}
+```
+
+| Command | Description |
+|---|---|
+| `inference` | Run the inference command |
+| `simulate` | Run the simulation command |
+| `training` | Run the training command |
+| `status` | Get node status and active workloads |
+| `cancel` | Cancel a running workload by PID or request_id |
+
+### Response Format
+
+```json
+{
+  "status": "ok",
+  "request_id": "unique-request-id",
+  "slug": "my-gpu-node",
+  "instance_uuid": "abc-123",
+  "output": "Command output here"
+}
+```
+
+On error, `status` is `"error"` and an `error` field replaces `output`.
+
+### Checking Status
+
+Send a `status` command to see active workloads:
+
+```json
+{
+  "slug": "my-gpu-node",
+  "instance_uuid": "abc-123",
+  "is_busy": true,
+  "active_workloads": [
+    {
+      "pid": 12345,
+      "type": "training",
+      "request_id": "abc-123",
+      "running_for_seconds": 3600
+    }
+  ]
+}
+```
+
+### Cancelling Workloads
+
+Cancel by PID or by the original workload `request_id`:
+
+<Tabs>
+  <Tab title="Cancel by PID">
+    ```json
+    {
+      "command": "cancel",
+      "request_id": "unique-request-id",
+      "params": { "pid": 12345 }
+    }
+    ```
+  </Tab>
+  <Tab title="Cancel by request_id">
+    ```json
+    {
+      "command": "cancel",
+      "request_id": "unique-request-id",
+      "params": { "workload_request_id": "original-training-request-id" }
+    }
+    ```
+  </Tab>
+  <Tab title="Force kill">
+    ```json
+    {
+      "command": "cancel",
+      "request_id": "unique-request-id",
+      "params": { "pid": 12345, "signal": "SIGKILL" }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+Supported signals:
+
+| Signal | Behavior |
+|---|---|
+| `SIGTERM` (default) | Graceful termination, allows cleanup |
+| `SIGINT` | Interrupt (like Ctrl+C) |
+| `SIGKILL` | Immediate force kill |
+
+---
+
+## Related Resources
+
+<CardGroup cols={3}>
+  <Card
+    title="API Key"
+    icon="key"
+    href="https://cyberwave.com/profile"
+  >
+    Generate your API key
+  </Card>
+  <Card
+    title="Python SDK"
+    icon="python"
+    href="/sdks/python-sdk"
+  >
+    Control twins and robots from Python
+  </Card>
+  <Card
+    title="Edge Overview"
+    icon="microchip"
+    href="/edge/overview"
+  >
+    Run Cyberwave on edge devices
+  </Card>
+</CardGroup>
