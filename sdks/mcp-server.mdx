@@ -33,23 +33,12 @@ When you connect the Cyberwave MCP server to an AI agent:
 4. The MCP server translates the tool call into the corresponding Cyberwave REST API operation
 5. Results are returned to the agent, which can reason about them and decide what to do next
 
-```
-You (natural language)
-    │
-    ▼
-AI Agent (Claude, GPT, Gemini, Cursor, etc.)
-    │
-    │  JSON-RPC 2.0 tool calls
-    ▼
-Cyberwave MCP Server
-    │
-    │  REST API (HTTPS)
-    ▼
-Cyberwave Cloud Backend
-    │
-    │  MQTT
-    ▼
-Edge Core → Robot Hardware
+```mermaid
+flowchart TB
+    A["You (natural language)"] --> B["AI Agent\nClaude, GPT, Gemini, Cursor, etc."]
+    B -->|JSON-RPC 2.0 tool calls| C[Cyberwave MCP Server]
+    C -->|REST API| D[Cyberwave Cloud Backend]
+    D -->|MQTT| E["Edge Core → Robot Hardware"]
 ```
 
 ---
