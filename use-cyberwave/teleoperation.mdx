@@ -30,16 +30,11 @@ Teleoperation requires a physical robot connected through [Cyberwave Edge](/edge
   </Card>
 </CardGroup>
 
-```
-┌───────────────┐    MQTT / WebRTC     ┌───────────────┐    Serial / USB    ┌───────────────┐
-│   Operator    │ ◄──────────────────► │   Cyberwave   │ ◄────────────────► │    Robot      │
-│   Browser     │   commands + video   │   Cloud       │   driver commands  │   Hardware    │
-└───────────────┘                      └───────────────┘                    └───────────────┘
-                                              ▲
-                                              │ MQTT
-                                       ┌──────┴──────┐
-                                       │  Edge Core  │
-                                       └─────────────┘
+```mermaid
+flowchart LR
+    A["Operator\nBrowser"] <-->|"MQTT / WebRTC\ncommands + video"| B["Cyberwave\nCloud"]
+    B <-->|"Serial / USB\ndriver commands"| C["Robot\nHardware"]
+    D[Edge Core] -->|MQTT| B
 ```
 
 ---

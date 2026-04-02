@@ -115,18 +115,12 @@ Each execution tracks status at both the workflow level and individual node leve
 
 A typical inspection workflow that captures an image, runs detection, and branches based on results:
 
-```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│ Move to     │───▶│ Capture     │───▶│ Analyze     │
-│ Position 1  │    │ Image       │    │ Image       │
-└─────────────┘    └─────────────┘    └─────────────┘
-                                             │
-                         ┌───────────────────┴───────────────────┐
-                         ▼                                       ▼
-                  ┌─────────────┐                         ┌─────────────┐
-                  │ Pass:       │                         │ Fail:       │
-                  │ Move Next   │                         │ Alert       │
-                  └─────────────┘                         └─────────────┘
+```mermaid
+flowchart LR
+    A[Move to Position 1] --> B[Capture Image]
+    B --> C[Analyze Image]
+    C -->|Pass| D[Move Next]
+    C -->|Fail| E[Alert]
 ```
 
 ---
