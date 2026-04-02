@@ -1,14 +1,18 @@
 ---
-title: "Teleoperation Latency"
+title: "Live Teleoperation Latency"
 description: "Expected and unavoidable latency during live teleoperation."
 icon: "gauge-high"
 ---
 
+<Warning>
+**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
+</Warning>
+
 ## Why delay can appear in live teleoperation
 
-In [Live Teleoperation](/use-cyberwave/teleoperation), a small delay between:
+In **Live** teleoperation, a small delay between:
 - operator input and physical robot motion,
-- [digital twin](/use-cyberwave/digital-twins) motion in the dashboard, and
+- digital twin motion in the dashboard, and
 - camera/video stream
 
 is expected and, in practice, unavoidable.
@@ -16,8 +20,8 @@ is expected and, in practice, unavoidable.
 ## Why this happens
 
 These data paths are real-time but not identical:
-- Robot commands and telemetry pass through [Edge Core](/edge/overview), network transport, and cloud update pipelines.
-- Video passes through capture, encoding, WebRTC transport, decoding, and rendering.
+- Robot commands and telemetry pass through edge compute, network transport, and cloud update pipelines.
+- Video passes through capture, encoding, transport, decoding, and rendering.
 - Browser rendering uses independent frame timing and buffering for 3D state and video.
 
 Because each path has different buffering and jitter behavior, perfect frame-by-frame alignment is not guaranteed.
@@ -31,24 +35,3 @@ Because each path has different buffering and jitter behavior, perfect frame-by-
 ## Current status
 
 This behavior is currently considered **expected** for Live teleoperation workflows.
-
----
-
-## Related
-
-<CardGroup cols={2}>
-  <Card
-    title="Live Teleoperation"
-    icon="gamepad"
-    href="/use-cyberwave/teleoperation"
-  >
-    Overview of teleoperation modes and control methods
-  </Card>
-  <Card
-    title="Cyberwave Edge"
-    icon="microchip"
-    href="/edge/overview"
-  >
-    The edge layer that bridges hardware to the cloud
-  </Card>
-</CardGroup>
