@@ -1,0 +1,79 @@
+---
+title: "Record & Replay"
+description: "Capture live edge data to disk and replay it for deterministic debugging"
+---
+
+{/* stub — content will be curated before publishing */}
+
+## Overview
+
+The SDK data layer includes `record()` and `replay()` utilities that let you capture live samples to disk and replay them later. Replayed samples flow through the same backend as live data, re-triggering any active hooks and subscribers.
+
+## Quick start
+
+```python
+from cyberwave.data import get_backend
+from cyberwave.data.recording import record, replay
+
+backend = get_backend()
+
+# Record live samples
+with record(backend, ["frames/default", "depth"], "/tmp/session1"):
+    # ... samples flow through the backend while this block runs
+    pass
+
+# Replay recorded samples
+result = replay(backend, "/tmp/session1", speed=1.0)
+print(f"Replayed {result.samples_published} samples")
+```
+
+## Recording
+
+`record()` returns a `RecordingSession` context manager. It subscribes to the specified channels using `policy="fifo"` and writes every incoming sample to per-channel `.bin` files inside the target directory.
+
+```python
+# Record with limits
+session = record(
+    backend,
+    channels=["frames/default", "joint_states"],
+    path="/data/recordings/session_001",
+    max_samples=1000,       # stop after 1000 samples
+    max_duration_s=60.0,    # or after 60 seconds
+)
+# ... later
+manifest = session.stop()
+```
+
+The recording directory contains:
+
+| File | Contents |
+|------|----------|
+| `manifest.json` | Version, channels, timestamps, sample count |
+| `<channel>.bin` | Binary stream of timestamped sample entries |
+
+## Replay
+
+`replay()` reads a recording directory and publishes each sample back through the backend, preserving inter-sample timing.
+
+```python
+from cyberwave.data.recording import replay
+
+# Real-time replay
+replay(backend, "/data/recordings/session_001", speed=1.0)
+
+# 2x speed
+replay(backend, "/data/recordings/session_001", speed=2.0)
+
+# As fast as possible (no sleep between samples)
+replay(backend, "/data/recordings/session_001", speed=0)
+
+# Replay specific channels only
+replay(backend, "/data/recordings/session_001", channels=["frames/default"])
+
+# Loop continuously
+replay(backend, "/data/recordings/session_001", loop=True)
+```
+
+## Portability
+
+Recordings are plain files with no backend-specific data. You can record on one backend (e.g. Zenoh) and replay on another (e.g. filesystem), or transfer recordings between machines.

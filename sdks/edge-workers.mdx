@@ -1,0 +1,90 @@
+---
+title: "Edge Workers"
+description: "Hook-based worker modules for on-device ML inference and event-driven processing at the edge."
+icon: "microchip-ai"
+---
+
+<Warning>
+**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
+</Warning>
+
+## Overview
+
+Edge workers are Python modules that run inside worker containers on edge devices. Each worker declares **hooks** (callbacks for sensor data) and **model loading** using the `cw` client—no imports needed.
+
+**Architecture:** one edge device → one worker container → one runtime → many worker modules.
+
+## Quick Example
+
+```python
+# /app/workers/detect_people.py — loaded by the runtime automatically
+
+model = cw.models.load("yolov8n")
+twin_uuid = cw.config.twin_uuid
+
+@cw.on_frame(twin_uuid, sensor="front")
+def detect_people(frame, ctx):
+    results = model.predict(frame, classes=["person"], confidence=0.5)
+    for det in results:
+        if det.area_ratio > 0.3:
+            cw.publish_event(twin_uuid, "person_too_close", {
+                "detections": len(results),
+                "frame_ts": ctx.timestamp,
+            })
+```
+
+## Hook Decorators
+
+Register callbacks for sensor streams. Hooks are passive at import time—the runtime activates them.
+
+| Decorator | Channel | Sensor kwarg |
+|---|---|---|
+| `@cw.on_frame(uuid, sensor=)` | `frames/{sensor}` | `sensor` |
+| `@cw.on_depth(uuid, sensor=)` | `depth/{sensor}` | `sensor` |
+| `@cw.on_audio(uuid, sensor=)` | `audio/{sensor}` | `sensor` |
+| `@cw.on_pointcloud(uuid, sensor=)` | `pointcloud/{sensor}` | `sensor` |
+| `@cw.on_lidar(uuid, sensor=)` | `lidar/{sensor}` | `sensor` |
+| `@cw.on_imu(uuid)` | `imu` | — |
+| `@cw.on_joint_states(uuid)` | `joint_states` | — |
+| `@cw.on_gps(uuid)` | `gps` | — |
+| `@cw.on_battery(uuid)` | `battery` | — |
+| `@cw.on_data(uuid, channel)` | custom | — |
+
+All callbacks receive `(sample_payload, ctx)` where `ctx` is a `HookContext` with `timestamp`, `channel`, `sensor_name`, `twin_uuid`, and `metadata`.
+
+## Model Loading
+
+```python
+model = cw.models.load("yolov8n")                    # auto-detect runtime
+model = cw.models.load("my-model", runtime="ultralytics", device="cuda:0")
+result = model.predict(frame, confidence=0.5, classes=["person"])
+```
+
+`cw.models.load()` caches models — safe to call at module level.
+
+## Publishing Events
+
+```python
+cw.publish_event(twin_uuid, "event_type", {"key": "value"})
+```
+
+Publishes to `cyberwave/twin/{uuid}/event` via MQTT. Payload matches the backend `mqtt_consumer.handle_business_event()` schema.
+
+## Configuration
+
+| Env var | Purpose |
+|---|---|
+| `CYBERWAVE_TWIN_UUID` | Twin UUID, available as `cw.config.twin_uuid` |
+| `CYBERWAVE_WORKERS_DIR` | Workers directory (default: `/app/workers`) |
+| `CYBERWAVE_MODEL_DIR` | Model weights directory (default: `/app/models`) |
+| `CYBERWAVE_MODEL_DEVICE` | Default inference device (default: auto-detect) |
+
+## Runtime Entrypoint
+
+Worker modules never call `cw.run_edge_workers()` themselves. The container entrypoint does:
+
+```python
+from cyberwave import Cyberwave
+cw = Cyberwave(api_key=...)
+cw.run_edge_workers()  # loads workers, wires hooks, blocks
+```

@@ -56,7 +56,7 @@ Edge Core → Robot Hardware
 
 ## Available Tools
 
-The MCP server exposes 27 tools across six categories.
+The MCP server exposes 30 tools across six categories.
 
 ### Discovery
 
@@ -66,7 +66,7 @@ The MCP server exposes 27 tools across six categories.
 | `cw_list_projects` | List projects, optionally filtered by workspace |
 | `cw_list_environments` | List environments, optionally filtered by project |
 | `cw_list_twins` | List digital twins, optionally filtered by environment |
-| `cw_list_assets` | List assets, optionally filtered by workspace |
+| `cw_search_catalog` | Search asset catalog by text query |
 | `cw_list_areas` | List areas (zones/regions) in an environment |
 
 ### Inspect
@@ -103,7 +103,9 @@ All action tools default to `execute=false` (preview mode). Set `execute=true` t
 | Tool | Description |
 |---|---|
 | `cw_create_environment` | Create a new environment in a workspace/project |
-| `cw_create_twin` | Create a new digital twin from the asset catalog |
+| `cw_add_twin_to_environment` | Add a twin to an environment from a catalog `registry_id` |
+| `cw_create_urdf_asset_from_zip` | Create a new asset from a URDF ZIP package |
+| `cw_set_asset_capabilities` | Set capabilities at `/extensions/cyberwave/capabilities` for an asset |
 | `cw_create_area` | Create a new area/zone in an environment |
 | `cw_resize_area` | Resize an area by setting new dimensions |
 | `cw_set_area_image` | Attach or remove a background image on an area (via URL or Base64) |
@@ -409,7 +411,11 @@ Frame data is returned as Base64-encoded JPEG. Multimodal models can inspect it 
 | Tool | Parameters |
 |---|---|
 | `cw_create_environment` | `name` (required), `workspace_uuid?`, `project_uuid?`, `description?`, `execute=false` |
-| `cw_create_twin` | `name` (required), `asset_uuid` (required), `environment_uuid?`, `description?`, `metadata?`, `execute=false` |
+| `cw_add_twin_to_environment` | `registry_id` (required), `environment_uuid?` |
+| `cw_create_urdf_asset_from_zip` | `name` (required), `zip_file_base64` (required), `zip_file_name` (default `asset.zip`), `workspace_uuid?`, `description?`, `visibility` (default `private`), `main_file_path?`, `metadata?` |
+| `cw_set_asset_capabilities` | `asset_uuid_or_registry_id` (required), `capabilities` (required object), `execute=false` |
+
+> stub: After calling `cw_create_urdf_asset_from_zip`, immediately call `cw_set_asset_capabilities` to define capabilities for the newly created asset. Use capability semantics from the Digital Twins documentation (`/use-cyberwave/digital-twins/overview`).
 
 ### Area Tools
 

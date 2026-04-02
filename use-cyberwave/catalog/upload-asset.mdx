@@ -101,3 +101,292 @@ API payload fields:
 <Tip>
 For API uploads, make sure `file_url` is reachable by Cyberwave and points to the final ZIP file.
 </Tip>
+
+---
+
+## Set physics properties
+
+When Cyberwave processes your URDF ZIP it generates a **universal schema** — the canonical JSON representation of your robot. The schema includes a `physics` object that controls world-level simulation parameters such as gravity, timestep, solver, and default contact surface.
+
+<Info>
+There is no physics editor in the UI yet. Use the PATCH API below to configure physics after uploading.
+</Info>
+
+### Physics object structure
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `gravity` | `{x, y, z}` | `{x: 0, y: 0, z: -9.81}` | World gravity vector |
+| `timestep` | `float` | `0.001` | Simulation timestep (seconds) |
+| `solver.type` | `string` | `"quick"` | Solver type: `quick`, `ode`, `bullet`, `dart`, `simbody` |
+| `solver.iterations` | `int` | `50` | Solver iterations per step |
+| `contact.mu_static` | `float` | `0.8` | Default static friction |
+| `contact.mu_dynamic` | `float` | `0.7` | Default dynamic friction |
+| `contact.restitution` | `float` | `0.1` | Default restitution (bounciness) |
+| `contact.stiffness` | `float` | `10000.0` | Contact stiffness |
+| `contact.damping` | `float` | `20.0` | Contact damping |
+
+### Set physics via API
+
+Use the universal schema PATCH endpoint:
+
+- `PATCH /api/v1/assets/{uuid}/universal-schema`
+
+Each call sends a single JSON Pointer operation:
+
+```bash
+curl -X PATCH "https://cyberwave.com/api/v1/assets/$ASSET_UUID/universal-schema" \
+  -H "Authorization: Bearer $CYBERWAVE_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "op": "add",
+    "path": "/physics",
+    "value": {
+      "gravity": { "x": 0, "y": 0, "z": -9.81 },
+      "timestep": 0.001,
+      "solver": {
+        "type": "quick",
+        "iterations": 50
+      },
+      "contact": {
+        "mu_static": 0.8,
+        "mu_dynamic": 0.7,
+        "restitution": 0.1
+      }
+    }
+  }'
+```
+
+You can also patch individual sub-fields without overwriting the entire object:
+
+```bash
+curl -X PATCH "https://cyberwave.com/api/v1/assets/$ASSET_UUID/universal-schema" \
+  -H "Authorization: Bearer $CYBERWAVE_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "op": "replace",
+    "path": "/physics/gravity",
+    "value": { "x": 0, "y": 0, "z": -3.71 }
+  }'
+```
+
+### Set physics via Python SDK
+
+The Python SDK provides convenience methods so you don't need to craft JSON Pointer operations manually. All setter methods use a read-modify-write pattern: omitted fields keep their current values.
+
+```python
+import cyberwave
+
+cw = cyberwave.Cyberwave()
+```
+
+#### `set_physics` — set multiple physics fields at once
+
+```python
+cw.assets.set_physics(
+    asset_id,
+    gravity={"x": 0, "y": 0, "z": -9.81},
+    timestep=0.002,
+    solver={"type": "quick", "iterations": 100},
+    contact={"mu_static": 1.0, "restitution": 0.05},
+)
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `gravity` | `dict` | `{"x", "y", "z"}` vector |
+| `timestep` | `float` | Simulation timestep (seconds) |
+| `solver` | `dict` | Solver config (merged with existing) |
+| `contact` | `dict` | Contact surface (merged with existing) |
+
+#### `set_gravity` — shorthand for the gravity vector
+
+```python
+cw.assets.set_gravity(asset_id, z=-3.71)   # Mars
+cw.assets.set_gravity(asset_id, z=0.0)     # Zero-g
+cw.assets.set_gravity(asset_id)             # Earth (default)
+```
+
+#### `set_physics_solver` — configure the solver
+
+```python
+cw.assets.set_physics_solver(
+    asset_id,
+    solver_type="bullet",
+    iterations=200,
+)
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `solver_type` | `str` | `"quick"`, `"ode"`, `"bullet"`, `"dart"`, `"simbody"` |
+| `iterations` | `int` | Solver iterations per step |
+| `sor` | `float` | Successive Over-Relaxation (ODE) |
+| `min_step_size` | `float` | Minimum step size |
+| `max_step_size` | `float` | Maximum step size |
+| `tolerance` | `float` | Solver tolerance |
+
+#### `set_contact_properties` — tune the default contact surface
+
+```python
+cw.assets.set_contact_properties(
+    asset_id,
+    mu_static=1.0,
+    restitution=0.0,
+)
+```
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `mu_static` | `float` | `0.8` | Static friction |
+| `mu_dynamic` | `float` | `0.7` | Dynamic friction |
+| `restitution` | `float` | `0.1` | Bounciness |
+| `stiffness` | `float` | `10000.0` | Contact stiffness |
+| `damping` | `float` | `20.0` | Contact damping |
+
+#### `get_physics` — read the current physics
+
+```python
+physics = cw.assets.get_physics(asset_id)
+if physics:
+    print(physics["gravity"])    # {"x": 0, "y": 0, "z": -9.81}
+    print(physics["timestep"])   # 0.001
+```
+
+Returns `None` if no physics have been configured yet.
+
+---
+
+## Universal schema helpers (Python SDK)
+
+Beyond physics, the SDK exposes general-purpose methods for reading and writing any part of the universal schema.
+
+#### `get_universal_schema` — download the full schema
+
+```python
+schema = cw.assets.get_universal_schema(asset_id)
+print(schema["links"])
+print(schema["extensions"]["cyberwave"]["capabilities"])
+```
+
+#### `get_universal_schema_at_path` — read a specific sub-path
+
+```python
+result = cw.assets.get_universal_schema_at_path(asset_id, "/sensors/0")
+sensor = result["value"]
+
+result = cw.assets.get_universal_schema_at_path(asset_id, "/physics/gravity")
+gravity = result["value"]
+```
+
+#### `patch_universal_schema` — write to any JSON Pointer path
+
+```python
+cw.assets.patch_universal_schema(
+    asset_id,
+    path="/extensions/cyberwave/capabilities/locomotion",
+    value={"mode": "wheeled", "has_wheels": True},
+    op="add",
+)
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `path` | `str` | JSON Pointer (e.g. `"/physics/gravity"`, `"/sensors/0/name"`) |
+| `value` | `any` | Value to set |
+| `op` | `str` | `"add"` or `"replace"` (default: `"replace"`) |
+
+#### `rebuild_universal_schema` — regenerate from source files
+
+```python
+cw.assets.rebuild_universal_schema(asset_id)
+```
+
+Re-parses the uploaded URDF/MJCF/SDF and regenerates the schema. Useful after uploading new source files or to discard manual edits.
+
+---
+
+## Physics tuning best practices
+
+Getting physics parameters right is the difference between a simulation that behaves like the real world and one that explodes on the first contact. This section distills practical guidance from the MuJoCo, Bullet, and Gazebo communities.
+
+### Pick the right timestep
+
+The timestep is the single most impactful parameter. Too large and the simulation becomes unstable; too small and you waste compute for no visible gain.
+
+| Scenario | Recommended timestep | Notes |
+| --- | --- | --- |
+| General-purpose robotics | **0.001 – 0.002 s** | Safe default; matches most control loops |
+| High-frequency control (impedance, force) | **0.0003 – 0.0005 s** | Required for stiff contacts and precise force control |
+| Fast prototyping / locomotion RL | **0.002 – 0.005 s** | Acceptable if contacts are simple |
+| > 0.005 s | Avoid | High risk of instability, tunneling, and divergence |
+
+<Warning>
+Your **control timestep must be an exact integer multiple** of the physics timestep. For example, a 50 Hz control loop (0.02 s) with a 0.002 s physics timestep means 10 physics sub-steps per control step. Fractional ratios cause subtle timing bugs.
+</Warning>
+
+### Choose a solver type
+
+Cyberwave maps solver types to the underlying engine. Use this as a starting point:
+
+| Solver | Strengths | When to use |
+| --- | --- | --- |
+| `quick` (default) | Fast, good general stability | Most use cases — manipulators, mobile robots |
+| `ode` | Mature LCP solver, predictable friction | Wheeled / skid-steer robots, legacy Gazebo models |
+| `bullet` | Good for large scenes, GPU-friendly | Multi-robot environments, RL at scale |
+| `dart` | Accurate analytical LCP | Academic benchmarking, precision contact studies |
+| `simbody` | Multibody dynamics focus | Biomechanics, articulated soft bodies |
+
+Increase `iterations` (default 50) when you see jitter or interpenetration at contacts. Higher iterations improve accuracy at the cost of speed — 100–200 is a reasonable upper bound before you should reduce the timestep instead.
+
+### Tune contact parameters for realism
+
+Default contact values are deliberately "grippy" (high friction, low restitution). This works well for tabletop manipulation but may need adjustment for other scenarios.
+
+**Friction (`mu_static`, `mu_dynamic`)**
+
+| Surface pair | Typical `mu_static` | Typical `mu_dynamic` |
+| --- | --- | --- |
+| Rubber on concrete | 0.8 – 1.0 | 0.6 – 0.8 |
+| Metal on metal | 0.3 – 0.5 | 0.2 – 0.4 |
+| Plastic on wood | 0.3 – 0.4 | 0.2 – 0.3 |
+| Teflon / low-friction | 0.04 – 0.1 | 0.03 – 0.08 |
+
+<Tip>
+When two objects collide, most engines pick the **minimum** friction of the two surfaces. Set friction on your robot's gripper pads separately from the rest of the body.
+</Tip>
+
+**Restitution (bounciness)**
+- `0.0` – completely inelastic (objects stick on contact) — good for grippers and heavy payloads
+- `0.1` – default; slight energy absorption
+- `0.5 – 0.8` – bouncy; use for balls, elastic impacts
+- `1.0` – perfectly elastic (no energy loss) — rarely realistic
+
+**Stiffness and damping** control how "soft" contacts feel. The defaults (10 000 / 20) model hard rigid bodies. Lower stiffness for deformable objects or compliant surfaces; increase damping if contacts oscillate.
+
+### Prepare for sim-to-real transfer
+
+If your goal is to deploy policies trained in simulation onto real hardware, physics parameters are a critical part of the reality gap.
+
+**1. Measure, don't guess.** Use a scale, force gauge, or system identification to get real mass, inertia, and joint friction values. Even rough measurements beat defaults — research shows unexpectedly high friction-torque ratios in real joints compared to simulation defaults.
+
+**2. Randomize what you can't measure.** Domain randomization over physics parameters helps policies generalize. Randomize friction (±30%), mass (±10%), and contact stiffness across training episodes. This is especially important for contact-rich tasks like assembly or grasping.
+
+**3. Validate on simple motions first.** Before training a full policy, compare simulated vs. real joint trajectories on a basic motion (e.g., gravity drop, sine-wave tracking). If these diverge, fix the model before scaling up.
+
+**4. Iterate on the timestep last.** Changing the timestep affects controller gains, contact behavior, and training speed simultaneously. Get other parameters right first, then tune timestep if needed.
+
+<Info>
+A policy that achieves 95% success in simulation can drop to 30–50% on real hardware without careful parameter calibration. Investing time in physics tuning pays off more than training longer.
+</Info>
+
+### Common pitfalls
+
+| Symptom | Likely cause | Fix |
+| --- | --- | --- |
+| Objects explode on contact | Timestep too large | Reduce to 0.001 s or lower |
+| Robot slides on flat ground | Friction too low | Increase `mu_static` to 0.8+ |
+| Grasped objects slip through fingers | Solver iterations too low | Increase to 100+; check collision geometry |
+| Joints oscillate / vibrate | Damping too low or timestep too large | Increase contact damping; reduce timestep |
+| Simulation runs but doesn't match real robot | Default inertia / friction values | Measure real parameters; use domain randomization |
+| Objects bounce unrealistically | Restitution too high | Set to 0.0 – 0.1 for most rigid contacts |

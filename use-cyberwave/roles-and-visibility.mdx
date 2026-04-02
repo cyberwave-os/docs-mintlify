@@ -1,0 +1,48 @@
+---
+title: "Roles and Visibility"
+description: "Stub reference for workspace roles and resource visibility in Cyberwave"
+icon: "users"
+---
+
+## Overview
+
+> stub
+
+This page summarizes how **workspace roles** and **resource visibility** combine to determine who can see and manage folders, environments, and related resources.
+
+## Workspace Roles (ACL)
+
+> stub
+
+| Role | Typical access level |
+| --- | --- |
+| `guest` | No access |
+| `member` | Workspace participant without automatic read on private resources |
+| `reader` | Read access to workspace resources |
+| `developer` | Read + limited write (resource-dependent) |
+| `writer` | Read + write |
+| `admin` | Read + write + access management |
+| `owner` | Full control |
+
+## Visibility Levels
+
+> stub
+
+| Visibility | Who can see the resource |
+| --- | --- |
+| `private` | Owner + users with qualifying workspace role or explicit share |
+| `workspace` | Active members of the resource workspace |
+| `project` | Members with access to the project scope |
+| `org` | Members of the organization |
+| `public` | Anyone (publicly visible) |
+| `link` | Anyone with a valid share link |
+
+## Resolution Notes
+
+> stub
+
+- Access evaluation is role- and visibility-aware.
+- Workspace role baselines and explicit shares can both grant access.
+- Reader-level workspace members should be able to list workspace folders and environments they can read.
+- Developer workspace role can update allowed environment content, but cannot move or delete environments.
+
