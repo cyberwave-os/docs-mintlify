@@ -108,7 +108,7 @@ With your environment and digital twin ready, you can start building immediately
 pip install cyberwave
 ```
 
-Generate an API key at **Dashboard → Profile → API Keys** and export it:
+Generate an API key by going to **Profile Settings** and clicking **Create an API Key**. Then export it:
 
 ```bash
 export CYBERWAVE_API_KEY=your_api_key
@@ -209,6 +209,10 @@ If you're only working in simulation or building application code, you can skip 
 #### Optional: Authenticate the CLI
 
 If you want to pre-authenticate the CLI before installing the Edge Core, you can log in with your API key. This is a one-time step, it writes a `credentials.json` file with your token, workspace, and related settings so the CLI (and Edge Core) can use them automatically.
+
+1. Go to **Profile Settings** in the Cyberwave dashboard.
+2. Click **Create an API Key** and copy the generated key.
+3. Run the login command:
 
 ```bash
 cyberwave login --token YOUR_API_KEY
