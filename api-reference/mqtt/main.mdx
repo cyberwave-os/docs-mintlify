@@ -1,421 +1,670 @@
-# Cyberwave MQTT API 1.0.0 documentation
+---
+title: "MQTT API Reference"
+description: "Complete reference for all MQTT topics and payload schemas used by the Cyberwave platform."
+---
 
-* Specification ID: `urn:com:cyberwave:mqtt:api`
-* License: [Proprietary](https://cyberwave.com/license)
-* Default content type: [application/json](https://www.iana.org/assignments/media-types/application/json)
-* Support: [Cyberwave API Support](https://cyberwave.com/support)
-* Email support: [support@cyberwave.com](mailto:support@cyberwave.com)
+<Note>
+This page is a stub. A human will curate and expand it before publishing.
+</Note>
 
-MQTT API for Cyberwave platform
-##### Specification tags
+The Cyberwave platform uses MQTT for real-time communication between edge drivers, the cloud backend, and the frontend. This page lists every topic and payload schema so you can write compatible drivers, simulators, or integrations without reading source code.
 
-| Name | Description | Documentation |
-|---|---|---|
-| articulation | Articulation related operations | - |
-| health | Health related operations | - |
-| joint | Joint related operations | - |
-| monitoring | Monitoring related operations | - |
-| position | Position related operations | - |
-| robot | Robot related operations | - |
-| rotation | Rotation related operations | - |
-| scale | Scale related operations | - |
-| streaming | Streaming related operations | - |
-| transform | Transform related operations | - |
-| twin | Twin related operations | - |
-| video | Video related operations | - |
-| webrtc | Webrtc related operations | - |
+## Topic prefix
 
+In non-production deployments the broker may be configured with an environment prefix (e.g. `local` for local dev). When a prefix is set, every topic below is written `{prefix}cyberwave/...`. The Python SDK's `topic_prefix` parameter and the Edge Core environment variable `CYBERWAVE_TOPIC_PREFIX` handle this automatically. All topic patterns on this page omit the prefix for clarity.
 
-## Table of Contents
+## Source types
 
-* [Servers](#servers)
-  * [production](#production-server)
-* [Operations](#operations)
-  * [SUB cyberwave.twin.{twin_uuid}.webrtc-offer](#sub-cyberwavetwintwin_uuidwebrtc-offer-operation)
-  * [SUB cyberwave.joint.{asset_uuid}.update](#sub-cyberwavejointasset_uuidupdate-operation)
-  * [SUB cyberwave.ping.{resource_uuid}.request](#sub-cyberwavepingresource_uuidrequest-operation)
-  * [PUB cyberwave.pong.{resource_uuid}.response](#pub-cyberwavepongresource_uuidresponse-operation)
-  * [SUB cyberwave.twin.{twin_uuid}.position](#sub-cyberwavetwintwin_uuidposition-operation)
-  * [SUB cyberwave.twin.{twin_uuid}.rotation](#sub-cyberwavetwintwin_uuidrotation-operation)
-  * [SUB cyberwave.twin.{twin_uuid}.scale](#sub-cyberwavetwintwin_uuidscale-operation)
+Most payloads include a `source_type` field. The allowed values are:
 
-## Servers
+| Value | Meaning |
+|---|---|
+| `edge` | Physical edge device / driver |
+| `edge_leader` | Leader arm (teleoperation) |
+| `edge_follower` | Follower arm (teleoperation) |
+| `tele` | Frontend teleoperation (real-world) |
+| `sim` | Simulation state (e.g. MuJoCo) |
+| `sim_tele` | Frontend teleoperation in simulation |
+| `edit` | Frontend editor |
+| `preview` | Frontend preview mode |
 
-### `production` Server
+---
 
-* URL: `mqtt://mosquitto:1883`
-* Protocol: `mqtt`
+## Twin transform
 
-Production MQTT broker
+### `cyberwave/twin/{twin_uuid}/position`
 
+**Direction:** publish (edge / sim) → subscribe (backend, frontend)
 
-## Operations
-
-### SUB `cyberwave.twin.{twin_uuid}.webrtc-offer` Operation
-
-* Operation ID: `subscribe_cyberwave_twin_twin_uuid_webrtc-offer`
-
-Processes WebRTC SDP offers from edge devices or frontend clients to establish real-time video streaming connections
-
-#### Parameters
-
-| Name | Type | Description | Value | Constraints | Notes |
-|---|---|---|---|---|---|
-| twin_uuid | string | The twin uuid | - | - | **required** |
-
-
-#### Message Handle WebRTC Offer `Handle WebRTC Offer`
-
-*Processes WebRTC SDP offers from edge devices or frontend clients to establish real-time video streaming connections*
-
-* Message ID: `cyberwave_twin_twin_uuid_webrtc-offer_subscribe_message`
-* Content type: [application/json](https://www.iana.org/assignments/media-types/application/json)
-
-##### Payload
-
-| Name | Type | Description | Value | Constraints | Notes |
-|---|---|---|---|---|---|
-| (root) | object | Payload for WebRTC offer messages. | examples (`{"sdp":"v=0...","sender":"edge","target":"backend","timestamp":1700000000,"type":"offer"}`) | - | **additional properties are allowed** |
-| type | string | Message type | default (`"offer"`), const (`"offer"`) | - | - |
-| sdp | string | Session Description Protocol offer | - | - | **required** |
-| target | string | Target of the WebRTC connection | allowed (`"backend"`, `"frontend"`, `"edge"`) | - | **required** |
-| sender | string | Sender of the WebRTC offer | allowed (`"backend"`, `"frontend"`, `"edge"`) | - | **required** |
-| frontend_type | string | Type of frontend stream (rgb, depth, etc.) | - | - | - |
-| color_track_id | string | ID of the color/RGB track | - | - | - |
-| depth_track_id | string | ID of the depth track | - | - | - |
-| timestamp | number | Unix timestamp | - | - | **required** |
-
-> Examples of payload
+Reports the 3D world position of the twin. Published by edge drivers and simulators; consumed by the backend (Vector) and the frontend.
 
 ```json
 {
-  "sdp": "v=0...",
-  "sender": "edge",
-  "target": "backend",
-  "timestamp": 1700000000,
-  "type": "offer"
+  "source_type": "edge",
+  "position": { "x": 1.0, "y": 2.0, "z": 0.0 },
+  "timestamp": 1700000000.0
 }
 ```
 
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `source_type` | string | yes | See [source types](#source-types) |
+| `position.x` | number | yes | X coordinate (metres) |
+| `position.y` | number | yes | Y coordinate (metres) |
+| `position.z` | number | yes | Z coordinate (metres) |
+| `timestamp` | number | no | Unix timestamp (seconds) |
 
-##### Message tags
+---
 
-| Name | Description | Documentation |
-|---|---|---|
-| webrtc | - | - |
-| video | - | - |
-| streaming | - | - |
+### `cyberwave/twin/{twin_uuid}/rotation`
 
+**Direction:** publish (edge / sim) → subscribe (backend, frontend)
 
-### SUB `cyberwave.joint.{asset_uuid}.update` Operation
-
-* Operation ID: `subscribe_cyberwave_joint_asset_uuid_update`
-
-Updates the state (position, velocity, effort) of a robot joint
-
-#### Parameters
-
-| Name | Type | Description | Value | Constraints | Notes |
-|---|---|---|---|---|---|
-| asset_uuid | string | The asset uuid | - | - | **required** |
-
-
-#### Message Update Joint State `Update Joint State`
-
-*Updates the state (position, velocity, effort) of a robot joint*
-
-* Message ID: `cyberwave_joint_asset_uuid_update_subscribe_message`
-* Content type: [application/json](https://www.iana.org/assignments/media-types/application/json)
-
-##### Payload
-
-| Name | Type | Description | Value | Constraints | Notes |
-|---|---|---|---|---|---|
-| (root) | object | Payload for joint state updates. | examples (`{"joint_name":"shoulder_pan_joint","joint_state":{"effort":0,"position":1.57,"velocity":0},"timestamp":1700000000}`) | - | **additional properties are allowed** |
-| joint_name | string | Name of the joint being updated | - | - | **required** |
-| joint_state | object | State of a single joint. | - | - | **required**, **additional properties are allowed** |
-| joint_state.position | number | Joint position in radians or meters | - | - | - |
-| joint_state.velocity | number | Joint velocity | - | - | - |
-| joint_state.effort | number | Joint effort/torque | - | - | - |
-| timestamp | number | Unix timestamp | - | - | - |
-
-> Examples of payload
+Reports the orientation of the twin as a quaternion.
 
 ```json
 {
+  "source_type": "edge",
+  "rotation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 },
+  "timestamp": 1700000000.0
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `source_type` | string | yes | See [source types](#source-types) |
+| `rotation.w` | number | no | W component (real part, default `1.0`) |
+| `rotation.x` | number | no | X component (default `0.0`) |
+| `rotation.y` | number | no | Y component (default `0.0`) |
+| `rotation.z` | number | no | Z component (default `0.0`) |
+| `timestamp` | number | no | Unix timestamp (seconds) |
+
+---
+
+### `cyberwave/twin/{twin_uuid}/scale`
+
+**Direction:** publish (edge / editor) → subscribe (backend, frontend)
+
+Sets the render scale of the twin's 3D model.
+
+```json
+{
+  "source_type": "edit",
+  "scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
+  "timestamp": 1700000000.0
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `source_type` | string | yes | See [source types](#source-types) |
+| `scale.x` | number | yes | X scale factor |
+| `scale.y` | number | yes | Y scale factor |
+| `scale.z` | number | yes | Z scale factor |
+| `timestamp` | number | no | Unix timestamp (seconds) |
+
+---
+
+## Joint states
+
+### `cyberwave/joint/{twin_uuid}/update`
+
+**Direction:** publish (edge / sim / tele) → subscribe (backend, frontend)
+
+Reports the state of one or more joints. Two payload formats are supported.
+
+#### Single-joint format
+
+Use this to report one joint at a time.
+
+```json
+{
+  "source_type": "edge",
+  "type": "joint_state",
   "joint_name": "shoulder_pan_joint",
   "joint_state": {
-    "effort": 0,
     "position": 1.57,
-    "velocity": 0
+    "velocity": 0.0,
+    "effort": 0.0
   },
-  "timestamp": 1700000000
+  "timestamp": 1700000000.0
 }
 ```
 
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `source_type` | string | yes | See [source types](#source-types) |
+| `type` | string | yes | Always `"joint_state"` |
+| `joint_name` | string | yes | Joint name as defined in the asset schema |
+| `joint_state.position` | number | no | Position in radians (revolute) or metres (prismatic) |
+| `joint_state.velocity` | number | no | Velocity |
+| `joint_state.effort` | number | no | Effort / torque |
+| `timestamp` | number | no | Unix timestamp (seconds) |
 
-##### Message tags
+#### Flat multi-joint format
 
-| Name | Description | Documentation |
-|---|---|---|
-| joint | - | - |
-| robot | - | - |
-| articulation | - | - |
-
-
-### SUB `cyberwave.ping.{resource_uuid}.request` Operation
-
-* Operation ID: `subscribe_cyberwave_ping_resource_uuid_request`
-
-Responds to health check ping messages with a pong response
-
-#### Parameters
-
-| Name | Type | Description | Value | Constraints | Notes |
-|---|---|---|---|---|---|
-| resource_uuid | string | The resource uuid | - | - | **required** |
-
-
-#### Message Handle Ping Request `Handle Ping Request`
-
-*Responds to health check ping messages with a pong response*
-
-* Message ID: `cyberwave_ping_resource_uuid_request_subscribe_message`
-* Content type: [application/json](https://www.iana.org/assignments/media-types/application/json)
-
-##### Payload
-
-| Name | Type | Description | Value | Constraints | Notes |
-|---|---|---|---|---|---|
-| (root) | object | Payload for ping health check messages. | examples (`{"timestamp":1700000000,"type":"ping"}`) | - | **additional properties are allowed** |
-| type | string | Message type | default (`"ping"`), const (`"ping"`) | - | - |
-| timestamp | number | Unix timestamp | - | - | **required** |
-
-> Examples of payload
+Use this to report many joints efficiently. Joint positions become top-level keys.
 
 ```json
 {
-  "timestamp": 1700000000,
-  "type": "ping"
+  "source_type": "edge",
+  "_1": 0.5,
+  "_2": -0.3,
+  "_3": 1.2
 }
 ```
 
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `source_type` | string | yes | See [source types](#source-types) |
+| `{joint_name}` | number | yes | One key per joint; value is position in radians or metres |
 
-##### Message tags
+#### Aggregated multi-joint format
 
-| Name | Description | Documentation |
-|---|---|---|
-| health | - | - |
-| monitoring | - | - |
-
-
-### PUB `cyberwave.pong.{resource_uuid}.response` Operation
-
-* Operation ID: `publish_cyberwave_pong_resource_uuid_response`
-
-Sends a pong response to confirm system health
-
-#### Parameters
-
-| Name | Type | Description | Value | Constraints | Notes |
-|---|---|---|---|---|---|
-| resource_uuid | string | The resource uuid | - | - | **required** |
-
-
-#### Message Send Pong Response `Send Pong Response`
-
-*Sends a pong response to confirm system health*
-
-* Message ID: `cyberwave_pong_resource_uuid_response_publish_message`
-* Content type: [application/json](https://www.iana.org/assignments/media-types/application/json)
-
-##### Payload
-
-| Name | Type | Description | Value | Constraints | Notes |
-|---|---|---|---|---|---|
-| (root) | object | Payload for pong health check responses. | examples (`{"timestamp":1700000000,"type":"pong"}`) | - | **additional properties are allowed** |
-| type | string | Message type | default (`"pong"`), const (`"pong"`) | - | - |
-| timestamp | number | Unix timestamp | - | - | **required** |
-
-> Examples of payload
+Use this when you also want to send velocities, efforts, or telemetry metadata.
 
 ```json
 {
-  "timestamp": 1700000000,
-  "type": "pong"
+  "source_type": "edge_follower",
+  "positions": { "_1": 0.5, "_2": -0.3 },
+  "velocities": { "_1": 0.0, "_2": 0.0 },
+  "efforts": { "_1": 0.0, "_2": 0.0 },
+  "timestamp": 1709123456.789,
+  "source_subtype": "openvla",
+  "workload_uuid": "uuid-here"
 }
 ```
 
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `source_type` | string | yes | See [source types](#source-types) |
+| `positions` | object | yes | Map of joint names to position values |
+| `velocities` | object | no | Map of joint names to velocity values |
+| `efforts` | object | no | Map of joint names to effort values |
+| `timestamp` | number | yes (when using this format) | Unix timestamp (seconds) |
+| `source_subtype` | string | no | Inference model name (e.g. `"openvla"`) |
+| `workload_uuid` | string | no | UUID of the ML workload generating this update |
+| `session_id` | string | no | Session identifier for grouping related updates |
 
-##### Message tags
+---
 
-| Name | Description | Documentation |
-|---|---|---|
-| health | - | - |
-| monitoring | - | - |
+## Navigation
 
+### `cyberwave/twin/{twin_uuid}/navigate/command`
 
-### SUB `cyberwave.twin.{twin_uuid}.position` Operation
+**Direction:** publish (backend) → subscribe (edge driver)
 
-* Operation ID: `subscribe_cyberwave_twin_twin_uuid_position`
-
-Updates the 3D position coordinates of a digital twin in the environment
-
-#### Parameters
-
-| Name | Type | Description | Value | Constraints | Notes |
-|---|---|---|---|---|---|
-| twin_uuid | string | The twin uuid | - | - | **required** |
-
-
-#### Message Update Twin Position `Update Twin Position`
-
-*Updates the 3D position coordinates of a digital twin in the environment*
-
-* Message ID: `cyberwave_twin_twin_uuid_position_subscribe_message`
-* Content type: [application/json](https://www.iana.org/assignments/media-types/application/json)
-
-##### Payload
-
-| Name | Type | Description | Value | Constraints | Notes |
-|---|---|---|---|---|---|
-| (root) | object | Payload for updating twin position. | examples (`{"position":{"x":1,"y":2,"z":3},"timestamp":1700000000}`) | - | **additional properties are allowed** |
-| position | object | 3D vector representation. | - | - | **required**, **additional properties are allowed** |
-| position.x | number | X coordinate | - | - | **required** |
-| position.y | number | Y coordinate | - | - | **required** |
-| position.z | number | Z coordinate | - | - | **required** |
-| timestamp | number | Unix timestamp of the update | - | - | - |
-
-> Examples of payload
+Sends a navigation command to the robot. Published by the backend in response to a REST API call.
 
 ```json
 {
-  "position": {
-    "x": 1,
-    "y": 2,
-    "z": 3
+  "action_id": "d0b0e8a7-7d6e-4e73-bf2d-9c420ff14c75",
+  "command": "navigate_to_pose",
+  "twin_uuid": "twin-uuid-here",
+  "environment_uuid": "env-uuid-here",
+  "controller_policy_uuid": "policy-uuid-here",
+  "source_type": "tele",
+  "nav_frame_coords": false,
+  "position": [1.0, 2.0, 0.0],
+  "rotation": [0.0, 0.0, 0.0, 1.0],
+  "waypoints": [
+    { "x": 0.5, "y": 1.0, "z": 0.0 }
+  ],
+  "constraints": {},
+  "frame_id": "map",
+  "reference_frame": "map",
+  "timestamp": 1700000000.0
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `action_id` | string | yes | UUID of the action (use to report status back) |
+| `command` | string | yes | Navigation command string (e.g. `"navigate_to_pose"`, `"cancel"`) |
+| `twin_uuid` | string | yes | UUID of the twin to navigate |
+| `environment_uuid` | string | no | UUID of the environment |
+| `controller_policy_uuid` | string | no | UUID of the controller policy |
+| `source_type` | string | yes | See [source types](#source-types) |
+| `nav_frame_coords` | boolean | yes | Whether coordinates are already in the navigation frame |
+| `position` | array\[3\] | no | Target position `[x, y, z]` in metres |
+| `rotation` | array\[4\] | no | Target orientation as quaternion `[x, y, z, w]` |
+| `waypoints` | array | no | List of intermediate waypoints `{x, y, z}` |
+| `constraints` | object | no | Navigation constraints (planner-specific) |
+| `frame_id` | string | no | Coordinate frame for the target |
+| `reference_frame` | string | no | Same as `frame_id` |
+| `metadata` | object | no | Extra metadata forwarded to the driver |
+| `timestamp` | number | yes | Unix timestamp (seconds) |
+
+### `cyberwave/twin/{twin_uuid}/navigate/status`
+
+**Direction:** publish (edge driver) → subscribe (backend)
+
+Reports the execution status of a navigation command. The `action_id` must match the one received in `navigate/command`.
+
+```json
+{
+  "action_id": "d0b0e8a7-7d6e-4e73-bf2d-9c420ff14c75",
+  "status": "running",
+  "progress": 45.0,
+  "source_type": "edge",
+  "timestamp": 1700000000.0
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `action_id` | string | yes | Action UUID received in the command |
+| `status` | string | yes | `"queued"` \| `"running"` \| `"blocked"` \| `"completed"` \| `"failed"` \| `"cancelled"` |
+| `message` | string | no | Human-readable status message |
+| `progress` | number | no | Completion percentage (0–100) |
+| `source_type` | string | no | See [source types](#source-types) |
+| `timestamp` | number | no | Unix timestamp (seconds) |
+
+---
+
+## Locomotion commands
+
+### `cyberwave/twin/{twin_uuid}/command`
+
+**Direction:** publish (backend / frontend) → subscribe (edge driver)
+
+Sends a discrete command to an edge device. Used for locomotion (move/turn), video control, and robot-specific actions.
+
+#### Locomotion commands
+
+Sent by the Cyberwave platform when the user presses a keyboard binding.
+
+```json
+{
+  "source_type": "tele",
+  "command": "move_forward",
+  "data": { "linear_x": 1.5, "angular_z": 0.0 },
+  "timestamp": 1700000000.0
+}
+```
+
+Standard locomotion command strings:
+
+| `command` | Description | `data` fields |
+|---|---|---|
+| `move_forward` | Drive forward | `linear_x` (m/s or m), `angular_z` (rad/s or rad) |
+| `move_backward` | Drive backward | `linear_x` (negative), `angular_z` |
+| `turn_left` | Rotate left | `linear_x: 0`, `angular_z` (positive) |
+| `turn_right` | Rotate right | `linear_x: 0`, `angular_z` (negative) |
+| `strafe_left` | Strafe left (drones/omni robots) | `linear_y` (negative) |
+| `strafe_right` | Strafe right | `linear_y` (positive) |
+| `ascend` | Increase altitude (drones) | `linear_z` (positive) |
+| `descend` | Decrease altitude | `linear_z` (negative) |
+| `takeoff` | Take off | — |
+| `land` | Land | — |
+| `return_to_home` | Return to home position | — |
+| `emergency_stop` | Immediate stop | — |
+| `sit_down` | Sit / crouch (quadruped) | `delta_z` (negative) |
+| `stand_up` | Stand (quadruped) | `delta_z` (positive) |
+| `recovery_stand` | Recovery stand (quadruped) | — |
+
+Robot-specific command strings used by bundled controllers:
+
+| `command` | Robot | Description |
+|---|---|---|
+| `led_toggle` | Quadruped | Toggle LEDs |
+| `chassis_light_toggle` | UGV Beast | Toggle chassis light |
+| `camera_light_toggle` | UGV Beast | Toggle camera light |
+| `camera_up` / `camera_down` | UGV Beast | Tilt camera |
+| `camera_left` / `camera_right` | UGV Beast | Pan camera |
+| `camera_default` | UGV Beast | Reset camera position |
+| `take_photo` | UGV Beast, Quadruped | Trigger camera snapshot |
+| `battery_check` | UGV Beast | Request battery status |
+| `lights` | UGV Beast | Set light PWM (pass `pwm` in `data`) |
+| `set_linear_velocity` | Quadruped | Update velocity setting (`linear` in `data`) |
+| `set_angular_velocity` | Quadruped | Update velocity setting (`angular` in `data`) |
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `source_type` | string | yes | See [source types](#source-types) |
+| `command` | string | yes | Command name (see tables above) |
+| `data` | object | no | Command parameters (driver-specific) |
+| `timestamp` | number | yes | Unix timestamp (seconds) |
+
+#### Video control commands
+
+Sent by the backend to start or stop video streaming on the edge device.
+
+```json
+{
+  "type": "start_video",
+  "timestamp": 1700000000.0,
+  "sensor_id": "front_camera",
+  "recording": true
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `type` | string | yes | `"start_video"` \| `"stop_video"` |
+| `timestamp` | number | yes | Unix timestamp (seconds) |
+| `sensor_id` | string | no | Camera identifier for multi-camera setups (defaults to primary camera) |
+| `recording` | boolean | no | Whether to record the stream (`start_video` only) |
+
+---
+
+## Telemetry lifecycle
+
+### `cyberwave/twin/{twin_uuid}/telemetry`
+
+**Direction:** publish (edge driver) → subscribe (backend)
+
+Lifecycle events for the telemetry session. Send these to let the backend track driver connectivity.
+
+```json
+{ "type": "connected", "timestamp": 1700000000.0 }
+{ "type": "telemetry_start", "timestamp": 1700000000.0, "fps": 30.0 }
+{ "type": "telemetry_end", "timestamp": 1700000000.0 }
+{ "type": "disconnected", "timestamp": 1700000000.0 }
+```
+
+| `type` | When to send | Extra fields |
+|---|---|---|
+| `connected` | On MQTT connect | — |
+| `telemetry_start` | When the driver starts publishing data | `fps` (optional), `observations` (optional) |
+| `telemetry_end` | When the driver stops publishing data | — |
+| `disconnected` | On MQTT disconnect | — |
+| `initial_observation` | For teleoperation: send current joint state to the leader | `observations` (object), `fps` (number) |
+
+Other `type` values used internally by edge drivers:
+
+| `type` | Description |
+|---|---|
+| `camera_stored` | Camera frame stored to recording |
+| `video_start_timestamp` | Timestamp of first video frame |
+| `camera_sync_frame` | Frame used to synchronise camera playback |
+| `driver_log` | Driver log message (see [driver log](#cyberwavetwintwin_uuiddriverlog)) |
+| `motor_status` | Motor controller status |
+
+---
+
+## Sensor data
+
+### `cyberwave/twin/{twin_uuid}/depth`
+
+**Direction:** publish (edge driver) → subscribe (backend / cloud nodes)
+
+Depth camera frame as a base64-encoded array.
+
+```json
+{
+  "type": "depth_data",
+  "data": "base64EncodedDepthArray==",
+  "width": 640,
+  "height": 480,
+  "timestamp": 1700000000.0
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `type` | string | yes | Always `"depth_data"` |
+| `data` | string | yes | Base64-encoded uint16 depth array (millimetres) |
+| `width` | number | no | Frame width in pixels (default `640`) |
+| `height` | number | no | Frame height in pixels (default `480`) |
+| `timestamp` | number | no | Unix timestamp (seconds) |
+
+### `cyberwave/twin/{twin_uuid}/pointcloud`
+
+**Direction:** publish (backend / edge) → subscribe (frontend)
+
+Point cloud data as a base64-encoded array.
+
+```json
+{
+  "type": "pointcloud",
+  "data": "base64EncodedPointCloud==",
+  "timestamp": 1700000000.0
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `type` | string | yes | Always `"pointcloud"` |
+| `data` | string | yes | Base64-encoded Nx3 float32 XYZ array |
+| `timestamp` | number | no | Unix timestamp (seconds) |
+
+### `cyberwave/twin/{twin_uuid}/metrics`
+
+**Direction:** publish (edge driver) → subscribe (backend)
+
+Periodic robot metrics snapshot (battery, navigation status, load, errors, etc.).
+
+```json
+{
+  "source_type": "edge",
+  "metrics": {
+    "power": {
+      "battery_percent": 78,
+      "charging": false,
+      "voltage": 48.2,
+      "estimated_runtime_minutes": 240
+    },
+    "navigation": {
+      "status": "navigating",
+      "distance_remaining_m": 23.5,
+      "eta_seconds": 45
+    },
+    "errors": []
+  }
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `source_type` | string | yes | Typically `"edge"` |
+| `metrics` | object | yes | Free-form dict of metric categories and values |
+
+---
+
+## Edge health
+
+### `cyberwave/twin/{twin_uuid}/edge_health`
+
+**Direction:** publish (edge driver) → subscribe (backend, frontend)
+
+Periodic health status published by the edge driver (every ~5 seconds).
+
+```json
+{
+  "type": "edge_health",
+  "timestamp": 1700000000.0,
+  "twin_uuid": "twin-uuid-here",
+  "edge_id": "edge-device-id",
+  "uptime_seconds": 3600.0,
+  "streams": {
+    "front_camera": {
+      "camera_id": "front_camera",
+      "connection_state": "connected",
+      "ice_connection_state": "connected",
+      "frames_sent": 12345,
+      "last_frame_ts": 1700000000.0,
+      "fps": 29.97,
+      "uptime_seconds": 3600.0,
+      "restart_count": 0,
+      "is_stale": false,
+      "is_healthy": true
+    }
   },
-  "timestamp": 1700000000
+  "stream_count": 1,
+  "healthy_streams": 1
 }
 ```
 
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `type` | string | yes | Always `"edge_health"` |
+| `timestamp` | number | yes | Unix timestamp (seconds) |
+| `twin_uuid` | string | yes | Twin UUID |
+| `edge_id` | string | yes | Edge device identifier |
+| `uptime_seconds` | number | yes | Seconds since the driver started |
+| `streams` | object | no | Map of camera/stream IDs to stream health objects |
+| `stream_count` | number | no | Total number of streams |
+| `healthy_streams` | number | no | Number of healthy streams |
 
-##### Message tags
+---
 
-| Name | Description | Documentation |
-|---|---|---|
-| twin | - | - |
-| position | - | - |
-| transform | - | - |
+## Driver log
 
+### `cyberwave/twin/{twin_uuid}/driverlog`
 
-### SUB `cyberwave.twin.{twin_uuid}.rotation` Operation
+**Direction:** publish (edge core / driver) → subscribe (backend)
 
-* Operation ID: `subscribe_cyberwave_twin_twin_uuid_rotation`
-
-Updates the rotation quaternion of a digital twin in the environment
-
-#### Parameters
-
-| Name | Type | Description | Value | Constraints | Notes |
-|---|---|---|---|---|---|
-| twin_uuid | string | The twin uuid | - | - | **required** |
-
-
-#### Message Update Twin Rotation `Update Twin Rotation`
-
-*Updates the rotation quaternion of a digital twin in the environment*
-
-* Message ID: `cyberwave_twin_twin_uuid_rotation_subscribe_message`
-* Content type: [application/json](https://www.iana.org/assignments/media-types/application/json)
-
-##### Payload
-
-| Name | Type | Description | Value | Constraints | Notes |
-|---|---|---|---|---|---|
-| (root) | object | Payload for updating twin rotation. | examples (`{"rotation":{"w":1,"x":0,"y":0,"z":0},"timestamp":1700000000}`) | - | **additional properties are allowed** |
-| rotation | object | Quaternion representation for rotation. | - | - | **required**, **additional properties are allowed** |
-| rotation.w | number | W component (real part) | default (`1`) | - | - |
-| rotation.x | number | X component | - | - | - |
-| rotation.y | number | Y component | - | - | - |
-| rotation.z | number | Z component | - | - | - |
-| timestamp | number | Unix timestamp of the update | - | - | - |
-
-> Examples of payload
+Structured log messages from edge drivers. Displayed in the platform UI.
 
 ```json
 {
-  "rotation": {
-    "w": 1,
-    "x": 0,
-    "y": 0,
-    "z": 0
-  },
-  "timestamp": 1700000000
+  "type": "driver_log",
+  "message": "Camera initialised on /dev/video0",
+  "level": "info",
+  "container_name": "cyberwave-driver-so101",
+  "source": "edge_core",
+  "timestamp": 1700000000.0,
+  "edge_core_version": "1.2.3",
+  "sdk_version": "0.9.0",
+  "driver_image": "ghcr.io/cyberwave-os/so101-driver:latest"
 }
 ```
 
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `type` | string | yes | Always `"driver_log"` |
+| `message` | string | yes | Log message text |
+| `level` | string | yes | `"debug"` \| `"info"` \| `"warning"` \| `"error"` |
+| `container_name` | string | no | Docker container name |
+| `source` | string | no | Log source identifier |
+| `timestamp` | number | yes | Unix timestamp (seconds) |
+| `edge_core_version` | string | no | Edge Core version string |
+| `sdk_version` | string | no | SDK version string |
+| `driver_image` | string | no | Docker image that produced the log |
 
-##### Message tags
+---
 
-| Name | Description | Documentation |
-|---|---|---|
-| twin | - | - |
-| rotation | - | - |
-| transform | - | - |
+## WebRTC signalling
 
+These topics are used to establish peer-to-peer video streaming between the edge and the browser.
 
-### SUB `cyberwave.twin.{twin_uuid}.scale` Operation
+### `cyberwave/twin/{twin_uuid}/webrtc-offer`
 
-* Operation ID: `subscribe_cyberwave_twin_twin_uuid_scale`
-
-Updates the 3D scale factors of a digital twin in the environment
-
-#### Parameters
-
-| Name | Type | Description | Value | Constraints | Notes |
-|---|---|---|---|---|---|
-| twin_uuid | string | The twin uuid | - | - | **required** |
-
-
-#### Message Update Twin Scale `Update Twin Scale`
-
-*Updates the 3D scale factors of a digital twin in the environment*
-
-* Message ID: `cyberwave_twin_twin_uuid_scale_subscribe_message`
-* Content type: [application/json](https://www.iana.org/assignments/media-types/application/json)
-
-##### Payload
-
-| Name | Type | Description | Value | Constraints | Notes |
-|---|---|---|---|---|---|
-| (root) | object | Payload for updating twin scale. | examples (`{"scale":{"x":1,"y":1,"z":1},"timestamp":1700000000}`) | - | **additional properties are allowed** |
-| scale | object | 3D vector representation. | - | - | **required**, **additional properties are allowed** |
-| scale.x | number | X coordinate | - | - | **required** |
-| scale.y | number | Y coordinate | - | - | **required** |
-| scale.z | number | Z coordinate | - | - | **required** |
-| timestamp | number | Unix timestamp of the update | - | - | - |
-
-> Examples of payload
+**Direction:** publish (edge) → subscribe (backend / media-service)
 
 ```json
 {
-  "scale": {
-    "x": 1,
-    "y": 1,
-    "z": 1
-  },
-  "timestamp": 1700000000
+  "type": "offer",
+  "sdp": "v=0\r\n...",
+  "target": "backend",
+  "sender": "edge",
+  "color_track_id": "video-0",
+  "depth_track_id": "video-1",
+  "timestamp": 1700000000.0
 }
 ```
 
+### `cyberwave/twin/{twin_uuid}/webrtc-answer`
 
-##### Message tags
+**Direction:** publish (backend / media-service) → subscribe (edge)
 
-| Name | Description | Documentation |
-|---|---|---|
-| twin | - | - |
-| scale | - | - |
-| transform | - | - |
+```json
+{
+  "type": "answer",
+  "sdp": "v=0\r\n...",
+  "target": "edge",
+  "sender": "backend",
+  "frontend_type": "rgb",
+  "timestamp": 1700000000.0
+}
+```
 
+### `cyberwave/twin/{twin_uuid}/webrtc-candidate`
 
+**Direction:** bidirectional
+
+ICE candidate exchange during WebRTC negotiation. Payload is the raw ICE candidate object.
+
+---
+
+## Environment
+
+### `cyberwave/environment/{environment_uuid}/{update_type}`
+
+**Direction:** publish (backend / edge) → subscribe (frontend, other services)
+
+Generic environment update channel. `update_type` is a free-form string (e.g. `"twin_added"`, `"twin_removed"`, `"sensor_binding"`, `"event"`).
+
+```json
+{
+  "type": "twin_added",
+  "data": { "twin_uuid": "twin-uuid-here" },
+  "timestamp": 1700000000.0,
+  "source_type": "edit"
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `type` | string | yes | Same as `update_type` in the topic |
+| `data` | object | yes | Update payload (structure depends on `type`) |
+| `timestamp` | number | yes | Unix timestamp (seconds) |
+| `source_type` | string | no | See [source types](#source-types) |
+
+#### Sensor binding update
+
+```json
+{
+  "type": "sensor_binding",
+  "bindings": {
+    "sensor-uuid-1": "target-uuid-1",
+    "sensor-uuid-2": "target-uuid-2"
+  },
+  "timestamp": 1700000000.0
+}
+```
+
+---
+
+## Health check
+
+### `cyberwave/ping/{resource_uuid}/request`
+
+**Direction:** publish (any client) → subscribe (backend)
+
+Connectivity probe. The backend replies on the corresponding pong topic.
+
+```json
+{ "type": "ping", "timestamp": 1700000000.0 }
+```
+
+### `cyberwave/pong/{resource_uuid}/response`
+
+**Direction:** publish (backend) → subscribe (client)
+
+```json
+{ "type": "pong", "timestamp": 1700000000.0 }
+```
+
+---
+
+## Workflow run status
+
+### `cyberwave/workflow-run/{run_uuid}/status`
+
+**Direction:** publish (backend) → subscribe (SDK clients)
+
+Status updates for a running workflow execution.
+
+```json
+{ "status": "running", "timestamp": 1700000000.0 }
+```
+
+| `status` | Description |
+|---|---|
+| `"pending"` | Queued, not yet started |
+| `"running"` | Currently executing |
+| `"completed"` | Finished successfully |
+| `"failed"` | Terminated with an error |
+| `"cancelled"` | Cancelled by the user |

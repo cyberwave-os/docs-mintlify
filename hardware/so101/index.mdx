@@ -87,6 +87,25 @@ The SO101 robot arm set provides a low-cost and efficient way to get started wit
 
 - **Simulation and real-world execution**: Test trained models in a browser-based 3D simulated environment using the SO101 digital twin, then deploy the same models to the physical robot without changing the logic.
 
+<Note>
+**Key API Endpoints:**
+- `POST /api/v1/twins` - Create digital twins from catalog
+- `PUT /api/v1/twins/{uuid}` - Update twin properties and assign controllers
+- `GET /api/v1/twins/{uuid}/calibration` - Manage robot calibration
+- `POST /api/v1/twins/{uuid}/actions` - Execute motion commands
+- `GET /api/v1/twins/{uuid}/recordings` - Access teleoperation recordings
+- `POST /api/v1/datasets` - Create datasets from episodes
+- `POST /api/v1/mltrainings` - Train ML models on collected data
+- `POST /api/v1/mltrainings/{uuid}/deploy` - Deploy trained models to robots
+
+**Key MQTT Topics:**
+- `cyberwave/twin/{uuid}/command` - Cloud-to-edge commands (calibration, controller changes)
+- `cyberwave/twin/{uuid}/telemetry` - Edge-to-cloud telemetry events (recording lifecycle)
+- `cyberwave/joint/{uuid}/+` - Joint state updates (bidirectional: edge→cloud during recording, cloud→edge during AI control)
+- `cyberwave/twin/{uuid}/position` - Position commands (typically cloud→edge)
+- `cyberwave/twin/{uuid}/rotation` - Rotation commands (typically cloud→edge)
+</Note>
+
 ---
 
 ## Next Steps

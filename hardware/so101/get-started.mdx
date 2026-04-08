@@ -30,6 +30,7 @@ Before you begin this quick start guide, ensure you have the following:
     <Warning>
     The Cyberwave CLI and Edge Core require a **64-bit architecture** (arm64/aarch64) on Raspberry Pi. If you are using a 32-bit OS or architecture, please wait for an updated version.
     </Warning>
+
   </Tab>
 
   <Tab title="Credentials">
@@ -68,7 +69,8 @@ A [digital twin](/get-started/key-concepts#digital-twins) is a virtual replica o
 The camera connected to the **follower arm** captures the workspace from the arm's perspective during teleoperation and dataset recording.
 
 <Info>
-Some cameras may use different frameworks and support lower resolutions, which can limit video streaming quality.
+  Some cameras may use different frameworks and support lower resolutions, which
+  can limit video streaming quality.
 </Info>
 
 **Dock the camera to the SO101 twin:**
@@ -82,7 +84,10 @@ The camera twin should now appear nested under the SO101 twin in the hierarchy.
 ![](/images/so1o1_env.png)
 
 <Info>
-Docking the camera to the wrist angle means the camera physically follows the arm's end-effector. This is essential for manipulation tasks where the camera needs to see what the gripper is doing, the resulting video feed stays aligned with the arm's workspace during teleoperation and dataset recording.
+  Docking the camera to the wrist angle means the camera physically follows the
+  arm's end-effector. This is essential for manipulation tasks where the camera
+  needs to see what the gripper is doing, the resulting video feed stays aligned
+  with the arm's workspace during teleoperation and dataset recording.
 </Info>
 
 #### Step 2: Install the Cyberwave Edge
@@ -90,7 +95,10 @@ Docking the camera to the wrist angle means the camera physically follows the ar
 The [Cyberwave CLI](/get-started/quickstart#step-3-install-the-cyberwave-cli) is the command-line tool used to authenticate, pair, and manage your physical hardware with the Cyberwave platform. The [Edge Core](/get-started/architecture#cyberwave-edge) acts as the bridge between the SO101 hardware and the Cyberwave cloud backend.
 
 <Warning>
-The Cyberwave CLI and Edge Core are currently only compatible with **64-bit architecture** on Raspberry Pi (arm64/aarch64). If you are using a 32-bit Raspberry Pi OS or any other non-64-bit architecture, please wait for an updated version.
+  The Cyberwave CLI and Edge Core are currently only compatible with **64-bit
+  architecture** on Raspberry Pi (arm64/aarch64). If you are using a 32-bit
+  Raspberry Pi OS or any other non-64-bit architecture, please wait for an
+  updated version.
 </Warning>
 
 **SSH into your edge device:**
@@ -115,6 +123,74 @@ sudo cyberwave edge install
 
 The CLI will prompt you to log in with your Cyberwave credentials and then ask you to select the environment you created in Step 1. Once complete, the edge runtime is installed and your device is linked to the cloud platform.
 
+<Accordion title="macOS: USB device passthrough via USB/IP">
+
+Docker Desktop on macOS cannot pass USB devices (serial controllers, cameras) directly to containers. During `cyberwave edge install`, the CLI automatically sets up a **USB/IP server** that bridges this gap.
+
+**Requirements:**
+- [Rust toolchain](https://rustup.rs/) (`cargo` must be in your PATH)
+- Docker Desktop 4.35+
+
+**What happens automatically:**
+1. The CLI clones and builds the [jiegec/usbip](https://github.com/jiegec/usbip) host server
+2. A shell wrapper and `launchd` agent are created so the server starts automatically on login
+3. macOS extended attributes are stripped and file ownership is corrected (even when installed via `sudo`)
+4. Driver containers use `--pid=host` and auto-attach all USB devices at startup
+5. Serial controllers appear as `/dev/ttyACM*`, cameras as `/dev/video*`
+
+<Note>Auto-discovery attaches **all** USB devices exported by the host USB/IP server. If you need to limit which devices are attached, set `CYBERWAVE_USBIP_BUSID` to a specific bus ID.</Note>
+
+**Verifying the setup:**
+
+Inside a driver container, USB devices should be visible:
+
+```bash
+nsenter -t 1 -m -- usbip list -r host.docker.internal
+```
+
+Check that the USB/IP server is running on the host:
+
+```bash
+lsof -nP -iTCP:3240 -sTCP:LISTEN
+```
+
+If not running, you can tear down and rebuild the entire setup from scratch:
+
+```bash
+sudo cyberwave edge install --force-reinstall
+```
+
+Or restart the service manually:
+
+```bash
+launchctl bootout gui/$(id -u)/com.cyberwave.usbip 2>/dev/null
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.cyberwave.usbip.plist
+```
+
+</Accordion>
+
+<Accordion title="macOS: Camera stream fallback (if USB/IP video is slow)">
+
+If USB/IP video bandwidth is insufficient for your camera resolution, you can use an MJPEG stream fallback instead. This captures from the macOS camera via `ffmpeg` and serves it as an HTTP stream.
+
+**Requirements:**
+- [ffmpeg](https://formulae.brew.sh/formula/ffmpeg) (`brew install ffmpeg`)
+
+**Manual setup:**
+
+```bash
+# Start ffmpeg MJPEG server on macOS host:
+ffmpeg -f avfoundation -framerate 30 -video_size 640x480 -i "0" \
+  -c:v mjpeg -q:v 5 -f mjpeg -listen 1 http://0.0.0.0:8091
+
+# Tell edge-core to use the stream URL instead of /dev/video*:
+export CYBERWAVE_MACOS_CAMERA_STREAM_URL=http://host.docker.internal:8091
+```
+
+The driver's `cv2.VideoCapture` natively supports HTTP MJPEG URLs — no driver code changes needed. Note: this fallback does not work for Intel RealSense depth cameras (which require raw USB access).
+
+</Accordion>
+
 **Pair the hardware:**
 
 Follow the terminal prompts to pair the SO101 arms and camera with their digital twins:
@@ -129,7 +205,10 @@ Follow the terminal prompts to pair the SO101 arms and camera with their digital
 Calibration is a **required step** before using an SO101 arm for teleoperation or control. It teaches the software where each joint's zero (reference) position is, what its valid movement range is, and how the physical arm maps to the software model. Without calibration, the robot won't know where its joints actually are and commands won't translate correctly to hardware movements.
 
 <Info>
-When you first connect a robot, it will have **no calibration**, you must complete calibration before the arm can be used. If you ever need to recalibrate (e.g. after reassembly or mechanical adjustments), you can delete the existing calibration from the platform and redo it.
+  When you first connect a robot, it will have **no calibration**, you must
+  complete calibration before the arm can be used. If you ever need to
+  recalibrate (e.g. after reassembly or mechanical adjustments), you can delete
+  the existing calibration from the platform and redo it.
 </Info>
 
 <Warning>
@@ -147,7 +226,9 @@ When you first connect a robot, it will have **no calibration**, you must comple
 6. Once both arms are calibrated, the platform will confirm the calibration is complete.
 
 <Tip>
-  Take your time during calibration, move each joint slowly and through its full range. Accurate calibration directly improves control precision during teleoperation.
+  Take your time during calibration, move each joint slowly and through its full
+  range. Accurate calibration directly improves control precision during
+  teleoperation.
 </Tip>
 
 #### Step 4: Set Up Teleoperation
@@ -157,6 +238,7 @@ When you first connect a robot, it will have **no calibration**, you must comple
 **How Teleoperation Works**:
 
 The teleoperation system creates a synchronized connection between:
+
 - **Physical leader arm** → captures human-guided joint movements
 - **Physical follower arm** → executes the movements in real-time
 - **Digital twin** → receives telemetry data from both arms for monitoring and recording
@@ -171,13 +253,21 @@ Both the leader and follower arms send real-time joint data to their correspondi
 4. The teleoperation session will start, the follower arm is now linked to the leader arm.
 
 <Check>
-  Teleoperation is active. Try moving the leader arm — the follower arm will replicate your movements in real time.
+  Teleoperation is active. Try moving the leader arm — the follower arm will
+  replicate your movements in real time.
 </Check>
 
+{/* stub — content pending human curation before publishing */}
 <Info>
-**Controller types and data quality:**
-- **Local Teleop** — actively generates high-frequency control data as you move the leader arm. This produces smooth, consistent datasets suitable for training ML models.
-- **Keyboard** — still generates data, but at a much lower control frequency. Keyboard-generated data is **not recommended for datasets** as the low frequency results in jerky, inconsistent demonstrations that don't train well.
+  **Controller types and data quality:**
+
+  - **Local Teleop** — actively generates high-frequency control data as you
+    move the leader arm. This produces smooth, consistent datasets suitable for
+    training ML models.
+  - **Keyboard** — still generates data, but at a much lower control frequency.
+    Keyboard-generated data is **not recommended for datasets** as the low
+    frequency results in jerky, inconsistent demonstrations that don't train
+    well.
 </Info>
 
 ---
@@ -201,8 +291,34 @@ In teleoperation, the leader arm drives the follower. In remote operation, a **c
 4. Once assigned, the follower arm will respond to commands from the selected controller.
 
 <Check>
-  Remote operation is active. The follower arm is now being controlled by the assigned controller, no leader arm needed.
+  Remote operation is active. The follower arm is now being controlled by the
+  assigned controller, no leader arm needed.
 </Check>
+
+### Follower rest behavior (SO101)
+
+> **stub** — Behavior details may be refined before publication.
+
+- After **calibration** completes, or when a **controller is detached** and the **follower** is no longer driven by Cyberwave, the follower arm **returns to a sit pose** when it disconnects from the active control session (safe resting configuration).
+- When you attach **any controller other than Local Teleop** (for example **Keyboard**, **VLA**, or another remote policy), the follower moves to **zero pose** as soon as that controller session is **up and running**, before you send task-specific commands.
+- For those controller modes (**not** Local Teleop), **collision detection is on by default** on the follower. Expect **alerts** that describe **near-collision** conditions (what is close to contacting) so you can adjust the pose or workspace.
+
+<Info>
+Always keep clearance around the arm; automatic moves to sit or zero pose can still contact objects or people if the workspace is cluttered.
+</Info>
+
+### Alerts and disabled controls
+
+> **stub** — Alert copy and exact UI rules may change before publication.
+
+The dashboard uses an **alerting** flow to guide setup:
+
+- **Missing calibration** (or calibration files not available on the twin/edge as expected) triggers alerts so you calibrate before relying on motion.
+- **Controller lifecycle** — attaching, removing, or **swapping** controllers triggers alerts so the robot and UI state stay aligned with what is actually running on the edge.
+- **Collision / proximity** — when the follower is driven by **any controller except Local Teleop**, **collision detection runs by default**. Alerts can explain **what is nearing collision** (e.g. links or constrained geometry) so you can clear interference or change commands before a clash.
+- While alerts require action, parts of the UI may be **disabled** so you cannot click through to operations that could misconfigure the arm or cause unexpected motion.
+
+Resolve or dismiss alerts as instructed before assuming the robot is ready to record, teleoperate, or run policies.
 
 ---
 
@@ -211,8 +327,17 @@ In teleoperation, the leader arm drives the follower. In remote operation, a **c
 Once teleoperation is set up and working, you can create datasets by recording episodes of the robot performing specific tasks. These datasets can later be used to train machine learning models for autonomous operation.
 
 <Info>
-For recording datasets with the SO101, we recommend using **teleoperation** rather than remote operation. Controlling the follower arm with a physical leader arm gives you finer, more intuitive control resulting in smoother demonstrations and higher-quality training data.
+  For recording datasets with the SO101, we recommend using **teleoperation**
+  rather than remote operation. Controlling the follower arm with a physical
+  leader arm gives you finer, more intuitive control resulting in smoother
+  demonstrations and higher-quality training data.
 </Info>
+
+<Warning>
+**stub** — Training/inference guidance will be curated before publication.
+
+For **VLA** (vision-language-action) and similar models, **match inference to training** as closely as you can: same **camera mount and angles**, lighting, table height, object placement style, and overall **scene layout**. Shifts in viewpoint or workspace between dataset recording and deployment are a common cause of poor generalization; keep the physical setup stable across demos, training exports, and live runs.
+</Warning>
 
 A **dataset** consists of multiple **episodes**, individual recordings of the robot completing a task. Each episode captures:
 
@@ -235,7 +360,7 @@ Recording episodes captures the manual operations performed through teleoperatio
    ![](/images/record-episodes.png)
 
 <Note>
-  Make sure teleoperation is running (from Step 7) before you start recording.
+  Make sure teleoperation is running (from **Step 4: Set Up Teleoperation**) before you start recording.
   The recording captures both the arm movements and camera feed simultaneously.
 </Note>
 
@@ -248,6 +373,7 @@ With recording active, use the leader arm to guide the follower arm through the 
 3. **Complete the task** fully (e.g., pick up object → move → place in box)
 4. **Repeat** the same task multiple times to create variety in the dataset
 
+{/* stub — example repeat count, dataset Tip, and Stop Recording steps below pending human curation before publishing */}
 <Accordion title="Example: Pick and Place Task">
 **Goal:** Train the SO101 to pick up an object and drop it inside a box.
 
@@ -259,7 +385,7 @@ With recording active, use the leader arm to guide the follower arm through the 
 4. Move to the box location
 5. Open the gripper to release the object
 6. Return to starting position
-7. Repeat 10-15 times with slight variations
+7. Repeat about 30 times with slight variations
 
 This creates a robust dataset with multiple examples of the same behavior.
 
@@ -268,14 +394,16 @@ This creates a robust dataset with multiple examples of the same behavior.
 <Tip>
   Record multiple demonstrations of the same task with slight variations
   (different speeds, slightly different positions). This helps the model
-  generalize better during training.
+  generalize better during training. More data will have an impact on how well
+  is the model capable of perform the given tasks in terms of spatial
+  coordinates and localization, i.e. pick the **red cube** on the **left** side.
 </Tip>
 
 **Stop Recording:**
 
 When you've captured enough demonstrations:
 
-1. Click **Stop Recording** in the Cyberwave interface
+1. Detach the **local teleop** controller from the robot
 2. The recording will be saved and ready for processing
 
 #### Step 2: Export Dataset
@@ -338,6 +466,16 @@ Once you've created episodes:
   that can teach autonomous behaviors.
 </Check>
 
+<Note>
+**API Reference:**
+- `GET /api/v1/datasets` - List all datasets
+- `GET /api/v1/datasets/{uuid}/zip` - Get signed URL for dataset zip file
+
+**MQTT Topics:**
+Datasets are exported via API. The underlying recordings are captured via:
+- `cyberwave/twin/{uuid}/telemetry` - Recording events (telemetry_start, telemetry_end)
+</Note>
+
 ---
 
 ### Train and Deploy an ML Model
@@ -389,6 +527,16 @@ Training transforms your recorded demonstrations into a model that can predict a
 
 5. Click **Start Training** to begin.
 
+<Note>
+**API Reference:**
+- `GET /api/v1/mlmodels` - List available ML models for training
+- `POST /api/v1/mltrainings` - Create and start a new training job
+- `GET /api/v1/mltrainings` - List your training jobs
+
+**MQTT Topics:**
+ML training is entirely cloud-based (no edge MQTT involvement).
+</Note>
+
 #### Step 2: Deploy a Model
 
 Once training completes successfully, deploy the model to make it available as a controller policy.
@@ -405,6 +553,15 @@ Once training completes successfully, deploy the model to make it available as a
   **Model Deployed:** Your trained model is now available as a controller policy
   and ready to control the robot autonomously.
 </Check>
+
+<Note>
+**API Reference:**
+- `POST /api/v1/mltrainings/{uuid}/deploy` - Deploy trained model to twins
+- `GET /api/v1/mltrainings/deployed` - List deployed models
+
+**MQTT Topics:**
+- `cyberwave/twin/{uuid}/command` - Sends `controller-changed` event when model is deployed
+</Note>
 
 #### Step 3: Use the Model as a Controller Policy
 
@@ -434,6 +591,16 @@ Now use your trained model to autonomously control the physical SO101 robot.
   **Autonomous Control Active:** Your SO101 is now controlled by AI using
   natural language prompts!
 </Check>
+
+<Note>
+**API Reference:**
+- `PUT /api/v1/twins/{uuid}` - Assign controller policy to twin
+- `GET /api/v1/twins/{uuid}` - Get twin details including assigned controller
+
+**MQTT Topics:**
+- `cyberwave/twin/{uuid}/command` - Controller assignment changes
+- `cyberwave/joint/{uuid}/+` - Joint commands from AI controller
+</Note>
 
 ---
 
