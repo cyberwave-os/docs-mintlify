@@ -1,0 +1,55 @@
+---
+title: "cyberwave.yml Manifest"
+description: "Schema reference for cyberwave.yml configuration files"
+---
+
+{/* stub — content will be curated before publishing */}
+
+## Overview
+
+Every Cyberwave Cloud Node and edge deployment is configured via a `cyberwave.yml` manifest file. The manifest declares install scripts, inference/training commands, worker modules, hardware requirements, and MQTT settings.
+
+## Minimal example
+
+```yaml
+cyberwave:
+  inference: inference.py
+  gpu: true
+```
+
+## Full field reference
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `version` | string | `"1"` | Schema version |
+| `name` | string | — | Node display name |
+| `install` | string | — | Shell command run once at startup |
+| `inference` | string | — | Module (`.py`) or shell command for inference |
+| `training` | string | — | Module (`.py`) or shell command for training |
+| `workers` | list | — | Worker `.py` files using hook decorators |
+| `requirements` | list | — | pip package specs |
+| `models` | list | — | Model IDs to pre-download |
+| `input` | string or list | — | Input type declaration |
+| `gpu` | boolean | `false` | Whether GPU is required |
+| `runtime` | string | — | Known runtime ID for zero-code mode |
+| `model` | string | — | Model file path (used with `runtime`) |
+| `profile_slug` | string | `"default"` | Profile for workload routing |
+| `resources` | object | — | `memory` and `cpus` constraints |
+
+## Dispatch modes
+
+The `inference` and `training` fields auto-detect their dispatch mode:
+
+- **Module mode** (`inference.py`): imports the file and calls `infer(**params)` directly
+- **Shell mode** (`python server.py {body}`): spawns a subprocess (existing behaviour)
+
+## Validating locally
+
+```bash
+cyberwave manifest validate
+cyberwave manifest validate path/to/cyberwave.yml --lenient
+```
+
+## Legacy compatibility
+
+Both `cyberwave:` and `cyberwave-cloud-node:` wrapper keys are supported. The `install_script:` field (legacy) is normalised alongside `install:` (new).

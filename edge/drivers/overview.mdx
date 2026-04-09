@@ -37,6 +37,10 @@ Manage edge driver containers:
 | `start` | Start a stopped driver container |
 | `stop` | Stop a running driver container |
 
+## Data bus
+
+Drivers publish sensor data (frames, depth, joint states) to the **edge data bus** — a Zenoh-backed publish/subscribe system that lets worker containers consume data with zero network overhead (shared memory). See [Writing compatible drivers](/edge/drivers/writing-compatible-drivers) for the channel naming convention and wire format.
+
 ## macOS hardware bridge (stub)
 
 When Edge Core runs on macOS, Linux `--device` mappings in Docker params cannot

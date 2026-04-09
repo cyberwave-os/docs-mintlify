@@ -1,10 +1,24 @@
 ---
-title: 'C++ SDK'
-description: 'Programmatically control your robots and simulations using our comprehensive C++ SDK'
-icon: '/images/cplusplus.svg'
-tag: 'Coming Soon'
+title: "C++ SDK"
+description: "Programmatically control your robots and simulations using our comprehensive C++ SDK"
+icon: "/images/cplusplus.svg"
+tag: "Coming Soon"
 ---
 
-<Note>
-Coming soon
-</Note>
+{/* stub — content will be curated before publishing */}
+
+## Status
+
+This page is a **stub** and will be expanded with complete examples.
+
+## Current Coverage
+
+- The C++ SDK now mirrors the regenerated REST surface for canonical environment export downloads, scene composed-schema fetches, environment previews, asset universal-schema rebuilds, workflow slug lookups, and twin universal-schema helpers.
+- Twin latest-frame calls now follow Python-style source resolution: simulation defaults to `source_type=sim`, while live mode omits the query unless the caller explicitly requests a compatible frame source.
+- `Client::twin()` now covers the main quickstart path for fetching by twin UUID or resolving an asset registry id / alias into a reusable twin, and it can auto-bootstrap a default workspace/project/environment context when none is configured yet.
+- Regular C++ `Twin` handles now expose the core capability helpers directly for locomotion, gripper, flight, and streaming workflows, so the main client and manager paths no longer stop at a base-only twin surface.
+- `Client::affect()` now matches Python's runtime-mode defaults end to end: simulation uses `sim` for REST/frame reads, `sim_tele` for control MQTT writes, live modes reset the default `source_type` back to `edge`, and switching modes disconnects the active MQTT client so it can reconnect with fresh runtime settings.
+- `AssetManager::upload_glb()` now mirrors Python's large-file behavior by switching oversized GLBs to the attachment signed-upload flow and retrying there automatically after payload-too-large direct uploads.
+- MQTT config supports topic prefixes, MQTT v5 selection, runtime-mode-aware client IDs, client-side event publishing helpers, and workflow-run status subscriptions on `cyberwave/workflow-run/{uuid}/status`.
+- A first `DataBus` milestone is now available with canonical wire-format helpers, validated data-key builders, a filesystem backend, and JSON / bytes / ndarray roundtrips for local development.
+- Worker parity now includes a hook-registration surface plus a first manifest schema / dispatch-mode helper, ready for a later runtime layer.

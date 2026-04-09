@@ -1,0 +1,172 @@
+---
+title: "Edge Workers"
+description: "Manage, author, and deploy Python worker modules that run on-device for ML inference and event-driven processing."
+icon: "microchip-ai"
+---
+
+<Warning>
+**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
+</Warning>
+
+## Overview
+
+Edge workers are Python modules that run inside a worker container on the edge device.
+They use the Cyberwave SDK hook API (`@cw.on_frame`, `cw.models.load`, `cw.publish_event`)
+to subscribe to sensor data and emit events.
+
+There are two kinds of workers:
+
+| Kind | Filename prefix | Managed by |
+|---|---|---|
+| **Custom** | anything except `wf_` | You — add/edit freely |
+| **Generated** | `wf_<uuid8>.py` | Backend workflow sync — do not edit directly |
+
+Worker files live in `{CONFIG_DIR}/workers/` (default `/etc/cyberwave/workers/` on Linux,
+`~/.cyberwave/workers/` on macOS).
+
+---
+
+## CLI: Managing Worker Files
+
+```bash
+cyberwave worker list                   # list installed workers (shows origin)
+cyberwave worker add detect_people.py  # copy a file into the workers dir
+cyberwave worker remove detect_people  # remove a worker (with or without .py)
+cyberwave worker status                # show worker files + container state
+cyberwave worker logs                  # stream worker container logs
+```
+
+`cyberwave worker list` shows the **origin** of each worker:
+
+```
+Installed Workers (/etc/cyberwave/workers)
+┌───────────────────────────┬──────────┬────────────────────────────┬───────┐
+│ Name                      │ Origin   │ File                       │ Size  │
+├───────────────────────────┼──────────┼────────────────────────────┼───────┤
+│ detect_people             │ custom   │ detect_people.py           │ 512 B │
+│ wf_a1b2c3d4               │ workflow │ wf_a1b2c3d4.py             │ 1.2 kB│
+└───────────────────────────┴──────────┴────────────────────────────┴───────┘
+```
+
+After adding or removing a worker file, restart the worker container so the
+change takes effect:
+
+```bash
+cyberwave-edge-core worker restart
+```
+
+---
+
+## Workflow-Generated Workers
+
+When a workflow with a **Camera Frame** trigger and a connected **Call Model** node
+is activated in the UI, the backend generates a `wf_*.py` worker module
+for that workflow.
+
+The edge node pulls these generated files during boot and on a periodic sync
+(default every ~5 minutes). The file is written atomically — content-identical
+files are left untouched to avoid spurious worker container restarts.
+
+**Lifecycle:**
+
+1. Activate a workflow in the UI (trigger: Camera Frame → Call Model → edge-compatible model).
+2. Edge core syncs on next boot or `CYBERWAVE_WORKER_SYNC_INTERVAL_LOOPS` expiry.
+3. `wf_<uuid8>.py` appears in the workers directory.
+4. The WorkerWatcher detects the new file and restarts the worker container.
+5. The worker container loads the new module and activates the hook.
+
+**Deactivating** a workflow removes the `wf_*.py` file on the next sync,
+which triggers a container restart without that worker.
+
+---
+
+## Eject Pattern
+
+A generated `wf_*.py` worker can be **ejected** into a custom worker when
+you need to customise the logic beyond what the workflow graph supports.
+
+```bash
+# 1. Copy the generated worker to a new custom name
+cp /etc/cyberwave/workers/wf_a1b2c3d4.py \
+   /etc/cyberwave/workers/my_detector.py
+
+# 2. Edit the new custom worker
+nano /etc/cyberwave/workers/my_detector.py
+
+# 3. Deactivate the originating workflow in the UI
+#    (this removes wf_a1b2c3d4.py on the next sync)
+```
+
+**Ownership after ejection:**
+
+- The `wf_*.py` file is **deleted** on the next edge sync (because the workflow was deactivated).
+- Your `my_detector.py` is **untouched** by edge sync — you own it.
+- Edge sync never writes to files that do not start with `wf_`.
+
+**Important:** do not edit `wf_*.py` files directly — they will be overwritten
+on the next sync. Always eject first.
+
+---
+
+## Writing a Custom Worker
+
+```python
+# /etc/cyberwave/workers/detect_people.py
+# ``cw`` is injected by the worker runtime — no import needed.
+# For IDE support, uncomment: from cyberwave import Cyberwave; cw: Cyberwave
+
+model = cw.models.load("yolov8n")        # cached, safe to call at module level
+twin_uuid = cw.config.twin_uuid
+
+@cw.on_frame(twin_uuid, sensor="front")
+def on_frame(frame, ctx):
+    results = model.predict(frame, classes=["person"], confidence=0.5)
+    for det in results:
+        cw.publish_event(twin_uuid, "person_detected", {
+            "confidence": getattr(det, "score", None),
+            "frame_ts": ctx.timestamp,
+        })
+```
+
+See [Edge Workers (SDK reference)](/sdks/edge-workers) for the full hook API.
+
+---
+
+## Generated Worker Format
+
+For reference, here is what a generated worker looks like:
+
+```python
+"""
+Generated edge worker for workflow: Alert on Person
+Workflow UUID: a1b2c3d4-...
+
+Auto-generated by WorkerCodegen — DO NOT EDIT.
+To customise this worker, eject it:
+  cp wf_a1b2c3d4.py alert_on_person.py
+"""
+
+# ``cw`` is injected by the worker runtime — no import needed.
+
+yolov8n = cw.models.load("yolov8n.pt")  # type: ignore[name-defined]  # noqa: F821
+
+@cw.on_frame("twin-uuid", sensor="front")  # type: ignore[name-defined]  # noqa: F821
+def on_frame_a1b2c3d4_0(frame, ctx):
+    """Camera frame handler for workflow 'Alert on Person'."""
+    results = yolov8n.predict(frame, classes=["person"], confidence=0.5)
+    for det in results:
+        cw.publish_event(  # type: ignore[name-defined]  # noqa: F821
+            "twin-uuid",
+            "person_detected",
+            {
+                "severity": "WARNING",
+                "model": "yolov8n.pt",
+                "confidence": getattr(det, "score", None),
+                "frame_ts": ctx.timestamp,
+            },
+        )
+```
+
+Generated workers follow exactly the same contract as handwritten workers:
+`cw` is injected as a builtin, models are loaded at module level, and events
+are published with `cw.publish_event`.

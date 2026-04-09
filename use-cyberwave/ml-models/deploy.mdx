@@ -1,57 +1,157 @@
 ## Phase 2: Train and Deploy Models
 
-With your robot connected, record task demonstrations, build datasets, and train AI models in the cloud. Then deploy those models back to your robot for fully autonomous control.
+With your robot connected, record demonstrations (via **Local Teleop**), build datasets, and train an **OpenVLA** policy in the cloud—then deploy it for autonomous control.
+
+> stub
+> **Training stack:** Cloud training currently supports **VLA with OpenVLA**
+> only. We plan to add more policy types—including additional **VLA** options
+> and **RL**—and, longer term, **non-robotic** models as well.
+
+> stub
+> **Data collection:** Dataset recording for this workflow assumes your robot
+> twin can use the **local teleop** controller. Robots that do not expose
+> **Local Teleop** are not supported for this style of training data capture
+> today.
 
 ### Step 6: Record and Create Datasets
 
-Collect training data by recording your robot operations. These datasets will be used to train AI models for autonomous behavior.
+Collect training data by recording your robot operations. These datasets are used for **OpenVLA** training. Your twin must support the **local teleop** controller (see the note above).
+
+{/* stub — Step 6 bullets and Tip below pending human curation before publishing */}
 
 - Switch your environment to **Live Mode**
-- Turn on the camera to capture video feed
-- Start recording your robot operations
+- Check that cameras are streaming correctly
+- Assign **Local Teleop** to a supported robot twin, then record (teleop-driven data is what OpenVLA training expects)
 - Perform the task you want the robot to learn multiple times
 - Stop recording when you have enough demonstrations
 
 <Tip>
-Record 10-15 demonstrations of the same task with slight variations for better model training results.
+  Record at least 30 demonstrations of the same task with slight variations.
+  More high-quality data usually improves spatial reasoning and instruction
+  following—for example, picking the **red cube** on the **left** when the
+  prompt requires it.
 </Tip>
 
+> stub:
+>
+> When collecting data to train an AI model, favor **clear, deliberate demonstrations** over rushing. Better demonstrations usually improve **VLA** predictions more than marginal gains from noisy data.
+>
+> **How much data?** There is no single dataset size for every task—it depends on the VLA, the scene, and task difficulty. **About 30 demonstrations** is a reasonable starting point; more **diverse** data often makes the policy more robust. Mixing **related tasks** in one dataset can sometimes help generalization.
+>
+> **Cameras:** Plan for at least a **wrist** camera and an **overhead** (scene) view. A practical rule: if you could perform the task using **only** what those cameras show, the VLA has a fair shot at learning it. Match camera placement and lighting between **recording for training** and **running inference** as closely as you can.
+>
+> **Episodes:** Pause between episodes. Vary **start** configurations so the robot learns to recover from different poses. Mark **ends** at crisp task boundaries—for example, gripper **closed** after a stable grasp on a pick, or gripper **open** after release on a place. Short pauses around those moments make trimming and labeling easier.
+>
+> **Iteration:** If quality is still lacking after training, add more demonstrations and repeat. Target the behavior that is weakest—**picking** is often the hardest—by adding more high-quality **pick** examples rather than only scaling unrelated footage.
+
+<Note>
+**API Reference:**
+- `PUT /api/v1/twins/{uuid}` - Assign Local Teleop controller for recording
+- `GET /api/v1/twins/{uuid}/recordings` - Get twin recordings
+
+**MQTT Topics:**
+- `cyberwave/twin/{uuid}/telemetry` - Recording lifecycle:
+  - `telemetry_start` - Recording begins
+  - `telemetry_end` - Recording ends (triggers cloud processing)
+- `cyberwave/joint/{uuid}/+` - Joint state updates during recording
+- `cyberwave/twin/{uuid}/command` - Controller assignment changes
+</Note>
+
+### Step 7: Mark episodes in Replay (stub)
+
+After recording, define **episodes**—one time-bounded segment per demonstration—in **Replay** before you assemble a dataset. Episodes carry a **task name** that groups semantically similar clips; keep that naming consistent for training.
+
+{/* stub — reconcile shortcuts and copy with `replay-panel.tsx`, `episode-create-dialog.tsx`, `useReplayShortcuts.ts` before publishing */}
+
+- Switch the environment to **Replay** mode
+- Select the **session** (and overall **time range**) where you collected data; **zoom or filter the timeline** if needed so markers land cleanly in a less cluttered view
+- Enter episode creation (**Create Episode** in the replay controls). Move the playhead and press **M** to drop a **marker** at the current time; the **second** marker completes a span and opens the episode **save** dialog (two markers → one episode)
+- In the dialog, set the **task name** with care—use the **same** name for the same task across runs. The UI **defaults** to the **last** task name you used and lets you pick from **names already used** in the environment; avoid near-duplicate spellings
+- With the dialog open, **playback stays paused**. When the dialog is dismissed and focus is on the viewer, **Space** toggles **play/pause** like elsewhere in Replay (shortcuts may not apply while typing in the dialog)
+
+> stub:
+>
+> **Implementation sketch:** Episode marking and **M** are wired through replay keyboard shortcuts; confirmation UI lives in the episode create flow. Exact button labels, marker affordances, and whether time-filtering is session-picker-only vs timeline-zoom should be checked in-product. Link internal sources: `cyberwave-frontend/components/environment/replay/replay-panel.tsx`, `episode-create-dialog.tsx`, `hooks/useReplayShortcuts.ts`.
+
+<Note>
+**API Reference:**
+- `POST /api/v1/episodes` - Create episode from marked timeline segment
+- `GET /api/v1/episodes` - List episodes (filter by environment)
+- `GET /api/v1/episodes/task-names` - Get available task names for autocomplete
+
+**MQTT Topics:**
+Episodes are created via API using recorded data from `telemetry_end` events.
+</Note>
+
+### Step 8: Prepare Your Dataset (export optional)
+
+Turn recordings and **episodes** (from Step 7 or equivalent trimming) into a dataset Cyberwave can use for training. You can do this **entirely in the platform**—**exporting** a dataset file is **optional** and only needed if you want a copy outside Cyberwave.
+
+- Review your recorded sessions and the **episodes** tied to them
+- If needed, adjust segments (e.g. trim) so each episode is one clean task completion
+- Choose the episodes you want in your dataset
+- Open **Manage Datasets** to create or review the dataset you will use in **AI → Training**
+- *(Optional)* Export the dataset if you need an offline artifact; otherwise continue in-product for training
+
+<Note>
+**API Reference:**
+- `POST /api/v1/datasets` - Create dataset from episodes
+- `GET /api/v1/datasets` - List available datasets
+- `GET /api/v1/datasets/{uuid}/zip` - Download dataset as zip file
+- `PUT /api/v1/datasets/{uuid}` - Update dataset episodes
+
+**MQTT Topics:**
+Dataset management is API-only (no real-time MQTT).
+</Note>
+
 ---
 
-### Step 7: Export Your Dataset
+### Step 9: Train an AI Model
 
-Process your recordings into structured datasets ready for training.
+Use your dataset to train a **VLA (OpenVLA)** policy that can control your robot autonomously. Other training backends are not available yet (see the notes at the top of this page).
 
-- Review your recorded sessions
-- Trim recordings to create episodes (one per task completion)
-- Select quality episodes for your dataset
-- Export the dataset
-- Access your dataset from the **Manage Datasets** tab
+You can start training in either of these ways:
 
----
+- **AI → Training → New Training** — single dialog to pick workspace, dataset, and model (when you already have a processed dataset).
+- **AI → Finetune VLA model** — opens **Finetune OpenVLA to your tasks**, a guided flow for dataset prep and training in one place.
 
-### Step 8: Train an AI Model
+{/* stub — before publish, verify against `cyberwave-frontend/components/environment/ai/fine-tune-vla-wizard-dialog.tsx` (steps, dialog title, STEP_TITLES) */}
 
-Use your dataset to train a machine learning model that can control your robot autonomously.
+> stub:
+>
+> **Finetune VLA wizard (implementation reference):** The guided dialog is implemented in `cyberwave-frontend/components/environment/ai/fine-tune-vla-wizard-dialog.tsx`. User-facing steps are **Prepare dataset** → **Start training** → **Done**: create or attach an existing dataset and wait for processing, then submit training via the embedded **New Training** form (`new-training-form.tsx`), with optional polling/logs until the run completes. Menu labels, timeouts, and step copy may change—reconcile with the live app before removing this stub.
+
+**If you use New Training only:**
 
 - Navigate to **AI → Training** in your environment
 - Click **New Training**
-- Select your exported dataset
-- Choose model architecture (e.g., VLA model)
+- Select the dataset you prepared (in-platform; no export required unless you chose to download one)
+- Choose the **OpenVLA** architecture (currently the supported option)
 - Configure training parameters or use defaults
 - Click **Start Training**
-- Monitor training progress in the Training tab
+- Training can take **several hours**; use **AI → Training → View training history** to check status
 
 ```python
 # Training happens in the cloud - no local setup required!
 # Monitor progress in the Cyberwave dashboard
 ```
 
+<Note>
+**API Reference:**
+- `GET /api/v1/mlmodels` - List available ML models (OpenVLA, etc.)
+- `POST /api/v1/mltrainings` - Start a new training job
+- `GET /api/v1/mltrainings/{uuid}` - Get training status and metrics
+- `PUT /api/v1/mltrainings/{uuid}` - Update training (used by training scripts)
+
+**MQTT Topics:**
+Training is fully cloud-based (no edge MQTT).
+</Note>
+
 ---
 
-### Step 9: Deploy Your Model
+### Step 10: Deploy Your Model
 
-Deploy your trained model as a controller policy to enable autonomous robot control.
+Deploy your trained **OpenVLA** policy as a controller to enable autonomous robot control.
 
 - Go to **AI → Deployments** in your environment
 - Click **Deploy Model**
@@ -60,11 +160,21 @@ Deploy your trained model as a controller policy to enable autonomous robot cont
 - Configure deployment settings
 - Click **Deploy**
 
+<Note>
+**API Reference:**
+- `POST /api/v1/mltrainings/{uuid}/deploy` - Deploy trained model to twins
+- `GET /api/v1/mlmodels/{uuid}/weights` - Download model checkpoint weights
+- `GET /api/v1/mltrainings/deployed` - List deployed models
+
+**MQTT Topics:**
+- `cyberwave/twin/{uuid}/command` - Sends `controller-changed` event on deployment
+</Note>
+
 ---
 
-### Step 10: Use AI to Control Your Robot
+### Step 11: Use AI to Control Your Robot
 
-Control your robot autonomously using natural language prompts powered by your deployed AI model.
+Control your robot with natural language prompts using your deployed **VLA** policy.
 
 - Switch to **Edit Mode** in your environment
 - Click **Assign Controller Policy** for your robot
@@ -75,7 +185,21 @@ Control your robot autonomously using natural language prompts powered by your d
 - Watch your robot execute the task autonomously!
 
 <Warning>
-Ensure the workspace is clear and the robot has safe operating space before running autonomous operations.
+  Ensure the workspace is clear and the robot has safe operating space before
+  running autonomous operations.
 </Warning>
+
+<Note>
+**API Reference:**
+- `PUT /api/v1/twins/{uuid}` - Assign controller policy to twin
+- `POST /api/v1/twins/{uuid}/actions` - Execute actions (motion, animation, etc.)
+- `GET /api/v1/twins/{uuid}/actions/{action_id}` - Get action execution status
+
+**MQTT Topics:**
+- `cyberwave/twin/{uuid}/command` - Controller policy updates
+- `cyberwave/joint/{uuid}/+` - Joint commands from AI controller to edge
+- `cyberwave/twin/{uuid}/position` - Position commands from AI
+- `cyberwave/twin/{uuid}/rotation` - Rotation commands from AI
+</Note>
 
 ---

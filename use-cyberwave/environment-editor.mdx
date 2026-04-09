@@ -56,6 +56,29 @@ The Environment Editor provides a comprehensive set of tools for creating and ma
 
 ---
 
+## Adding Primitives
+
+stub: The **Add** menu (or the **+** button in the editor toolbar) includes a **Primitives** section. Primitives are curated public catalog assets with a short alias — things like cameras, lidars, and common generic objects — that you can drop into any environment in one click.
+
+- **Where to find them:** open the 3D editor, click **Add → Primitives** (or the catalog icon in the sidebar) to browse the full list.
+- **Why use them:** primitives are the fastest way to populate an environment. Because each primitive carries a short alias (e.g. `camera`, `lidar`), you can also instantiate them programmatically without knowing the full `vendor/slug` registry ID:
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+
+# Browse available primitives and their aliases
+for p in cw.assets.list_primitives():
+    print(p.registry_id_alias, "->", p.registry_id)
+
+# Instantiate by alias — no catalog search needed
+camera = cw.twin("camera")
+lidar  = cw.twin("lidar")
+```
+
+---
+
 ## Edge core connection status (Live mode)
 
 When you are in **Live** mode, the right-hand panel shows an edge core status indicator:
@@ -81,6 +104,12 @@ stub: In **Edit** mode, changing a twin joint updates the scene immediately, pub
 ## Twin position quick actions
 
 stub: In the environment editor transform panel, **Center** resets a twin to the origin. **Above** keeps the current X and Y values and only moves the twin to `z = 1` for fast vertical placement.
+
+---
+
+## Twin override export controls
+
+stub: In the twin editor, **Twin overrides** lets you set per-twin appearance color, opacity, fixed-base behavior, and a total exported MuJoCo mass in kilograms. Cyberwave converts the total mass into proportional per-link scaling during MuJoCo export, and the editor shows an **Export warning** badge when the asset snapshot has incomplete inertial data that makes the export best-effort.
 
 ---
 

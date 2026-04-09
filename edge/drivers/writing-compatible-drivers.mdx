@@ -84,23 +84,155 @@ Drivers should treat `metadata["edge_configs"]` as the source of truth for per-d
 
 Read `edge_configs` from `CYBERWAVE_TWIN_JSON_FILE` at startup to obtain per-device settings without hardcoding them in the image.
 
-## Sensor data output (stub)
+## Sensor data output
 
-If your driver produces sensor data (video frames, depth maps, audio, joint states, etc.), it should write that data to the **sensor data convention path** so that edge scripts and ML models can consume it locally — with zero network overhead.
+If your driver produces sensor data (video frames, depth maps, audio, joint states, etc.), publish it to the **edge data bus** so worker containers and ML models can consume it locally with zero network overhead.
 
-### The convention
+There are two options: the **Zenoh data bus** (recommended) and the **filesystem convention** (fallback for constrained environments). Both use the same channel names — a driver can switch between them by changing one env var.
 
-Write sensor data to a subfolder of the config directory that Edge Core already mounts into your container:
+### Option A: Zenoh data bus (recommended)
+
+The Zenoh data bus provides zero-copy shared memory between driver and worker containers. Data is consumed directly by worker hooks and `cw.data.latest()`.
+
+#### Key expression convention
+
+```
+cw/{twin_uuid}/data/{channel}
+```
+
+| Segment     | Value                    | Example              |
+| ----------- | ------------------------ | -------------------- |
+| `cw`        | Fixed prefix             | `cw`                 |
+| `twin_uuid` | UUID of the twin         | `a1b2c3d4-...`       |
+| `data`      | Fixed namespace          | `data`               |
+| `channel`   | Canonical channel name   | `frames/default`     |
+
+The `DataBus` handles key composition automatically via `CYBERWAVE_TWIN_UUID`.
+
+#### Canonical channels
+
+| Channel            | Encoding           | Pattern       | Wire payload                                                       |
+| ------------------ | ------------------ | ------------- | ------------------------------------------------------------------ |
+| `frames/default`   | `numpy/ndarray`    | Stream        | SDK header + raw BGR/RGB uint8                                     |
+| `depth/default`    | `numpy/ndarray`    | Stream        | SDK header + raw uint16 depth (mm)                                 |
+| `joint_states`     | `application/json` | Latest value  | `{ts, names, positions, velocities?, efforts?, source_type}`       |
+| `position`         | `application/json` | Latest value  | `{ts, x, y, z, qx?, qy?, qz?, qw?}`                              |
+| `audio/default`    | `numpy/ndarray`    | Stream        | SDK header + float32 PCM                                           |
+| `pointcloud/default` | `numpy/ndarray`  | Stream        | SDK header + Nx3 float32                                           |
+| `imu`              | `application/json` | Stream        | `{ts, accel: {x,y,z}, gyro: {x,y,z}}`                             |
+| `battery`          | `application/json` | Latest value  | `{ts, voltage_v, current_a, charge_pct}`                           |
+| `telemetry`        | `application/json` | Latest value  | Free-form `{ts, ...}`                                              |
+
+You can define custom channels by picking any channel name.
+
+#### Python SDK example
+
+```python
+from cyberwave import Cyberwave
+import numpy as np
+import os, time
+
+cw = Cyberwave(api_key=os.environ["CYBERWAVE_API_KEY"], source_type="edge")
+
+# Binary stream: numpy array published with SDK header
+frame = np.zeros((480, 640, 3), dtype=np.uint8)
+cw.data.publish("frames/default", frame)
+
+# JSON latest-value: dict published as application/json
+cw.data.publish("joint_states", {
+    "ts": time.time(),
+    "names": ["shoulder", "elbow"],
+    "positions": [0.1, -0.5],
+})
+```
+
+`CYBERWAVE_TWIN_UUID` is read automatically from the environment. `CYBERWAVE_DATA_BACKEND` selects the transport (`zenoh` or `filesystem`).
+
+#### Wire format reference (for native language publishers)
+
+For C++, Rust, or any language that needs to publish without the Python SDK:
+
+```
+┌──────────────────┬──────────┬──────────┬─────────────────────┬─────────────────┐
+│ header_len (u32) │ ts (f64) │ seq (i64)│ header JSON (UTF-8) │ payload (bytes) │
+│   4 bytes, LE    │ 8 bytes  │ 8 bytes  │ variable length     │ variable length │
+└──────────────────┴──────────┴──────────┴─────────────────────┴─────────────────┘
+```
+
+Required JSON fields:
+- `content_type`: `"numpy/ndarray"` | `"application/json"` | `"application/octet-stream"`
+- `shape`: `[H, W, C]` (for ndarray; omit for JSON/bytes)
+- `dtype`: `"uint8"` | `"uint16"` | `"float32"` etc. (for ndarray; omit for JSON/bytes)
+
+#### C++ native publish example
+
+Minimal `zenoh-cpp` snippet that publishes frames with the correct header:
+
+```cpp
+#include <zenoh.hxx>
+#include <nlohmann/json.hpp>
+#include <cstring>
+#include <cstdint>
+
+std::vector<uint8_t> pack_frame(
+    const uint8_t* pixels, size_t pixel_bytes,
+    int height, int width, int channels,
+    double ts, int64_t seq
+) {
+    nlohmann::json meta;
+    meta["content_type"] = "numpy/ndarray";
+    meta["shape"] = {height, width, channels};
+    meta["dtype"] = "uint8";
+    std::string json_str = meta.dump();
+
+    uint32_t header_len = 16 + static_cast<uint32_t>(json_str.size());
+    std::vector<uint8_t> buf(4 + header_len + pixel_bytes);
+
+    size_t off = 0;
+    memcpy(buf.data() + off, &header_len, 4); off += 4;
+    memcpy(buf.data() + off, &ts, 8); off += 8;
+    memcpy(buf.data() + off, &seq, 8); off += 8;
+    memcpy(buf.data() + off, json_str.data(), json_str.size());
+    off += json_str.size();
+    memcpy(buf.data() + off, pixels, pixel_bytes);
+    return buf;
+}
+
+int main() {
+    auto config = zenoh::Config::default_config();
+    auto session = zenoh::Session::open(std::move(config));
+
+    std::string twin_uuid = std::getenv("CYBERWAVE_TWIN_UUID");
+    std::string key = "cw/" + twin_uuid + "/data/frames/default";
+    auto pub = session.declare_publisher(key);
+
+    int64_t seq = 0;
+    while (true) {
+        // ... capture frame into pixels[] ...
+        auto wire = pack_frame(pixels, pixel_bytes, 480, 640, 3,
+                               wall_clock_seconds(), seq++);
+        pub.put(zenoh::Bytes(wire.data(), wire.size()));
+    }
+}
+```
+
+The Python SDK's `DataBus.subscribe()` automatically decodes this payload — no adapter code needed.
+
+### Option B: Filesystem convention (fallback)
+
+<Note>
+The filesystem convention is the **fallback** for environments where `eclipse-zenoh` cannot be installed. For most drivers, use `cw.data.publish()` (Zenoh data bus) instead — it provides zero-copy shared memory and is consumed directly by worker hooks. Both conventions use the same channel names.
+</Note>
+
+Write sensor data to a subfolder of the config directory that Edge Core mounts into your container:
 
 ```
 $CYBERWAVE_EDGE_CONFIG_DIR/data/{twin_uuid}/{channel}/{sensor_name}/
 ```
 
-`CYBERWAVE_EDGE_CONFIG_DIR` is always set by Edge Core (defaults to `/app/.cyberwave`). `CYBERWAVE_TWIN_UUID` gives you the twin UUID.
+`CYBERWAVE_EDGE_CONFIG_DIR` is always set by Edge Core (defaults to `/app/.cyberwave`).
 
-### Ring buffer (for stream data)
-
-Use this pattern for high-frequency data like video frames, depth maps, audio chunks, or point clouds.
+#### Ring buffer (for stream data)
 
 ```
 data/{twin_uuid}/frames/default/
@@ -112,43 +244,12 @@ data/{twin_uuid}/frames/default/
 ```
 
 **Rules:**
-- Write `.npy` files (numpy format) to numbered slots: `{slot:06d}.npy`
-- Slot index = `write_count % buffer_size` (default buffer size: 120)
+- Write `.npy` files to numbered slots: `{slot:06d}.npy`
+- Slot index = `write_count % buffer_size` (default: 120)
 - **Atomic writes**: write to `{slot}.npy.tmp`, then `rename()` to `{slot}.npy`
-- Update `meta.json` after each write with at least: `write_idx`, `size`, `shape`, `dtype`
+- Update `meta.json` after each write
 
-**Python example (camera driver):**
-
-```python
-import os, json, numpy as np
-from pathlib import Path
-
-config_dir = os.getenv("CYBERWAVE_EDGE_CONFIG_DIR", "/app/.cyberwave")
-twin_uuid = os.getenv("CYBERWAVE_TWIN_UUID")
-data_dir = Path(config_dir) / "data" / twin_uuid / "frames" / "default"
-ring_dir = data_dir / "ring"
-ring_dir.mkdir(parents=True, exist_ok=True)
-
-BUFFER_SIZE = 120
-write_idx = 0
-
-def on_frame(frame: np.ndarray, frame_count: int):
-    global write_idx
-    slot = write_idx % BUFFER_SIZE
-    tmp = ring_dir / f"{slot:06d}.npy.tmp"
-    target = ring_dir / f"{slot:06d}.npy"
-    np.save(tmp, frame)
-    tmp.rename(target)
-    meta = {"write_idx": write_idx, "size": BUFFER_SIZE,
-            "shape": list(frame.shape), "dtype": str(frame.dtype)}
-    (data_dir / "meta.json.tmp").write_text(json.dumps(meta))
-    (data_dir / "meta.json.tmp").rename(data_dir / "meta.json")
-    write_idx += 1
-```
-
-### Latest value (for state data)
-
-Use this pattern for low-frequency state data like joint positions, robot pose, or telemetry.
+#### Latest value (for state data)
 
 ```
 data/{twin_uuid}/joint_states/
@@ -160,46 +261,66 @@ data/{twin_uuid}/joint_states/
 - **Atomic writes**: write to `latest.json.tmp`, then `rename()`
 - Include a `timestamp` field
 
-**Python example (robot driver):**
+This is a **filesystem convention**, not a Python API. C++, Rust, or any other language can write `.npy` files and JSON to the same paths.
 
-```python
-import os, json, time
-from pathlib import Path
+## MQTT topics and payloads
 
-config_dir = os.getenv("CYBERWAVE_EDGE_CONFIG_DIR", "/app/.cyberwave")
-twin_uuid = os.getenv("CYBERWAVE_TWIN_UUID")
-data_dir = Path(config_dir) / "data" / twin_uuid / "joint_states"
-data_dir.mkdir(parents=True, exist_ok=True)
+If you publish data over MQTT directly (rather than through the SDK's `cw.data.publish`), see the [MQTT API Reference](/api-reference/mqtt/main) for the complete list of topics and payload schemas supported by the platform. That page covers:
 
-def publish_joints(positions, velocities):
-    payload = {"positions": positions, "velocities": velocities,
-               "timestamp": time.time()}
-    tmp = data_dir / "latest.json.tmp"
-    tmp.write_text(json.dumps(payload))
-    tmp.rename(data_dir / "latest.json")
+- Twin transform: position, rotation, scale
+- Joint state updates (single-joint, flat multi-joint, and aggregated formats)
+- Navigation commands and status reporting
+- Locomotion commands (`move_forward`, `turn_left`, etc.)
+- Telemetry lifecycle events (`connected`, `telemetry_start`, `telemetry_end`)
+- Sensor data: depth frames, point clouds, metrics
+- Edge health reporting
+- WebRTC signalling
+- Health check ping/pong
+
+## Migrating from MQTT-only drivers
+
+If your driver currently publishes sensor data over MQTT, you can add Zenoh publishing without removing the MQTT path. The two paths serve different consumers:
+
+- **MQTT** → cloud backend (telemetry, frontend, workflows)
+- **Zenoh** → local worker containers (zero-copy inference, fusion)
+
+### Step 1: Set CYBERWAVE_DATA_BACKEND
+
+Ensure `CYBERWAVE_DATA_BACKEND=zenoh` is set in the driver container. Edge Core sets this automatically for managed drivers. For manual testing:
+
+```bash
+docker run -e CYBERWAVE_DATA_BACKEND=zenoh ...
 ```
 
-### Supported channels
+### Step 2: Add cw.data.publish alongside the MQTT call
 
-| Channel | Data type | Pattern | Recommended buffer size |
-|---|---|---|---|
-| `frames` | Video frames (numpy BGR uint8) | Ring buffer | 120 (~4s at 30fps) |
-| `depth` | Depth maps (numpy uint16) | Ring buffer | 120 |
-| `audio` | Audio chunks (numpy float32) | Ring buffer | 300 |
-| `pointcloud` | Point clouds (numpy Nx3 float32) | Ring buffer | 30 |
-| `joint_states` | Joint positions/velocities | Latest value | — |
-| `position` | 3D pose | Latest value | — |
-| `telemetry` | Device metrics | Latest value | — |
+```python
+# Before (MQTT only)
+twin.client.mqtt.update_joints_state(twin_uuid=twin_uuid, ...)
 
-You can define custom channels by picking any channel name and following either the ring buffer or latest value pattern.
+# After (dual-publish)
+twin.client.mqtt.update_joints_state(twin_uuid=twin_uuid, ...)   # unchanged
+cw.data.publish("joint_states", {"ts": ts, "names": [...], "positions": [...]})
+```
 
-### Why this matters
+Zenoh publish errors are caught and logged — they do not affect the MQTT path.
 
-Edge scripts and ML models read from these exact paths to do local inference — detecting objects in camera frames, fusing depth + RGB data, monitoring joint states, etc. By following this convention your driver automatically becomes compatible with the edge scripting system, without any coupling to specific ML frameworks or script logic.
+### Step 3: Verify with a subscriber
 
-### Language-agnostic
+```python
+sub = cw.data.subscribe("joint_states", lambda data: print(data))
+# Run your driver; you should see joint dicts printed
+```
 
-This is a **filesystem convention**, not a Python API. C++, Rust, or any other language can write `.npy` files and JSON to the same paths. The Python SDK provides optional helpers (`SharedVolumeWriter`, `LatestValueWriter`) but they are not required.
+### Controlling which paths are active
+
+Set `CYBERWAVE_PUBLISH_MODE` to choose:
+
+| Value          | Effect                                |
+| -------------- | ------------------------------------- |
+| `dual`         | Both MQTT and Zenoh publish (default) |
+| `zenoh_only`   | Only Zenoh (local-only drivers)       |
+| `mqtt_only`    | Only MQTT (legacy mode)               |
 
 ## Licensing your driver
 
@@ -234,5 +355,8 @@ Once you have a working driver, these guides cover the platform features your dr
   </Card>
   <Card title="Record & Replay" icon="circle-play" href="/edge/drivers/data-record-replay">
     Capture live edge data to disk and replay it for deterministic debugging.
+  </Card>
+  <Card title="MQTT API Reference" icon="tower-broadcast" href="/api-reference/mqtt/main">
+    Complete list of MQTT topics and payload schemas: telemetry, commands, navigation, joint states, and more.
   </Card>
 </CardGroup>

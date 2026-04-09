@@ -1,0 +1,65 @@
+---
+title: "Edge Worker Container"
+description: "Run ML worker scripts on edge devices with managed lifecycle, hot-reload, and health monitoring"
+icon: "container-storage"
+stub: true
+---
+
+## Overview
+
+Edge Core manages a dedicated worker container (`cyberwave-worker-{env_uuid[:8]}`) on each edge device. Worker scripts run inside this container with access to the Zenoh data bus, cached model weights, and all environment twin data.
+
+<Info>
+  One worker container runs per edge device (not per twin). Workers can consume
+  data from all twins in the environment simultaneously.
+</Info>
+
+## Worker Directory
+
+Place Python worker scripts in the edge config workers directory:
+
+| Platform | Path |
+|---|---|
+| Linux | `/etc/cyberwave/workers/` |
+| macOS | `~/.cyberwave/workers/` |
+
+## Model Requirements
+
+Declare model dependencies in `cyberwave.yml` inside the workers directory:
+
+```yaml
+models:
+  - yolov8n
+  - background-subtraction
+```
+
+Edge Core pre-downloads listed models before starting the worker container. Models are also auto-detected from `cw.models.load("...")` calls in worker Python files.
+
+## CLI Commands
+
+```bash
+cyberwave-edge-core worker start      # Start the worker container
+cyberwave-edge-core worker stop       # Stop the worker container
+cyberwave-edge-core worker restart    # Restart (re-scans workers, re-downloads models)
+cyberwave-edge-core worker status     # Show container state, workers, cached models, and health
+cyberwave-edge-core worker health     # Show detailed restart history and circuit-breaker state
+cyberwave-edge-core worker logs       # Stream worker container logs
+```
+
+## Hot-Reload on File Changes
+
+Edge Core monitors the workers directory every ~15 seconds. When `.py` files are added, removed, or modified, the worker container is automatically restarted with the updated set of workers.
+
+A minimum cool-down of 10 seconds between successive automatic restarts prevents rapid churn when files are written incrementally.
+
+## Health Monitoring
+
+Edge Core continuously monitors the worker container:
+
+- **Restart accounting**: every restart is recorded with timestamp and reason.
+- **Circuit-breaker**: after 5 restarts in 5 minutes, automatic restarts are suppressed until the window clears. Run `worker health` to inspect the state.
+- **Spontaneous exit detection**: if the container exits without a deliberate restart, a warning is logged.
+
+## GPU Access
+
+Edge Core detects the NVIDIA container runtime and passes `--gpus all` to the worker container when available.

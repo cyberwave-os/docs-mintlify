@@ -1,0 +1,67 @@
+---
+title: "Zenoh-MQTT Bridge"
+description: "Bidirectional forwarder between local Zenoh data bus and cloud MQTT broker"
+---
+
+{/* stub — this page will be curated by a human before publishing */}
+
+The Zenoh-MQTT bridge runs on edge devices alongside Edge Core. It connects the local high-performance Zenoh data bus (`cyberwave.data`) to the cloud MQTT broker, forwarding selected channels in both directions.
+
+## Overview
+
+| Direction | Source | Destination | Use case |
+|---|---|---|---|
+| Outbound | Zenoh channel | MQTT topic | Inference results, events, health to cloud |
+| Inbound | MQTT topic | Zenoh channel | Workflow sync commands from cloud |
+
+When MQTT is disconnected, outbound messages are buffered to a persistent file-backed queue and drained in FIFO order on reconnect.
+
+## Quick start
+
+```python
+from cyberwave.zenoh_mqtt import ZenohMqttBridge, BridgeConfig
+
+bridge = ZenohMqttBridge(
+    config=BridgeConfig(
+        twin_uuids=["<twin_uuid>"],
+        outbound_channels=["model_output", "event", "model_health"],
+    ),
+    mqtt_host="<mqtt_host>",
+    mqtt_port=8883,
+    mqtt_password="<api_key>",
+)
+bridge.start()
+```
+
+## Default topic mapping
+
+| Zenoh key | MQTT topic | Direction |
+|---|---|---|
+| `cw/{twin}/data/model_output` | `cyberwave/twin/{twin}/model_output` | Edge to Cloud |
+| `cw/{twin}/data/event` | `cyberwave/twin/{twin}/event` | Edge to Cloud |
+| `cw/{twin}/data/model_health` | `cyberwave/twin/{twin}/model_health` | Edge to Cloud |
+| — | `cyberwave/twin/{twin}/commands/sync_workflows` | Cloud to Edge |
+
+## Offline queue
+
+When the MQTT connection drops:
+
+1. Outbound messages are appended to segmented files under `CYBERWAVE_BRIDGE_QUEUE_DIR`.
+2. On reconnect, the queue is drained in FIFO order before resuming live forwarding.
+3. Queue size is bounded by `CYBERWAVE_BRIDGE_QUEUE_MAX_BYTES` (default 50 MiB); oldest segments are evicted when the budget is exceeded.
+
+## Configuration
+
+| Environment variable | Default | Description |
+|---|---|---|
+| `CYBERWAVE_BRIDGE_ENABLED` | `false` | Master switch |
+| `CYBERWAVE_BRIDGE_TWIN_UUIDS` | — | Comma-separated twin UUIDs |
+| `CYBERWAVE_BRIDGE_OUTBOUND_CHANNELS` | `model_output,event,model_health` | Channels forwarded to MQTT |
+| `CYBERWAVE_BRIDGE_INBOUND_TOPICS` | `commands/sync_workflows` | MQTT suffixes forwarded to Zenoh |
+| `CYBERWAVE_BRIDGE_QUEUE_DIR` | `/tmp/cyberwave_bridge_queue` | Persistent queue directory |
+| `CYBERWAVE_BRIDGE_QUEUE_MAX_BYTES` | `52428800` | Max offline queue size (bytes) |
+| `CYBERWAVE_BRIDGE_MQTT_QOS` | `1` | MQTT QoS for bridge messages |
+
+## Transition compatibility
+
+Existing direct MQTT paths (`cw.mqtt.publish(...)`) continue to work unchanged. The bridge is additive — channels published via both Zenoh and MQTT are handled idempotently on the cloud side.

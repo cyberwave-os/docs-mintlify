@@ -9,11 +9,17 @@ description: "Alerts notify operators that action is needed."
 
 Alerts notify operators that action is needed. They are displayed prominently in the UI (environment view, twin detail, etc.).
 
+Alerts have a **category**:
+
+- **technical** (default): operational or hardware events (e.g. robot stuck, calibration needed).
+- **business**: business-process events (e.g. order delayed, SLA threshold exceeded).
+
 Examples:
 
 - A robot needs calibration.
 - A robot got stuck and needs remote takeover.
 - A sensor reading is out of expected range.
+- An order has exceeded its SLA deadline.
 
 ## Model
 
@@ -26,7 +32,8 @@ Every alert belongs to a workspace and must be attached to at least one of: twin
 | `alert_type` | string | Machine-readable code (e.g. `calibration_needed`, `robot_stuck`) |
 | `severity` | enum | `info`, `warning`, `error`, `critical` (default: `warning`) |
 | `status` | enum | `active`, `acknowledged`, `resolved`, `silenced` (default: `active`) |
-| `source_type` | enum | `edge`, `cloud`, `workflow` (default: `edge`) |
+| `source_type` | enum | `edge`, `simulation`, `cloud`, `workflow` (default: `edge`) |
+| `category` | enum | `technical`, `business` (default: `technical`) |
 
 ## Lifecycle
 
