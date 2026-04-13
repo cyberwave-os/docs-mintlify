@@ -1,0 +1,64 @@
+---
+title: "Changelog"
+description: "New features, improvements, and updates to the Cyberwave platform"
+icon: "clock-rotate-left"
+rss: true
+---
+
+<Update label="March 2025" description="Platform Update">
+
+## New Features
+
+**Try a Real Robot Live**
+
+Control a real SO101 robot arm directly from your browser, no hardware or setup required. Sign up, click **Try a Real Robot**, and start moving a physical arm in our Milan lab with a keyboard controller and live camera feed. [Try it now →](/get-started/quickstart#try-a-real-robot-live)
+
+**Mission Authoring and Execution**
+
+Missions got a major upgrade with redesigned waypoint editing and ordering in the UI, improved waypoint visualization, and drag-and-drop ordering. Assets now support waypoint-style in-scene transform gizmos for precise positioning.
+
+**Mission Capture Persistence + Workflow Integration**
+
+Capture state and media now persist across backend, edge, and frontend. Mission captures are surfaced in the UI and connected to workflow attachment processing, enabling end-to-end capture-to-workflow pipelines.
+
+**Primitives as First-Class Objects**
+
+Primitives (camera, lidar, etc.) are now accessible across all product surfaces: a new public endpoint `GET /api/v1/assets/primitives`, Python SDK access via `cw.assets.list_primitives()`, MCP tooling support, and documentation updates for environment editing.
+
+**Alert Categories: Business vs Technical**
+
+Alerts now support **business** and **technical** categories across the full stack: backend model, schema, migration, API, MQTT payload, Python SDK, and documentation.
+
+**GO2 Real-Robot Pipeline**
+
+Restored the end-to-end real-robot runtime pipeline for the Unitree GO2 under the new architecture, including navigation timestamp handling updates.
+
+## Feature Improvements
+
+**SDK Updates**
+
+- **Python SDK**: Added `AssetManager.list_primitives()` / `cw.assets.list_primitives()` for alias-based primitive discovery (e.g. camera, lidar) with README usage examples
+- **Python SDK Alerts**: Category support added to alert create/update flows, aligned with backend alert categories
+- **C++ SDK**: Core/runtime parity and route fixes, build/install/guard improvements, and README/docs refresh
+
+**MQTT Documentation**
+
+Major rewrite of the MQTT topic and payload reference with cross-linking from driver documentation, covering all real-time communication contracts.
+
+**Frontend UX**
+
+- **Consistent "Add" menus**: Environment header and twin-list menus now share aligned items, icons, and action wiring
+- **Improved controller selection**: Dedicated controllers appear first, "See all" for universal controllers, and clearer "Unassign Controller" language and styling
+
+## Bug Fixes
+
+- **Replay timeline**: Resolved previously unclickable areas in the timeline interaction
+
+## Documentation
+
+- [Quick Start](/get-started/quickstart) restructured with simulation-first workflow and application development guide
+- [Architecture](/get-started/architecture) updated with "Your Applications" layer
+- [MCP Server](/sdks/mcp-server) expanded to 27 tools across 6 categories
+- [Cyberwave Edge](/edge/overview) complete rewrite of Edge Core, drivers, and alerts
+
+</Update>
