@@ -4,43 +4,47 @@ description: "Product updates and announcements"
 rss: true
 ---
 
-<Update label="April 8, 2026">
+<Update label="April 9, 2026" description="Production release">
 
-## Major features
+## New Features
 
-- **Mission authoring and execution upgrade** — Redesigned waypoint editing/ordering in UI, better waypoint visualization, drag-and-drop ordering, and waypoint-style in-scene transform gizmos for assets.
-- **Mission capture persistence + workflow integration** — Capture state and media now persist across backend, edge, and frontend; mission captures are surfaced in UI and connected to workflow attachment processing.
-- **Primitives as a first-class concept** — New public endpoint `GET /api/v1/assets/primitives`, SDK access, MCP tooling, and docs updates for environment editing.
-- **Alert categories (business vs technical)** — Backend model/schema/migration/API updates, MQTT payload inclusion, Python SDK support, and docs update.
-- **MQTT contract documentation expansion** — Major rewrite of MQTT topic/payload reference with cross-linking from driver docs.
-- **GO2 runtime pipeline restoration** — End-to-end real-robot path and navigation timestamp handling updates under the new structure.
+- **3D editing keeps physics active for GLB and URDF twins**: Both `GLBAsset` and `URDFAsset` updated so Rapier rigid bodies remain mounted while edit gizmos are shown, instead of disabling physics during transforms.
+- **Editor-mode-only transform controls**: `EnvironmentViewer3D` now gates `isEditing` and `transformMode` with `isEditorMode`, preventing edit controls from appearing in non-editor contexts.
 
-## SDK updates
+## Feature Improvements
 
-- **Python SDK** — Added `AssetManager.list_primitives()` / `cw.assets.list_primitives()` for alias-based primitive discovery (e.g. camera, lidar) with README usage examples.
-- **Python SDK alerts** — Category support added to alert create/update flows, aligned with backend alert categories.
-- **C++ SDK** — Core/runtime parity and route fixes, build/install/guard improvements, and README/docs refresh.
-
-## Frontend improvements
-
-- **Consistent "Add" menus** — Environment header and twin-list menus now share aligned items, icons, and action wiring.
-- **Controller selection UX** — Dedicated-first ordering, "See all" for universal controllers, and clearer "Unassign Controller" language/styling.
-- **Replay timeline fix** — Resolved previously unclickable areas in the timeline.
+- **Safer pickability while gizmos are visible**: `setObjectTreePickable(...)` logic tightened in both asset renderers so object picking is disabled when transform gizmos are active, reducing accidental scene interaction conflicts.
+- **More predictable gizmo visibility outside editor mode**: New tests assert that selected GLB/URDF twins in simulate mode receive `isEditing: false` and `transformMode: undefined`, keeping gizmos hidden outside editor mode.
+- **Regression coverage for fixed-base physics in edit flows**: New GLB and URDF tests verify fixed-body Rapier behavior remains active while PivotControls are visible.
 
 </Update>
 
-<Update label="April 9, 2026" description="Production release">
+<Update label="April 8, 2026">
 
-## Major features
+## New Features
 
-- **3D editing keeps physics active for GLB and URDF twins** — In the production release commit (`2fc6edb0`), both `GLBAsset` and `URDFAsset` were updated so Rapier rigid bodies remain mounted while edit gizmos are shown, instead of disabling physics during transforms.
-- **Safer pickability while gizmos are visible** — `setObjectTreePickable(...)` logic was tightened in both asset renderers so object picking is disabled when transform gizmos are active, reducing accidental scene interaction conflicts.
-- **Editor-mode-only transform controls in the main viewer** — `EnvironmentViewer3D` now gates `isEditing` and `transformMode` with `isEditorMode`, preventing edit controls from appearing in non-editor contexts.
-- **Scope note (evidence-based)** — This release commit touched frontend 3D components and tests only; there were no backend or public docs changes in the shipped diff.
+- **Mission authoring and execution upgrade**: Redesigned waypoint editing/ordering in UI, better waypoint visualization, drag-and-drop ordering, and waypoint-style in-scene transform gizmos for assets.
+- **Mission capture persistence + workflow integration**: Capture state and media now persist across backend, edge, and frontend; mission captures are surfaced in UI and connected to workflow attachment processing.
+- **Primitives as a first-class concept**: New public endpoint `GET /api/v1/assets/primitives`, SDK access via `cw.assets.list_primitives()`, MCP tooling, and docs updates for environment editing.
+- **Alert categories (business vs technical)**: Backend model/schema/migration/API updates, MQTT payload inclusion, Python SDK support, and docs update.
+- **GO2 runtime pipeline restoration**: End-to-end real-robot path and navigation timestamp handling updates under the new structure.
 
-## Frontend improvements
+## Feature Improvements
 
-- **More predictable gizmo visibility outside editor mode** — New tests assert that selected GLB/URDF twins in simulate mode receive `isEditing: false` and `transformMode: undefined`, keeping gizmos hidden when users are not in editor mode.
-- **Regression coverage for fixed-base physics in edit flows** — New GLB and URDF tests verify fixed-body Rapier behavior remains active while PivotControls are visible, improving confidence in editing + physics coexistence.
+**SDK**
+
+- **Python SDK**: Added `AssetManager.list_primitives()` for alias-based primitive discovery (e.g. camera, lidar) with README usage examples.
+- **Python SDK alerts**: Category support added to alert create/update flows, aligned with backend alert categories.
+- **C++ SDK**: Core/runtime parity and route fixes, build/install/guard improvements, and README/docs refresh.
+
+**Platform**
+
+- **MQTT documentation**: Major rewrite of MQTT topic/payload reference with cross-linking from driver docs.
+- **Consistent "Add" menus**: Environment header and twin-list menus now share aligned items, icons, and action wiring.
+- **Controller selection UX**: Dedicated-first ordering, "See all" for universal controllers, and clearer "Unassign Controller" language/styling.
+
+## Bug Fixes
+
+- **Replay timeline**: Resolved previously unclickable areas in the timeline.
 
 </Update>
