@@ -4,6 +4,31 @@ description: "Product updates and announcements"
 rss: true
 ---
 
+<Update label="April 12, 2026" description="hotfix">
+
+## Major features
+
+- **Cloud-node TTL protection for active workloads** — `CloudNodeProvisionUtils.get_expired_instances()` now extends `ttl_expires_at` for expired instances that still have `RUNNING` or `ASSIGNED` workloads, instead of marking them for termination (`cyberwave-backend/src/lib/cloud_node_provision_utils.py`, commit `4d29c79e`).
+- **Prevents premature deprovisioning of busy compute** — This release ships an urgent production fix for cloud-node instances that were at risk of teardown while associated workloads were still active (PR #1808).
+
+</Update>
+
+<Update label="April 9, 2026" description="Regular release">
+
+## Major features
+
+- **3D editing keeps physics active for GLB and URDF twins** — In the production release commit (`2fc6edb0`), both `GLBAsset` and `URDFAsset` were updated so Rapier rigid bodies remain mounted while edit gizmos are shown, instead of disabling physics during transforms.
+- **Safer pickability while gizmos are visible** — `setObjectTreePickable(...)` logic was tightened in both asset renderers so object picking is disabled when transform gizmos are active, reducing accidental scene interaction conflicts.
+- **Editor-mode-only transform controls in the main viewer** — `EnvironmentViewer3D` now gates `isEditing` and `transformMode` with `isEditorMode`, preventing edit controls from appearing in non-editor contexts.
+- **Scope note (evidence-based)** — This release commit touched frontend 3D components and tests only; there were no backend or public docs changes in the shipped diff.
+
+## Frontend improvements
+
+- **More predictable gizmo visibility outside editor mode** — New tests assert that selected GLB/URDF twins in simulate mode receive `isEditing: false` and `transformMode: undefined`, keeping gizmos hidden when users are not in editor mode.
+- **Regression coverage for fixed-base physics in edit flows** — New GLB and URDF tests verify fixed-body Rapier behavior remains active while PivotControls are visible, improving confidence in editing + physics coexistence.
+
+</Update>
+
 <Update label="April 8, 2026">
 
 ## Major features
@@ -26,21 +51,5 @@ rss: true
 - **Consistent "Add" menus** — Environment header and twin-list menus now share aligned items, icons, and action wiring.
 - **Controller selection UX** — Dedicated-first ordering, "See all" for universal controllers, and clearer "Unassign Controller" language/styling.
 - **Replay timeline fix** — Resolved previously unclickable areas in the timeline.
-
-</Update>
-
-<Update label="April 9, 2026" description="Production release">
-
-## Major features
-
-- **3D editing keeps physics active for GLB and URDF twins** — In the production release commit (`2fc6edb0`), both `GLBAsset` and `URDFAsset` were updated so Rapier rigid bodies remain mounted while edit gizmos are shown, instead of disabling physics during transforms.
-- **Safer pickability while gizmos are visible** — `setObjectTreePickable(...)` logic was tightened in both asset renderers so object picking is disabled when transform gizmos are active, reducing accidental scene interaction conflicts.
-- **Editor-mode-only transform controls in the main viewer** — `EnvironmentViewer3D` now gates `isEditing` and `transformMode` with `isEditorMode`, preventing edit controls from appearing in non-editor contexts.
-- **Scope note (evidence-based)** — This release commit touched frontend 3D components and tests only; there were no backend or public docs changes in the shipped diff.
-
-## Frontend improvements
-
-- **More predictable gizmo visibility outside editor mode** — New tests assert that selected GLB/URDF twins in simulate mode receive `isEditing: false` and `transformMode: undefined`, keeping gizmos hidden when users are not in editor mode.
-- **Regression coverage for fixed-base physics in edit flows** — New GLB and URDF tests verify fixed-body Rapier behavior remains active while PivotControls are visible, improving confidence in editing + physics coexistence.
 
 </Update>
