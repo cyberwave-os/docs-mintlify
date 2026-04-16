@@ -7,9 +7,7 @@ description: "Automate robot operations with visual workflow orchestration"
 
 Workflows in Cyberwave let you create automated sequences of robot operations. Connect nodes visually to build complex behaviors without writing procedural code.
 
-<Info>
-Workflows run on Cyberwave's cloud infrastructure, ensuring reliable execution even when your local machine is offline.
-</Info>
+Workflows run either **on the cloud** (Celery tasks — for manual, schedule, webhook, event, MQTT, and email triggers) or **on the edge device** (for `camera_frame` triggers that run ML inference locally without sending video to the cloud).
 
 ---
 
@@ -20,18 +18,21 @@ Workflows run on Cyberwave's cloud infrastructure, ensuring reliable execution e
 Nodes are the building blocks of workflows. Each node performs a specific action:
 
 <CardGroup cols={2}>
+  <Card title="Trigger Nodes" icon="bolt">
+    Start the workflow: manual, schedule, webhook, event, MQTT, email, or camera_frame (edge-local)
+  </Card>
+  <Card title="Call Model Nodes" icon="brain">
+    Run ML inference — cloud VLM/LLM or edge-local object detection (YOLO, etc.)
+  </Card>
   <Card title="Twin Nodes" icon="robot">
     Control digital twin position, rotation, and state
   </Card>
-  
   <Card title="Joint Nodes" icon="gear">
     Set individual joint positions or run trajectories
   </Card>
-  
   <Card title="Condition Nodes" icon="code-branch">
-    Branch based on sensor data or twin state
+    Branch based on sensor data, twin state, or model output
   </Card>
-  
   <Card title="Delay Nodes" icon="clock">
     Add timing between operations
   </Card>
@@ -44,57 +45,51 @@ Connections define the execution flow between nodes:
 - **Parallel**: Execute multiple nodes simultaneously
 - **Conditional**: Branch based on conditions
 
+Connection validation prevents invalid graphs: self-connections, cycles, and invalid pairings (e.g. `camera_frame` triggers can only connect to `call_model` nodes) are blocked.
+
 ---
 
 ## Creating a Workflow
 
 > stub: Workflows now have an editable `slug` that is unique within a workspace. You can keep the generated slug or customize it for stable SDK and automation references. Workflows can also be marked `public` from the workflow creation and editing UI.
 
+### Using the Dashboard
+
+1. Navigate to **Workflows** in the dashboard
+2. Click **Create Workflow** — set a name, optional slug, and visibility
+3. Drag nodes from the palette to the canvas
+4. Connect nodes by dragging from output to input ports
+5. Configure each node's parameters
+6. Click **Activate**
+
+### Using the CLI
+
+```bash
+cyberwave workflow list                  # list workflows
+cyberwave workflow create -n "Name"      # create a workflow
+cyberwave workflow create --template motion-detection
+cyberwave workflow show                  # show details (interactive)
+cyberwave workflow sync                  # sync to edge device(s)
+cyberwave workflow activate              # activate (interactive)
+cyberwave workflow deactivate            # deactivate (interactive)
+cyberwave workflow delete --yes
+```
+
+All subcommands accept `--base-url` / `-u` to override the API URL. When a UUID argument is omitted, an interactive arrow-key selector is shown.
+
 ### Using the SDK
 
 ```python
 from cyberwave import Cyberwave
 
-client = Cyberwave()
+cw = Cyberwave(api_key="your_api_key")
 
-# Create a new workflow
-workflow = client.api.workflow_create({
-    "name": "Pick and Place",
-    "description": "Move arm to pick position, grip, move to place position, release"
-})
+workflows = cw.workflows.list()
 
-# Add nodes
-pick_node = client.api.workflow_node_create(workflow.uuid, {
-    "type": "joint_control",
-    "config": {
-        "twin_uuid": "your-twin-uuid",
-        "joints": {"shoulder": 45, "elbow": 30}
-    }
-})
-
-grip_node = client.api.workflow_node_create(workflow.uuid, {
-    "type": "gripper",
-    "config": {
-        "action": "close",
-        "force": 0.8
-    }
-})
-
-# Connect nodes
-client.api.workflow_connection_create(workflow.uuid, {
-    "source_node": pick_node.uuid,
-    "target_node": grip_node.uuid
-})
+run = cw.workflows.trigger("workflow-uuid", inputs={"speed": 0.5})
+run.wait(timeout=60)
+print(f"Workflow finished: {run.status}")
 ```
-
-### Using the Dashboard
-
-1. Navigate to **Workflows** in the dashboard
-2. Click **Create Workflow**
-3. Drag nodes from the palette to the canvas
-4. Connect nodes by dragging from output to input ports
-5. Configure each node's parameters
-6. Click **Save** and **Run**
 
 ---
 
@@ -103,10 +98,8 @@ client.api.workflow_connection_create(workflow.uuid, {
 ### Manual Execution
 
 ```python
-# Execute a workflow
-execution = client.api.workflow_execute(workflow.uuid)
-print(f"Execution ID: {execution.uuid}")
-print(f"Status: {execution.status}")
+run = cw.workflows.trigger("workflow-uuid")
+print(f"Run ID: {run.uuid}, Status: {run.status}")
 ```
 
 ### Triggered Execution
@@ -114,7 +107,21 @@ print(f"Status: {execution.status}")
 Workflows can be triggered by:
 - **Schedule**: Run at specific times (cron)
 - **Events**: Run when sensor data matches conditions
-- **API**: Trigger from external systems
+- **API**: Trigger from external systems via REST or MCP
+- **Camera Frame**: Run on every camera frame at the edge device
+
+---
+
+## Edge Workflows (Camera Frame)
+
+The `camera_frame` trigger generates a Python worker (`wf_<uuid8>.py`) that runs ML inference directly on the edge device. The `call_model` node's `emit_event` parameter controls event emission:
+
+- **emit_mode**: `always`, `on_enter` (new classes only), `on_change` (count changes)
+- **cooldown_seconds**: minimum delay between events (default 5s)
+
+Sync to the edge with `cyberwave workflow sync` or wait for the automatic periodic sync.
+
+See [Edge Workers](/edge/workers/overview) for the full generated worker lifecycle and format.
 
 ---
 
@@ -123,30 +130,26 @@ Workflows can be triggered by:
 Track workflow execution status and results:
 
 ```python
-# Get execution details
-execution = client.api.workflow_execution_get(execution_uuid)
+runs = cw.workflow_runs.list(workflow_uuid="workflow-uuid")
 
-print(f"Status: {execution.status}")
-print(f"Started: {execution.started_at}")
-print(f"Completed: {execution.completed_at}")
-
-# Get node-level execution details
-for node_execution in execution.node_executions:
-    print(f"  {node_execution.node_name}: {node_execution.status}")
+for run in runs:
+    print(f"Status: {run.status}, Started: {run.started_at}")
 ```
+
+Each execution tracks status at both the workflow level and individual node level, including `started_at`, `finished_at`, and `error_message` fields.
 
 ---
 
-## Example: Inspection Workflow
+## Example: Edge Detection Workflow
 
-A typical inspection workflow might include:
+A `camera_frame` workflow that runs YOLO on the edge and emits alerts:
 
 ```mermaid
 flowchart LR
-    A[Move to Position 1] --> B[Capture Image]
-    B --> C[Analyze Image]
-    C -->|Pass| D[Move Next]
-    C -->|Fail| E[Alert]
+    A[Camera Frame Trigger] --> B[Call Model: YOLOv8]
+    B --> C{Detection?}
+    C -->|Yes| D[Publish Event]
+    C -->|No| E[Skip]
 ```
 
 ---
@@ -163,7 +166,12 @@ flowchart LR
   </Accordion>
   
   <Accordion title="Use meaningful names">
-    Name nodes and workflows descriptively. "Move to inspection position" is better than "Node 1".
+    Name nodes and workflows descriptively. "Alert on person in zone A" is better than "Node 1".
+  </Accordion>
+
+  <Accordion title="Use emit modes for edge workflows">
+    Use `on_enter` for alert-style use cases (person entering a zone) and
+    `on_change` for occupancy tracking. Set `cooldown_seconds` to avoid event floods.
   </Accordion>
 </AccordionGroup>
 
@@ -179,12 +187,11 @@ flowchart LR
   >
     Full workflow API documentation
   </Card>
-  
   <Card
-    title="SO101 Example"
-    icon="robot-astromech"
-    href="/examples/so101-arm"
+    title="Edge Workers"
+    icon="microchip-ai"
+    href="/edge/workers/overview"
   >
-    See workflows in action with a robot arm
+    Generated workers, eject pattern, and custom workers
   </Card>
 </CardGroup>

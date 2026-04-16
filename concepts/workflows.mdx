@@ -8,10 +8,9 @@ icon: "diagram-project"
 
 Workflows in Cyberwave let you create automated sequences of robot operations. Connect nodes visually to build complex behaviors without writing procedural code.
 
-<Info>
-  Workflows run on Cyberwave's cloud infrastructure, ensuring reliable execution
-  even when your local machine is offline.
-</Info>
+Workflows can execute in two environments:
+- **Cloud** — schedule, webhook, manual, event, MQTT, and email triggers run as Celery tasks on Cyberwave infrastructure.
+- **Edge** — the `camera_frame` trigger generates a Python worker that runs ML inference directly on the device. Raw video never leaves the edge.
 
 ---
 
@@ -22,22 +21,21 @@ Workflows in Cyberwave let you create automated sequences of robot operations. C
 Nodes are the building blocks of workflows. Each node performs a specific action:
 
 <CardGroup cols={2}>
+  <Card title="Trigger Nodes" icon="bolt">
+    Start the workflow: manual, schedule, webhook, event, MQTT, email, or camera_frame (edge-local)
+  </Card>
+  <Card title="Call Model Nodes" icon="brain">
+    Run ML inference — cloud VLM/LLM or edge-local object detection (YOLO, etc.)
+  </Card>
   <Card title="Twin Nodes" icon="robot">
     Control digital twin position, rotation, and state
   </Card>
-
-{" "}
-
-<Card title="Joint Nodes" icon="gear">
-  Set individual joint positions or run trajectories
-</Card>
-
-{" "}
-
-<Card title="Condition Nodes" icon="code-branch">
-  Branch based on sensor data or twin state
-</Card>
-
+  <Card title="Joint Nodes" icon="gear">
+    Set individual joint positions or run trajectories
+  </Card>
+  <Card title="Condition Nodes" icon="code-branch">
+    Branch based on sensor data, twin state, or model output
+  </Card>
   <Card title="Delay Nodes" icon="clock">
     Add timing between operations
   </Card>
@@ -51,16 +49,47 @@ Connections define the execution flow between nodes:
 - **Parallel**: Execute multiple nodes simultaneously
 - **Conditional**: Branch based on conditions
 
+The workflow editor validates connections in real time: self-connections, cycles, and invalid pairings (e.g. `camera_frame` triggers can only connect to `call_model` nodes) are blocked before saving.
+
+---
+
+## Trigger Types
+
+| Trigger | Where it runs | Description |
+|---------|--------------|-------------|
+| Manual | Cloud | User clicks "Run" in the dashboard or calls the SDK |
+| Schedule | Cloud | Cron or interval timer |
+| Webhook | Cloud | HTTP POST to a generated URL |
+| Event | Cloud | Business event matching conditions |
+| MQTT | Cloud | Message on a subscribed MQTT topic |
+| Email | Cloud | Incoming email |
+| Camera Frame | **Edge** | Every camera frame — ML inference on-device, only events sent to cloud |
+
+---
+
+## Edge Workflow Execution
+
+When a workflow uses a `camera_frame` trigger connected to a `call_model` node with an edge-compatible model, the backend generates a Python worker file (`wf_<uuid8>.py`) via `WorkerCodegen`. The edge device pulls this file on boot and periodically, writes it to its workers directory, and the worker runtime activates the `@cw.on_frame` hook.
+
+The `call_model` node supports configurable event emission via `emit_event`:
+
+- **emit_mode**: `always` (every detection), `on_enter` (new classes only), `on_change` (count changes)
+- **cooldown_seconds**: minimum delay between consecutive event publications (default 5s)
+
+See [Edge Workers](/edge/workers/overview) for the full lifecycle, eject pattern, and generated worker format.
+
 ---
 
 ## Creating a Workflow
 
 1. Navigate to **Workflows** in the dashboard
-2. Click **Create Workflow**
+2. Click **Create Workflow** — set a name, optional slug, and visibility
 3. Drag nodes from the palette to the canvas
 4. Connect nodes by dragging from output to input ports
 5. Configure each node's parameters
-6. Click **Save** and **Run**
+6. Click **Activate**
+
+For edge workflows, sync to the device with `cyberwave workflow sync` or wait for the automatic edge sync.
 
 ---
 
@@ -71,6 +100,7 @@ Workflows can be triggered by:
 - **Schedule**: Run at specific times (cron)
 - **Events**: Run when sensor data matches conditions
 - **API**: Trigger from external systems
+- **Camera Frame**: Run on every frame at the edge device
 
 ---
 
@@ -82,16 +112,19 @@ Workflows can be triggered by:
     workflow. This makes debugging and maintenance easier.
   </Accordion>
 
-{" "}
-
-<Accordion title="Add error handling">
-  Include condition nodes to handle failure cases gracefully. Consider what
-  should happen if a joint can't reach its target.
-</Accordion>
+  <Accordion title="Add error handling">
+    Include condition nodes to handle failure cases gracefully. Consider what
+    should happen if a joint can't reach its target.
+  </Accordion>
 
   <Accordion title="Use meaningful names">
-    Name nodes and workflows descriptively. "Move to inspection position" is
+    Name nodes and workflows descriptively. "Alert on person in zone A" is
     better than "Node 1".
+  </Accordion>
+
+  <Accordion title="Use emit modes for edge workflows">
+    Use `on_enter` for alert-style use cases (person entering a zone) and
+    `on_change` for occupancy tracking. Set `cooldown_seconds` to avoid event floods.
   </Accordion>
 </AccordionGroup>
 
@@ -106,5 +139,12 @@ Workflows can be triggered by:
     href="/api-reference/rest/WorkflowSchema"
   >
     Full workflow API documentation
+  </Card>
+  <Card
+    title="Edge Workers"
+    icon="microchip-ai"
+    href="/edge/workers/overview"
+  >
+    Generated workers, eject pattern, and custom workers
   </Card>
 </CardGroup>

@@ -10,7 +10,7 @@ icon: "microchip-ai"
 
 ## Overview
 
-Edge workers are Python modules that run inside a worker container on the edge device.
+Edge workers are Python modules that run inside the `cyberwaveos/edge-ml-worker` Docker container on the edge device.
 They use the Cyberwave SDK hook API (`@cw.on_frame`, `cw.models.load`, `cw.publish_event`)
 to subscribe to sensor data and emit events.
 
@@ -21,8 +21,26 @@ There are two kinds of workers:
 | **Custom** | anything except `wf_` | You — add/edit freely |
 | **Generated** | `wf_<uuid8>.py` | Backend workflow sync — do not edit directly |
 
-Worker files live in `{CONFIG_DIR}/workers/` (default `/etc/cyberwave/workers/` on Linux,
-`~/.cyberwave/workers/` on macOS).
+Worker files live in `{CONFIG_DIR}/workers/` (default `~/.cyberwave/workers/`).
+
+---
+
+## Container Image
+
+The worker container image (`cyberwaveos/edge-ml-worker`) is pulled automatically during `cyberwave edge install`. To skip it:
+
+```bash
+cyberwave edge install --without-workers
+```
+
+Edge-core manages the container lifecycle — you don't need to run it manually. The container mounts worker scripts and model weights from the host as read-only volumes.
+
+| Tag | Description |
+|---|---|
+| `latest` | Stable CPU release |
+| `dev` | Development CPU build |
+| `latest-gpu` | Stable with NVIDIA CUDA |
+| `dev-gpu` | Development with NVIDIA CUDA |
 
 ---
 
@@ -34,12 +52,13 @@ cyberwave worker add detect_people.py  # copy a file into the workers dir
 cyberwave worker remove detect_people  # remove a worker (with or without .py)
 cyberwave worker status                # show worker files + container state
 cyberwave worker logs                  # stream worker container logs
+cyberwave worker monitor               # live resource/throughput dashboard
 ```
 
 `cyberwave worker list` shows the **origin** of each worker:
 
 ```
-Installed Workers (/etc/cyberwave/workers)
+Installed Workers (~/.cyberwave/workers)
 ┌───────────────────────────┬──────────┬────────────────────────────┬───────┐
 │ Name                      │ Origin   │ File                       │ Size  │
 ├───────────────────────────┼──────────┼────────────────────────────┼───────┤
@@ -57,6 +76,61 @@ cyberwave-edge-core worker restart
 
 ---
 
+## CLI: Monitoring Workers
+
+<Warning>
+**STUB:** This section will be expanded with screenshots and deeper guidance.
+</Warning>
+
+`cyberwave worker monitor` opens a live-updating terminal dashboard for the running worker container.
+
+```bash
+cyberwave worker monitor               # default 2s refresh
+cyberwave worker monitor --update 1    # 1s refresh
+cyberwave worker monitor -c <name>     # explicit container
+```
+
+The dashboard shows:
+
+| Section | Metrics | Source |
+|---|---|---|
+| **Resource Usage** | CPU %, memory, network I/O, PIDs | `docker stats` |
+| **GPU** | Utilization, memory, temperature | `nvidia-smi` (Linux only) |
+| **Zenoh Throughput** | Per-channel msgs/s, totals | SDK instrumentation via Zenoh |
+| **Worker Hooks** | Per-hook frame count, drop rate | SDK instrumentation via Zenoh |
+| **Model Inference** | Avg / P95 / P99 latency, count | SDK instrumentation via Zenoh |
+
+**Requirements:**
+- Docker must be running on the host.
+- For Zenoh throughput, hooks, and model metrics: `eclipse-zenoh` must be installed (`pip install eclipse-zenoh`).
+- GPU metrics require NVIDIA drivers and `nvidia-smi` on Linux. macOS shows "N/A" for GPU.
+
+---
+
+## CLI: Managing Workflows
+
+The `cyberwave workflow` command group lets you manage workflows from the terminal:
+
+```bash
+cyberwave workflow list                # list workflows with status and target twin(s)
+cyberwave workflow list --json         # JSON output
+cyberwave workflow show                # interactive selection, shows nodes and twins
+cyberwave workflow show <uuid>         # show specific workflow
+cyberwave workflow create -n "Name"    # create a workflow
+cyberwave workflow create --template motion-detection
+cyberwave workflow activate            # activate (interactive selector)
+cyberwave workflow deactivate          # deactivate (interactive selector)
+cyberwave workflow sync                # sync workflow to edge device(s) via MQTT
+cyberwave workflow sync <uuid>         # sync specific workflow
+cyberwave workflow delete --yes        # delete (skip confirmation)
+```
+
+All subcommands accept `--base-url` / `-u` to override the API URL (e.g. `http://192.168.10.101:8000`). When a UUID is omitted, an interactive arrow-key selector is shown.
+
+The `sync` command reads the workflow's `camera_frame` trigger nodes to discover which twin(s) it targets, then sends a `sync_workflows` MQTT command to each twin's edge node, which triggers an immediate HTTP pull of the latest worker files.
+
+---
+
 ## Workflow-Generated Workers
 
 When a workflow with a **Camera Frame** trigger and a connected **Call Model** node
@@ -70,13 +144,35 @@ files are left untouched to avoid spurious worker container restarts.
 **Lifecycle:**
 
 1. Activate a workflow in the UI (trigger: Camera Frame → Call Model → edge-compatible model).
-2. Edge core syncs on next boot or `CYBERWAVE_WORKER_SYNC_INTERVAL_LOOPS` expiry.
+2. Edge core syncs on next boot, `CYBERWAVE_WORKER_SYNC_INTERVAL_LOOPS` expiry, or immediately when `cyberwave workflow sync` sends a `sync_workflows` MQTT command.
 3. `wf_<uuid8>.py` appears in the workers directory.
 4. The WorkerWatcher detects the new file and restarts the worker container.
 5. The worker container loads the new module and activates the hook.
 
 **Deactivating** a workflow removes the `wf_*.py` file on the next sync,
 which triggers a container restart without that worker.
+
+---
+
+## emit_event Configuration
+
+The `call_model` node's `emit_event` parameter controls when detection events are published back to the cloud. These settings are baked into the generated worker source at codegen time — no cloud round-trip is needed at inference time.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | bool | `true` | Set to `false` to run inference without publishing events |
+| `event_type` | string | `"detection"` | Business event type published to the cloud |
+| `severity` | string | `"INFO"` | Event severity (`INFO`, `WARNING`, `CRITICAL`) |
+| `emit_mode` | string | `"always"` | Controls when events fire (see below) |
+| `cooldown_seconds` | float | `5.0` | Minimum seconds between consecutive events |
+
+**emit_mode values:**
+
+- **`always`** — publishes for every detection, subject to cooldown. Skips frames with no results.
+- **`on_enter`** — publishes only for newly-appeared object classes (not seen in previous frame). Tracks a `_prev_labels` set. Useful for "person entered the zone" alerts.
+- **`on_change`** — publishes only when the detection count changes from the previous frame. Tracks a `_prev_count` counter. Useful for occupancy tracking.
+
+All modes respect `cooldown_seconds`: if the cooldown hasn't elapsed, the event is suppressed and the state (labels/count) is not updated so it retries on the next frame.
 
 ---
 
@@ -87,11 +183,11 @@ you need to customise the logic beyond what the workflow graph supports.
 
 ```bash
 # 1. Copy the generated worker to a new custom name
-cp /etc/cyberwave/workers/wf_a1b2c3d4.py \
-   /etc/cyberwave/workers/my_detector.py
+cp ~/.cyberwave/workers/wf_a1b2c3d4.py \
+   ~/.cyberwave/workers/my_detector.py
 
 # 2. Edit the new custom worker
-nano /etc/cyberwave/workers/my_detector.py
+nano ~/.cyberwave/workers/my_detector.py
 
 # 3. Deactivate the originating workflow in the UI
 #    (this removes wf_a1b2c3d4.py on the next sync)
@@ -111,7 +207,7 @@ on the next sync. Always eject first.
 ## Writing a Custom Worker
 
 ```python
-# /etc/cyberwave/workers/detect_people.py
+# ~/.cyberwave/workers/detect_people.py
 # ``cw`` is injected by the worker runtime — no import needed.
 # For IDE support, uncomment: from cyberwave import Cyberwave; cw: Cyberwave
 
@@ -134,7 +230,7 @@ See [Edge Workers (SDK reference)](/sdks/edge-workers) for the full hook API.
 
 ## Generated Worker Format
 
-For reference, here is what a generated worker looks like:
+For reference, here is what a generated worker looks like (with `on_enter` emit mode and cooldown):
 
 ```python
 """
@@ -146,27 +242,51 @@ To customise this worker, eject it:
   cp wf_a1b2c3d4.py alert_on_person.py
 """
 
+import time
+
 # ``cw`` is injected by the worker runtime — no import needed.
+# For IDE support, uncomment: from cyberwave import Cyberwave; cw: Cyberwave
 
 yolov8n = cw.models.load("yolov8n.pt")  # type: ignore[name-defined]  # noqa: F821
 
-@cw.on_frame("twin-uuid", sensor="front")  # type: ignore[name-defined]  # noqa: F821
+_last_emit_ts_0 = 0.0
+_prev_labels_0 = set()
+
+@cw.on_frame("twin-uuid", sensor="front", fps=5)  # type: ignore[name-defined]  # noqa: F821
 def on_frame_a1b2c3d4_0(frame, ctx):
     """Camera frame handler for workflow 'Alert on Person'."""
+    global _last_emit_ts_0, _prev_labels_0
     results = yolov8n.predict(frame, classes=["person"], confidence=0.5)
+    current_labels = {
+        getattr(d, 'label', getattr(d, 'class_name', ''))
+        for d in results
+    }
+    new_labels = current_labels - _prev_labels_0
+    if not new_labels:
+        _prev_labels_0 = current_labels
+        return
+    now = time.monotonic()
+    if now - _last_emit_ts_0 < 5.0:
+        return
+    _prev_labels_0 = current_labels
+    _last_emit_ts_0 = now
     for det in results:
+        label = getattr(det, 'label', getattr(det, 'class_name', ''))
+        if label not in new_labels:
+            continue
         cw.publish_event(  # type: ignore[name-defined]  # noqa: F821
             "twin-uuid",
             "person_detected",
             {
                 "severity": "WARNING",
                 "model": "yolov8n.pt",
-                "confidence": getattr(det, "score", None),
+                "confidence": getattr(det, 'score', None),
                 "frame_ts": ctx.timestamp,
             },
         )
 ```
 
-Generated workers follow exactly the same contract as handwritten workers:
+Generated workers follow the same contract as handwritten workers:
 `cw` is injected as a builtin, models are loaded at module level, and events
-are published with `cw.publish_event`.
+are published with `cw.publish_event`. The `fps` parameter on the `@cw.on_frame`
+decorator controls the frame sampling rate.

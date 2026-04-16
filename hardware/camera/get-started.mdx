@@ -23,11 +23,20 @@ This guide walks you through connecting a physical camera (external webcam or la
 - The camera should be connected and recognised by your operating system
 - Verify your camera is detected:
 
-```bash
-ls /dev/video*
-```
-
-You should see at least one device (e.g., `/dev/video0`).
+<Tabs>
+  <Tab title="Linux">
+    ```bash
+    ls /dev/video*
+    ```
+    You should see at least one device (e.g., `/dev/video0`).
+  </Tab>
+  <Tab title="macOS">
+    ```bash
+    ffmpeg -f avfoundation -list_devices true -i "" 2>&1 | grep "AVFoundation"
+    ```
+    You should see your camera listed (e.g., "OBSBOT Tiny 3 Lite StreamCamera" or "FaceTime HD Camera"). Requires `ffmpeg` (`brew install ffmpeg`).
+  </Tab>
+</Tabs>
 
 ---
 
@@ -123,8 +132,19 @@ Follow the prompts in your terminal:
 
 1. Select the environment you created earlier.
 2. Select the camera digital twin you added to that environment.
-3. The camera driver will be automatically installed and configured.
+3. **macOS only:** Select which camera to use from the list of detected AVFoundation devices. The selection is stored by device name and persists across reboots.
+4. The camera driver will be automatically installed and configured.
 
 <Check>
 Your camera is now paired with its digital twin and streaming video to Cyberwave in real time.
 </Check>
+
+<Tip>
+To switch to a different camera later without a full reinstall, run:
+
+```bash
+cyberwave edge install --reconfigure-camera
+```
+
+This re-prompts for camera selection and restarts the stream and edge-core service.
+</Tip>

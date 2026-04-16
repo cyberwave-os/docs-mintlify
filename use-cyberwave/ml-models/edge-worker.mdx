@@ -20,8 +20,7 @@ Place Python worker scripts in the edge config workers directory:
 
 | Platform | Path |
 |---|---|
-| Linux | `/etc/cyberwave/workers/` |
-| macOS | `~/.cyberwave/workers/` |
+| All | `~/.cyberwave/workers/` |
 
 ## Model Requirements
 
@@ -38,13 +37,17 @@ Edge Core pre-downloads listed models before starting the worker container. Mode
 ## CLI Commands
 
 ```bash
-cyberwave-edge-core worker start      # Start the worker container
-cyberwave-edge-core worker stop       # Stop the worker container
-cyberwave-edge-core worker restart    # Restart (re-scans workers, re-downloads models)
-cyberwave-edge-core worker status     # Show container state, workers, cached models, and health
-cyberwave-edge-core worker health     # Show detailed restart history and circuit-breaker state
-cyberwave-edge-core worker logs       # Stream worker container logs
+cyberwave worker start      # Start the worker container
+cyberwave worker stop       # Stop the worker container
+cyberwave worker restart    # Restart (re-scans workers, re-downloads models)
+cyberwave worker status     # Show container state and loaded workers
+cyberwave worker health     # Show detailed restart history and circuit-breaker state
+cyberwave worker logs       # Stream worker container logs
 ```
+
+<Tip>
+These commands are also available via `cyberwave-edge-core worker …` if you prefer to use the edge-core CLI directly.
+</Tip>
 
 ## Hot-Reload on File Changes
 

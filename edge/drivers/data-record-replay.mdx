@@ -74,6 +74,10 @@ replay(backend, "/data/recordings/session_001", channels=["frames/default"])
 replay(backend, "/data/recordings/session_001", loop=True)
 ```
 
+## Replay timeline markers
+
+stub: Replays with video now expose historical alert markers and selected telemetry markers on the timeline. Operators can filter those markers and the replay tracks by twin while reviewing live-originated and simulation-originated sessions.
+
 ## Portability
 
 Recordings are plain files with no backend-specific data. You can record on one backend (e.g. Zenoh) and replay on another (e.g. filesystem), or transfer recordings between machines.
