@@ -238,7 +238,7 @@ Agents can request a prompt before executing a task. For example, `safe_manipula
     | Method | Configuration |
     |---|---|
     | Environment variable (preferred) | `CYBERWAVE_API_KEY=<token>` or `CYBERWAVE_TOKEN=<token>` |
-    | Credentials file | `/etc/cyberwave/credentials.json`, `~/.cyberwave/credentials.json`, or `CYBERWAVE_CREDENTIALS_FILE=/path` |
+    | Credentials file | `~/.cyberwave/credentials.json` or `CYBERWAVE_CREDENTIALS_FILE=/path` |
     | Per-request passthrough | Client sends `Authorization: Bearer <token>` and the server forwards it |
 
     To enforce per-request authentication in HTTP mode:

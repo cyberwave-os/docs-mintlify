@@ -327,15 +327,32 @@ angle = robot.joints.get("shoulder_joint")
 
 joint_names = robot.joints.list()
 
+# Get all joint states as a dict {name: radians}
 all_joints = robot.joints.get_all()
+
+# Print a human-readable table of all joint states (radians + degrees)
+robot.joints.print_joint_states()
+```
+
+`print_joint_states()` fetches the latest state from the server and prints a formatted table:
+
+```
+Joint states for twin <twin-uuid>:
+------------------------------------------------------
+Joint                       Radians       Degrees
+------------------------------------------------------
+elbow_joint               0.0000 rad       0.00 °
+shoulder_joint            0.7854 rad      45.00 °
+------------------------------------------------------
 ```
 
 | Method | Description |
 |---|---|
 | `joints.set(name, value, degrees=True)` | Set a joint to a target position |
-| `joints.get(name)` | Get the current position of a specific joint |
+| `joints.get(name)` | Get the current position of a specific joint (radians) |
 | `joints.list()` | List all joint names for the twin |
-| `joints.get_all()` | Get all joint states at once |
+| `joints.get_all()` | Get all joint states as a `dict[name, radians]` |
+| `joints.print_joint_states()` | Print all joint states in a human-readable table (radians + degrees) |
 
 ---
 
@@ -539,7 +556,7 @@ edge = cw.edges.update(edge.uuid, {"name": "lab-rpi-001-renamed"})
 cw.edges.delete(edge.uuid)
 ```
 
-The `fingerprint` is a stable hardware identifier derived from hostname, OS, architecture, and MAC address. The Edge Core generates and persists it automatically at `/etc/cyberwave/fingerprint.json` on first boot.
+The `fingerprint` is a stable hardware identifier derived from hostname, OS, architecture, and MAC address. The Edge Core generates and persists it automatically at `~/.cyberwave/fingerprint.json` on first boot.
 
 ---
 
@@ -577,6 +594,20 @@ runs = cw.workflow_runs.list(workflow_id="workflow-uuid", status="error")
 for r in runs:
     print(r.uuid, r.status, r.error)
 ```
+
+Check if a workflow is currently running:
+
+```python
+wf = cw.workflows.get("workflow-uuid")
+if wf.is_running():
+    print("Workflow is currently executing")
+
+# Or using the manager directly
+if cw.workflows.is_running("workflow-uuid"):
+    print("Workflow is currently executing")
+```
+
+`is_running()` returns `True` when any run has status `running`, `waiting`, or `requested`.
 
 ---
 

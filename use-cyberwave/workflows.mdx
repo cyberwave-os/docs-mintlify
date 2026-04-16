@@ -8,9 +8,7 @@ icon: "diagram-project"
 
 Workflows in Cyberwave let you create automated sequences of robot operations. Connect nodes visually to build complex behaviors without writing procedural code.
 
-<Info>
-Workflows run on Cyberwave's cloud infrastructure, ensuring reliable execution even when your local machine is offline.
-</Info>
+Workflows can run **on the cloud** (Celery tasks) or **on the edge device** depending on the trigger type. Cloud triggers handle schedule, webhook, event, and manual execution. The `camera_frame` trigger runs ML inference directly on the edge — no video leaves the device.
 
 ---
 
@@ -21,6 +19,12 @@ Workflows run on Cyberwave's cloud infrastructure, ensuring reliable execution e
 Nodes are the building blocks of workflows. Each node performs a specific action:
 
 <CardGroup cols={2}>
+  <Card title="Trigger Nodes" icon="bolt">
+    Start the workflow: manual, schedule, webhook, event, MQTT, email, or camera_frame (edge)
+  </Card>
+  <Card title="Call Model Nodes" icon="brain">
+    Run ML inference — cloud VLM/LLM or edge-local object detection
+  </Card>
   <Card title="Twin Nodes" icon="robot">
     Control digital twin position, rotation, and state
   </Card>
@@ -28,7 +32,7 @@ Nodes are the building blocks of workflows. Each node performs a specific action
     Set individual joint positions or run trajectories
   </Card>
   <Card title="Condition Nodes" icon="code-branch">
-    Branch based on sensor data or twin state
+    Branch based on sensor data, twin state, or model results
   </Card>
   <Card title="Delay Nodes" icon="clock">
     Add timing between operations
@@ -42,6 +46,24 @@ Connections define the execution flow between nodes:
 - **Parallel**: Execute multiple nodes simultaneously
 - **Conditional**: Branch based on conditions
 
+<Info>
+Connection validation prevents invalid graphs: trigger nodes cannot accept incoming connections, cycles are blocked, and `camera_frame` triggers can only connect to `call_model` nodes.
+</Info>
+
+---
+
+## Trigger Types
+
+| Trigger | Where it runs | How it fires |
+|---------|--------------|-------------|
+| **Manual** | Cloud (Celery) | User clicks "Run" in the UI or triggers via SDK/API |
+| **Schedule** | Cloud (Celery) | Cron or interval timer |
+| **Webhook** | Cloud (Celery) | HTTP POST to a webhook URL |
+| **Event** | Cloud (Celery) | Business event matching conditions |
+| **MQTT** | Cloud (Celery) | MQTT message on a topic |
+| **Email** | Cloud (Celery) | Incoming email |
+| **Camera Frame** | **Edge device** | Every camera frame, locally — never sends video to the cloud |
+
 ---
 
 ## Creating a Workflow
@@ -53,18 +75,48 @@ Connections define the execution flow between nodes:
         Navigate to **Workflows** in the dashboard.
       </Step>
       <Step title="Create">
-        Click **Create Workflow**.
+        Click **Create Workflow**. Give it a name, optional slug (unique within the workspace), and visibility.
       </Step>
       <Step title="Build">
         Drag nodes from the palette to the canvas. Connect nodes by dragging from output to input ports.
       </Step>
       <Step title="Configure">
-        Configure each node's parameters (twin UUID, joint values, conditions, etc.).
+        Configure each node's parameters (twin UUID, model, confidence threshold, emit_event settings, etc.).
       </Step>
-      <Step title="Run">
-        Click **Save** and **Run**.
+      <Step title="Activate">
+        Click **Activate**. For edge workflows, sync to the device with the CLI or wait for the next automatic sync.
       </Step>
     </Steps>
+  </Tab>
+  <Tab title="CLI">
+    ```bash
+    # List workflows
+    cyberwave workflow list
+    cyberwave workflow list --json
+
+    # Create from template
+    cyberwave workflow create --template motion-detection
+
+    # Create with custom name
+    cyberwave workflow create -n "My Workflow"
+
+    # Show workflow details (interactive selection if UUID omitted)
+    cyberwave workflow show
+    cyberwave workflow show <uuid>
+
+    # Activate / deactivate
+    cyberwave workflow activate
+    cyberwave workflow deactivate
+
+    # Sync workflow to edge node(s)
+    cyberwave workflow sync
+    cyberwave workflow sync <uuid> --base-url http://192.168.10.101:8000
+
+    # Delete
+    cyberwave workflow delete --yes
+    ```
+
+    All subcommands accept `--base-url` / `-u` to override the API URL. When a UUID argument is omitted, an interactive arrow-key selector is shown.
   </Tab>
   <Tab title="Python SDK">
     ```python
@@ -83,6 +135,68 @@ Connections define the execution flow between nodes:
 
 ---
 
+## Edge Workflows (Camera Frame)
+
+The `camera_frame` trigger is designed for on-device ML inference. The backend generates a Python worker file that runs directly on the edge — raw video frames never leave the device.
+
+### How it works
+
+```mermaid
+sequenceDiagram
+    participant UI as Workflow Editor
+    participant BE as Backend
+    participant Edge as Edge Device
+
+    UI->>BE: Activate workflow (camera_frame → call_model)
+    Edge->>BE: GET /api/v1/workflows/edge-sync/{twin_uuid}
+    BE->>Edge: Worker source + model requirements
+    Edge->>Edge: Write wf_<uuid8>.py, install models
+    Edge->>Edge: Runtime loads worker, registers @cw.on_frame
+    loop Every frame
+        Edge->>Edge: model.predict(frame)
+        Edge->>BE: cw.publish_event() (detections only)
+    end
+```
+
+### emit_event configuration
+
+The `call_model` node's `emit_event` parameter controls when detection events are published back to the cloud. All settings are baked into the generated worker at codegen time.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | bool | `true` | Set to `false` to run inference without publishing events |
+| `event_type` | string | `"detection"` | Business event type published to the cloud |
+| `severity` | string | `"INFO"` | Event severity (`INFO`, `WARNING`, `CRITICAL`) |
+| `emit_mode` | string | `"always"` | Controls when events fire (see below) |
+| `cooldown_seconds` | float | `5.0` | Minimum seconds between consecutive events |
+
+**emit_mode values:**
+
+- **`always`** — publishes for every detection, subject to cooldown. Skips frames with no results.
+- **`on_enter`** — publishes only when new object classes appear that were not in the previous frame. Useful for "person entered the zone" alerts.
+- **`on_change`** — publishes only when the detection count changes. Useful for occupancy tracking.
+
+### Syncing to the edge
+
+After activating a workflow in the UI, push it to edge devices:
+
+```bash
+# Interactive: picks the workflow, discovers target twins, sends sync via MQTT
+cyberwave workflow sync
+
+# Explicit
+cyberwave workflow sync <workflow-uuid>
+
+# Or sync a specific twin directly
+cyberwave edge sync-workflows --twin-uuid <twin-uuid>
+```
+
+The CLI sends a `sync_workflows` command via MQTT. Edge core receives it and immediately pulls the latest worker files from the backend — no need to wait for the periodic cycle.
+
+The edge device also syncs automatically on boot and periodically (default ~5 min, configurable via `CYBERWAVE_WORKER_SYNC_INTERVAL_LOOPS`).
+
+---
+
 ## Execution Modes
 
 Workflows can be triggered by:
@@ -93,6 +207,7 @@ Workflows can be triggered by:
 | **Schedule** | Run at specific times (cron) |
 | **Events** | Run when sensor data matches conditions |
 | **API** | Trigger from external systems via REST or MCP |
+| **Camera Frame** | Run on every camera frame at the edge device |
 
 ---
 
@@ -109,18 +224,32 @@ for run in runs:
 
 Each execution tracks status at both the workflow level and individual node level, including `started_at`, `finished_at`, and `error_message` fields.
 
+### Check if a Workflow is Running
+
+Use `is_running()` to quickly check if a workflow has any active execution without manually querying runs:
+
+```python
+wf = cw.workflows.get("workflow-uuid")
+if wf.is_running():
+    print("Workflow is currently executing")
+```
+
+This returns `True` when any run has status `running`, `waiting`, or `requested`.
+
+In the dashboard, a **Running** indicator appears next to the Active badge in the workflow editor header whenever the workflow has an active execution. It refreshes automatically every 2 seconds.
+
 ---
 
-## Example: Inspection Workflow
+## Example: Edge Detection Workflow
 
-A typical inspection workflow that captures an image, runs detection, and branches based on results:
+A camera_frame workflow that runs YOLO on the edge and emits alerts:
 
 ```mermaid
 flowchart LR
-    A[Move to Position 1] --> B[Capture Image]
-    B --> C[Analyze Image]
-    C -->|Pass| D[Move Next]
-    C -->|Fail| E[Alert]
+    A[Camera Frame Trigger] --> B[Call Model: YOLOv8]
+    B --> C{Detection?}
+    C -->|Yes| D[Publish Event]
+    C -->|No| E[Skip]
 ```
 
 ---
@@ -129,4 +258,7 @@ flowchart LR
 
 - **Keep workflows focused** — create separate workflows for distinct operations rather than one large workflow. This makes debugging and maintenance easier.
 - **Add error handling** — include condition nodes to handle failure cases gracefully. Consider what should happen if a joint can't reach its target.
-- **Use meaningful names** — name nodes and workflows descriptively. "Move to inspection position" is better than "Node 1".
+- **Use meaningful names** — name nodes and workflows descriptively. "Alert on person in zone A" is better than "Node 1".
+- **Use `on_enter` emit mode for alerts** — avoids flooding with repeated events while the same object stays in frame.
+- **Set appropriate cooldowns** — balance between responsiveness and event volume. 5s is a safe default; lower for time-critical use cases.
+- **Eject before customising** — never edit `wf_*.py` files directly. Copy them to a custom name and deactivate the originating workflow.

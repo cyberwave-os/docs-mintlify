@@ -27,7 +27,8 @@ Manage the edge node service lifecycle, configuration, and monitoring:
 
 | Subcommand | Description |
 | --- | --- |
-| `install` | Install cyberwave-edge-core and register systemd service |
+| `install` | Install cyberwave-edge-core and register systemd service. On macOS, also sets up the camera stream bridge and prompts for camera selection. |
+| `install --reconfigure-camera` | Re-select camera and restart the stream and edge-core without a full reinstall |
 | `start` | Start the edge node |
 | `stop` | Stop the edge node |
 | `restart` | Restart the edge node (systemd or process) |

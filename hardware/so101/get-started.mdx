@@ -169,25 +169,30 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.cyberwave.usbip.plis
 
 </Accordion>
 
-<Accordion title="macOS: Camera stream fallback (if USB/IP video is slow)">
+<Accordion title="macOS: Camera stream (automatic)">
 
-If USB/IP video bandwidth is insufficient for your camera resolution, you can use an MJPEG stream fallback instead. This captures from the macOS camera via `ffmpeg` and serves it as an HTTP stream.
+On macOS, Docker cannot access USB cameras directly. During `cyberwave edge install`, the CLI **automatically** sets up an MJPEG camera stream bridge:
+
+1. The installer prompts you to select which camera to use from the list of detected AVFoundation devices.
+2. An `ffmpeg` process captures from the selected camera and serves an MJPEG stream on `http://localhost:8091`.
+3. A `launchd` agent ensures the stream starts automatically on login.
+4. Edge Core passes `CYBERWAVE_METADATA_VIDEO_DEVICE=http://host.docker.internal:8091` to driver containers.
+5. The driver's `cv2.VideoCapture` natively supports HTTP MJPEG URLs — no driver code changes needed.
+
+The selected camera is stored by **device name** (not index) so it persists across USB reconnections and reboots.
 
 **Requirements:**
 - [ffmpeg](https://formulae.brew.sh/formula/ffmpeg) (`brew install ffmpeg`)
 
-**Manual setup:**
+**To switch cameras** after initial install:
 
 ```bash
-# Start ffmpeg MJPEG server on macOS host:
-ffmpeg -f avfoundation -framerate 30 -video_size 640x480 -i "0" \
-  -c:v mjpeg -q:v 5 -f mjpeg -listen 1 http://0.0.0.0:8091
-
-# Tell edge-core to use the stream URL instead of /dev/video*:
-export CYBERWAVE_MACOS_CAMERA_STREAM_URL=http://host.docker.internal:8091
+cyberwave edge install --reconfigure-camera
 ```
 
-The driver's `cv2.VideoCapture` natively supports HTTP MJPEG URLs — no driver code changes needed. Note: this fallback does not work for Intel RealSense depth cameras (which require raw USB access).
+This re-prompts for camera selection and restarts the stream and edge-core service.
+
+<Note>This fallback does not work for Intel RealSense depth cameras (which require raw USB access).</Note>
 
 </Accordion>
 
