@@ -4,54 +4,53 @@ description: "Product updates and announcements"
 rss: true
 ---
 
-<Update label="April 16, 2026" description="Production release">
+<Update label="April 16, 2026">
 
 ## New Features
 
-- **Multi-runtime Edge ML inference (CYB-1712, PR #1860)**: Edge workers can now run models through a runtime registry covering ONNX, TFLite (including quantized/INT8 paths), OpenCV DNN, TensorRT, and PyTorch, with normalized detection publishing across runtimes.
-- **Mission orchestration foundation (CYB-1699, PR #1815)**: Introduced the initial Mission model/renaming and planning primitives that connect mission authoring/execution flows across backend, frontend, and runtime paths.
-- **Replay intelligence overlays (CYB-1705, PR #1824)**: Added timeline event APIs and UI markers for alerts + telemetry, including twin-level filtering for replay investigations.
-- **Database-backed feature flag platform (CYB-1694, PR #1793)**: Replaced hardcoded flags with a DB catalog and added global, organization, and user-level rollout controls with explicit precedence.
-- **Uptime Kuma infrastructure (PR #1855)**: Added a dedicated GCP Uptime Kuma stack with dev/staging/production environments and HTTPS-only access for platform monitoring.
+- **Multi-runtime Edge ML inference**: Edge workers can now run models through a runtime registry covering ONNX, TFLite (including quantized/INT8 paths), OpenCV DNN, TensorRT, and PyTorch, with normalized detection publishing across runtimes.
+- **Mission orchestration foundation**: Introduced the initial Mission model/renaming and planning primitives that connect mission authoring/execution flows across backend, frontend, and runtime paths.
+- **Replay intelligence overlays**: Added timeline event APIs and UI markers for alerts + telemetry, including twin-level filtering for replay investigations.
+- **Database-backed feature flag platform**: Replaced hardcoded flags with a DB catalog and added global, organization, and user-level rollout controls with explicit precedence.
+- **Uptime Kuma infrastructure**: Added a dedicated GCP Uptime Kuma stack with dev/staging/production environments and HTTPS-only access for platform monitoring.
 
 ## Feature Improvements
 
 ## Platform
 
-- **Shared-view performance and reliability (PR #1865, #1841)**: Environment viewer requests now pass a dedicated view token header, isolate viewer query caches, and skip unnecessary data/subscriptions in view-only mode.
-- **Public website messaging polish (CYB-1695/1717/1721, PR #1794, #1836, #1845)**: Iterated homepage narrative and interactive hero/code showcase for a simpler, higher-clarity value proposition.
-- **Simulation and vision UX upgrades (PR #1820, #1758)**: Improved virtual camera live-feed support and added camera FOV cone visualization in 3D environments.
-- **Catalog and seeding maintenance (PR #1851)**: Refactored controller/model seed catalogs and updated OpenARM references for staging/prod compatibility.
+- **Shared-view performance and reliability**: Environment viewer requests now pass a dedicated view token header, isolate viewer query caches, and skip unnecessary data/subscriptions in view-only mode.
+- **Public website messaging polish**: Iterated homepage narrative and interactive hero/code showcase for a simpler, higher-clarity value proposition.
+- **Simulation and vision UX upgrades**: Improved virtual camera live-feed support and added camera FOV cone visualization in 3D environments.
+- **Catalog and seeding maintenance**: Refactored controller/model seed catalogs and updated OpenARM references for staging/prod compatibility.
 
 ## SDK
 
 ### Python SDK
 
-- **Regression hardening for critical paths (CYB-1720, PR #1844)**: Added integration coverage for `get_latest_frame()` image validity and slash-style `registry_id` twin resolution.
-- **Developer ergonomics**: Added `JointController.print_joint_states()` support (PR #1798) and improved generated SDK packaging/self-check reliability in CI (PR #1848).
-- **Runtime protocol upgrades**: Backend MQTT client path moved to MQTT v5 semantics with expanded logging/reason-code handling (PR #1827).
+- **Regression hardening for critical paths**: Added integration coverage for `get_latest_frame()` image validity and slash-style `registry_id` twin resolution.
+- **Runtime protocol upgrades**: Backend MQTT client path moved to MQTT v5 semantics with expanded logging/reason-code handling.
 
 ### C++ SDK
 
-- **MQTT adapter modernization (CYB-1692, PR #1784)**: Transitioned from Paho to libmosquitto to improve maintainability and throughput behavior, especially for larger payload handling.
-- **Spec-alignment fixes (PR #1769)**: Updated assets API client behavior to match current OpenAPI expectations.
+- **MQTT adapter modernization**: Transitioned from Paho to libmosquitto to improve maintainability and throughput behavior, especially for larger payload handling.
+- **Spec-alignment fixes**: Updated assets API client behavior to match current OpenAPI expectations.
 
 ## Bug Fixes
 
-- Removed MCP `cw_edit_position` 2m delta guardrail that was blocking large one-shot moves (CYB-1735, PR #1859).
-- Fixed UGV replay recording path by ensuring sensor identity and sync-frame publication (CYB-1719, PR #1839).
-- Fixed large ZIP asset sync regressions and added dedicated regression coverage for symlink/large-upload edge cases (PR #1825, #1828, #1831, #1834).
-- Fixed Python SDK crash when `environment_id`/`workspace_id` were passed explicitly to `Cyberwave()` (CYB-1702, PR #1814).
-- Fixed Python SDK asset lookup failure for slash-form registry IDs when aliases are present (CYB-1701, PR #1816).
-- Fixed `Camera.start_streaming()` failures in notebook runtimes with active event loops (CYB-1683, PR #1765).
-- Fixed controller-policy asset preselection clearing on edit due to loading/search timing (CYB-1685, PR #1771).
-- Fixed edit-mode camera panel defaults and depth-visualization rendering conditions (CYB-1690, CYB-1684, PR #1773, #1766).
-- Fixed UGV driver reconnect stability and servo joint-state sync drift (CYB-1698, PR #1799).
-- Fixed TFLite resize fallback in environments without Pillow/OpenCV dependencies (PR #1861).
+- Removed MCP `cw_edit_position` 2m delta guardrail that was blocking large one-shot moves.
+- Fixed UGV replay recording path by ensuring sensor identity and sync-frame publication.
+- Fixed large ZIP asset sync regressions and added dedicated regression coverage for symlink/large-upload edge cases.
+- Fixed Python SDK crash when `environment_id`/`workspace_id` were passed explicitly to `Cyberwave()`
+- Fixed Python SDK asset lookup failure for slash-form registry IDs when aliases are present.
+- Fixed `Camera.start_streaming()` failures in notebook runtimes with active event loops.
+- Fixed controller-policy asset preselection clearing on edit due to loading/search timing.
+- Fixed edit-mode camera panel defaults and depth-visualization rendering conditions.
+- Fixed UGV driver reconnect stability and servo joint-state sync drift.
+- Fixed TFLite resize fallback in environments without Pillow/OpenCV dependencies.
 
 </Update>
 
-<Update label="April 9, 2026" description="Production release">
+<Update label="April 9, 2026">
 
 ## New Features
 
