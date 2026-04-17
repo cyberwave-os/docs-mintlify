@@ -1,0 +1,51 @@
+---
+title: "Hello Robot"
+description: "Control a robot in simulation in under 5 minutes"
+icon: "hand-wave"
+---
+
+<iframe
+  width="100%"
+  height="400"
+  src="https://www.youtube.com/embed/vocKU2END60"
+  title="Hello Robot"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowfullscreen
+  style={{ borderRadius: '8px' }}
+></iframe>
+
+This is the fastest path to controlling a robot on Cyberwave. No hardware, no SDK, no code. Just the browser.
+
+<Steps>
+  <Step title="Create an environment">
+    Go to the [Cyberwave dashboard](https://cyberwave.com/request-early-access) and click **New Environment**. Give it a name (e.g. "Hello Robot") and a description.
+  </Step>
+  <Step title="Add a digital twin">
+    Inside your environment, click **Add from Catalog** in the left panel. Search for **SO101**, add it to the environment, and position it.
+  </Step>
+  <Step title="Switch to Simulate mode">
+    In the top bar of the environment editor, switch from **Edit** to **Simulate**.
+  </Step>
+  <Step title="Assign a controller">
+    Click the **Assign Controller** button on the SO101 twin. Select **Keyboard** from the list.
+  </Step>
+  <Step title="Move the robot">
+    Use your keyboard to control the arm. You'll see the digital twin moving in the 3D viewport in real time.
+  </Step>
+</Steps>
+
+<Check>
+You're controlling a robot in simulation. From here you can explore different controllers, add cameras, or connect real hardware.
+</Check>
+
+## What's next?
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="bolt" href="/get-started/quickstart">
+    Full guide covering SDK setup, hardware connection, and application development
+  </Card>
+  <Card title="Browse Catalog" icon="book-open" href="https://cyberwave.com/catalog">
+    Explore all available robots, cameras, and sensors
+  </Card>
+</CardGroup>
