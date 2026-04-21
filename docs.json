@@ -49,10 +49,10 @@
                 "icon": "microchip",
                 "pages": [
                   "edge/overview",
+                  "edge/raspberry-pi",
                   "edge/drivers/overview",
                   "edge/drivers/writing-compatible-drivers",
                   "edge/drivers/alerts",
-                  "edge/workers/overview",
                   {
                     "group": "Edge Workers",
                     "icon": "microchip-ai",
