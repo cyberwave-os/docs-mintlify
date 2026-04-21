@@ -11,9 +11,9 @@ icon: "robot"
 
 This guide walks you through connecting a **Universal Robot UR7e** industrial arm to its digital twin on Cyberwave via a Raspberry Pi running ROS 2. By the end, you will have:
 
-- Flashed a pre-configured ROS 2 image onto a Raspberry Pi
-- Created a Cyberwave environment with a UR7e digital twin
+- Prepared a Raspberry Pi with the Cyberwave image
 - Connected the Raspberry Pi to the UR7e over Ethernet
+- Created a Cyberwave environment with a UR7e digital twin
 - Installed the Cyberwave edge stack and paired the robot
 - Launched the UR robot driver and MQTT bridge for real-time control
 
@@ -24,20 +24,12 @@ This guide walks you through connecting a **Universal Robot UR7e** industrial ar
 <Tabs>
   <Tab title="Hardware">
     - **Universal Robot UR7e** arm, powered on and in **Remote Control** mode
-    - **Raspberry Pi 4 or 5** (4 GB+ RAM recommended)
-    - **SD card**: 32 GB minimum, 64 GB+ recommended
+    - **Raspberry Pi 4 or 5** (4 GB+ RAM recommended) flashed with the Cyberwave image — see [Raspberry Pi Setup](/edge/raspberry-pi)
     - **Ethernet cable** connecting the Raspberry Pi to the UR7e
-    - Monitor, keyboard, and mouse for initial Pi setup
   </Tab>
 
-  <Tab title="Software Image">
-    The Raspberry Pi runs a pre-configured **Ubuntu 24.04 ARM64** image that includes:
-    - ROS 2 Jazzy Jalisco (latest LTS)
-    - UR Robot Driver for the UR7e
-    - MQTT Bridge for remote control via Cyberwave
-    - EPick Gripper support (optional)
-
-    Contact your Cyberwave representative to obtain the image file.
+  <Tab title="Software">
+    The Raspberry Pi should be running the [Cyberwave Raspberry Pi image](/edge/raspberry-pi), which includes SSH, Docker, and mDNS out of the box. The UR7e ROS 2 driver and MQTT bridge will be installed during the setup below.
   </Tab>
 
   <Tab title="Credentials">
@@ -50,89 +42,34 @@ This guide walks you through connecting a **Universal Robot UR7e** industrial ar
 
 ---
 
-## Phase 1: Flash the Raspberry Pi
+## Phase 1: Prepare the Raspberry Pi
 
-Write the pre-configured ROS 2 image to your SD card.
-
-### Option A: Raspberry Pi Imager (recommended)
-
-1. Download and install [Raspberry Pi Imager](https://www.raspberrypi.com/software/).
-2. Launch the imager, click **Choose OS** → **Use custom**, and select the `.img.xz` image file.
-3. Click **Choose Storage** and select your SD card.
-4. Click **Write**. No need to extract the `.xz` file first.
-5. Wait 10–20 minutes, then safely eject the SD card.
-
-### Option B: Command line (Linux / macOS)
-
-```bash
-# Identify your SD card device
-lsblk
-
-# Unmount if mounted (replace sdX with your device)
-sudo umount /dev/sdX*
-
-# Write the image
-sudo sh -c 'xzcat <image-file>.img.xz | dd of=/dev/sdX bs=4M status=progress conv=fsync'
-sync
-```
-
-<Warning>
-Double-check the device name before writing. Using the wrong device will erase that disk.
-</Warning>
+Follow the [Raspberry Pi Setup](/edge/raspberry-pi) guide to flash the Cyberwave image, configure Wi-Fi, and SSH into your Pi. Once you can reach the Pi at `cyberwave.local`, continue below.
 
 ---
 
-## Phase 2: First Boot and Network Setup
+## Phase 2: Connect the Pi to the UR7e
 
-### Step 1: Boot the Raspberry Pi
+### Step 1: Verify network connectivity to the UR7e
 
-1. Insert the SD card into the Raspberry Pi.
-2. Connect an HDMI monitor, USB keyboard, and Ethernet cable (to the same network as the UR7e).
-3. Power on and wait 2–3 minutes for the first boot to complete.
-
-### Step 2: Log in and expand the filesystem
+Connect an Ethernet cable between the Raspberry Pi and the UR7e, then SSH in:
 
 ```bash
-# Default credentials
-# Username: edgeros
-# Password: provided with the image
-
-# If your SD card is larger than 32 GB, expand the filesystem:
-sudo raspi-config
-# Navigate to: 6 Advanced Options → A1 Expand Filesystem → Reboot
-```
-
-### Step 3: Verify network connectivity to the UR7e
-
-```bash
-ip addr show
+ssh pi@cyberwave.local
 ping 192.168.1.102   # Replace with your UR7e's IP address
 ```
 
-If the robot is not reachable, configure a static IP on the same subnet:
-
-```yaml
-# /etc/netplan/50-cloud-init.yaml
-network:
-  version: 2
-  ethernets:
-    eth0:
-      dhcp4: no
-      addresses:
-        - 192.168.1.100/24
-      routes:
-        - to: default
-          via: 192.168.1.1
-      nameservers:
-        addresses: [8.8.8.8, 8.8.4.4]
-```
+If the robot is not reachable, configure a static IP on the Ethernet interface so the Pi is on the same subnet as the UR7e:
 
 ```bash
-sudo netplan apply
+sudo nmcli con add type ethernet ifname eth0 con-name ur7e-link \
+  ipv4.addresses 192.168.1.100/24 \
+  ipv4.method manual
+sudo nmcli con up ur7e-link
 ```
 
 <Tip>
-Change the default password with `passwd` before proceeding.
+The Wi-Fi connection to your local network remains active for internet and Cyberwave cloud access, while the Ethernet link provides a direct connection to the robot.
 </Tip>
 
 ---
@@ -161,7 +98,7 @@ An [environment](/get-started/key-concepts#environments) is a 3D virtual space t
 SSH into the Raspberry Pi and install the CLI:
 
 ```bash
-ssh edgeros@<raspberry-pi-ip>
+ssh pi@cyberwave.local
 curl -fsSL https://cyberwave.com/install.sh | bash
 ```
 
@@ -316,9 +253,9 @@ After=network.target
 
 [Service]
 Type=simple
-User=edgeros
-Environment="HOME=/home/edgeros"
-ExecStart=/bin/bash -c "source /opt/ros/jazzy/setup.bash && source /home/edgeros/workspace/ros_ur_driver/install/setup.bash && ros2 launch mqtt_bridge bridge_launch.py"
+User=pi
+Environment="HOME=/home/pi"
+ExecStart=/bin/bash -c "source /opt/ros/jazzy/setup.bash && source /home/pi/workspace/ros_ur_driver/install/setup.bash && ros2 launch mqtt_bridge bridge_launch.py"
 Restart=on-failure
 RestartSec=10
 
@@ -350,7 +287,7 @@ sudo systemctl start mqtt-bridge.service
     1. Verify the Ethernet cable is connected.
     2. Check the robot's IP matches your configuration: `ping 192.168.1.102`.
     3. Ensure the robot is in **Remote Control** mode on the teach pendant.
-    4. Review your netplan config and run `sudo netplan apply`.
+    4. Review the Ethernet connection: `nmcli con show ur7e-link`.
   </Accordion>
 
   <Accordion title="Build fails with missing dependencies">
