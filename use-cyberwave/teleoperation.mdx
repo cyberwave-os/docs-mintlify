@@ -65,10 +65,10 @@ cw = Cyberwave()
 
 cw.affect("simulation")
 robot = cw.twin("the-robot-studio/so101")
-robot.joints.set("shoulder_joint", 45, degrees=True)  # moves the digital twin
+robot.joints.set("shoulder_pan", 45, degrees=True)  # moves the digital twin
 
 cw.affect("live")
-robot.joints.set("shoulder_joint", 45, degrees=True)  # moves the physical robot
+robot.joints.set("shoulder_pan", 45, degrees=True)  # moves the physical robot
 ```
 
 ---

@@ -1,0 +1,85 @@
+---
+title: "Perception"
+description: "Give your robots sight and understanding with cameras, sensor fusion, and AI inference"
+icon: "eye"
+---
+
+## What is Perception?
+
+Perception is how your robot **understands its environment**: what's in the camera frame, where obstacles are, what objects to interact with, and what a human operator is asking for. On Cyberwave, perception data flows from sensors on the edge through digital twins into AI models, and back into your control loop in real time.
+
+<Info>
+Perception models on Cyberwave can run **in the cloud** (good for heavy VLMs and batch inference) or **on the edge** through Edge Workers (good for low-latency, video-never-leaves-the-device use cases).
+</Info>
+
+---
+
+## Hardware that Supports it
+
+<CardGroup cols={2}>
+  <Card title="Cameras" icon="camera" href="/hardware/camera/get-started">
+    USB webcams, laptop cameras, and IP cameras for live streaming, vision workflows, and dataset recording.
+  </Card>
+  <Card title="LiDAR & Depth Sensors" icon="satellite-dish" href="/hardware/other-hardware/get-started">
+    Connect 3D sensors via ROS, drivers, or custom integrations.
+  </Card>
+  <Card title="Onboard Robot Sensors" icon="microchip" href="/hardware">
+    Wrist-mounted cameras, depth sensors, and IMUs that stream alongside the robot's joint state.
+  </Card>
+  <Card title="Edge Compute" icon="microchip-ai" href="/edge/raspberry-pi">
+    Run inference on Raspberry Pi, Jetson, or any Linux box co-located with your hardware.
+  </Card>
+</CardGroup>
+
+---
+
+## How You Build It
+
+### 1. Stream sensor data into a twin
+
+Cameras and sensors paired through the [Edge Core](/edge/overview) appear as live streams on their digital twin. View them in the dashboard, record them as datasets, or pipe them into a model. The wire format is consistent across cloud and edge.
+
+### 2. Pick the right model
+
+| Input | Model type | Reference |
+|---|---|---|
+| Single image | VLM (vision-language) | [ML Models](/use-cyberwave/ml-models) |
+| Video stream | VLM with temporal context | [ML Models](/use-cyberwave/ml-models) |
+| Image + state | VLA (vision-language-action) | [ML Models](/use-cyberwave/ml-models) |
+| Custom | Any registered model | [ML Models](/use-cyberwave/ml-models) |
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+camera = cw.twin("wrist-camera-01")
+model = cw.model("vlm/qwen-vl")
+
+frame = camera.latest_frame()
+answer = model.ask(frame, prompt="Where is the red block?")
+print(answer)
+```
+
+### 3. Run inference where it makes sense
+
+For low-latency loops (closed-loop visual servoing, safety-critical detection), deploy your model as an [Edge Worker](/edge/drivers/edge-workers) so frames never leave the device. For heavier reasoning (planning, multi-modal VLMs), call the cloud-hosted model directly.
+
+### 4. Wire perception into workflows
+
+The `camera_frame` trigger in [Workflows](/use-cyberwave/workflows) runs your model on every new frame and routes the output into downstream nodes, perfect for event-driven detection, anomaly alerts, or visual triggers for manipulation tasks.
+
+---
+
+## Where to Go Next
+
+<CardGroup cols={3}>
+  <Card title="Camera Quickstart" icon="camera" href="/hardware/camera/get-started">
+    Stream your first camera into a digital twin.
+  </Card>
+  <Card title="Edge to Cloud VLM" icon="brain" href="/tutorials/edge-to-cloud-vlm">
+    Tutorial: run a VLM on edge frames and trigger cloud workflows.
+  </Card>
+  <Card title="Edge Workers" icon="microchip-ai" href="/edge/drivers/edge-workers">
+    Deploy models alongside your hardware for low-latency inference.
+  </Card>
+</CardGroup>

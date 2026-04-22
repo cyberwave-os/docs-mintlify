@@ -1,0 +1,85 @@
+---
+title: "Locomotion"
+description: "Move robots through the world: wheeled rovers, legged platforms, and autonomous navigation"
+icon: "person-walking"
+---
+
+## What is Locomotion?
+
+Locomotion covers how a robot **moves through space**: driving a wheeled or tracked rover, walking with a quadruped, following a planned path, or exploring autonomously. On Cyberwave, locomotion platforms connect through the same digital twin layer as arms, so you get teleoperation, simulation, and AI policies out of the box.
+
+<Info>
+A locomotion stack on Cyberwave usually combines three things: **a base platform** (rover or legged), **a perception input** (camera, LiDAR, or both), and **a controller** (manual, scripted, or model-driven).
+</Info>
+
+---
+
+## Hardware that Supports it
+
+<CardGroup cols={2}>
+  <Card title="UGV Beast Rover" icon="truck-monster" href="/hardware/ugv/get-started">
+    Off-road tracked rover with a Raspberry Pi + ESP32 dual-controller architecture and ROS 2 stack.
+  </Card>
+  <Card title="Unitree Go2" icon="dog" href="/hardware/go2/get-started">
+    Quadruped with 4D LiDAR, AI-powered locomotion, and autonomous navigation.
+  </Card>
+  <Card title="Boston Dynamics Spot" icon="dog" href="/hardware/boston-dynamics/get-started">
+    Quadruped for inspection, patrol, and autonomous missions in industrial environments.
+  </Card>
+  <Card title="Custom Mobile Platforms" icon="puzzle-piece" href="/hardware/other-hardware/custom-hardware">
+    Connect any AGV, AMR, or wheeled platform via ROS, VDA5050, or a custom driver.
+  </Card>
+</CardGroup>
+
+---
+
+## How You Build It
+
+### 1. Test in simulation first
+
+Build a 3D environment that mirrors your physical site in the [Environment Editor](/use-cyberwave/environment-editor), then drive the digital twin to validate paths, collision boundaries, and sensor coverage before deploying to the real platform.
+
+### 2. Drive the platform
+
+| Mode | Use it for | Reference |
+|---|---|---|
+| Dashboard / gamepad | Manual driving, demos | [Live Teleoperation](/use-cyberwave/teleoperation) |
+| Python SDK | Mission scripts, waypoint runs | [Python SDK](/sdks/python-sdk) |
+| ML policy | Autonomous navigation, exploration | [ML Models](/use-cyberwave/ml-models) |
+| Workflow | Triggered patrols and inspections | [Workflows](/use-cyberwave/workflows) |
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+rover = cw.twin("ugv-beast-01")
+
+with cw.affect("live"):
+    rover.set_velocity(linear=0.4, angular=0.0)
+    rover.wait(seconds=3)
+    rover.stop()
+```
+
+### 3. Add autonomy
+
+Route your camera and LiDAR streams through a [VLM or VLA model](/use-cyberwave/ml-models) to add object detection, free-space estimation, or natural-language driving commands. Inference can run in the cloud or directly on the [edge](/edge/overview) for low-latency control.
+
+### 4. Run scheduled missions
+
+Use [Workflows](/use-cyberwave/workflows) to chain triggers, perception, and motion into repeatable missions: scheduled patrols, event-driven inspections, or webhook-triggered deliveries.
+
+---
+
+## Where to Go Next
+
+<CardGroup cols={3}>
+  <Card title="UGV Beast Quickstart" icon="truck-monster" href="/hardware/ugv/get-started">
+    Stand up your first rover.
+  </Card>
+  <Card title="Rover AI Mission" icon="play" href="/tutorials/rover-ai-mission">
+    Tutorial: scripted autonomous mission with perception in the loop.
+  </Card>
+  <Card title="Go2 Digital to Physical" icon="dog" href="/tutorials/go2-digital-to-physical">
+    Tutorial: take a Go2 quadruped from simulation to real-world deployment.
+  </Card>
+</CardGroup>

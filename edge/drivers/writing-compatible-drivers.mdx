@@ -141,7 +141,7 @@ cw.data.publish("frames/default", frame)
 # JSON latest-value: dict published as application/json
 cw.data.publish("joint_states", {
     "ts": time.time(),
-    "names": ["shoulder", "elbow"],
+    "names": ["shoulder_pan", "elbow_flex"],
     "positions": [0.1, -0.5],
 })
 ```

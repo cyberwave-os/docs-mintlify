@@ -1,0 +1,88 @@
+---
+title: "Manipulation"
+description: "Build robotic systems that grasp, place, assemble, and interact with physical objects"
+icon: "hand"
+---
+
+## What is Manipulation?
+
+Manipulation covers everything a robot does with its **end-effector**: picking, placing, pushing, assembling, handing over, and dexterous in-hand manipulation. On Cyberwave, you build manipulation systems by pairing a robot arm with a digital twin, controlling it through teleoperation or AI policies, and orchestrating multi-step tasks with workflows.
+
+<Info>
+Most manipulation projects on Cyberwave follow the same loop: **simulate the task → teleoperate to collect demonstrations → train a policy → deploy to hardware**.
+</Info>
+
+---
+
+## Hardware that Supports it
+
+<CardGroup cols={2}>
+  <Card title="SO101 Robot Arms" icon="hand" href="/hardware/so101/get-started">
+    Open-source 6-DOF arms for desk-based manipulation, teleoperation, and imitation learning.
+  </Card>
+  <Card title="Universal Robot UR7e" icon="robot" href="/hardware/universal-robot-7/get-started">
+    Industrial collaborative arm for production-grade pick and place and assembly tasks.
+  </Card>
+  <Card title="Boston Dynamics Spot Arm" icon="dog" href="/hardware/boston-dynamics/get-started">
+    Mobile manipulation: combine the Spot quadruped with its arm for inspection and retrieval.
+  </Card>
+  <Card title="Custom Arms" icon="puzzle-piece" href="/hardware/other-hardware/custom-hardware">
+    Bring any URDF-described arm and connect it through a custom driver.
+  </Card>
+</CardGroup>
+
+---
+
+## How You Build It
+
+### 1. Test in simulation first
+
+Spin up a digital twin in the [Environment Editor](/use-cyberwave/environment-editor), drop in target objects, and verify your motion plans against the MuJoCo physics simulation before any hardware moves.
+
+### 2. Drive the arm
+
+| Mode | Use it for | Reference |
+|---|---|---|
+| Dashboard controllers | Quick manual moves, demos | [Live Teleoperation](/use-cyberwave/teleoperation) |
+| Leader-follower teleoperation | Collecting demonstration data | [Live Teleoperation](/use-cyberwave/teleoperation) |
+| Python SDK | Scripted sequences, tests, CI | [Python SDK](/sdks/python-sdk) |
+| ML policy | Autonomous execution | [ML Models](/use-cyberwave/ml-models) |
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+arm = cw.twin("so101-main")
+
+with cw.affect("live"):
+    arm.joints.set("shoulder_pan", 10, degrees=True)
+    arm.joints.set("shoulder_lift", -30, degrees=True)
+    arm.joints.set("elbow_flex", 60, degrees=True)
+    arm.joints.set("wrist_flex", 45, degrees=True)
+    arm.joints.set("wrist_roll", 0, degrees=True)
+    arm.joints.set("gripper", 0, degrees=True)
+```
+
+### 3. Train a policy from demonstrations
+
+Record 10–15 episodes of teleoperated demonstrations, then train a Vision-Language-Action model in the cloud and deploy it back to the arm as a controller policy. See [ML Models](/use-cyberwave/ml-models) for the training pipeline.
+
+### 4. Orchestrate with workflows
+
+Chain perception, planning, and motion into repeatable sequences with [Workflows](/use-cyberwave/workflows). A pick-and-place workflow typically looks like *camera frame → object detection model → IK solver → motion node → gripper node*.
+
+---
+
+## Where to Go Next
+
+<CardGroup cols={3}>
+  <Card title="SO101 Quickstart" icon="microchip" href="/hardware/so101/get-started">
+    Stand up your first manipulation arm.
+  </Card>
+  <Card title="Train a VLA Model" icon="brain" href="/tutorials/edge-to-cloud-vlm">
+    End-to-end tutorial: collect data, train, deploy.
+  </Card>
+  <Card title="Workflows" icon="diagram-project" href="/use-cyberwave/workflows">
+    Compose multi-step manipulation tasks visually.
+  </Card>
+</CardGroup>

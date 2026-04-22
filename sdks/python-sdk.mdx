@@ -99,10 +99,10 @@ robot.edit_scale(x=1.5, y=1.5, z=1.5)
 # 3. Control joints (degrees or radians)
 # ──────────────────────────────────────────────
 
-robot.joints.set("shoulder_joint", 45, degrees=True)
-robot.joints.set("elbow_joint", math.pi / 4, degrees=False)
+robot.joints.set("shoulder_pan", 45, degrees=True)
+robot.joints.set("elbow_flex", math.pi / 4, degrees=False)
 
-angle = robot.joints.get("shoulder_joint")
+angle = robot.joints.get("shoulder_pan")
 all_joints = robot.joints.get_all()
 print(f"Joint names: {robot.joints.list()}")
 
@@ -319,11 +319,11 @@ import math
 cw.affect("simulation")
 robot = cw.twin("the-robot-studio/so101")
 
-robot.joints.set("shoulder_joint", 45, degrees=True)
+robot.joints.set("shoulder_pan", 45, degrees=True)
 
-robot.joints.set("elbow_joint", math.pi/4, degrees=False)
+robot.joints.set("elbow_flex", math.pi/4, degrees=False)
 
-angle = robot.joints.get("shoulder_joint")
+angle = robot.joints.get("shoulder_pan")
 
 joint_names = robot.joints.list()
 
@@ -341,8 +341,8 @@ Joint states for twin <twin-uuid>:
 ------------------------------------------------------
 Joint                       Radians       Degrees
 ------------------------------------------------------
-elbow_joint               0.0000 rad       0.00 °
-shoulder_joint            0.7854 rad      45.00 °
+elbow_flex                0.0000 rad       0.00 °
+shoulder_pan              0.7854 rad      45.00 °
 ------------------------------------------------------
 ```
 
