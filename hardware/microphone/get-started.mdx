@@ -1,7 +1,7 @@
 ---
-title: "Microphone"
+title: "Voice as a Sensor"
 sidebarTitle: "Microphone"
-description: "Connect a USB microphone or built-in mic to Cyberwave for voice capture and audio workflows"
+description: "Use a microphone as a real-time input to Cyberwave: turn spoken commands into digital-twin actions, controller-policy prompts, or workflow triggers."
 icon: "microphone"
 ---
 
@@ -9,104 +9,136 @@ import EarlyAccess from '/snippets/early-access.mdx';
 
 <EarlyAccess />
 
-## Goals
+<Warning>
+**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
+</Warning>
 
-This guide walks you through connecting a physical microphone (external USB mic or a laptop's built-in microphone) to its digital twin on Cyberwave. By the end, you will have:
+## What "voice as a sensor" means in Cyberwave
 
-- Created a Cyberwave environment with a microphone digital twin
-- Installed the Cyberwave edge stack on your device
-- Paired the physical microphone with the digital twin and streaming audio in real time
+Cyberwave treats every input stream as a sensor attached to a digital twin. A microphone is no different from a camera: audio is captured, optionally transcribed, and fed into the platform in one of three consumer roles.
 
-Once connected, audio can feed into [ML Models](/use-cyberwave/ml-models) for voice command recognition, anomaly detection, or transcription, and trigger [Workflows](/use-cyberwave/workflows) on spoken input.
+| Role of the transcript | What it drives | Cyberwave surface it hits |
+|---|---|---|
+| Instruction | A deployed ML / VLA controller policy | `POST /api/v1/controller-policies/{uuid}/execute` with `{"instruction": "..."}` |
+| Trigger input | A workflow | `POST /api/v1/workflows/{uuid}/execute` |
+| Telemetry / label | A recording, dataset, or alert | `cyberwave/twin/{uuid}/telemetry` MQTT topic, `twin.alerts.create(...)` |
+
+Everything else (the wake word, the STT engine, the VAD) lives at the edge or on the client and is your choice.
+
+<Info>
+Cyberwave never needs to hear audio directly. You decide where transcription happens; the platform only cares about the resulting text.
+</Info>
 
 ---
 
-## Prerequisites
+## Architecture
 
-- A USB microphone or a laptop with a built-in microphone
-- The microphone should be connected and recognised by your operating system
-- Verify your microphone is detected:
+```mermaid
+flowchart LR
+  Mic["Microphone<br/>(laptop or edge)"] -->|audio| STT["STT engine<br/>(Whisper, faster-whisper, ...)"]
+  STT -->|text| Endpoint["Cyberwave endpoint<br/>execute / trigger / telemetry"]
+  Endpoint --> Policy["Deployed controller policy<br/>or workflow"]
+  Policy -->|MQTT| Edge["Edge Core"]
+  Edge --> Hardware["Robot hardware"]
+```
+
+Cyberwave exposes three stable primitives: **controller-policy execute**, **workflow execute**, and **telemetry publish**. Any voice stack that can produce text can drive a Cyberwave robot through them.
+
+---
+
+## Two integration patterns
 
 <Tabs>
-  <Tab title="Linux">
-    ```bash
-    arecord -l
+  <Tab title="Pattern A: Client-side microphone">
+    Best for operator-in-the-loop apps, demos, hackathons, and voice-first UIs.
+
     ```
-    You should see at least one capture device listed (e.g., `card 1: USB [USB Audio Device]`).
+    Operator -> laptop mic -> faster-whisper (local) -> REST: execute controller policy
+    ```
+
+    No changes on the edge device, no new sensor twin. Starts working in minutes.
   </Tab>
-  <Tab title="macOS">
-    ```bash
-    ffmpeg -f avfoundation -list_devices true -i "" 2>&1 | grep -A 20 "AVFoundation audio"
+  <Tab title="Pattern B: On-robot microphone">
+    Best for autonomous deployments where the mic lives on the robot, ambient listening, multi-user spaces, or voice telemetry in datasets.
+
     ```
-    You should see your microphone listed (e.g., "MacBook Pro Microphone"). Requires `ffmpeg` (`brew install ffmpeg`).
+    Edge mic -> edge-side STT (or upload audio) -> publish as microphone sensor
+                                                ├─> REST: execute controller policy
+                                                └─> MQTT telemetry (timestamped, for datasets)
+    ```
+
+    The Python SDK's `cyberwave.sensor` module abstracts microphone capture on the edge.
   </Tab>
 </Tabs>
 
 ---
 
-## Phase 1: Configure Cyberwave Environment
+## Use cases
 
-Set up your environment and add a microphone digital twin on Cyberwave.
+### Manipulation (arm and gripper twins: SO-101, UR5, Piper, iiwa14, openarm, ...)
 
-### Step 1: Create an Environment
+| Voice command | Implementation |
+|---|---|
+| Pick and place: *"pick the red block and place it in the blue cup"* | `instruction` to a VLA or diffusion policy |
+| Sort by attribute: *"put all the pens in the left drawer"* | VLA multi-step, or a workflow with a per-object loop |
+| Handover: *"hand me the screwdriver"* | VLA plus force-sensitive gripper release primitive |
+| Reset / home: *"go home"*, *"reset workspace"* | Motion controller policy with a recorded sequence |
+| Pause / resume / abort: *"stop"*, *"continue"* | Workflow state control; controller-policy execute with a stop instruction, or MQTT cancel |
+| Parametric tasks: *"stack three blocks"*, *"pour 20 ml"* | Parse the number and pass it via workflow input rather than as a VLA prompt |
+| Inspection: *"show me the label of the bottle"* | VLA picks and rotates; camera twin captures the frame and posts to a workflow result |
+| Labeling demonstrations: *"this one is a successful pickup"* | Publish to telemetry topic; the episode trim tool picks it up |
+| Teach-a-pose: *"remember this as 'tray'"* | Records the current joint state under the given label for reuse in a motion controller |
 
-An [environment](/get-started/key-concepts#environment) is a 3D virtual space that mirrors your real-world setup.
+### Locomotion (mobile twins: Go2, Husky-300, UR-mounted AMRs, humanoids)
 
-1. Go to the Cyberwave dashboard and click **New Environment**.
-2. Give your environment a **name** and **description**.
+| Voice command | Implementation |
+|---|---|
+| Go-to: *"go to the kitchen"*, *"return to dock"* | Navigation workflow with a named waypoint as input |
+| Follow / come here: *"follow me"*, *"come"* | Controller policy subscribing to person-detection sensor plus instruction |
+| Speed and gait: *"walk slower"*, *"trot"*, *"sit"* | Direct controller command (Go2 has built-in gaits) |
+| Patrol / area scan: *"patrol the hallway for 10 minutes"* | Workflow with a duration input; VLM-driven anomaly detection on frames |
+| Fetch: *"bring me that bottle"* | Locomotion policy plus handover, composed as a workflow |
+| Emergency stop: *"stop"*, *"freeze"* | Dedicated low-latency wake-word pipeline that publishes an abort command over MQTT |
+| Exploration narration: *"what's in the corner of the room?"* | Locomotion to position plus VLM describe-scene plus TTS response |
 
-<Info>
-For more details, see [Step 1 of the Quick Start guide](/get-started/quickstart#step-1-create-an-environment).
-</Info>
+### Cross-cutting (applies to both)
 
-### Step 2: Add the Microphone Digital Twin
-
-1. Inside your environment, click **Add from Catalog** in the left panel.
-2. Search for **Microphone** and add it to the environment.
-3. Position the twin alongside the hardware or robot it will be paired with.
+- **Recording control**: *"start recording"*, *"label this run 'take 3'"* drive `cyberwave/twin/{uuid}/telemetry` with `telemetry_start` events.
+- **Mode switching**: *"take over"* detaches the active controller policy and re-attaches Local Teleop.
+- **Alert acknowledgement**: *"acknowledge all alerts"* iterates `twin.alerts.list(status="active")` and calls `alert.acknowledge()` on each.
+- **Status queries**: *"what's the battery on the follower?"* triggers a workflow that reads twin state and returns TTS.
+- **Voice-labeled datasets**: narration recorded while teleoperating becomes free-form natural-language labels on episodes, directly usable as VLA training prompts.
 
 ---
 
-## Phase 2: Install the Cyberwave Edge Stack
+## Where voice slots into the Cyberwave stack
 
-Install the Cyberwave CLI and Edge Core on the device where the microphone is plugged in (laptop, edge device, or the robot's host machine).
-
-```bash
-curl -fsSL https://cyberwave.com/install.sh | bash
-sudo cyberwave edge install
+```mermaid
+flowchart LR
+  Voice[voice] --> Instr[instruction]
+  Voice --> Wf[workflow]
+  Voice --> Tel[telemetry]
+  Instr --> Policy["controller policy"]
+  Wf --> Orch["orchestrated action"]
+  Tel --> Data["recordings, datasets, alerts"]
+  Policy --> Twin["arm / robot twin"]
+  Orch --> Twin
 ```
 
-Follow the prompts to log in, select your environment, and pair the microphone twin. The appropriate driver will be installed automatically.
-
-<Info>
-See [Quick Start > Part 2](/get-started/quickstart#part-2-connect-real-hardware) for the full edge install flow.
-</Info>
+The voice layer is intentionally outside the platform: you choose client-side vs on-robot, local vs cloud STT, English vs multilingual, wake-word style, and so on. Cyberwave's side is three stable primitives: controller-policy execute, workflow execute, telemetry publish. Any voice stack that can produce text can drive a Cyberwave robot today.
 
 ---
 
-## Phase 3: Verify Live Audio
+## Where to Go Next
 
-Open your environment in the Cyberwave dashboard and switch to **Live Mode**. The microphone twin should show an active audio stream.
-
-<Check>
-Your microphone is paired with its digital twin. Audio is streaming from the edge device to Cyberwave in real time.
-</Check>
-
----
-
-## What You Can Do Next
-
-<CardGroup cols={2}>
-  <Card title="Run a Voice Model" icon="brain" href="/use-cyberwave/ml-models">
-    Route audio into a transcription or voice-command ML model.
+<CardGroup cols={3}>
+  <Card title="Deploy a Controller Policy" icon="brain" href="/use-cyberwave/ml-models/deploy">
+    Get a VLA or RL policy running on a twin so voice has something to drive.
   </Card>
-  <Card title="Trigger Workflows" icon="diagram-project" href="/use-cyberwave/workflows">
-    Use audio events to trigger robot actions or cloud workflows.
+  <Card title="Workflows" icon="diagram-project" href="/use-cyberwave/workflows">
+    Route transcripts into multi-step orchestration with parameters and branching.
   </Card>
   <Card title="Perception Overview" icon="eye" href="/capabilities/perception">
     See how audio fits alongside vision in the perception stack.
-  </Card>
-  <Card title="Writing Custom Drivers" icon="code" href="/edge/drivers/writing-compatible-drivers">
-    Build a custom driver if your mic needs specific configuration.
   </Card>
 </CardGroup>
