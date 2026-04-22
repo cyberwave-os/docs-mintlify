@@ -4,7 +4,7 @@ description: "80+ devices supported out of the box, with full ROS compatibility 
 icon: "microchip"
 ---
 
-Cyberwave connects to **80+ robotic devices** out of the box through its [hardware catalog](https://cyberwave.com/catalog). Every device in the catalog has a pre-built driver that is automatically installed when you pair hardware with a digital twin — no manual integration required.
+Cyberwave connects to **80+ robotic devices** out of the box through its [hardware catalog](https://cyberwave.com/catalog). Every device in the catalog has a pre-built driver that is automatically installed when you pair hardware with a digital twin, with no manual integration required.
 
 Beyond the catalog, Cyberwave's open driver architecture means **any device with an API, serial interface, or network protocol can be connected**. You can write a driver in Python or C++ using our SDKs, or use our AI scaffolding tool to generate one in minutes.
 
@@ -16,7 +16,7 @@ Every hardware connection follows the same pattern:
 
 1. **Add a digital twin** from the catalog (or create a custom one)
 2. **Install the Cyberwave edge stack** on a device connected to your hardware
-3. **Pair** — the driver is installed automatically and your hardware starts syncing in real time
+3. **Pair**: the driver is installed automatically and your hardware starts syncing in real time
 
 The [Edge Core](/edge/overview) orchestrates drivers on the edge device and bridges all communication to the Cyberwave cloud over MQTT.
 
@@ -55,7 +55,7 @@ For devices not listed above, see the [Other Hardware](/hardware/other-hardware/
 
 Cyberwave is fully compatible with **ROS 1** and **ROS 2**. The open-source [cyberwave-os](https://github.com/cyberwave-os) GitHub organization provides SDKs and reference implementations for bridging ROS topics with Cyberwave's MQTT-based digital twin layer.
 
-A typical ROS integration uses the **MQTT bridge** pattern: a lightweight node subscribes to ROS topics (joint states, odometry, camera feeds) and publishes them to the Cyberwave MQTT broker. Commands flow in the opposite direction — from the dashboard or API, through MQTT, and into ROS action servers or publishers.
+A typical ROS integration uses the **MQTT bridge** pattern: a lightweight node subscribes to ROS topics (joint states, odometry, camera feeds) and publishes them to the Cyberwave MQTT broker. Commands flow in the opposite direction, from the dashboard or API, through MQTT, and into ROS action servers or publishers.
 
 <Card title="Custom Integrations" icon="plug" href="/hardware/other-hardware/custom-hardware">
   Integrate with ROS, VDA5050, OPC UA, Modbus, and other industrial protocols
@@ -76,7 +76,7 @@ Cyberwave's driver architecture is not limited to ROS. The same pattern works wi
 | **gRPC / REST** | Custom services and microservice architectures |
 | **Serial / USB** | Direct device control (servos, microcontrollers) |
 
-Each protocol is bridged to Cyberwave through a driver — a Docker container managed by the Edge Core that translates between your device's native interface and Cyberwave's MQTT layer.
+Each protocol is bridged to Cyberwave through a driver: a Docker container managed by the Edge Core that translates between your device's native interface and Cyberwave's MQTT layer.
 
 ---
 
@@ -116,12 +116,12 @@ These open-source drivers are good starting points:
 
 Regardless of which hardware you connect, every digital twin on Cyberwave gives you access to the same platform capabilities:
 
-- **Real-time teleoperation** — control your hardware from the dashboard, SDK, or API
-- **Live telemetry streaming** — monitor sensor data, joint states, camera feeds, and more
-- **Dataset recording** — capture episodic datasets for training and evaluation
-- **ML model training and deployment** — train models on recorded data and deploy them as autonomous controller policies
-- **Simulation** — test in a browser-based 3D environment before deploying to physical hardware
-- **Workflows and automation** — chain actions, models, and logic into repeatable workflows
+- **Real-time teleoperation**: control your hardware from the dashboard, SDK, or API
+- **Live telemetry streaming**: monitor sensor data, joint states, camera feeds, and more
+- **Dataset recording**: capture episodic datasets for training and evaluation
+- **ML model training and deployment**: train models on recorded data and deploy them as autonomous controller policies
+- **Simulation**: test in a browser-based 3D environment before deploying to physical hardware
+- **Workflows and automation**: chain actions, models, and logic into repeatable workflows
 
 ---
 

@@ -6,7 +6,7 @@ icon: "eye"
 
 ## What is Perception?
 
-Perception is how your robot **understands its environment**: what's in the camera frame, where obstacles are, what objects to interact with, and what a human operator is asking for. On Cyberwave, perception data flows from sensors on the edge through digital twins into AI models — and back into your control loop in real time.
+Perception is how your robot **understands its environment**: what's in the camera frame, where obstacles are, what objects to interact with, and what a human operator is asking for. On Cyberwave, perception data flows from sensors on the edge through digital twins into AI models, and back into your control loop in real time.
 
 <Info>
 Perception models on Cyberwave can run **in the cloud** (good for heavy VLMs and batch inference) or **on the edge** through Edge Workers (good for low-latency, video-never-leaves-the-device use cases).
@@ -37,7 +37,7 @@ Perception models on Cyberwave can run **in the cloud** (good for heavy VLMs and
 
 ### 1. Stream sensor data into a twin
 
-Cameras and sensors paired through the [Edge Core](/edge/overview) appear as live streams on their digital twin. View them in the dashboard, record them as datasets, or pipe them into a model — the wire format is consistent across cloud and edge.
+Cameras and sensors paired through the [Edge Core](/edge/overview) appear as live streams on their digital twin. View them in the dashboard, record them as datasets, or pipe them into a model. The wire format is consistent across cloud and edge.
 
 ### 2. Pick the right model
 
@@ -66,7 +66,7 @@ For low-latency loops (closed-loop visual servoing, safety-critical detection), 
 
 ### 4. Wire perception into workflows
 
-The `camera_frame` trigger in [Workflows](/use-cyberwave/workflows) runs your model on every new frame and routes the output into downstream nodes — perfect for event-driven detection, anomaly alerts, or visual triggers for manipulation tasks.
+The `camera_frame` trigger in [Workflows](/use-cyberwave/workflows) runs your model on every new frame and routes the output into downstream nodes, perfect for event-driven detection, anomaly alerts, or visual triggers for manipulation tasks.
 
 ---
 
