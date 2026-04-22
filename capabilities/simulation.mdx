@@ -1,0 +1,134 @@
+---
+title: "Simulation"
+description: "Run the full Cyberwave stack against digital twins — physics, virtual sensors, and policy evaluation — before touching physical hardware"
+icon: "atom"
+---
+
+## What is Simulation?
+
+Simulation on Cyberwave runs your robots, sensors, and workflows against a **physics-backed digital twin** instead of the real world. The same environment, the same SDK, the same models — just with `cw.affect("simulation")` swapped in for `cw.affect("live")`. It's how you iterate on control code, validate ML policies, and stress-test missions without wearing out hardware.
+
+<Info>
+Simulation and live modes share the same API surface. Code you write against a simulated twin deploys unchanged to the physical robot once you flip the affect mode.
+</Info>
+
+---
+
+## What You Can Simulate
+
+<CardGroup cols={2}>
+  <Card title="Any Digital Twin" icon="clone" href="/use-cyberwave/digital-twins">
+    Every twin in your environment — arms, rovers, quadrupeds, cameras — has a physics-backed simulated counterpart out of the box.
+  </Card>
+  <Card title="Custom URDF Imports" icon="upload" href="/use-cyberwave/catalog">
+    Upload your own URDF and 3D model to simulate hardware that isn't in the catalog yet.
+  </Card>
+  <Card title="Virtual Sensors" icon="camera" href="/use-cyberwave/environment-editor">
+    Cameras, depth sensors, and IMUs render synthetic data from the simulated scene — same wire format as live sensors.
+  </Card>
+  <Card title="Whole Environments" icon="warehouse" href="/use-cyberwave/environment-editor">
+    Warehouses, labs, outdoor sites — build the scene once in the Environment Editor and reuse across simulation and live.
+  </Card>
+</CardGroup>
+
+---
+
+## How You Build It
+
+### 1. Set up the scene
+
+Use the [Environment Editor](/use-cyberwave/environment-editor) to drop twins, static objects, and sensors into a 3D space. Every environment supports an **Edit Mode** for design and a **Simulate Mode** for physics playback — no separate sim project needed.
+
+### 2. Drive the simulation
+
+| Mode | Use it for | Reference |
+|---|---|---|
+| Dashboard Simulate Mode | Interactive debugging, demos | [Environment Editor](/use-cyberwave/environment-editor) |
+| `cw.affect("simulation")` | Scripted runs, unit tests, CI | [Python SDK](/sdks/python-sdk) |
+| Model evaluation | Benchmarking a trained policy | [ML Models](/use-cyberwave/ml-models) |
+| Workflow trigger | Scheduled sim sweeps, regression runs | [Workflows](/use-cyberwave/workflows) |
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+cw.affect("simulation")
+
+arm = cw.twin("so101-main")
+
+arm.joints.set("shoulder_pan", 10, degrees=True)
+arm.joints.set("shoulder_lift", -30, degrees=True)
+arm.joints.set("elbow_flex", 60, degrees=True)
+
+state = arm.joints.get_all()
+print(state)
+```
+
+### 3. Use virtual sensors
+
+Every sensor attached to a twin has a simulated counterpart that renders from the 3D scene. Pull a synthetic camera frame, run it through a perception model, and close the loop — exactly like you would in live mode.
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+cw.affect("simulation")
+
+arm = cw.twin("so101-main")
+frame = arm.capture_frame("numpy", sensor_id="wrist_cam")
+
+model = cw.model("vlm/qwen-vl")
+answer = model.ask(frame, prompt="Is the red block in the gripper's reach?")
+print(answer)
+```
+
+Use virtual sensors to generate synthetic training data, verify camera placement before mounting a real one, or sanity-check a perception pipeline on controlled scenes.
+
+### 4. Evaluate fine-tuned models in simulation
+
+Before you deploy a fine-tuned [VLA or VLM model](/use-cyberwave/ml-models) to hardware, run it against the simulated twin to score it against a held-out set of tasks. This is the fastest way to compare checkpoints and catch regressions.
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+cw.affect("simulation")
+
+arm = cw.twin("so101-main")
+policy = cw.model("vla/pick-place-v3")
+
+successes = 0
+for episode in range(50):
+    arm.reset()
+    result = policy.run(arm, prompt="pick up the red block", max_steps=200)
+    if result.success:
+        successes += 1
+
+print(f"Success rate: {successes / 50:.2%}")
+```
+
+Typical evaluation loops on Cyberwave look like:
+
+- **Regression suite** — replay known-good task prompts against every new checkpoint and compare success rates.
+- **Distribution shift** — randomise object positions, lighting, and camera angles in the Environment Editor to measure robustness.
+- **Sim-to-real gap** — run the same policy in sim and live back-to-back to quantify the delta before broad deployment.
+
+### 5. Automate with workflows
+
+Wire simulation runs into [Workflows](/use-cyberwave/workflows) so every new model checkpoint, every config change, or every scheduled sweep produces a fresh evaluation report. Workflows can run sim in the cloud on demand — no local GPU required.
+
+---
+
+## Where to Go Next
+
+<CardGroup cols={3}>
+  <Card title="Environment Editor" icon="pen-to-square" href="/use-cyberwave/environment-editor">
+    Build the scene your simulation runs in.
+  </Card>
+  <Card title="Digital Twins" icon="clone" href="/use-cyberwave/digital-twins">
+    Understand the twin layer that powers both sim and live.
+  </Card>
+  <Card title="Train a VLA Model" icon="brain" href="/tutorials/edge-to-cloud-vlm">
+    Tutorial: collect data, fine-tune, and evaluate in simulation before deploying.
+  </Card>
+</CardGroup>

@@ -76,7 +76,7 @@ The SDK automatically returns the right Twin class based on capabilities:
 
 ```python
 arm = cw.twin("the-robot-studio/so101")
-arm.joints.set("shoulder", 45, degrees=True)
+arm.joints.set("shoulder_pan", 45, degrees=True)
 
 camera = cw.twin("cyberwave/standard-cam")
 await camera.stream_video_background()

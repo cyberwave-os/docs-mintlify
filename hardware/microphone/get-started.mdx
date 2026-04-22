@@ -1,0 +1,112 @@
+---
+title: "Microphone"
+sidebarTitle: "Microphone"
+description: "Connect a USB microphone or built-in mic to Cyberwave for voice capture and audio workflows"
+icon: "microphone"
+---
+
+import EarlyAccess from '/snippets/early-access.mdx';
+
+<EarlyAccess />
+
+## Goals
+
+This guide walks you through connecting a physical microphone (external USB mic or a laptop's built-in microphone) to its digital twin on Cyberwave. By the end, you will have:
+
+- Created a Cyberwave environment with a microphone digital twin
+- Installed the Cyberwave edge stack on your device
+- Paired the physical microphone with the digital twin and streaming audio in real time
+
+Once connected, audio can feed into [ML Models](/use-cyberwave/ml-models) for voice command recognition, anomaly detection, or transcription, and trigger [Workflows](/use-cyberwave/workflows) on spoken input.
+
+---
+
+## Prerequisites
+
+- A USB microphone or a laptop with a built-in microphone
+- The microphone should be connected and recognised by your operating system
+- Verify your microphone is detected:
+
+<Tabs>
+  <Tab title="Linux">
+    ```bash
+    arecord -l
+    ```
+    You should see at least one capture device listed (e.g., `card 1: USB [USB Audio Device]`).
+  </Tab>
+  <Tab title="macOS">
+    ```bash
+    ffmpeg -f avfoundation -list_devices true -i "" 2>&1 | grep -A 20 "AVFoundation audio"
+    ```
+    You should see your microphone listed (e.g., "MacBook Pro Microphone"). Requires `ffmpeg` (`brew install ffmpeg`).
+  </Tab>
+</Tabs>
+
+---
+
+## Phase 1: Configure Cyberwave Environment
+
+Set up your environment and add a microphone digital twin on Cyberwave.
+
+### Step 1: Create an Environment
+
+An [environment](/get-started/key-concepts#environment) is a 3D virtual space that mirrors your real-world setup.
+
+1. Go to the Cyberwave dashboard and click **New Environment**.
+2. Give your environment a **name** and **description**.
+
+<Info>
+For more details, see [Step 1 of the Quick Start guide](/get-started/quickstart#step-1-create-an-environment).
+</Info>
+
+### Step 2: Add the Microphone Digital Twin
+
+1. Inside your environment, click **Add from Catalog** in the left panel.
+2. Search for **Microphone** and add it to the environment.
+3. Position the twin alongside the hardware or robot it will be paired with.
+
+---
+
+## Phase 2: Install the Cyberwave Edge Stack
+
+Install the Cyberwave CLI and Edge Core on the device where the microphone is plugged in (laptop, edge device, or the robot's host machine).
+
+```bash
+curl -fsSL https://cyberwave.com/install.sh | bash
+sudo cyberwave edge install
+```
+
+Follow the prompts to log in, select your environment, and pair the microphone twin. The appropriate driver will be installed automatically.
+
+<Info>
+See [Quick Start > Part 2](/get-started/quickstart#part-2-connect-real-hardware) for the full edge install flow.
+</Info>
+
+---
+
+## Phase 3: Verify Live Audio
+
+Open your environment in the Cyberwave dashboard and switch to **Live Mode**. The microphone twin should show an active audio stream.
+
+<Check>
+Your microphone is paired with its digital twin. Audio is streaming from the edge device to Cyberwave in real time.
+</Check>
+
+---
+
+## What You Can Do Next
+
+<CardGroup cols={2}>
+  <Card title="Run a Voice Model" icon="brain" href="/use-cyberwave/ml-models">
+    Route audio into a transcription or voice-command ML model.
+  </Card>
+  <Card title="Trigger Workflows" icon="diagram-project" href="/use-cyberwave/workflows">
+    Use audio events to trigger robot actions or cloud workflows.
+  </Card>
+  <Card title="Perception Overview" icon="eye" href="/capabilities/perception">
+    See how audio fits alongside vision in the perception stack.
+  </Card>
+  <Card title="Writing Custom Drivers" icon="code" href="/edge/drivers/writing-compatible-drivers">
+    Build a custom driver if your mic needs specific configuration.
+  </Card>
+</CardGroup>

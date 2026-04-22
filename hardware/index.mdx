@@ -1,0 +1,132 @@
+---
+title: "Hardware Overview"
+description: "80+ devices supported out of the box, with full ROS compatibility and an extensible driver architecture"
+icon: "microchip"
+---
+
+Cyberwave connects to **80+ robotic devices** out of the box through its [hardware catalog](https://cyberwave.com/catalog). Every device in the catalog has a pre-built driver that is automatically installed when you pair hardware with a digital twin — no manual integration required.
+
+Beyond the catalog, Cyberwave's open driver architecture means **any device with an API, serial interface, or network protocol can be connected**. You can write a driver in Python or C++ using our SDKs, or use our AI scaffolding tool to generate one in minutes.
+
+---
+
+## How It Works
+
+Every hardware connection follows the same pattern:
+
+1. **Add a digital twin** from the catalog (or create a custom one)
+2. **Install the Cyberwave edge stack** on a device connected to your hardware
+3. **Pair** — the driver is installed automatically and your hardware starts syncing in real time
+
+The [Edge Core](/edge/overview) orchestrates drivers on the edge device and bridges all communication to the Cyberwave cloud over MQTT.
+
+---
+
+## Featured Hardware
+
+These platforms have dedicated setup guides with step-by-step instructions.
+
+<CardGroup cols={2}>
+  <Card title="SO101 Robot Arms" icon="hand" href="/hardware/so101/get-started">
+    Open-source 6-DOF manipulator arms for desk-based manipulation, teleoperation, and imitation learning.
+  </Card>
+  <Card title="UGV Beast Rover" icon="truck-monster" href="/hardware/ugv/get-started">
+    Off-road tracked rover with a Raspberry Pi + ESP32 dual-controller architecture and ROS 2 stack.
+  </Card>
+  <Card title="Unitree Go2" icon="dog" href="/hardware/go2/get-started">
+    Intelligent quadruped with 4D LiDAR, AI-powered locomotion, and autonomous navigation.
+  </Card>
+  <Card title="Universal Robot UR7e" icon="robot" href="/hardware/universal-robot-7/get-started">
+    Industrial collaborative arm connected via a Raspberry Pi running ROS 2 and an MQTT bridge.
+  </Card>
+  <Card title="Boston Dynamics Spot" icon="dog" href="/hardware/boston-dynamics/get-started">
+    Quadruped robot for inspection, patrol, and autonomous missions.
+  </Card>
+  <Card title="Camera" icon="camera" href="/hardware/camera/get-started">
+    USB webcams and laptop cameras for live streaming, vision workflows, and dataset recording.
+  </Card>
+</CardGroup>
+
+For devices not listed above, see the [Other Hardware](/hardware/other-hardware/get-started) guide.
+
+---
+
+## Full ROS Compatibility
+
+Cyberwave is fully compatible with **ROS 1** and **ROS 2**. The open-source [cyberwave-os](https://github.com/cyberwave-os) GitHub organization provides SDKs and reference implementations for bridging ROS topics with Cyberwave's MQTT-based digital twin layer.
+
+A typical ROS integration uses the **MQTT bridge** pattern: a lightweight node subscribes to ROS topics (joint states, odometry, camera feeds) and publishes them to the Cyberwave MQTT broker. Commands flow in the opposite direction — from the dashboard or API, through MQTT, and into ROS action servers or publishers.
+
+<Card title="Custom Integrations" icon="plug" href="/hardware/other-hardware/custom-hardware">
+  Integrate with ROS, VDA5050, OPC UA, Modbus, and other industrial protocols
+</Card>
+
+---
+
+## Industrial Protocol Support
+
+Cyberwave's driver architecture is not limited to ROS. The same pattern works with any protocol your hardware speaks:
+
+| Protocol | Use Case |
+|---|---|
+| **ROS 1 / ROS 2** | Robot arms, mobile robots, sensor stacks |
+| **VDA5050** | AGV and AMR fleet communication |
+| **OPC UA** | Industrial automation and PLC connectivity |
+| **Modbus TCP/RTU** | Sensor and actuator networks |
+| **gRPC / REST** | Custom services and microservice architectures |
+| **Serial / USB** | Direct device control (servos, microcontrollers) |
+
+Each protocol is bridged to Cyberwave through a driver — a Docker container managed by the Edge Core that translates between your device's native interface and Cyberwave's MQTT layer.
+
+---
+
+## Extend Cyberwave with Custom Drivers
+
+If your hardware isn't in the catalog, you can write a compatible driver and connect it in minutes. A driver is a Docker container that translates between your device's native API and Cyberwave's MQTT interface.
+
+<CardGroup cols={2}>
+  <Card title="Writing Compatible Drivers" icon="code" href="/edge/drivers/writing-compatible-drivers">
+    Full guide on driver architecture, environment variables, and packaging
+  </Card>
+  <Card title="Driver Overview" icon="puzzle-piece" href="/edge/drivers/overview">
+    How drivers are registered and managed by Edge Core
+  </Card>
+  <Card title="Python SDK" icon="python" href="/sdks/python-sdk">
+    Build drivers and applications with the Cyberwave Python SDK
+  </Card>
+  <Card title="C++ SDK" icon="microchip" href="/sdks/cpp-sdk">
+    High-performance SDK for embedded and latency-sensitive drivers
+  </Card>
+</CardGroup>
+
+You can also use the [Cyberwave Driver Skill](https://github.com/cyberwave-os/driver-skill) to scaffold a complete driver project interactively with AI assistance.
+
+### Reference Implementations
+
+These open-source drivers are good starting points:
+
+| Driver | Repository |
+|---|---|
+| Camera | [cyberwave-os/cyberwave-edge-camera-driver](https://github.com/cyberwave-os/cyberwave-edge-camera-driver) |
+| SO-101 arm | [cyberwave-os/cyberwave-edge-so101](https://github.com/cyberwave-os/cyberwave-edge-so101) |
+
+---
+
+## What You Can Do Once Connected
+
+Regardless of which hardware you connect, every digital twin on Cyberwave gives you access to the same platform capabilities:
+
+- **Real-time teleoperation** — control your hardware from the dashboard, SDK, or API
+- **Live telemetry streaming** — monitor sensor data, joint states, camera feeds, and more
+- **Dataset recording** — capture episodic datasets for training and evaluation
+- **ML model training and deployment** — train models on recorded data and deploy them as autonomous controller policies
+- **Simulation** — test in a browser-based 3D environment before deploying to physical hardware
+- **Workflows and automation** — chain actions, models, and logic into repeatable workflows
+
+---
+
+## Browse the Catalog
+
+<Card title="Hardware Catalog" icon="grid-2" href="https://cyberwave.com/catalog">
+  Browse all 80+ supported devices and add them to your environment
+</Card>

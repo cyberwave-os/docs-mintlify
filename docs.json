@@ -17,25 +17,38 @@
             "group": "Getting started",
             "pages": [
               "get-started/index",
-              "get-started/hello-robot",
               "get-started/quickstart",
-              "get-started/architecture",
-              "get-started/core-data-hierarchy",
-              "get-started/supported-hardware",
-              "get-started/key-concepts"
+              "get-started/hello-robot",
+              "get-started/try-real-robot"
             ]
           },
           {
-            "group": "Hardware Guide",
+            "group": "Capabilities",
             "pages": [
+              "capabilities/manipulation",
+              "capabilities/locomotion",
+              "capabilities/perception",
+              "capabilities/simulation"
+            ]
+          },
+          {
+            "group": "Robotic Hardware",
+            "pages": [
+              "hardware/index",
               "hardware/so101/get-started",
               "hardware/ugv/get-started",
               "hardware/go2/get-started",
-              "hardware/camera/get-started",
               "hardware/universal-robot-7/get-started",
               "hardware/boston-dynamics/get-started",
               "hardware/other-hardware/get-started",
               "hardware/other-hardware/custom-hardware"
+            ]
+          },
+          {
+            "group": "Sensors",
+            "pages": [
+              "hardware/camera/get-started",
+              "hardware/microphone/get-started"
             ]
           },
           {
@@ -55,7 +68,6 @@
                   "edge/drivers/alerts",
                   {
                     "group": "Edge Workers",
-                    "icon": "microchip-ai",
                     "pages": [
                       "edge/drivers/edge-workers",
                       "edge/drivers/data-wire-format",
@@ -67,8 +79,8 @@
                 ]
               },
               "sdks/cloud-node",
-              "sdks/cpp-sdk",
-              "sdks/zenoh-mqtt-bridge"
+              "sdks/zenoh-mqtt-bridge",
+              "sdks/cpp-sdk"
             ]
           },
           {
@@ -78,18 +90,29 @@
               "tutorials/rover-ai-mission",
               "tutorials/go2-digital-to-physical"
             ]
+          }
+        ]
+      },
+      {
+        "tab": "Platform Reference",
+        "groups": [
+          {
+            "group": "Concepts",
+            "pages": [
+              "get-started/architecture",
+              "get-started/core-data-hierarchy",
+              "get-started/key-concepts"
+            ]
           },
           {
-            "group": "Reference Features",
+            "group": "Platform Features",
             "pages": [
               "use-cyberwave/setup-cyberwave",
               "use-cyberwave/catalog",
               "use-cyberwave/digital-twins",
+              "use-cyberwave/environment-editor",
               "use-cyberwave/workflows",
               "use-cyberwave/ml-models",
-              "use-cyberwave/manifest",
-              "use-cyberwave/environment-editor",
-              "use-cyberwave/access-control",
               {
                 "group": "Live Teleoperation",
                 "icon": "gamepad",
@@ -98,7 +121,21 @@
                   "use-cyberwave/teleoperation-latency"
                 ]
               },
+              "use-cyberwave/access-control",
               "use-cyberwave/docker-registry"
+            ]
+          },
+          {
+            "group": "Technical Reference",
+            "pages": [
+              "use-cyberwave/manifest"
+            ]
+          },
+          {
+            "group": "Use-Case Recipes",
+            "pages": [
+              "get-started/idea-cookbook",
+              "get-started/starter-kit-builders"
             ]
           }
         ]
