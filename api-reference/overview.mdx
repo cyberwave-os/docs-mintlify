@@ -35,7 +35,7 @@ All REST endpoints require an API key. Go to the [Cyberwave dashboard](https://a
     ```bash
     export CYBERWAVE_API_KEY="cw_your_token_here"
 
-    curl -X GET "https://api.cyberwave.com/api/v1/assets/" \
+    curl -X GET "https://api.cyberwave.com/api/v1/projects" \
       -H "Authorization: Bearer $CYBERWAVE_API_KEY"
     ```
   </Tab>
@@ -48,14 +48,14 @@ All REST endpoints require an API key. Go to the [Cyberwave dashboard](https://a
         "Authorization": f"Bearer {os.environ['CYBERWAVE_API_KEY']}",
     }
 
-    r = requests.get("https://api.cyberwave.com/api/v1/assets/", headers=headers)
+    r = requests.get("https://api.cyberwave.com/api/v1/projects", headers=headers)
     r.raise_for_status()
     print(r.json())
     ```
   </Tab>
   <Tab title="JavaScript (fetch)">
     ```javascript
-    const res = await fetch("https://api.cyberwave.com/api/v1/assets/", {
+    const res = await fetch("https://api.cyberwave.com/api/v1/projects", {
       headers: {
         Authorization: `Bearer ${process.env.CYBERWAVE_API_KEY}`,
       },
