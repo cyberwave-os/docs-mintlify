@@ -17,6 +17,58 @@ The REST API is used for **non-real-time communication** with the Cyberwave plat
 - Managing user accounts and permissions
 - Performing administrative tasks
 
+### Authentication
+
+All REST endpoints require an API key. Go to the [Cyberwave dashboard](https://cyberwave.com/profile) → **Profile** → **API Tokens** and create a new key, then pass it in the `Authorization` header on every request.
+
+| Field | Value |
+|---|---|
+| Base URL | `https://api.cyberwave.com` |
+| Auth header | `Authorization: Bearer <CYBERWAVE_API_KEY>` |
+| Alternative header | `X-Cyberwave-Api-Key: <CYBERWAVE_API_KEY>` |
+| Accepted prefixes | `Bearer` and `Token` |
+| Recommended env var | `CYBERWAVE_API_KEY` |
+
+<Tabs>
+  <Tab title="curl">
+    ```bash
+    export CYBERWAVE_API_KEY="cw_your_token_here"
+
+    curl -X GET "https://api.cyberwave.com/api/v1/assets/" \
+      -H "Authorization: Bearer $CYBERWAVE_API_KEY"
+    ```
+  </Tab>
+  <Tab title="Python (requests)">
+    ```python
+    import os
+    import requests
+
+    headers = {
+        "Authorization": f"Bearer {os.environ['CYBERWAVE_API_KEY']}",
+    }
+
+    r = requests.get("https://api.cyberwave.com/api/v1/assets/", headers=headers)
+    r.raise_for_status()
+    print(r.json())
+    ```
+  </Tab>
+  <Tab title="JavaScript (fetch)">
+    ```javascript
+    const res = await fetch("https://api.cyberwave.com/api/v1/assets/", {
+      headers: {
+        Authorization: `Bearer ${process.env.CYBERWAVE_API_KEY}`,
+      },
+    });
+
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    const data = await res.json();
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+Treat the API key like a password. Never commit it to source control or paste it into client-side code that ships to browsers. Prefer environment variables and short-lived keys for production deployments.
+</Warning>
 
 ## MQTT API
 
@@ -48,10 +100,10 @@ To start using the Cyberwave APIs, make sure you have:
 3. Network access to the Cyberwave platform
 
 <CardGroup cols={2}>
-  <Card title="REST Quickstart" icon="rocket" href="/quickstart#rest-api">
-    Get started with REST API in minutes
+  <Card title="REST API Reference" icon="rocket" href="/api-reference/rest/DefaultApi">
+    Browse every REST endpoint, request schema, and response shape.
   </Card>
-  <Card title="MQTT Quickstart" icon="bolt" href="/quickstart#mqtt-api">
-    Connect to MQTT and start streaming
+  <Card title="MQTT API Reference" icon="bolt" href="/api-reference/mqtt/main">
+    Connect to MQTT and start streaming real-time data.
   </Card>
 </CardGroup>
