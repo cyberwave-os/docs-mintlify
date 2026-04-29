@@ -78,7 +78,7 @@ Use:
 Example:
 
 ```bash
-curl -X POST "https://cyberwave.com/api/v1/assets/create-with-urdf" \
+curl -X POST "https://api.cyberwave.com/api/v1/assets/create-with-urdf" \
   -H "Authorization: Bearer $CYBERWAVE_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -135,7 +135,7 @@ Use the universal schema PATCH endpoint:
 Each call sends a single JSON Pointer operation:
 
 ```bash
-curl -X PATCH "https://cyberwave.com/api/v1/assets/$ASSET_UUID/universal-schema" \
+curl -X PATCH "https://api.cyberwave.com/api/v1/assets/$ASSET_UUID/universal-schema" \
   -H "Authorization: Bearer $CYBERWAVE_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -160,7 +160,7 @@ curl -X PATCH "https://cyberwave.com/api/v1/assets/$ASSET_UUID/universal-schema"
 You can also patch individual sub-fields without overwriting the entire object:
 
 ```bash
-curl -X PATCH "https://cyberwave.com/api/v1/assets/$ASSET_UUID/universal-schema" \
+curl -X PATCH "https://api.cyberwave.com/api/v1/assets/$ASSET_UUID/universal-schema" \
   -H "Authorization: Bearer $CYBERWAVE_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
