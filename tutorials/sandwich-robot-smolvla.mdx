@@ -1,0 +1,253 @@
+---
+title: "Building an Autonomous Sandwich-Making Robot with Cyberwave & SmolVLA"
+sidebarTitle: "Sandwich Robot (SmolVLA)"
+description: "A step-by-step tutorial on training a Vision-Language-Action model for real-world robotic manipulation using the SO-101 arm and the Cyberwave platform."
+icon: "burger"
+iconType: "solid"
+---
+
+<Info>
+**Author:** Siddharth Mehta, Cyberwave Builder Program
+</Info>
+
+## Introduction
+
+What if you could teach a robot to make a sandwich just by showing it a few times? That's exactly what we built: a system where you physically demonstrate the task through teleoperation, and a 450M-parameter VLA model learns to replicate it autonomously.
+
+This tutorial walks through the entire pipeline: hardware setup, Cyberwave integration, demonstration recording, SmolVLA training, and deployment.
+
+## Prerequisites
+
+- SO-101 dual robotic arms (leader + follower)
+- Raspberry Pi 4 with Cyberwave Edge Core installed
+- Logitech C275 USB webcam
+- Cyberwave account with API key
+- Python 3.10+, Google Colab (for training)
+
+## Step 1: Set up Cyberwave
+
+### Install the Edge Core on Raspberry Pi
+
+```bash
+ssh your_user@raspberry_pi_ip
+curl -fsSL https://cyberwave.com/install.sh | bash
+sudo cyberwave edge install
+```
+
+Follow the prompts to log in and select your environment. The CLI will install a systemd service and a Docker driver for the SO-101.
+
+### Set up the Cyberwave environment
+
+Before calibrating, you need a Cyberwave environment with the SO-101 arm and camera twins added and paired to the hardware. The full reference is in [SO-101 Get Started: Set Up the Cyberwave Environment](/hardware/so101/get-started#step-1-set-up-the-cyberwave-environment).
+
+1. In the Cyberwave dashboard, click **New Environment** and give it a name (e.g. *"Sandwich Bot"*).
+2. Click **Add from Catalog**, search for **SO101**, and add it to the environment. Position it to roughly match your physical setup.
+3. Click **Add from Catalog** again, search for **Standard Camera**, and add it.
+4. Open the camera twin in **Edit Mode**, set **Dock to Twin** to the **SO101** twin, and set **Parent Root** to **wrist**. The camera will now follow the arm's end-effector during teleoperation and recording.
+5. Pair the hardware by following the terminal prompts from `cyberwave edge install`: select your environment, select the SO101 twin (the driver auto-installs), then repeat for the camera twin.
+
+<Tip>
+The wrist-mounted camera is the visual input SmolVLA learns from. Lock the dock position now: any later change invalidates the demonstrations you'll record in Step 3.
+</Tip>
+
+### Calibrate the arms in the product UI
+
+Calibration teaches the software where each joint's zero position is, what its valid movement range is, and how the physical arm maps to the software model. Without it, joint commands won't translate correctly to hardware. For the full reference, see [SO-101 Get Started](/hardware/so101/get-started#step-3-calibrate-the-arms).
+
+<Warning>
+You must calibrate each arm individually. For this dual-arm setup, complete calibration for both the leader and the follower.
+</Warning>
+
+1. Open the **Cyberwave dashboard** and navigate to your environment.
+2. Select the SO101 twin. You'll see an option to **Calibrate** both arms (leader and follower).
+3. Click **Calibrate** and follow the on-screen prompts.
+4. **Manually move every joint** of the leader arm through its full range when prompted.
+5. Repeat for the **follower arm**.
+6. Once both arms are calibrated, the platform will confirm calibration is complete.
+
+<Tip>
+Move each joint slowly and through its full range. Accurate calibration directly improves control precision during teleoperation and the quality of the demonstrations you'll record in Step 3.
+</Tip>
+
+### Calibrate the arms via the CLI (alternative)
+
+If you'd rather skip the dashboard, run calibration from inside the driver container:
+
+```bash
+# Follower (12V arm)
+docker exec -it $(docker ps -q --filter name=cyberwave-driver) \
+    python -m scripts.cw_calibrate --type follower --port /dev/ttyACM1 --id follower1
+
+# Leader (5V arm)
+docker exec -it $(docker ps -q --filter name=cyberwave-driver) \
+    python -m scripts.cw_calibrate --type leader --port /dev/ttyACM0 --id leader1
+```
+
+### Connect via the Python SDK
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave(api_key="your_api_key")
+cw.affect("live")  # Essential: starts MQTT connection
+
+robot = cw.twin(
+    "the-robot-studio/so101",
+    twin_id="your_twin_id",
+    environment_id="your_env_id",
+)
+```
+
+<Tip>
+**Key discovery.** `cw.affect("live")` must be called before any robot interaction. Without it, MQTT never connects and all joint commands silently fail.
+</Tip>
+
+## Step 2: Understand the Cyberwave SDK
+
+### Read joint state
+
+The SDK's `joints.get()` and `joints.get_all()` don't work with the SO-101 driver. Instead, use `subscribe_joints()`:
+
+```python
+import threading
+
+positions = {}
+lock = threading.Lock()
+
+SDK_KEY_TO_NAME = {
+    "_1": "shoulder_pan", "_2": "shoulder_lift",
+    "_3": "elbow_flex", "_4": "wrist_flex",
+    "_5": "wrist_roll", "_6": "gripper",
+}
+
+def on_joint_update(data):
+    if data.get("source_type") != "edge_leader":
+        return
+    with lock:
+        for key, val in data["positions"].items():
+            name = SDK_KEY_TO_NAME.get(key)
+            if name:
+                positions[name] = float(val)
+
+robot.subscribe_joints(on_joint_update)
+```
+
+### Send joint commands
+
+Commands work with standard joint names:
+
+```python
+robot.joints.set("shoulder_pan", 30, degrees=True)
+robot.joints.set("gripper", 10, degrees=True)
+```
+
+### Capture camera frames
+
+The robot twin's `get_latest_frame()` returns tiny thumbnails. Instead, connect to the **camera twin** directly:
+
+```python
+camera = cw.twin(
+    "the-robot-studio/so101",
+    twin_id="your_camera_twin_id",
+    environment_id="your_env_id",
+)
+
+import time
+time.sleep(3)  # Let WebRTC connect
+
+jpg_bytes = camera.get_latest_frame()  # Real JPEG frame
+```
+
+## Step 3: Record demonstrations
+
+With teleoperation running, we record synchronized joint states and camera frames:
+
+```bash
+python scripts/record_demos.py \
+    --task "Make a sandwich with bread, cheese, and bread on top" \
+    --episodes 10
+```
+
+Each episode captures:
+
+- Joint positions at 30 Hz via `subscribe_joints()`
+- Camera frames via `camera_twin.get_latest_frame()`
+- Saved as NumPy arrays plus JPEG frames
+
+<Tip>
+Record 10 to 15 consistent demonstrations. Vary the starting positions slightly between episodes for better generalization.
+</Tip>
+
+## Step 4: Convert to LeRobot format
+
+LeRobot v3.0 expects a specific dataset structure with parquet files, video, and metadata:
+
+```bash
+python scripts/convert_dataset.py
+```
+
+Then rebuild using LeRobot's native API for guaranteed compatibility:
+
+```python
+from lerobot.datasets.lerobot_dataset import LeRobotDataset
+
+dataset = LeRobotDataset.create(
+    repo_id="your_username/sandwich-bot-demos",
+    fps=30,
+    robot_type="so101_follower",
+    features=features,
+    root="data/rebuilt",
+)
+
+for episode in episodes:
+    for frame in episode:
+        dataset.add_frame({
+            "observation.state": state,
+            "action": action,
+            "observation.images.image": camera_frame,
+            "task": "Make a sandwich",
+        })
+    dataset.save_episode()
+
+dataset.finalize()
+```
+
+## Step 5: Fine-tune SmolVLA
+
+SmolVLA is a 450M-parameter VLA pre-trained on SO100 / SO101 community data. Fine-tuning on your specific task takes ~1.5 hours on a T4 GPU:
+
+```bash
+lerobot-train \
+    --policy.path=lerobot/smolvla_base \
+    --dataset.repo_id=your_username/sandwich-bot-demos \
+    --dataset.root=data/rebuilt \
+    --batch_size=8 \
+    --steps=5000 \
+    --policy.device=cuda \
+    --rename_map='{"observation.images.image": "observation.images.camera1"}'
+```
+
+## Step 6: Deploy for inference
+
+Run the trained model in a closed loop:
+
+```bash
+python scripts/run_sandwich_vla.py --mode sequence --device mps --hz 10
+```
+
+The inference loop:
+
+1. Captures a camera frame via the Cyberwave SDK.
+2. Reads the current joint state via `subscribe_joints()`.
+3. Feeds both plus the language instruction to SmolVLA.
+4. The model outputs 6 joint targets.
+5. Sends them to the robot via `joints.set()`.
+6. Repeats at 10 Hz.
+
+## Conclusion
+
+A complete imitation learning pipeline, from teleoperation to autonomous execution, can be built in under three weeks using Cyberwave and SmolVLA. The key insight is that modern VLA models need remarkably few demonstrations when the base model is pre-trained on similar robots.
+
+---
+
+*Built by Siddharth Mehta as part of the Cyberwave Builder Program.*
