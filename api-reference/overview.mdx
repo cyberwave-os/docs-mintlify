@@ -19,15 +19,16 @@ The REST API is used for **non-real-time communication** with the Cyberwave plat
 
 ### Authentication
 
-All REST endpoints require an API key. Go to the [Cyberwave dashboard](https://cyberwave.com/profile) → **Profile** → **API Tokens** and create a new key, then pass it in the `Authorization` header on every request.
+All REST endpoints require an API key. Go to the [Cyberwave dashboard](https://app.cyberwave.com/profile) → **API Tokens** card → **Create Token**, then pass the key in the `Authorization` header on every request.
 
 | Field | Value |
 |---|---|
 | Base URL | `https://api.cyberwave.com` |
 | Auth header | `Authorization: Bearer <CYBERWAVE_API_KEY>` |
-| Accepted prefixes | `Bearer` and `Token` |
+| Accepted prefixes | `Bearer` and `Token` (case-insensitive) |
 | OpenAPI security scheme | `CustomTokenAuthentication` (API key, header) |
 | Recommended env var | `CYBERWAVE_API_KEY` |
+| Where to get a key | [`https://app.cyberwave.com/profile`](https://app.cyberwave.com/profile) → **API Tokens** card → **Create Token** |
 
 <Tabs>
   <Tab title="curl">
