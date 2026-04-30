@@ -1,0 +1,216 @@
+---
+title: "Autonomous Cloth Folding on Dual SO-101"
+sidebarTitle: "Cloth Folding (SmolVLA)"
+description: "A bimanual SO-101 setup that learns to fold cloth from human demonstrations using SmolVLA, the Cyberwave platform, and an Intel RealSense camera."
+icon: "shirt"
+iconType: "solid"
+---
+
+<Info>
+**Community tutorial.** Contributed by **Abhishek Pavani** and **Yash Shukla** (Team BostonX) through the [Cyberwave Builder Program](https://cyberwave.com/builders). Built and verified on the authors' own dual-arm SO-101 setup; results will vary based on lighting, fabric type, and calibration accuracy.
+</Info>
+
+<Tip>
+**Reference implementation.** Full source for the data-collection, training, and inference scripts referenced below lives in the authors' repo: [apavani2/cyberwave-cloth-folding-so101](https://github.com/apavani2/cyberwave-cloth-folding-so101). The original write-up is [on the project blog](https://cyberwave-bostonx-cloth-folding-so101.netlify.app). Clone the repo to follow along, or use the snippets in each step as a guide for your own implementation.
+</Tip>
+
+## Introduction
+
+Folding laundry is the household chore that people hate the most, and it's also a long-standing nightmare for robotics: cloth has effectively infinite configurations, so traditional point-cloud markers and hard-coded geometry don't generalize. This tutorial shows that a low-cost dual-arm SO-101 setup, paired with an efficient Vision-Language-Action (VLA) model, can learn the task from as few as **50 human demonstrations**.
+
+By the end you will have:
+
+- A bimanual SO-101 workspace registered as digital twins on Cyberwave.
+- A LeRobot-formatted dataset of teleoperated cloth-folding episodes.
+- A fine-tuned SmolVLA checkpoint that maps `language + image` to dual-arm joint actions.
+- A closed-loop deployment that runs asynchronous inference on the real robot.
+
+## Prerequisites
+
+- **Hardware**
+  - 2 × SO-101 6-DOF arms (leader + follower per side; 12-DOF total action space across both followers)
+  - 1 × Intel RealSense D435i or D455 (RGB + depth, mounted overhead)
+  - A flat workspace and a piece of cloth (the authors started with a napkin)
+  - Edge device for inference: NVIDIA Jetson Orin Nano Super or comparable
+- **Credentials**: Cyberwave API key (see [API Reference → Authentication](/api-reference/overview#authentication)).
+- **Base setup**: complete [SO-101 Get Started](/hardware/so101/get-started) for one arm pair before scaling to two. The teleop and calibration steps generalize directly.
+
+## Step 1: Set up Cyberwave
+
+A bimanual configuration mimics human dexterity, which is essential for handling fabric: one arm pinches and lifts, the other tucks and folds. Position both SO-101 follower arms facing each other with a shared workspace between them, and mount the RealSense overhead with a clear top-down view of the cloth before starting the steps below.
+
+### Install the Edge Core on the edge device
+
+This project deploys onto an NVIDIA Jetson Orin Nano Super, but the same flow works on a Raspberry Pi 4 (arm64) or any Linux box wired to the four serial ports.
+
+```bash
+ssh your_user@edge_device_ip
+curl -fsSL https://cyberwave.com/install.sh | bash
+sudo cyberwave edge install
+```
+
+Follow the prompts to log in and select your environment. The CLI will install a systemd service and the Docker drivers for the SO-101 arms.
+
+### Set up the Cyberwave environment
+
+You need one Cyberwave environment that contains **both** SO-101 arm pairs and the RealSense camera, all paired to the hardware on your edge device. The full reference is in [SO-101 Get Started: Set Up the Cyberwave Environment](/hardware/so101/get-started#step-1-set-up-the-cyberwave-environment).
+
+1. In the Cyberwave dashboard, click **New Environment** and give it a name (e.g. *"Cloth Folding"*).
+2. Click **Add from Catalog**, search for **SO101**, and add the **left** arm pair to the environment.
+3. Click **Add from Catalog** again and add the **right** arm pair as a second SO101 twin. Position both twins to mirror your physical layout.
+4. Click **Add from Catalog** again, search for **Standard Camera** (or your specific RealSense entry if available), and add it as a top-level twin. **Do not dock it under either arm** — it must stay overhead.
+5. Pair the hardware by following the terminal prompts from `cyberwave edge install`: select your environment, then pair each SO101 twin and the camera twin in turn. The drivers auto-install per twin.
+
+<Tip>
+**Lock the camera and table.** SmolVLA learns the visual task from this exact overhead viewpoint. Any mid-project change in camera pose, table height, or lighting invalidates earlier demonstrations and forces a retrain.
+</Tip>
+
+### Calibrate the arms in the product UI
+
+Calibration teaches the software where each joint's zero position is, what its valid movement range is, and how each physical arm maps to its software model. Without it, joint commands won't translate correctly to hardware. For the full reference, see [SO-101 Get Started](/hardware/so101/get-started#step-3-calibrate-the-arms).
+
+<Warning>
+You must calibrate **all four arms individually**: left leader, left follower, right leader, right follower. Skipping any one of them breaks bimanual coordination.
+</Warning>
+
+1. Open the **Cyberwave dashboard** and navigate to your environment.
+2. Select the **left** SO101 twin. You'll see an option to **Calibrate** both arms (leader and follower).
+3. Click **Calibrate** and follow the on-screen prompts: manually move every joint of the leader arm through its full range, then repeat for the follower.
+4. Repeat the entire flow for the **right** SO101 twin.
+5. Once all four arms are calibrated, the platform confirms calibration is complete.
+
+<Tip>
+Move each joint slowly and through its full range. Accurate calibration directly improves control precision during teleoperation and the quality of the demonstrations you'll record in Step 2.
+</Tip>
+
+### Calibrate the arms via the CLI (alternative)
+
+If you'd rather skip the dashboard, run calibration from inside the driver container. Repeat the leader/follower pair for both sides with their respective serial ports:
+
+```bash
+# Left pair
+docker exec -it $(docker ps -q --filter name=cyberwave-driver) \
+    python -m scripts.cw_calibrate --type leader   --port /dev/ttyACM0 --id leader_left
+docker exec -it $(docker ps -q --filter name=cyberwave-driver) \
+    python -m scripts.cw_calibrate --type follower --port /dev/ttyACM1 --id follower_left
+
+# Right pair
+docker exec -it $(docker ps -q --filter name=cyberwave-driver) \
+    python -m scripts.cw_calibrate --type leader   --port /dev/ttyACM2 --id leader_right
+docker exec -it $(docker ps -q --filter name=cyberwave-driver) \
+    python -m scripts.cw_calibrate --type follower --port /dev/ttyACM3 --id follower_right
+```
+
+### Connect via the Python SDK
+
+Once both pairs are paired and calibrated, you can register the twins in code for any SDK-driven monitoring or control. Note that the reference repo does data collection through a direct Feetech motor bus for low-latency teleop; the SDK is still the right surface for environment, calibration, and digital-twin state.
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave(api_key="your_api_key")
+cw.affect("live")  # Essential: starts MQTT connection
+
+left = cw.twin(
+    "the-robot-studio/so101",
+    twin_id="your_left_twin_id",
+    environment_id="your_env_id",
+)
+
+right = cw.twin(
+    "the-robot-studio/so101",
+    twin_id="your_right_twin_id",
+    environment_id="your_env_id",
+)
+```
+
+<Tip>
+**Key discovery.** `cw.affect("live")` must be called before any robot interaction. Without it, MQTT never connects and all joint commands silently fail.
+</Tip>
+
+<Check>
+You're ready for Step 2 when you can teleoperate **both** SO-101 follower arms from their respective leaders and see the RealSense feed live in your Cyberwave environment viewer.
+</Check>
+
+## Step 2: Collect demonstrations
+
+The authors' [`scripts/record_data/collect_dual_arm_dataset.py`](https://github.com/apavani2/cyberwave-cloth-folding-so101/blob/main/scripts/record_data) records synchronized 12-DOF joint states and RGB-D frames at 30 fps while you teleoperate both leader arms:
+
+```bash
+python scripts/record_data/collect_dual_arm_dataset.py \
+  --leader1-port   /dev/ttyACM0 --follower1-port /dev/ttyACM1 \
+  --leader2-port   /dev/ttyACM2 --follower2-port /dev/ttyACM3
+```
+
+Each episode captures, per follower arm:
+
+- `shoulder_pan`, `shoulder_lift`, `elbow_flex`, `wrist_flex`, `wrist_roll`, `gripper` joint positions at 30 Hz.
+- Synchronized RGB and depth streams from the RealSense.
+- The natural-language task prompt (e.g. *"fold a napkin"*).
+
+**Target ~50 demonstrations** for a single, well-defined fold. Vary cloth starting position slightly between episodes; keep camera, lighting, and fabric type fixed.
+
+<Tip>
+**Visualize as you go.** The repo bundles a [Rerun.io](https://www.rerun.io/) visualizer that replays joint-state graphs alongside the live video feed, making it easy to spot drifted demos before you waste training time on them. See [`scripts/visualization/`](https://github.com/apavani2/cyberwave-cloth-folding-so101/tree/main/scripts/visualization).
+</Tip>
+
+## Step 3: Convert to LeRobot format
+
+LeRobot v3.0 expects parquet episodes plus per-task metadata. The authors' [`scripts/training/convert_to_lerobot.py`](https://github.com/apavani2/cyberwave-cloth-folding-so101/blob/main/scripts/training) walks every recorded episode and writes the dataset:
+
+```bash
+python scripts/training/convert_to_lerobot.py \
+  --raw-data-dir data/ \
+  --output-dir   data/lerobot_dataset \
+  --repo-id      local/cloth_fold
+```
+
+The output is a standard LeRobot dataset directory (parquet under `data/`, MP4s under `videos/`, plus the `meta/` files) ready for either local training or a push to the Hugging Face Hub.
+
+## Step 4: Fine-tune SmolVLA
+
+[SmolVLA](https://huggingface.co/lerobot/smolvla_base) is a ~450M-parameter Vision-Language-Action model pre-trained on SO100 / SO101 community data. It maps an image plus a language instruction directly to robot joint actions, which makes it an efficient fit for edge deployment on a Jetson Orin Nano Super. The authors' [`scripts/training/train_smolvla.py`](https://github.com/apavani2/cyberwave-cloth-folding-so101/blob/main/scripts/training) handles the LeRobot policy wiring, optimizer, and checkpoint cadence:
+
+```bash
+python scripts/training/train_smolvla.py \
+  --dataset-dir  data/lerobot_dataset \
+  --repo-id      local/cloth_fold \
+  --output-dir   checkpoints/smolvla_cloth_fold
+```
+
+Watch the validation loss: a healthy curve drops for the first few epochs and then flattens. If it never flattens, expand the dataset or tighten label consistency before retraining.
+
+## Step 5: Deploy with asynchronous inference
+
+Once trained, deploy the policy back to the physical arms using [`scripts/inference/main.py`](https://github.com/apavani2/cyberwave-cloth-folding-so101/blob/main/scripts/inference):
+
+```bash
+python scripts/inference/main.py \
+  --checkpoint     checkpoints/smolvla_cloth_fold/final \
+  --follower1-port /dev/ttyACM1 \
+  --follower2-port /dev/ttyACM3
+```
+
+A critical detail: the deployment uses **asynchronous inference**. The robot computes the next action chunk while it's still executing the current one, which avoids stalls between predictions and produces fluid, continuous motion across the bimanual fold.
+
+<Warning>
+**Always simulate before live.** Test the policy against your digital twin in Cyberwave before sending it to the physical arms. Cloth manipulation involves close contact between two arms; a bad checkpoint can ram one gripper into the other and damage motors. The original authors lost a follower-arm motor mid-development.
+</Warning>
+
+## Where to go next
+
+<CardGroup cols={3}>
+  <Card title="Project blog" icon="book-open" href="https://cyberwave-bostonx-cloth-folding-so101.netlify.app">
+    Read the original BostonX write-up with photos, figures, and a teaser of t-shirt folding.
+  </Card>
+  <Card title="Reference repo" icon="github" href="https://github.com/apavani2/cyberwave-cloth-folding-so101">
+    Clone the dual-arm pipeline: data collection, conversion, training, inference, and the Rerun visualizer.
+  </Card>
+  <Card title="Sandwich-making with SmolVLA" icon="burger" href="/tutorials/sandwich-robot-smolvla">
+    A single-arm SO-101 community tutorial using the same teleop → VLA → deploy loop.
+  </Card>
+</CardGroup>
+
+---
+
+*Built by Abhishek Pavani and Yash Shukla (Team BostonX) as part of the Cyberwave Builder Program.*

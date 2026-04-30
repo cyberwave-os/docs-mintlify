@@ -95,7 +95,8 @@
           {
             "group": "Built by the Community",
             "pages": [
-              "tutorials/sandwich-robot-smolvla"
+              "tutorials/sandwich-robot-smolvla",
+              "tutorials/cloth-folding-so101"
             ]
           }
         ]
