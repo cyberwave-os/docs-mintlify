@@ -89,7 +89,12 @@
               "tutorials/edge-to-cloud-vlm",
               "tutorials/rover-ai-mission",
               "tutorials/go2-digital-to-physical",
-              "tutorials/so101-voice-pick-and-place",
+              "tutorials/so101-voice-pick-and-place"
+            ]
+          },
+          {
+            "group": "Built by the Community",
+            "pages": [
               "tutorials/sandwich-robot-smolvla"
             ]
           }
