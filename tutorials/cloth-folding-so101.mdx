@@ -124,10 +124,6 @@ right = cw.twin(
 )
 ```
 
-<Tip>
-**Key discovery.** `cw.affect("live")` must be called before any robot interaction. Without it, MQTT never connects and all joint commands silently fail.
-</Tip>
-
 <Check>
 You're ready for Step 2 when you can teleoperate **both** SO-101 follower arms from their respective leaders and see the RealSense feed live in your Cyberwave environment viewer.
 </Check>
@@ -149,10 +145,6 @@ Each episode captures, per follower arm:
 - The natural-language task prompt (e.g. *"fold a napkin"*).
 
 **Target ~50 demonstrations** for a single, well-defined fold. Vary cloth starting position slightly between episodes; keep camera, lighting, and fabric type fixed.
-
-<Tip>
-**Visualize as you go.** The repo bundles a [Rerun.io](https://www.rerun.io/) visualizer that replays joint-state graphs alongside the live video feed, making it easy to spot drifted demos before you waste training time on them. See [`scripts/visualization/`](https://github.com/apavani2/cyberwave-cloth-folding-so101/tree/main/scripts/visualization).
-</Tip>
 
 ## Step 3: Convert to LeRobot format
 
