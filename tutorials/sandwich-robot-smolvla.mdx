@@ -10,6 +10,10 @@ iconType: "solid"
 **Community tutorial.** Contributed by **Siddharth Mehta** through the [Cyberwave Builder Program](https://cyberwave.com/builders). Built and verified on the author's own SO-101 setup; your mileage may vary depending on hardware revision and environment.
 </Info>
 
+<Tip>
+**Reference implementation.** Full source for the helper scripts referenced below (`record_demos.py`, `convert_dataset.py`, training, inference, and config) lives in the author's repo: [siddharth270/Cyberwave-RoboticChef](https://github.com/siddharth270/Cyberwave-RoboticChef). Clone it to follow along, or use the snippets in each step as a guide for your own implementation.
+</Tip>
+
 ## Introduction
 
 What if you could teach a robot to make a sandwich just by showing it a few times? That's exactly what we built: a system where you physically demonstrate the task through teleoperation, and a 450M-parameter VLA model learns to replicate it autonomously.
@@ -106,7 +110,7 @@ robot = cw.twin(
 
 ### Read joint state
 
-The SDK's `joints.get()` and `joints.get_all()` don't work with the SO-101 driver. Instead, use `subscribe_joints()`:
+For the SO-101 driver, read joint state by subscribing to live updates with `subscribe_joints()`:
 
 ```python
 import threading
@@ -143,24 +147,21 @@ robot.joints.set("gripper", 10, degrees=True)
 
 ### Capture camera frames
 
-The robot twin's `get_latest_frame()` returns tiny thumbnails. Instead, connect to the **camera twin** directly:
+Use `capture_frame()` on the robot twin, with `sensor_id` set to the wrist camera you docked in Step 1. The SDK supports several output formats:
 
 ```python
-camera = cw.twin(
-    "the-robot-studio/so101",
-    twin_id="your_camera_twin_id",
-    environment_id="your_env_id",
-)
-
 import time
-time.sleep(3)  # Let WebRTC connect
+time.sleep(3)  # Let the WebRTC stream warm up on first connect
 
-jpg_bytes = camera.get_latest_frame()  # Real JPEG frame
+jpg_bytes = robot.capture_frame("bytes", sensor_id="wrist_cam")
+frame     = robot.capture_frame("numpy", sensor_id="wrist_cam")  # for ML inference
 ```
+
+See the [Python SDK reference](/sdks/python-sdk#frame-capture) for all supported output formats (`"numpy"`, `"pil"`, `"bytes"`, or a temp JPEG file path).
 
 ## Step 3: Record demonstrations
 
-With teleoperation running, we record synchronized joint states and camera frames:
+With teleoperation running, the author's [`record_demos.py`](https://github.com/siddharth270/Cyberwave-RoboticChef/blob/main/scripts/record_demos.py) records synchronized joint states and camera frames while you move the leader arm:
 
 ```bash
 python scripts/record_demos.py \
@@ -170,9 +171,9 @@ python scripts/record_demos.py \
 
 Each episode captures:
 
-- Joint positions at 30 Hz via `subscribe_joints()`
-- Camera frames via `camera_twin.get_latest_frame()`
-- Saved as NumPy arrays plus JPEG frames
+- Joint positions at 30 Hz via `subscribe_joints()` (see [Read joint state](#read-joint-state))
+- Wrist-camera frames at 30 Hz via the Cyberwave SDK (see [Capture camera frames](#capture-camera-frames))
+- Output written to `data/episodes/episode_NNNN/` as `states.npy`, `actions.npy`, `timestamps.npy`, plus a `frames/` directory of JPEGs and an `episode.json` manifest
 
 <Tip>
 Record 10 to 15 consistent demonstrations. Vary the starting positions slightly between episodes for better generalization.
@@ -180,37 +181,29 @@ Record 10 to 15 consistent demonstrations. Vary the starting positions slightly 
 
 ## Step 4: Convert to LeRobot format
 
-LeRobot v3.0 expects a specific dataset structure with parquet files, video, and metadata:
+LeRobot expects a specific dataset structure with parquet files, video, and metadata. The author's [`convert_dataset.py`](https://github.com/siddharth270/Cyberwave-RoboticChef/blob/main/scripts/convert_dataset.py) walks every recorded episode, transcodes the JPEG sequence to MP4 with `ffmpeg`, and writes parquet plus the LeRobot `meta/` files:
 
 ```bash
-python scripts/convert_dataset.py
+python scripts/convert_dataset.py \
+    --episodes-dir data/episodes \
+    --output-dir data/processed \
+    --repo-id your_username/sandwich-bot-demos
 ```
 
-Then rebuild using LeRobot's native API for guaranteed compatibility:
+The output looks like this:
 
-```python
-from lerobot.datasets.lerobot_dataset import LeRobotDataset
-
-dataset = LeRobotDataset.create(
-    repo_id="your_username/sandwich-bot-demos",
-    fps=30,
-    robot_type="so101_follower",
-    features=features,
-    root="data/rebuilt",
-)
-
-for episode in episodes:
-    for frame in episode:
-        dataset.add_frame({
-            "observation.state": state,
-            "action": action,
-            "observation.images.image": camera_frame,
-            "task": "Make a sandwich",
-        })
-    dataset.save_episode()
-
-dataset.finalize()
 ```
+data/processed/
+├── data/chunk-000/episode_000000.parquet     # state + action per frame
+├── videos/chunk-000/observation.images.image/episode_000000.mp4
+└── meta/{info,stats,episodes,tasks}.{json,jsonl}
+```
+
+To upload directly to the Hugging Face Hub after conversion, add `--upload`.
+
+<Tip>
+If LeRobot's loader rejects the dataset, rebuild with the native API for guaranteed compatibility. See [LeRobotDataset.create](https://github.com/huggingface/lerobot) and adapt the same `state` / `action` / `observation.images.image` keys the converter writes.
+</Tip>
 
 ## Step 5: Fine-tune SmolVLA
 
@@ -229,7 +222,7 @@ lerobot-train \
 
 ## Step 6: Deploy for inference
 
-Run the trained model in a closed loop:
+Run the trained model in a closed loop using the author's [`run_sandwich_vla.py`](https://github.com/siddharth270/Cyberwave-RoboticChef/blob/main/scripts/run_sandwich_vla.py):
 
 ```bash
 python scripts/run_sandwich_vla.py --mode sequence --device mps --hz 10
