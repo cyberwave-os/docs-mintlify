@@ -25,6 +25,28 @@ By the end you will have:
 - A fine-tuned SmolVLA checkpoint that maps `language + image` to dual-arm joint actions.
 - A closed-loop deployment that runs asynchronous inference on the real robot.
 
+## Architecture
+
+Two short diagrams: the **runtime stack** (bimanual hardware on a Jetson edge node, twins in the cloud) and the **data pipeline** that produces the deployed policy.
+
+**Runtime stack**
+
+```mermaid
+flowchart LR
+  hw["2 × SO-101 (12-DOF)<br/>+ overhead RealSense"] <--> edge["Jetson Orin Nano Super<br/>Cyberwave Edge"]
+  edge <--> cloud["Cyberwave Cloud<br/>(2 arm twins + camera twin)"]
+  cloud <--> app["Python app<br/>(SDK + direct Feetech bus)"]
+```
+
+**Data pipeline**
+
+```mermaid
+flowchart LR
+  collect["Collect dual-arm demos<br/>(12-DOF + RGB-D, 30 Hz)"] --> conv["Convert to<br/>LeRobot v3.0 dataset"]
+  conv --> train["Fine-tune SmolVLA<br/>(450M VLA)"]
+  train --> infer["Async inference<br/>(action chunks → 12-DOF)"]
+```
+
 ## Prerequisites
 
 - **Hardware**

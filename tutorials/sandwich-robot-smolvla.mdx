@@ -20,6 +20,28 @@ What if you could teach a robot to make a sandwich just by showing it a few time
 
 This tutorial walks through the entire pipeline: hardware setup, Cyberwave integration, demonstration recording, SmolVLA training, and deployment.
 
+## Architecture
+
+Two short diagrams: the **runtime stack** that links the arm to your Python app, and the **data pipeline** that turns demonstrations into a deployed policy.
+
+**Runtime stack**
+
+```mermaid
+flowchart LR
+  hw["SO-101 + wrist cam"] <--> edge["Raspberry Pi 4<br/>Cyberwave Edge"]
+  edge <--> cloud["Cyberwave Cloud<br/>(twins, MQTT)"]
+  cloud <--> app["Python app<br/>(Cyberwave SDK)"]
+```
+
+**Data pipeline**
+
+```mermaid
+flowchart LR
+  rec["Record demos<br/>(teleop, 30 Hz)"] --> conv["Convert to<br/>LeRobot dataset"]
+  conv --> train["Fine-tune SmolVLA<br/>(Colab T4)"]
+  train --> infer["Closed-loop<br/>inference @ 10 Hz"]
+```
+
 ## Prerequisites
 
 - SO-101 dual robotic arms (leader + follower)
