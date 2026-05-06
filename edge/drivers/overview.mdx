@@ -29,6 +29,58 @@ Example driver metadata (JSON):
 }
 ```
 
+### GPU passthrough
+
+Drivers can opt-in to GPU acceleration by setting `"prefer_gpu": true` in their metadata. When the host has the NVIDIA container runtime available **and** configured as the default in `/etc/docker/daemon.json`, Edge Core passes `--gpus` to the driver container.
+
+The optional `"gpu"` field controls which GPUs are exposed:
+
+| `gpu` value | Docker flag | Use case |
+|---|---|---|
+| _(not set)_ | `--gpus all` | All available GPUs (default) |
+| `1` | `--gpus 1` | Limit to 1 GPU |
+| `"device=0,2"` | `--gpus "device=0,2"` | Specific GPU devices |
+
+```json
+{
+  "drivers": {
+    "default": {
+      "docker_image": "cyberwaveos/go2-ros2-driver:humble",
+      "prefer_gpu": true,
+      "gpu": "all"
+    }
+  }
+}
+```
+
+<Tip>
+On NVIDIA Jetson devices, Edge Core auto-detects the platform and tries a `jetson-` prefixed image tag (e.g. `:humble` → `:jetson-humble`), falling back to the original if unavailable. You can also add a `"linux-aarch64-jetson"` driver key in metadata for explicit Jetson-specific configuration.
+</Tip>
+
+### Platform-specific drivers
+
+Use platform keys in `metadata.drivers` to provide platform-specific images or params:
+
+```json
+{
+  "drivers": {
+    "default": {
+      "docker_image": "cyberwaveos/driver:humble"
+    },
+    "linux-aarch64-jetson": {
+      "docker_image": "cyberwaveos/driver:jetson-humble",
+      "prefer_gpu": true
+    },
+    "darwin-arm64": {
+      "docker_image": "cyberwaveos/driver:humble",
+      "params": ["--add-host", "host.docker.internal:host-gateway"]
+    }
+  }
+}
+```
+
+Edge Core resolves drivers in order: `linux-aarch64-jetson` → `linux-aarch64` → `linux` → `default`.
+
 Manage edge driver containers:
 
 | Subcommand | Description |
@@ -36,6 +88,47 @@ Manage edge driver containers:
 | `list` | List running driver containers (`--all` includes exited) |
 | `start` | Start a stopped driver container |
 | `stop` | Stop a running driver container |
+
+## Multi-container drivers
+
+<Warning>
+**STUB DOCUMENT:** This section is intentionally minimal and will be expanded with deeper technical details in a future update.
+</Warning>
+
+Some robots require multiple cooperating containers — for example a ROS 2 driver, bridge nodes, Nav2, SLAM, and elevation mapping. Use the `services` array in driver metadata to define a multi-container stack that Edge Core launches automatically.
+
+```json
+{
+  "drivers": {
+    "linux-aarch64-jetson": {
+      "services": [
+        { "image": "cyberwaveos/go2-ros2-driver:jetson-humble", "name": "driver",
+          "command": ["ros2", "launch", "cyberwave_go2_driver", "robot_driver.launch.py"] },
+        { "image": "cyberwaveos/go2-ros2-driver:jetson-humble", "name": "bridges" },
+        { "image": "cyberwaveos/ros2-nav2:jetson-humble", "name": "nav2" },
+        { "image": "cyberwaveos/ros2-slam:jetson-humble", "name": "slam" },
+        { "image": "cyberwaveos/ros2-elevation-mapping:jetson-humble", "name": "elevation",
+          "prefer_gpu": true }
+      ],
+      "shared_env": { "ROS_DOMAIN_ID": "0", "CYBERWAVE_MAP_DIR": "/data" },
+      "shared_params": ["--network", "host", "-v", "/data:/data"]
+    },
+    "default": {
+      "docker_image": "cyberwaveos/go2-ros2-driver",
+      "prefer_gpu": true
+    }
+  }
+}
+```
+
+Key points:
+
+- `services` present → multi-container mode. `docker_image` present → single-container mode (existing behavior, unchanged).
+- Each service requires `image` (Docker image) and `name` (used in the container name suffix).
+- Optional per-service fields: `command`, `env`, `params`, `prefer_gpu`, `gpu`.
+- `shared_env` and `shared_params` apply to all services. Per-service `env` overrides shared values.
+- Container naming: `cyberwave-driver-{twin_uuid[:8]}-{service_name}`.
+- Edge Core injects standard env vars (`CYBERWAVE_API_KEY`, MQTT, Zenoh, etc.) into every service automatically.
 
 ## Data bus
 

@@ -1,0 +1,77 @@
+---
+title: Upload LeRobot Datasets
+description: Import pre-built LeRobot datasets (v2.1 and v3.0) into Cyberwave
+sidebarTitle: Upload LeRobot
+icon: cloud-arrow-up
+---
+
+<Note>
+**stub** - This page is a work in progress and will be expanded with detailed instructions.
+</Note>
+
+## Overview
+
+Cyberwave supports uploading pre-built LeRobot datasets directly to your workspace. This allows you to use existing datasets for VLA model fine-tuning without re-collecting data in Cyberwave.
+
+Supported formats:
+- **LeRobot v2.1** - Legacy format with splits-based episode organization
+- **LeRobot v3.0** - Current format with chunked data and episodes.jsonl
+
+## Quick Start
+
+1. Open an environment in the Cyberwave editor
+2. Navigate to **File → Import → Upload dataset**
+3. Fill in the dataset name and select your `.zip` file
+4. Wait for processing to complete
+5. Your dataset is now available under **Data → Manage Datasets**
+
+## Dataset Requirements
+
+Your LeRobot dataset zip file should contain:
+
+```
+your-dataset.zip/
+├── meta/
+│   ├── info.json          # Required: dataset metadata
+│   └── episodes.jsonl     # v3.0 only
+├── data/
+│   └── chunk-000/
+│       └── *.parquet      # Episode data
+└── videos/                # Optional: video files
+    └── chunk-000/
+        └── *.mp4
+```
+
+The `meta/info.json` file must include:
+- `codebase_version` - Version string (e.g., "v3.0" or "v2.1")
+- `fps` - Recording frame rate
+- `features` - Feature definitions including action/observation shapes
+
+## Size Limits
+
+- Maximum file size: 10 GB
+- Large uploads (>2 GB) may take several minutes
+
+## Processing Stages
+
+After upload, Cyberwave automatically:
+
+1. **Downloads** the zip to processing workers
+2. **Extracts** and validates the archive structure
+3. **Detects** the format version (v2.1 or v3.0)
+4. **Validates** data integrity and required files
+5. **Persists** metadata and creates dataset records
+
+You can monitor progress in real-time through the upload dialog.
+
+## Using Uploaded Datasets
+
+Once processed, your dataset can be used for:
+- **VLA Fine-tuning** - Train SmolVLA or other models on your data
+- **Export** - Download in different formats
+- **Review** - Browse episodes and metadata
+
+## Related
+
+- [SmolVLA Training](/use-cyberwave/ml-models/smolvla-training)
+- [ML Models Overview](/use-cyberwave/ml-models/overview)

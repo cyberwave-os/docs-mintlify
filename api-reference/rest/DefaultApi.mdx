@@ -78,14 +78,17 @@ Method | HTTP request | Description
 [**src_app_api_environments_create_environment_link**](DefaultApi.md#src_app_api_environments_create_environment_link) | **POST** /api/v1/environments/{uuid}/create-link | Create Environment Link
 [**src_app_api_environments_create_environment_simulation**](DefaultApi.md#src_app_api_environments_create_environment_simulation) | **POST** /api/v1/environments/{uuid}/simulations | Create Environment Simulation
 [**src_app_api_environments_create_environment_snapshot**](DefaultApi.md#src_app_api_environments_create_environment_snapshot) | **POST** /api/v1/environments/{uuid}/snapshots | Create Environment Snapshot
+[**src_app_api_environments_add_environment_waypoints**](DefaultApi.md#src_app_api_environments_add_environment_waypoints) | **POST** /api/v1/environments/{uuid}/waypoints | Add Environment Waypoints
 [**src_app_api_environments_create_standalone_environment**](DefaultApi.md#src_app_api_environments_create_standalone_environment) | **POST** /api/v1/environments | Create Standalone Environment
 [**src_app_api_environments_delete_environment**](DefaultApi.md#src_app_api_environments_delete_environment) | **DELETE** /api/v1/environments/{uuid} | Delete Environment
 [**src_app_api_environments_delete_environment_for_project**](DefaultApi.md#src_app_api_environments_delete_environment_for_project) | **DELETE** /api/v1/projects/{project_uuid}/environments/{uuid} | Delete Environment For Project
 [**src_app_api_environments_delete_environment_snapshot**](DefaultApi.md#src_app_api_environments_delete_environment_snapshot) | **DELETE** /api/v1/environments/{uuid}/snapshots/{snapshot_uuid} | Delete Environment Snapshot
+[**src_app_api_environments_delete_environment_waypoint**](DefaultApi.md#src_app_api_environments_delete_environment_waypoint) | **DELETE** /api/v1/environments/{uuid}/waypoints/{waypoint_id} | Delete Environment Waypoint
 [**src_app_api_environments_delete_recording**](DefaultApi.md#src_app_api_environments_delete_recording) | **DELETE** /api/v1/environments/{uuid}/recordings/{recording_uuid} | Delete Recording
 [**src_app_api_environments_generate_telemetry_recording**](DefaultApi.md#src_app_api_environments_generate_telemetry_recording) | **POST** /api/v1/environments/{uuid}/generate-recording | Generate Telemetry Recording
 [**src_app_api_environments_get_environment**](DefaultApi.md#src_app_api_environments_get_environment) | **GET** /api/v1/environments/{uuid} | Get Environment
 [**src_app_api_environments_get_environment_dirty_twins**](DefaultApi.md#src_app_api_environments_get_environment_dirty_twins) | **GET** /api/v1/environments/{uuid}/schema/dirty_twins | Get Environment Dirty Twins
+[**src_app_api_environments_get_environment_waypoints**](DefaultApi.md#src_app_api_environments_get_environment_waypoints) | **GET** /api/v1/environments/{uuid}/waypoints | Get Environment Waypoints
 [**src_app_api_environments_get_environment_invitations**](DefaultApi.md#src_app_api_environments_get_environment_invitations) | **GET** /api/v1/environments/{uuid}/invitations | Get Environment Invitations
 [**src_app_api_environments_get_environment_mujoco_scene**](DefaultApi.md#src_app_api_environments_get_environment_mujoco_scene) | **GET** /api/v1/environments/{uuid}/mujoco-scene | Get Environment Mujoco Scene
 [**src_app_api_environments_get_environment_mujoco_scene_xml**](DefaultApi.md#src_app_api_environments_get_environment_mujoco_scene_xml) | **GET** /api/v1/environments/{uuid}/mujoco-scene.xml | Get Environment Mujoco Scene Xml
@@ -6117,6 +6120,110 @@ Name | Type | Description  | Notes
 ### HTTP request headers
 
  - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_environments_add_environment_waypoints**
+> EnvironmentWaypointSchema[] src_app_api_environments_add_environment_waypoints(uuid, environment_waypoint_bulk_create_schema)
+
+Add Environment Waypoints
+
+Append multiple waypoints to an environment.
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+ **environment_waypoint_bulk_create_schema** | [**EnvironmentWaypointBulkCreateSchema**](EnvironmentWaypointBulkCreateSchema.md)|  | 
+
+### Return type
+
+[**EnvironmentWaypointSchema[]**](EnvironmentWaypointSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_environments_delete_environment_waypoint**
+> EnvironmentWaypointSchema[] src_app_api_environments_delete_environment_waypoint(uuid, waypoint_id)
+
+Delete Environment Waypoint
+
+Delete a waypoint from an environment.
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+ **waypoint_id** | **str**|  | 
+
+### Return type
+
+[**EnvironmentWaypointSchema[]**](EnvironmentWaypointSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **src_app_api_environments_get_environment_waypoints**
+> EnvironmentWaypointSchema[] src_app_api_environments_get_environment_waypoints(uuid)
+
+Get Environment Waypoints
+
+List environment waypoints.
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **uuid** | **str**|  | 
+
+### Return type
+
+[**EnvironmentWaypointSchema[]**](EnvironmentWaypointSchema.md)
+
+### Authorization
+
+[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
  - **Accept**: application/json
 
 ### HTTP response details

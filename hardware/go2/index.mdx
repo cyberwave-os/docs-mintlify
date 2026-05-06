@@ -33,3 +33,23 @@ The **Unitree Go2** is an intelligent quadruped robot, a bionic dog designed for
 >
   Official Go2 hardware documentation from Quadruped Robotics
 </Card>
+
+## ROS 2 Navigation Driver
+
+Cyberwave provides a pre-built ROS 2 driver for the Go2 that handles autonomous navigation, SLAM, waypoint missions, and live telemetry streaming. Docker images are available for Jazzy, Humble, and Jetson platforms:
+
+```bash
+docker pull cyberwaveos/go2-ros2-driver:jazzy          # Desktop / server
+docker pull cyberwaveos/go2-ros2-driver:humble          # Humble ecosystem
+docker pull cyberwaveos/go2-ros2-driver:jetson-humble    # NVIDIA Jetson
+```
+
+The driver publishes standard ROS 2 topics (`/odom`, `/point_cloud2`, `/scan`, `/camera/*`, `/joint_states`) so you can use your own ROS 2 nodes alongside the Cyberwave platform integration.
+
+<Card
+  title="ROS 2 Driver Reference"
+  icon="terminal"
+  href="/hardware/go2/ros2-driver"
+>
+  Docker images, environment variables, ROS 2 topics, and configuration reference
+</Card>

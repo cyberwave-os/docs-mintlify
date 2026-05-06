@@ -96,6 +96,28 @@ Twin behavior in Cyberwave is capability-driven. The platform computes capabilit
 
 ---
 
+## Cloud Recording
+
+By default, Cyberwave saves video recordings from every twin session to cloud storage. You can disable this per twin if you do not need cloud-stored recordings (for example, during development or for privacy reasons).
+
+### Disabling Cloud Recording
+
+Open the twin editor in an environment, click the **three-dot menu** (&#8943;), and select **Disable cloud recording**. The option is available for any twin that has at least one RGB or depth camera sensor.
+
+When cloud recording is disabled:
+
+- Telemetry lifecycle events (start/stop) are still logged normally.
+- Camera and robot recording generation tasks (parquet, MP4) are **not** spawned.
+- No video or data artifacts are uploaded to cloud storage for that twin.
+
+To re-enable, open the same menu and select **Enable cloud recording**.
+
+<Info>
+The setting is stored in `twin.metadata.cloud_recording_enabled`. When the key is absent or `true`, recordings are saved (default behavior). Set it to `false` to disable.
+</Info>
+
+---
+
 ## Related
 
 <CardGroup cols={3}>

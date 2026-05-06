@@ -113,6 +113,16 @@ stub: In the twin editor, **Twin overrides** lets you set per-twin appearance co
 
 ---
 
+## Reorder root twins in Scene Objects
+
+stub: In **Edit** mode, the Scene Objects left pane supports drag-and-drop reordering for root twins using a grip handle. Child twins stay attached to their parent group and move with the parent when reordered.
+
+- Reordering is available only when edit controls are enabled and search is not active.
+- Order is saved to environment settings as `twin_order`, so it persists across reloads.
+- Live stream cards in the right pane now follow the same persisted twin order.
+
+---
+
 ## Simulate tab playground physics
 
 stub: In **Simulate → Playground**, Cyberwave now applies lightweight frontend physics with gravity and basic rigid collisions. URDF twins use their `<collision>` geometry as collision sources when available, and a fallback collider is used when collision metadata is missing.
@@ -125,6 +135,16 @@ stub: In the 3D editor, open **Edit → Editor Assistant** to launch a built-in 
 
 - The assistant automatically provisions a workspace-scoped API key for the session so you can start chatting immediately.
 - The assistant displays a **Used tools** line for each response so you can verify which MCP tools were invoked.
+
+---
+
+## Workflow executions in an environment
+
+stub: In the environment editor, open **Executions → Workflow Executions** to review recent runs for mission workflows bound to the current environment.
+
+- The list stays compact by default and shows workflow name, status, and run time.
+- Select a run to inspect trigger data, errors, and metadata.
+- **Node Executions** stay collapsed behind **Show more** so the default view stays lightweight.
 
 ## Live point cloud alignment
 

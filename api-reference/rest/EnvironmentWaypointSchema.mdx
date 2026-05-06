@@ -1,0 +1,16 @@
+# EnvironmentWaypointSchema
+
+stub
+
+Normalized environment waypoint returned by the REST API.
+
+## Properties
+
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**id** | **str** | Waypoint identifier. | 
+**name** | **str** | Display name. | 
+**collection** | **str** | Optional grouping label. | [optional]
+**position** | **Vector3Schema** | Position with `x`, `y`, and `z`. |
+**rotation** | **QuaternionSchema** | Quaternion rotation with `w`, `x`, `y`, and `z`. |
+**metadata** | **Dict[str, object]** | Optional waypoint metadata. | [optional]

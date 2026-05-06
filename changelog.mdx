@@ -4,6 +4,60 @@ description: "Product updates and announcements"
 rss: true
 ---
 
+<Update label="May 6, 2026">
+
+## New Features
+
+- **Edge workflow automation for spatial intelligence**: Added spatial zones, Timed Condition gates, edge-side dwell/timeout/debounce execution, live zone overlays, capture-frame authoring, and compile-time model compatibility checks for camera-frame workflows. This turns intrusion detection and zone-aware perception into an end-to-end workflow pattern across backend, frontend, edge workers, SDK channels, and docs (#2080, #2082, #2085, #2088, #2089, #2093, #2113, #2122, #2153, #2155, #2156).
+- **Datasets and robot recording playgrounds**: Introduced dataset import with Hugging Face/LeRobot focus, dataset slug/visibility/source metadata, SDK schema support, and visualizer/playground pages for LeRobot and Cyberwave-format datasets with episode playback, video panes, URDF/joint context, and long-recording streaming improvements (#2038, #2047, #2051, #2069).
+- **Commerce and template foundations**: Added asset pricing, currency selection, environment monthly cost previews, hardware purchase/rental guidance, organization billing details, delivery addresses, and richer environment/workflow template publishing and cloning flows (#2068, #2101, #2111, #2119, #2154).
+- **New edge/device integrations**: Added the first DJI Mini Android app with DJI telemetry, WebRTC video, Cyberwave MQTT/REST streaming, APK publishing, and smoke-test CI; added a native microphone driver with Whisper STT cloud-model wiring; added the PI05 OpenArm cloud node; and improved GO2 ROS 2 driver setup for dynamic IPs (#2096, #2117, #2004, #2026, #2097).
+
+## Feature Improvements
+
+## Platform
+
+- **Workflow authoring polish**: Workflow creation can start from templates or generated mission waypoints; the environment workbench, node library, canvas previews, node I/O strips, wired/available port grouping, missing-configuration hints, hover tooltips, and right-side inspector were substantially refined for faster graph authoring (#2048, #2052, #2065, #2077, #2079, #2081, #2086, #2087, #2115, #2120, #2123, #2128).
+- **Workflow semantics and edge sync clarity**: Workflows now derive environment behavior from bindings instead of the legacy `kind` field, support multi-twin perception on edge, publish `sync_workflows` immediately when run-on-edge workflows activate, and expose operator-triggered sync from the twin editor plus an `--edge-active` CLI filter (#2054, #2071, #2090, #2063, #2112, #2114).
+- **Environment and template UX**: The create-environment flow was redesigned into a full-screen multi-step experience, AI environment creation now opens the assistant on a blank environment, public templates clone correctly across workspaces, and template publishing supports public/workspace visibility with workflow summaries (#2053, #2059, #2060, #2119, #2154).
+- **Edge device observability**: The Edge Devices tab now follows live MQTT heartbeats, shows host/IP/uptime/stream health, filters archived tombstones, uses a compact row layout, and updates backend edge heartbeat state from `edge_health` messages (#2137, #2140, #2141).
+- **Model and catalog UX**: ML models now expose a typed edge runtime selector; the model picker has higher-contrast filters, tokenized search, and greys out edge-incompatible models in camera-frame chains with clear reasons and override affordances (#2076, #2146, #2155).
+- **Operator controls**: Added cloud-recording toggles per twin, an alert-overlay visibility toggle, live-mode hardware-dialog suppression when hardware already exists, improved onboarding overlay dark-mode readability, and route-safe environment creation redirects (#2046, #2095, #2147, #2151, #2158, #2145, #2099).
+
+## SDK
+
+### Python SDK
+
+- **Perception/runtime correctness**: ONNX YOLO postprocessing now applies per-class NMS; MQTT topic handlers are deduped to prevent WebRTC answer/candidate storms; annotate publishes overlay payloads on a dedicated frame overlay channel; and device fingerprinting has safer hostname fallbacks (#2133, #2153, #2140).
+- **Dataset and media support**: Python SDK schemas and bindings were updated for dataset import/visualization flows, and camera streaming paths gained stronger reconnect behavior for long-lived WebRTC sessions (#2038, #2051, #2069, #2130).
+- **Internal distribution hardening**: Video-sync packaging was obfuscated, CLI/internal install scripts gained better Buildkite authentication and redaction, and `sync-assets` can filter by `--registry-vendor` for workspace-scoped catalog syncs (#2036, #2157).
+
+### C++ SDK
+
+- **API compatibility maintenance**: Updated the generated assets client call shape after pricing filters expanded the list-assets API, and kept C++ recording pipeline CI coverage aligned with the release (#2068).
+
+## Bug Fixes
+
+- Fixed workflow execution reading stale replica data by forcing primary reads in workflow task paths.
+- Fixed missing `action_id` errors in generated `move_twin` workflow code.
+- Fixed workflow editor autosave races, Send Alert target-twin persistence, Timed Condition alias schema emission, node-title font/spacing issues, and spatial-filter inspector action layout.
+- Fixed AI environment creation hitting a shadowed backend endpoint, public template clone 403s, and wrong redirects after environment creation.
+- Fixed attachment ACL gaps, including environment-map parent access handling.
+- Fixed long robot recordings crashing playback by streaming signed Parquet data around the seek point.
+- Fixed edge worker install/build regressions by installing the local SDK wheel with required extras and smoke-testing `ultralytics`/`zenoh`.
+- Fixed edge workflow codegen bugs around detection confidence, empty twin UUID chains, spatial-filter bbox normalization, alert dedupe bypass for re-firing cooldowns, anonymize fail-closed behavior, and cloud-vs-edge model gate scope.
+- Fixed edge-core worker lifecycle issues: no unnecessary worker image pull when no active workflows exist, two-strike stale-worker cleanup, symmetric worker restart after edge-core restart, and graceful `docker stop` semantics.
+- Fixed CLI MQTT `topic_prefix` forwarding so workflow sync commands reach prefixed edge deployments.
+- Fixed camera driver WebRTC streams going silent after consumers disconnect, and fixed SDK MQTT handler accumulation that caused repeated WebRTC answers/candidates.
+- Fixed Edge Devices status drift, stale online fallbacks, cross-workspace tombstone visibility, and unresolved-edge status rendering.
+- Fixed GO2 driver dynamic-IP handling and filtering of simulated teleop commands.
+- Fixed the DJI Android smoke-test/degraded-mode path, Sentry empty-DSN startup crash, and CI emulator working-directory issues.
+- Fixed live-mode hardware dialog false positives by checking MQTT, REST, and historical edge-device presence.
+- Fixed onboarding overlay dark-mode contrast and removed an exposed close button.
+- Removed a sensitive token from Terraform configuration.
+
+</Update>
+
 <Update label="April 16, 2026">
 
 ## New Features

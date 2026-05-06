@@ -1,0 +1,105 @@
+---
+title: "Unified Slug System"
+description: "Human-readable identifiers for workspace entities"
+---
+
+<Note>This page is a stub. A human will curate and expand it before publishing.</Note>
+
+## Overview
+
+Every major entity in Cyberwave has a **unified, human-readable slug** that uniquely identifies it across the platform. The slug follows a consistent three-segment format:
+
+```
+{workspace-slug}/{type-prefix}/{entity-slug}
+```
+
+For example: `acme-robotics/catalog/my-robot-arm`
+
+## Type Prefixes
+
+| Entity | Type Prefix | Example Slug |
+|--------|-------------|--------------|
+| Asset (catalog) | `catalog` | `acme/catalog/my-robot-arm` |
+| Workflow | `workflows` | `acme/workflows/pick-and-place` |
+| ML Model | `models` | `acme/models/yolov8-custom` |
+| Controller Policy | `controllers` | `acme/controllers/keyboard-teleop` |
+| Environment | `envs` | `acme/envs/production-floor` |
+| Twin | `twins` | `acme/twins/arm-station-1` |
+
+## URL Format
+
+The slug maps directly to the frontend URL:
+
+```
+/{workspace-slug}/{type-prefix}/{entity-slug}
+```
+
+For example: `/acme-robotics/envs/production-floor`
+
+## API Usage
+
+### Lookup by Slug
+
+All entity APIs accept both UUID and slug for lookup. Use the dedicated `by-slug` endpoints when you have a slug:
+
+- `GET /api/v1/environments/by-slug?slug={slug}`
+- `GET /api/v1/twins/by-slug?slug={slug}`
+- `GET /api/v1/workflows/by-slug?slug={slug}`
+
+### Slug Availability Check
+
+Check whether a slug is available before creating an entity:
+
+```
+GET /api/v1/slugs/check?slug={workspace/type/entity}&entity_type={type}
+```
+
+Response:
+```json
+{
+  "available": true,
+  "slug": "acme/envs/my-environment",
+  "suggestion": null
+}
+```
+
+## Slug Generation
+
+Slugs are auto-generated on entity creation from the entity name using Django's `slugify`. Collisions are resolved by appending a numeric suffix: `-2`, `-3`, etc.
+
+## Workspace Rename
+
+When a workspace slug changes, all entity slugs are updated automatically to reflect the new workspace prefix.
+
+## Python SDK Usage
+
+The Python SDK fully supports unified slugs. Slugs and UUIDs are interchangeable wherever an identifier is accepted.
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+
+# Fetch entities by slug
+twin = cw.twin(twin_id="acme/twins/my-arm")
+env = cw.environments.get_by_slug("acme/envs/production-floor")
+wf = cw.workflows.get_by_slug("acme/workflows/pick-and-place")
+
+# Create a twin using asset slug and environment slug
+robot = cw.twin("acme/catalog/so101", environment_id="acme/envs/lab")
+
+# Trigger a workflow by slug
+run = cw.workflows.trigger("acme/workflows/pick-and-place", inputs={"speed": 1.0})
+
+# Check slug availability
+result = cw.assets.check_slug("acme/catalog/my-new-robot")
+
+# Access entity slugs
+print(twin.slug)   # "acme/twins/my-arm"
+print(wf.slug)     # "acme/workflows/pick-and-place"
+```
+
+## Deprecation Notices
+
+- **`registry_id`** and **`registry_id_alias`** on Assets: deprecated in favor of the unified `slug` field. Will be removed in a future release.
+- **`catalog_seed_id`** / **`catalog_key`** on ControllerPolicy metadata: deprecated. Use the `slug` field instead.

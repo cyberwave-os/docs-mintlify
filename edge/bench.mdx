@@ -1,0 +1,103 @@
+---
+title: "Edge Bench"
+sidebarTitle: "Benchmark"
+description: "Measure Zenoh SDK hot-path performance on an edge device and compare against a per-device baseline."
+icon: "gauge-high"
+---
+
+<Warning>
+**STUB DOCUMENT:** This page is intentionally minimal and will be expanded in a future update.
+</Warning>
+
+`cyberwave edge bench` micro-benchmarks the Zenoh SDK hot paths on whichever
+machine it runs on — header pack, sample decode, stats accounting, sequence
+numbering — and compares every metric against a baseline shipped for the
+detected device class. It prints a device fingerprint, a results table with
+`Baseline ops/s` / `Delta` / `Status` columns, and a PASS/FAIL report card.
+
+## When to use it
+
+- Sanity-check a freshly-provisioned edge device (Jetson, Raspberry Pi, mini-PC) against a known-good reference.
+- Gate merges in CI on reference hardware: the command exits `2` when any metric regresses beyond the threshold.
+- Validate performance after kernel, Python, NumPy, or Zenoh upgrades.
+
+## Run it
+
+```bash
+# Default run, auto-selects the baseline for this device class.
+cyberwave edge bench
+
+# Pin to CPU 0 for quieter numbers, dump the full result as JSON.
+cyberwave edge bench --pin --output /tmp/bench.json
+
+# Skip comparison (raw numbers only).
+cyberwave edge bench --no-compare
+```
+
+The device class is auto-detected (`jetson-orin-nano`, `rpi-5`, `x86-laptop`,
+`apple-silicon-m4`, ...) from `/proc/device-tree/model`,
+`/etc/nv_tegra_release`, `sysctl -n machdep.cpu.brand_string` (macOS), and
+`platform.machine()`. On Apple Silicon the chip generation is parsed from the
+brand string and emitted as `apple-silicon-m1` … `apple-silicon-m4` (Pro / Max
+/ Ultra variants share a tier).
+
+Baselines are shipped inside the CLI package, and the loader walks from the
+specific slug up to a generic fallback — e.g. `apple-silicon-m4` tries
+`apple-silicon-m4.json` → `apple-silicon.json` → `generic-arm64.json`, so new
+generations degrade gracefully. Use `--baseline <path>` to override.
+
+## Bless a baseline for a new device class
+
+Run the bench on real reference hardware and write a baseline file the CLI
+will pick up:
+
+```bash
+cyberwave edge bench \
+    --rounds 500000 --warmup 20000 --repeat 5 --pin \
+    --save-baseline ./jetson-orin-nano.json
+```
+
+The file name must match the `device_class` slug the fingerprint reports —
+e.g. `apple-silicon-m4.json` on an M4 / M4 Pro / M4 Max MacBook. Ship the
+file inside the CLI package's `bench_baselines/` directory and flip
+`"provisional": false` once you're happy with the numbers. On macOS the
+`--pin` flag is a no-op; plug in power, disable Low Power Mode, and close
+background apps before blessing to avoid thermal throttling.
+
+## Key flags
+
+| Flag | Default | Purpose |
+| ---- | ------- | ------- |
+| `--rounds / -n` | `100000` | Iterations per timed pass. |
+| `--warmup` | `2000` | Un-timed warmup before each benchmark. |
+| `--repeat` | `3` | Timed passes; the median is reported. |
+| `--threshold` | `0.15` | Regression threshold (fraction). |
+| `--baseline <path>` | - | Override the auto-selected baseline. |
+| `--save-baseline <path>` | - | Persist this run's metrics as a baseline. |
+| `--output <path>` | - | Persist the full run result (fingerprint + metrics + deltas). |
+| `--pin` | `false` | Pin the bench to CPU 0 (Linux only). |
+| `--no-compare` | `false` | Skip baseline lookup and comparison. |
+
+## Exit codes
+
+- `0` — every metric within threshold (or no baseline available).
+- `2` — one or more metrics regressed beyond `--threshold`.
+
+## Related
+
+<CardGroup cols={2}>
+  <Card
+    title="Edge Overview"
+    icon="microchip"
+    href="/edge/overview"
+  >
+    Install and manage Cyberwave Edge Core.
+  </Card>
+  <Card
+    title="Edge Workers"
+    icon="microchip-ai"
+    href="/edge/workers/overview"
+  >
+    Run ML workers that consume the same Zenoh data plane this bench measures.
+  </Card>
+</CardGroup>

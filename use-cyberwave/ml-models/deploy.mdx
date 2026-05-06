@@ -97,7 +97,7 @@ Turn recordings and **episodes** (from Step 7 or equivalent trimming) into a dat
 **API Reference:**
 - `POST /api/v1/datasets` - Create dataset from episodes
 - `GET /api/v1/datasets` - List available datasets
-- `GET /api/v1/datasets/{uuid}/zip` - Download dataset as zip file
+- `GET /api/v1/datasets/{uuid}/zip?format=openvla|lerobot` - Get signed URL for processed dataset zip (requires `format` query parameter)
 - `PUT /api/v1/datasets/{uuid}` - Update dataset episodes
 
 **MQTT Topics:**

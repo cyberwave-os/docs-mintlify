@@ -1,0 +1,13 @@
+---
+title: 'List environment recordings'
+description: 'stub — GET /api/v1/environments/{uuid}/recordings'
+---
+
+{/* stub — human curation pending */}
+
+**Endpoint:** `GET /api/v1/environments/{environment_uuid}/recordings`
+
+- Returns **all** matching recordings in one response (**not paginated**). Payload: `{ "items": [...] }` (no `total` / `limit` / `offset`).
+- Each item is **lean** metadata (`uuid`, `twin_uuid`, `environment_uuid`, whitelisted `metadata`). Heavy playback payloads use `GET .../recordings/{recording_uuid}/data`.
+- **Optional query:** `start_timestamp` and `end_timestamp` as calendar dates `yyyy-mm-dd` (both required if filtering). The server returns recordings whose interval overlaps that UTC day range (inclusive start day through end day).
+- **Ordering:** Without date filters, items are sorted by server `timestamp` (newest first). With both date params, sorted by recording start time in metadata (newest first), then `timestamp`.

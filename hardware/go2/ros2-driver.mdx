@@ -1,0 +1,203 @@
+---
+title: "ROS 2 Driver"
+sidebarTitle: "ROS 2 Driver"
+description: "Docker images, configuration, and ROS 2 topic reference for the Go2 navigation driver."
+icon: "terminal"
+---
+
+{/* stub — this page will be curated by a human before publishing */}
+
+## Docker Images
+
+The full robot stack is published as four images on Docker Hub, each available in three tags (`jazzy`, `humble`, `jetson-humble`):
+
+| Image | Description |
+| ----- | ----------- |
+| `cyberwaveos/go2-ros2-driver` | Go2 driver, streaming bridges, edge bridge |
+| `cyberwaveos/ros2-nav2` | Nav2 navigation stack (robot-agnostic) |
+| `cyberwaveos/ros2-slam` | SLAM — RTAB-Map, slam_toolbox, Cartographer (robot-agnostic) |
+| `cyberwaveos/ros2-elevation-mapping` | GPU-accelerated elevation mapping (robot-agnostic) |
+
+The `jetson-humble` driver image ships with optimized defaults for constrained hardware.
+
+```bash
+docker pull cyberwaveos/go2-ros2-driver:jazzy
+docker pull cyberwaveos/ros2-nav2:jazzy
+docker pull cyberwaveos/ros2-slam:jazzy
+docker pull cyberwaveos/ros2-elevation-mapping:jazzy
+```
+
+## Quick Start
+
+When connected to the Cyberwave platform, the **edge-core** service automatically pulls and starts all required containers based on the asset metadata configured for your twin. See the [Edge Setup Guide](/edge/setup) for installation.
+
+For local development with Docker Compose, see the driver [README](https://github.com/cyberwave-os/cyberwave/tree/main/cyberwave-edge-runtime/runtime-services/drivers/ros2/robots/unitree/go2).
+
+## ROS 2 Topics
+
+The driver publishes standard ROS 2 topics that any ROS 2 node can consume independently:
+
+| Topic               | Type                      | Description                      |
+| ------------------- | ------------------------- | -------------------------------- |
+| `/odom`             | `nav_msgs/Odometry`       | LiDAR-based odometry             |
+| `/point_cloud2`     | `sensor_msgs/PointCloud2` | 3D point cloud from LiDAR        |
+| `/scan`             | `sensor_msgs/LaserScan`   | 2D laser scan (from point cloud) |
+| `/camera/image_raw` | `sensor_msgs/Image`       | Front camera frames              |
+| `/joint_states`     | `sensor_msgs/JointState`  | Joint positions and velocities   |
+| `/imu/data`         | `sensor_msgs/Imu`         | IMU measurements                 |
+| `/map`              | `nav_msgs/OccupancyGrid`  | Occupancy map (from SLAM)        |
+
+**All robot-specific topics are namespaces as twin\_<your twin's UUID> by default**.
+
+## Key Environment Variables
+
+| Variable                                     | Default              | Description                                     |
+| -------------------------------------------- | -------------------- | ----------------------------------------------- |
+| `CYBERWAVE_API_KEY`                          | —                    | Cyberwave API token                             |
+| `CYBERWAVE_TWIN_UUID`                        | —                    | Digital twin UUID                               |
+| `CYBERWAVE_MQTT_HOST`                        | `mqtt.cyberwave.com` | MQTT broker                                     |
+| `ROBOT_IP`                                   | (auto-discovered)    | Go2 IP — validated on startup; see below        |
+| `ROBOT_IP_FALLBACKS`                         | `192.168.12.1,192.168.123.161` | Comma-separated IPs to probe when `ROBOT_IP` is unset or unreachable |
+| `CONFIG_PROFILE`                             | (auto)               | Config profile: `jazzy`, `humble`, or `jetson`  |
+| `CYBERWAVE_PERIODIC_MAP_UPLOAD_INTERVAL_SEC` | `120`                | Periodic map cloud sync interval (0 to disable) |
+| `GO2_USE_CPP_VOXEL_DECODER`                  | `true`               | Use C++ LiDAR decoder (faster)                  |
+| `GO2_OBSTACLE_AVOIDANCE`                     | `false`              | Enable onboard obstacle avoidance               |
+
+### Robot IP discovery
+
+The driver validates that the Go2 is reachable **before** starting any ROS 2
+node, so you get a fast failure instead of a silent WebRTC hang.
+
+**Resolution order:**
+
+1. `ROBOT_IP` (from env or Edge Core metadata) — probed via TCP on port 9991.
+2. If unreachable (or unset), each address in `ROBOT_IP_FALLBACKS` is tried.
+3. First address that responds is used for the entire stack.
+4. If nothing responds, the container exits with an error and pushes a
+   `robot_unreachable` alert to Cyberwave (if SDK credentials are available).
+
+The default fallback list covers the two most common Go2 network configurations:
+
+| Address             | Scenario                     |
+| ------------------- | ---------------------------- |
+| `192.168.12.1`      | Wi-Fi AP / USB-Ethernet      |
+| `192.168.123.161`   | Ethernet direct-connect      |
+
+**Custom networks:** If your Go2 is on a different subnet (e.g. behind a
+router), override the fallback list:
+
+```bash
+# .env file or Edge Core shared_env
+ROBOT_IP_FALLBACKS=10.0.0.50,10.0.0.51
+```
+
+You can set both `ROBOT_IP` (preferred address) and `ROBOT_IP_FALLBACKS`
+(safety net). If the preferred IP is unreachable, the driver automatically
+falls through to the fallback list.
+
+<Info>
+The probe uses a TCP socket connect on port 9991 (Go2 WebRTC signaling) with a
+2-second timeout per address. No WebRTC handshake is attempted. Simulation
+launches skip the check entirely.
+</Info>
+
+## Config Profiles
+
+| Profile  | When to use                                                                            |
+| -------- | -------------------------------------------------------------------------------------- |
+| `jazzy`  | Default for ROS 2 Jazzy on desktop/server hardware                                     |
+| `humble` | ROS 2 Humble ecosystem compatibility                                                   |
+| `jetson` | NVIDIA Jetson: reduced costmap resolution, increased transform tolerances, lower rates |
+
+Set `CONFIG_PROFILE=jetson` or use the `jetson-humble` Docker image which sets this automatically.
+
+## Edge Core metadata
+
+When using **Cyberwave Edge Core** for managed deployment, the driver stack is
+configured through twin/asset metadata. Edge Core reads this metadata, pulls
+images, and injects environment variables automatically.
+
+### Multi-container configuration
+
+The Go2 ROS 2 stack runs as multiple cooperating containers. Define the stack in
+`metadata.drivers` using the `services` array:
+
+```json
+{
+  "drivers": {
+    "linux-aarch64-jetson": {
+      "services": [
+        { "image": "cyberwaveos/go2-ros2-driver:jetson-humble", "name": "driver",
+          "command": ["ros2", "launch", "cyberwave_go2_driver", "robot_driver.launch.py"] },
+        { "image": "cyberwaveos/go2-ros2-driver:jetson-humble", "name": "bridges",
+          "command": ["ros2", "launch", "cyberwave_go2_driver", "robot_bridges.launch.py"] },
+        { "image": "cyberwaveos/ros2-nav2:jetson-humble", "name": "nav2" },
+        { "image": "cyberwaveos/ros2-slam:jetson-humble", "name": "slam" }
+      ],
+      "shared_env": {
+        "CONFIG_PROFILE": "jetson",
+        "ROS_DOMAIN_ID": "0"
+      },
+      "shared_params": ["--network", "host", "-v", "/data:/data"]
+    },
+    "default": {
+      "docker_image": "cyberwaveos/go2-ros2-driver:jazzy",
+      "prefer_gpu": true
+    }
+  }
+}
+```
+
+To add a service (e.g. elevation mapping), append to the `services` array. To
+set the robot IP or fallback list, add them to `shared_env`:
+
+```json
+"shared_env": {
+  "ROBOT_IP_FALLBACKS": "10.0.0.50,10.0.0.51",
+  "CONFIG_PROFILE": "jetson"
+}
+```
+
+See [Drivers overview](/edge/drivers/overview) for the full metadata schema and
+[Writing compatible drivers](/edge/drivers/writing-compatible-drivers) for the
+`edge_configs` per-device pattern.
+
+## NVIDIA Container Toolkit (Jetson / GPU)
+
+GPU-accelerated containers (simulation, video decode, elevation mapping) require the **NVIDIA Container Toolkit**. This is especially important on Jetson (L4T / JetPack) where the toolkit must be installed and the runtime registered with Docker.
+
+```bash
+# Install
+distribution=$(. /etc/os-release; echo $ID$VERSION_ID)
+curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | \
+  sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list | \
+  sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+  sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
+
+# Register with Docker
+sudo nvidia-ctk runtime configure --runtime=docker
+sudo systemctl restart docker
+```
+
+On Jetson, set the NVIDIA runtime as the default so all containers get GPU access automatically:
+
+```bash
+sudo tee /etc/docker/daemon.json <<'EOF'
+{
+    "default-runtime": "nvidia",
+    "runtimes": {
+        "nvidia": {
+            "args": [],
+            "path": "nvidia-container-runtime"
+        }
+    }
+}
+EOF
+sudo systemctl restart docker
+```
+
+<Tip>
+If `nvidia-container-toolkit` is already installed but containers cannot access the GPU, re-run the `nvidia-ctk runtime configure` step, ensure `daemon.json` has the nvidia runtime, and restart Docker.
+</Tip>

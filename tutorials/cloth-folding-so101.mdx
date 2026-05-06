@@ -7,11 +7,21 @@ iconType: "solid"
 ---
 
 <Info>
-**Community tutorial.** Contributed by **Abhishek Pavani** and **Yash Shukla** (Team BostonX) through the [Cyberwave Builder Program](https://cyberwave.com/builders). Built and verified on the authors' own dual-arm SO-101 setup; results will vary based on lighting, fabric type, and calibration accuracy.
+  **Community tutorial.** Contributed by **Abhishek Pavani** and **Yash Shukla**
+  (Team BostonX) through the [Cyberwave Builder
+  Program](https://cyberwave.com/builders). Built and verified on the authors'
+  own dual-arm SO-101 setup; results will vary based on lighting, fabric type,
+  and calibration accuracy.
 </Info>
 
 <Tip>
-**Reference implementation.** Full source for the data-collection, training, and inference scripts referenced below lives in the authors' repo: [apavani2/cyberwave-cloth-folding-so101](https://github.com/apavani2/cyberwave-cloth-folding-so101). The original write-up is [on the project blog](https://cyberwave-bostonx-cloth-folding-so101.netlify.app). Clone the repo to follow along, or use the snippets in each step as a guide for your own implementation.
+  **Reference implementation.** Full source for the data-collection, training,
+  and inference scripts referenced below lives in the authors' repo:
+  [apavani2/cyberwave-cloth-folding-so101](https://github.com/apavani2/cyberwave-cloth-folding-so101).
+  The original write-up is [on the project
+  blog](https://cyberwave-bostonx-cloth-folding-so101.netlify.app). Clone the
+  repo to follow along, or use the snippets in each step as a guide for your own
+  implementation.
 </Tip>
 
 ## Introduction
@@ -77,14 +87,16 @@ Follow the prompts to log in and select your environment. The CLI will install a
 
 You need one Cyberwave environment that contains **both** SO-101 arm pairs and the RealSense camera, all paired to the hardware on your edge device. The full reference is in [SO-101 Get Started: Set Up the Cyberwave Environment](/hardware/so101/get-started#step-1-set-up-the-cyberwave-environment).
 
-1. In the Cyberwave dashboard, click **New Environment** and give it a name (e.g. *"Cloth Folding"*).
+1. In the Cyberwave dashboard, click **New Environment** and give it a name (e.g. _"Cloth Folding"_).
 2. Click **Add from Catalog**, search for **SO101**, and add the **left** arm pair to the environment.
 3. Click **Add from Catalog** again and add the **right** arm pair as a second SO101 twin. Position both twins to mirror your physical layout.
 4. Click **Add from Catalog** again, search for **Standard Camera** (or your specific RealSense entry if available), and add it as a top-level twin. **Do not dock it under either arm** — it must stay overhead.
 5. Pair the hardware by following the terminal prompts from `cyberwave edge install`: select your environment, then pair each SO101 twin and the camera twin in turn. The drivers auto-install per twin.
 
 <Tip>
-**Lock the camera and table.** SmolVLA learns the visual task from this exact overhead viewpoint. Any mid-project change in camera pose, table height, or lighting invalidates earlier demonstrations and forces a retrain.
+  **Lock the camera and table.** SmolVLA learns the visual task from this exact
+  overhead viewpoint. Any mid-project change in camera pose, table height, or
+  lighting invalidates earlier demonstrations and forces a retrain.
 </Tip>
 
 ### Calibrate the arms in the product UI
@@ -92,7 +104,9 @@ You need one Cyberwave environment that contains **both** SO-101 arm pairs and t
 Calibration teaches the software where each joint's zero position is, what its valid movement range is, and how each physical arm maps to its software model. Without it, joint commands won't translate correctly to hardware. For the full reference, see [SO-101 Get Started](/hardware/so101/get-started#step-3-calibrate-the-arms).
 
 <Warning>
-You must calibrate **all four arms individually**: left leader, left follower, right leader, right follower. Skipping any one of them breaks bimanual coordination.
+  You must calibrate **all four arms individually**: left leader, left follower,
+  right leader, right follower. Skipping any one of them breaks bimanual
+  coordination.
 </Warning>
 
 1. Open the **Cyberwave dashboard** and navigate to your environment.
@@ -102,7 +116,9 @@ You must calibrate **all four arms individually**: left leader, left follower, r
 5. Once all four arms are calibrated, the platform confirms calibration is complete.
 
 <Tip>
-Move each joint slowly and through its full range. Accurate calibration directly improves control precision during teleoperation and the quality of the demonstrations you'll record in Step 2.
+  Move each joint slowly and through its full range. Accurate calibration
+  directly improves control precision during teleoperation and the quality of
+  the demonstrations you'll record in Step 2.
 </Tip>
 
 ### Calibrate the arms via the CLI (alternative)
@@ -147,7 +163,9 @@ right = cw.twin(
 ```
 
 <Check>
-You're ready for Step 2 when you can teleoperate **both** SO-101 follower arms from their respective leaders and see the RealSense feed live in your Cyberwave environment viewer.
+  You're ready for Step 2 when you can teleoperate **both** SO-101 follower arms
+  from their respective leaders and see the RealSense feed live in your
+  Cyberwave environment viewer.
 </Check>
 
 ## Step 2: Collect demonstrations
@@ -164,7 +182,7 @@ Each episode captures, per follower arm:
 
 - `shoulder_pan`, `shoulder_lift`, `elbow_flex`, `wrist_flex`, `wrist_roll`, `gripper` joint positions at 30 Hz.
 - Synchronized RGB and depth streams from the RealSense.
-- The natural-language task prompt (e.g. *"fold a napkin"*).
+- The natural-language task prompt (e.g. _"fold a napkin"_).
 
 **Target ~50 demonstrations** for a single, well-defined fold. Vary cloth starting position slightly between episodes; keep camera, lighting, and fabric type fixed.
 
@@ -208,23 +226,42 @@ python scripts/inference/main.py \
 A critical detail: the deployment uses **asynchronous inference**. The robot computes the next action chunk while it's still executing the current one, which avoids stalls between predictions and produces fluid, continuous motion across the bimanual fold.
 
 <Warning>
-**Always simulate before live.** Test the policy against your digital twin in Cyberwave before sending it to the physical arms. Cloth manipulation involves close contact between two arms; a bad checkpoint can ram one gripper into the other and damage motors. The original authors lost a follower-arm motor mid-development.
+  **Always simulate before live.** Test the policy against your digital twin in
+  Cyberwave before sending it to the physical arms. Cloth manipulation involves
+  close contact between two arms; a bad checkpoint can ram one gripper into the
+  other and damage motors. The original authors lost a follower-arm motor
+  mid-development.
 </Warning>
 
 ## Where to go next
 
 <CardGroup cols={3}>
-  <Card title="Project blog" icon="book-open" href="https://cyberwave-bostonx-cloth-folding-so101.netlify.app">
-    Read the original BostonX write-up with photos, figures, and a teaser of t-shirt folding.
+  <Card
+    title="Project blog"
+    icon="book-open"
+    href="https://cyberwave-bostonx-cloth-folding-so101.netlify.app"
+  >
+    Read the original BostonX write-up with photos, figures, and a teaser of
+    t-shirt folding.
   </Card>
-  <Card title="Reference repo" icon="github" href="https://github.com/apavani2/cyberwave-cloth-folding-so101">
-    Clone the dual-arm pipeline: data collection, conversion, training, inference, and the Rerun visualizer.
+  <Card
+    title="Reference repo"
+    icon="github"
+    href="https://github.com/apavani2/cyberwave-cloth-folding-so101"
+  >
+    Clone the dual-arm pipeline: data collection, conversion, training,
+    inference, and the Rerun visualizer.
   </Card>
-  <Card title="Sandwich-making with SmolVLA" icon="burger" href="/tutorials/sandwich-robot-smolvla">
-    A single-arm SO-101 community tutorial using the same teleop → VLA → deploy loop.
+  <Card
+    title="Sandwich-making with SmolVLA"
+    icon="burger"
+    href="/tutorials/sandwich-robot-smolvla"
+  >
+    A single-arm SO-101 community tutorial using the same teleop → VLA → deploy
+    loop.
   </Card>
 </CardGroup>
 
 ---
 
-*Built by Abhishek Pavani and Yash Shukla (Team BostonX) as part of the Cyberwave Builder Program.*
+_Built by Abhishek Pavani and Yash Shukla (Team BostonX) as part of the Cyberwave Builder Program._

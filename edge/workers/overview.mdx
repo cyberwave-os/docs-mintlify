@@ -53,6 +53,7 @@ cyberwave worker remove detect_people  # remove a worker (with or without .py)
 cyberwave worker status                # show worker files + container state
 cyberwave worker logs                  # stream worker container logs
 cyberwave worker monitor               # live resource/throughput dashboard
+cyberwave worker doctor                # diagnose silent failure modes
 ```
 
 `cyberwave worker list` shows the **origin** of each worker:
@@ -121,6 +122,7 @@ cyberwave workflow create --template motion-detection
 cyberwave workflow activate            # activate (interactive selector)
 cyberwave workflow deactivate          # deactivate (interactive selector)
 cyberwave workflow sync                # sync workflow to edge device(s) via MQTT
+cyberwave workflow sync --edge-active  # restrict selector to active edge workflows
 cyberwave workflow sync <uuid>         # sync specific workflow
 cyberwave workflow delete --yes        # delete (skip confirmation)
 ```
@@ -141,10 +143,19 @@ The edge node pulls these generated files during boot and on a periodic sync
 (default every ~5 minutes). The file is written atomically — content-identical
 files are left untouched to avoid spurious worker container restarts.
 
+<Info>
+**Scope of the pull:** Edge Core only pulls `wf_*.py` files for the twins the
+operator selected at install time (the `twin_uuids` list in
+`~/.cyberwave/environment.json`). Workflows targeting twins that are *not* in
+that list stay off this edge even if those twins happen to share its
+fingerprint in metadata — re-run `cyberwave edge install` to change the
+selection.
+</Info>
+
 **Lifecycle:**
 
 1. Activate a workflow in the UI (trigger: Camera Frame → Call Model → edge-compatible model).
-2. Edge core syncs on next boot, `CYBERWAVE_WORKER_SYNC_INTERVAL_LOOPS` expiry, or immediately when `cyberwave workflow sync` sends a `sync_workflows` MQTT command.
+2. Edge core syncs on next boot, `CYBERWAVE_WORKER_SYNC_INTERVAL_LOOPS` expiry, or immediately when a `sync_workflows` MQTT command arrives on the twin's command topic. That command is sent by `cyberwave workflow sync`, by `POST /twins/{uuid}/sync-workflows`, and — for `run_on_edge` workflows — automatically by the activate API itself, so flipping the UI toggle takes effect on the edge within seconds instead of up to one sync interval.
 3. `wf_<uuid8>.py` appears in the workers directory.
 4. The WorkerWatcher detects the new file and restarts the worker container.
 5. The worker container loads the new module and activates the hook.
@@ -290,3 +301,91 @@ Generated workers follow the same contract as handwritten workers:
 `cw` is injected as a builtin, models are loaded at module level, and events
 are published with `cw.publish_event`. The `fps` parameter on the `@cw.on_frame`
 decorator controls the frame sampling rate.
+
+---
+
+## Troubleshooting: `@cw.on_frame` hook never fires
+
+<Warning>
+**STUB SECTION:** The most common reasons a worker container looks healthy but
+hooks report `frames: 0` indefinitely.
+</Warning>
+
+Run `cyberwave worker doctor` first. It runs both static ("paperwork") and
+runtime ("actual traffic") checks.
+
+**Static checks** surface the most common config-level failures:
+
+1. **`cyberwave-edge-core` not installed.** Worker containers are managed by
+   edge-core. Install with `cyberwave edge install`.
+2. **Worker files not world-readable.** The container runs as a non-root user
+   (UID 1001) and cannot read mode `0600` files. `cyberwave worker add`
+   chmods files to `0644` automatically; files installed manually may need
+   `chmod 0644 ~/.cyberwave/workers/*.py`.
+3. **No co-located driver container.** Workers only receive frames from
+   drivers on the same Zenoh session. Check
+   `docker ps --filter name=cyberwave-driver-` on the edge host.
+4. **Env drift between driver and worker.** Mismatched `CYBERWAVE_ENVIRONMENT`,
+   `ZENOH_CONNECT`, `CYBERWAVE_DATA_BACKEND`, or `ZENOH_SHARED_MEMORY`
+   produces a container that looks healthy but never publishes on the key
+   the worker subscribes to. The doctor compares these across the running
+   driver and worker containers, and flags legacy env-var spellings
+   (e.g. `ZENOH_SHM_ENABLED`) that are silently ignored.
+
+**Runtime checks** open a short Zenoh subscription (default 3 s) and
+compare the actual traffic against the key-expressions your worker hooks
+declare:
+
+- **`zenoh-liveness`** — counts keys seen on the bus during the probe.
+  Zero traffic means either no publisher is running or the doctor can't
+  reach the router.
+- **`keyexpr-alignment`** — for every `@cw.on_*(<twin>)` hook the scanner
+  can resolve statically, asserts at least one matching key is being put
+  on the bus. Diagnoses three common failure modes:
+    - **Sensor mismatch** — hook listens on `sensor="default"` but the driver
+      publishes on `sensor="color_camera"` (or vice-versa).
+    - **Wrong twin** — the channel is flowing, but under a different twin
+      UUID than the hook expects.
+    - **No publisher** — nothing on the bus looks anything like the hook's
+      expected key.
+- **`keyexpr-scoping`** — flags publishers that put to non-canonical keys
+  like `frames/color_camera` (no `cw/<twin>/...` prefix). Twin-scoped
+  hooks silently drop these. The checker accepts only the canonical shape
+  `cw/<twin-uuid>/data/<channel>[/<sensor>]`.
+
+Skip the runtime probe with `--no-runtime` (pure paperwork) or extend
+the window with `--window 6` when traffic is bursty. The probe requires
+`eclipse-zenoh` on the host (`pip install --user eclipse-zenoh`); when
+it's missing the runtime section degrades to an info message rather
+than failing.
+
+A healthy edge node shows `keyexpr-alignment ok` and ~25 fps on
+`cw/<twin-uuid>/data/frames/<sensor>` in the `zenoh-liveness` top-keys
+list, alongside a ticking `cw/_monitor/worker_stats` key.
+
+### Manual fallback: inspect the bus with eclipse-zenoh
+
+If the doctor can't reach the router (remote edge, unusual network) the
+same sanity check is one script away:
+
+```python
+import time, zenoh
+
+cfg = zenoh.Config()
+cfg.insert_json5("connect/endpoints", '["tcp/<edge-host>:7447"]')
+session = zenoh.open(cfg)
+
+seen = {}
+def on(sample):
+    seen[str(sample.key_expr)] = seen.get(str(sample.key_expr), 0) + 1
+
+sub = session.declare_subscriber("**", on)
+time.sleep(3)
+for k, n in sorted(seen.items(), key=lambda kv: -kv[1]):
+    print(f"{n:>6}  {k}")
+```
+
+You should see canonical keys shaped like
+`cw/<twin-uuid>/data/frames/<sensor>`. If the key list is empty or uses a
+different twin/sensor than your `@cw.on_frame(...)` call, fix the publisher
+— the worker will never see those messages otherwise.

@@ -470,6 +470,12 @@ Periodic robot metrics snapshot (battery, navigation status, load, errors, etc.)
 
 Periodic health status published by the edge driver (every ~5 seconds).
 
+The frontend uses these payloads to drive the live "green dot" online
+indicator on twin tiles, the workflow-pane Edge Devices tab, and the lab
+queue heuristics. The backend additionally bumps the corresponding
+`Edge.last_heartbeat` row (debounced to ~30 s per edge) so that the REST
+`Edge.is_online` flag agrees with the live MQTT signal.
+
 ```json
 {
   "type": "edge_health",
