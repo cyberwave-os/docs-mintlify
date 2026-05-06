@@ -1,0 +1,86 @@
+---
+title: "Execution ingress"
+description: "How edges, workers, and SDKs report workflow execution progress back to Cyberwave over MQTT."
+tag: stub
+---
+
+Workflows that run outside the backend (on edges, in workers, or via
+the SDK) can report their execution progress back to Cyberwave so that
+the UI and API expose a live timeline. Ingress is MQTT-only; both the
+SDK reporter and generated edge workers publish to the topics below,
+which the backend consumer funnels into the `WorkflowExecution` +
+`WorkflowNodeExecution` tables.
+
+Currently scoped to **mission** workflows. Vision and general-kind
+workflows keep using the cloud-side task runner.
+
+## MQTT topics
+
+| Topic | Payload |
+|---|---|
+| `cyberwave/workflow/{workflow_uuid}/execution/started` | `{ execution_uuid?, trigger_data?, source_type? }` |
+| `cyberwave/workflow/{workflow_uuid}/execution/{execution_uuid}/node/{node_uuid}` | `{ status, input_data?, output_data?, error_message?, execution_time_ms?, metadata?, source_type? }` |
+| `cyberwave/workflow/{workflow_uuid}/execution/{execution_uuid}/finished` | `{ status, error_message?, source_type? }` |
+
+Publishers should set `source_type` to one of `edge`, `sim`, `tele`,
+or `edit` for lineage. Authentication is broker-level (consistent with
+other Cyberwave MQTT ingress such as
+`cyberwave/twin/{uuid}/navigate/status`).
+
+Idempotency is enforced on the backend:
+- Repeat `started` with the same `execution_uuid` returns the existing
+  row without re-seeding node children.
+- Node events for a node already in a terminal state (`success` /
+  `error` / `skipped`) are ignored — first terminal write wins.
+- `finished` on an already-terminal execution is a no-op.
+
+These guarantees mean at-least-once MQTT delivery is safe: duplicate
+publishes after reconnects won't corrupt the execution timeline.
+
+## Python SDK
+
+`client.workflow_executions.start(...)` returns a
+`WorkflowExecutionReporter` that owns a single execution and publishes
+over MQTT. The client must be connected to a Cyberwave-backed MQTT
+broker — the reporter raises on construction if not.
+
+```python
+client = Cyberwave(api_key="...")
+
+reporter = client.workflow_executions.start(
+    workflow_uuid="wf-uuid",
+    source_type="edge",
+)
+try:
+    for node_uuid in node_uuids:
+        reporter.node_started(node_uuid)
+        try:
+            run_node(node_uuid)
+            reporter.node_finished(node_uuid, output_data=[...])
+        except Exception as exc:
+            reporter.node_error(node_uuid, error=str(exc))
+            raise
+    reporter.finished(status="success")
+except Exception as exc:
+    reporter.finished(status="error", error_message=str(exc))
+    raise
+```
+
+A context-manager form (`with client.workflow_executions.start(...) as r:`)
+marks `success` on clean exit and `error` on exception, so workers
+don't have to repeat the try/except shape.
+
+The initial `started` publish is always strict: if it fails, later
+node events would reference an execution the backend never saw. Pass
+`strict=True` to `start(...)` to surface later publish failures as
+well (the default swallows them after logging, so a transient broker
+blip doesn't poison a running workflow).
+
+## Generated worker modules
+
+Mission workflows compiled with `run_on_edge=true` ship a generated
+`wf_*.py` that already wires the reporter around every emitted node.
+Each step in `compiled_payload.steps` carries the emitting node's
+`node_uuid` so runners that consume the payload directly (cloud-side
+or custom edge runners) can produce the same events without parsing
+the generated Python source.

@@ -1,0 +1,76 @@
+---
+title: "Multi-Camera Detection Routing"
+description: "Route detection results to the correct twin when a single worker handles frames from multiple cameras."
+---
+
+<Warning>
+**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
+</Warning>
+
+When a single edge worker runs detection models on frames from multiple cameras (each represented by a different digital twin), detection results must be published back to the **correct** twin's Zenoh channel.
+
+## The problem
+
+By default, `DataBus` publishes to the twin it was constructed with. In a multi-camera worker, all detections would land on a single twin's channel regardless of which camera produced the frame.
+
+## Solution: `twin_uuid` routing
+
+Pass `twin_uuid=ctx.twin_uuid` to `model.predict()` to route detections to the originating twin.
+
+```python
+CAMERA_LEFT = os.environ["CAMERA_LEFT_TWIN"]
+CAMERA_RIGHT = os.environ["CAMERA_RIGHT_TWIN"]
+
+model = cw.models.load("yolov8n")
+
+@cw.on_frame(CAMERA_LEFT)
+def on_left_frame(frame, ctx):
+    model.predict(frame, confidence=0.5, twin_uuid=ctx.twin_uuid)
+
+@cw.on_frame(CAMERA_RIGHT)
+def on_right_frame(frame, ctx):
+    model.predict(frame, confidence=0.5, twin_uuid=ctx.twin_uuid)
+```
+
+Each hook's `ctx.twin_uuid` is set from the decorator registration, so
+`model.predict()` publishes detections to
+`cw/{twin_uuid}/data/detections/{runtime}` for the correct twin. `ctx.sensor_name`
+is populated from the observed Zenoh key (e.g. `color_camera`), so a single
+handler can disambiguate multi-sensor twins at runtime.
+
+<Note>
+  Omitting `sensor=` subscribes to the twin's `frames/**` wildcard, matching
+  any camera the driver actually publishes. Pin `sensor="<name>"` only when
+  you need to target one specific sensor on a multi-camera twin (the name
+  must match the twin asset's sensor id — typically `color_camera`,
+  `depth_camera`, etc.).
+</Note>
+
+## Cross-twin synchronized hooks
+
+For stereo vision or cross-camera fusion, use `@cw.on_synchronized` with `twin_channels` to synchronize frames from different twins:
+
+```python
+@cw.on_synchronized(
+    twin_channels={
+        "left": (CAMERA_LEFT, "frames/default"),
+        "right": (CAMERA_RIGHT, "frames/default"),
+    },
+    tolerance_ms=50.0,
+)
+def on_stereo_pair(samples, ctx):
+    left_frame = samples["left"]
+    right_frame = samples["right"]
+    # ctx.metadata["twin_uuids"] contains the sorted list of involved twins
+```
+
+The single-twin `@cw.on_synchronized(twin_uuid, channels)` API continues to work unchanged.
+
+## Key API additions
+
+| API | Change |
+| --- | --- |
+| `model.predict(..., twin_uuid=)` | Route detections to a specific twin |
+| `DataBus.publish(..., twin_uuid=)` | Override the default twin for a publish |
+| `DataBus.publish_raw(..., twin_uuid=)` | Override the default twin for raw publish |
+| `@cw.on_synchronized(twin_channels=)` | Cross-twin synchronized hook mode |

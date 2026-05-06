@@ -39,6 +39,28 @@ def handler(samples: dict[str, Sample], ctx: HookContext) -> None: ...
 3. On each incoming sample the buffer is updated, then checked: if all channels are present **and** `max(timestamps) - min(timestamps) <= tolerance_ms / 1000`, the callback fires with a copy of the buffer.
 4. Exceptions in the callback are logged; the runtime continues.
 
+## Cross-twin mode
+
+For multi-camera or cross-device fusion, use `twin_channels` to synchronize channels from different twins:
+
+```python
+@cw.on_synchronized(
+    twin_channels={
+        "left": (CAMERA_LEFT, "frames/default"),
+        "right": (CAMERA_RIGHT, "frames/default"),
+    },
+    tolerance_ms=50.0,
+)
+def on_stereo_pair(samples, ctx):
+    left = samples["left"]   # Sample from CAMERA_LEFT twin
+    right = samples["right"] # Sample from CAMERA_RIGHT twin
+    # ctx.metadata["twin_uuids"] lists the involved twins
+```
+
+The single-twin API (`@cw.on_synchronized(twin_uuid, channels)`) continues to work unchanged.
+
+See [Multi-Camera Detection Routing](/edge/drivers/multi-camera-detection-routing) for an end-to-end example.
+
 ## Comparison with `latest(max_age_ms=)`
 
 | Approach | Guarantee | Use case |

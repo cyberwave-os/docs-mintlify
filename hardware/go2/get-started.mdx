@@ -90,6 +90,14 @@ ping <go2-internal-ip>
 The Go2 typically assigns an IP on its internal Ethernet network (e.g., `192.168.123.x`). Refer to the [Go2 network interface documentation](https://www.docs.quadruped.de/projects/go2/html/index.html) for the default IP range, SSH credentials, and network configuration details.
 </Tip>
 
+<Info>
+You don't have to hardcode the Go2's IP. The Cyberwave ROS 2 driver
+automatically probes `192.168.12.1` and `192.168.123.161` on startup and uses
+the first address that responds. If your Go2 is on a custom subnet, set
+`ROBOT_IP` or `ROBOT_IP_FALLBACKS` in the environment. See [Robot IP
+discovery](/hardware/go2/ros2-driver#robot-ip-discovery) for details.
+</Info>
+
 ### Step 2: Install the Cyberwave CLI
 
 With your edge device connected to the Go2 and SSH session active, install the Cyberwave CLI:

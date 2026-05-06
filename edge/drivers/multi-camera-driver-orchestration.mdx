@@ -1,0 +1,71 @@
+---
+title: "Multi-Camera Driver Orchestration"
+description: "How Edge Core manages multiple camera drivers alongside a single worker container."
+---
+
+<Warning>
+**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
+</Warning>
+
+When an edge device has multiple cameras (each represented by a separate digital twin), Edge Core starts one driver container per camera and a single shared worker container that receives frames from all of them.
+
+## Architecture
+
+```
+┌──────────────────┐   ┌──────────────────┐
+│ cyberwave-driver  │   │ cyberwave-driver  │
+│ (Camera A)        │   │ (Camera B)        │
+│ TWIN_UUID=aaa...  │   │ TWIN_UUID=bbb...  │
+└────────┬─────────┘   └────────┬─────────┘
+         │ Zenoh frames/default  │
+         ▼                       ▼
+┌─────────────────────────────────────────┐
+│         cyberwave-worker-{env[:8]}       │
+│  TWIN_UUIDS=aaa...,bbb...               │
+│  Subscribes to both camera channels      │
+└─────────────────────────────────────────┘
+```
+
+## Driver startup sequencing
+
+Edge Core starts drivers **before** the worker and verifies each driver container reaches a `running` state:
+
+1. All linked twins are resolved from the environment.
+2. Driver images are pulled in parallel.
+3. Containers are started sequentially, each verified with a readiness probe.
+4. Once all drivers reach a stable state, the worker container starts.
+5. If some drivers fail, the worker still starts (with a warning) so healthy cameras can be utilized.
+
+## Worker environment wiring
+
+The worker container receives:
+
+| Variable | Value | Purpose |
+| --- | --- | --- |
+| `CYBERWAVE_TWIN_UUIDS` | Comma-separated list of all linked twin UUIDs | Worker subscribes to all twin channels |
+| `CYBERWAVE_TWIN_UUID` | First twin UUID (backward compatibility) | Legacy single-twin workers |
+
+## Model pre-download
+
+Before the worker starts, Edge Core scans `workers/*.py` for `cw.models.load("...")` calls and pre-downloads all referenced models to the local cache (`~/.cyberwave/models/`).
+
+## CLI visibility
+
+`cyberwave edge status` shows:
+
+- Each driver container with its twin UUID mapping
+- The worker container with its full twin list
+- Running/stopped status for all containers
+
+## Health monitoring
+
+Edge Core continuously monitors driver containers during the runtime loop:
+
+- **Restart loop detection:** Drivers that restart too frequently are stopped automatically.
+- **Driver-down alerts:** If a driver stops while the worker is running, an alert is sent to the associated twin.
+- **Worker health:** The worker container has its own health monitor with circuit-breaker protection against crash loops.
+
+## Related
+
+- [Multi-Camera Detection Routing](/edge/drivers/multi-camera-detection-routing) — SDK-level detection routing
+- [Synchronized Hooks](/edge/drivers/data-synchronized-hooks) — Cross-twin frame synchronization

@@ -131,9 +131,11 @@ For more details on CLI and Edge Core installation, see [Steps 5–6 of the Quic
 Follow the prompts in your terminal:
 
 1. Select the environment you created earlier.
-2. Select the camera digital twin you added to that environment.
-3. **macOS only:** Select which camera to use from the list of detected AVFoundation devices. The selection is stored by device name and persists across reboots.
-4. The camera driver will be automatically installed and configured.
+2. Select one or more camera digital twins you added to that environment.
+3. **macOS, single camera:** Select which camera to use from the list of detected AVFoundation devices. The selection is stored by device name and persists across reboots.
+4. **macOS, multiple cameras:** When more than one AVFoundation device is detected alongside multiple camera twins, the CLI walks you through a per-twin mapping. One `ffmpeg` MJPEG stream is started per distinct physical camera (on sequential ports starting at `8091`) and the assignments are persisted to `~/.cyberwave/camera_streams.json`.
+5. **Linux, multiple cameras:** When more than one physical camera is detected, the CLI walks you through a per-twin mapping so each twin is bound to a specific `/dev/video*` device. With a single physical camera, all selected camera twins share it automatically.
+6. The camera driver will be automatically installed and configured.
 
 <Check>
 Your camera is now paired with its digital twin and streaming video to Cyberwave in real time.

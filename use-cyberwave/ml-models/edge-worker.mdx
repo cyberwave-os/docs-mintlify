@@ -34,6 +34,38 @@ models:
 
 Edge Core pre-downloads listed models before starting the worker container. Models are also auto-detected from `cw.models.load("...")` calls in worker Python files.
 
+### Picking the model format — *stub*
+
+Each catalog model declares an **edge runtime** that tells the worker how to load the checkpoint. The runtime selector lives in the model editor (`/models` → "Add Model" or "Edit"), and is also accepted as a typed `edge_runtime` field on `POST /api/v1/mlmodels` and `PUT /api/v1/mlmodels/{uuid}`.
+
+The well-known runtimes mirror the loaders in the Cyberwave Python SDK's `cyberwave.models.runtimes` registry:
+
+| Runtime | Extension | Loader |
+|---|---|---|
+| `ultralytics` | `.pt` | YOLOv5/8/11 via the Ultralytics package |
+| `onnxruntime` | `.onnx` | ONNX Runtime (CPU, CUDA EP on the GPU image) |
+| `opencv` | `.xml` / `.caffemodel` | OpenCV Haar / DNN models |
+| `tflite` | `.tflite` | TensorFlow Lite |
+| `torch` | `.pt` / `.pth` | TorchScript / raw PyTorch |
+| `tensorrt` | `.engine` / `.trt` | TensorRT engines (GPU image only) |
+
+Custom values are accepted via the editor's "Other" entry — used today for framework-specific identifiers like `sam2`, `sam3`, and `depth_anything_v2` that don't have an SDK loader yet but still need to round-trip through the catalog.
+
+`GET /api/v1/mlmodels/edge-runtimes` returns the current well-known list (no auth required) so external tools can mirror the dropdown without hard-coding it.
+
+> stub: ONNX YOLO postprocessing applies per-class non-max suppression with a default IoU threshold of `0.7` so swapping `yolov8s.pt` for `yolov8s.onnx` produces the same number of boxes per object instead of a cluster of overlapping anchors. Override per-call via `model.predict(frame, iou=0.5)` (stricter) or `iou=1.0` (raw output, no suppression).
+
+### Model weights resolution — *stub*
+
+For each required model, Edge Core resolves weights in this order:
+
+1. **Local cache (intact).** If `~/.cyberwave/models/{model_id}/...` is present and its SHA-256 matches the manifest, it is used directly.
+2. **Cyberwave-hosted signed URL.** If the catalog entry has a checkpoint mirror, Edge Core fetches a signed URL via `GET /api/v1/mlmodels/{uuid}/weights` and downloads from our private bucket.
+3. **Upstream weights URL.** If no Cyberwave mirror exists, Edge Core falls back to the public `download_url` from the catalog (e.g. an official Ultralytics release).
+4. **Stale cache fallback.** If every download attempt fails but the local file is intact, Edge Core returns the cached file with a warning. This keeps workers running across transient network failures and on permanently air-gapped sites.
+
+Operators on air-gapped sites can pre-stage weights by copying them to `~/.cyberwave/models/{model_id}/`. Edge Core computes a SHA-256, infers the runtime from the file extension (`.pt`, `.onnx`, `.engine`/`.trt`, `.tflite`, `.pth`, `.xml`), and writes a sidecar `metadata.json` on the next worker start. To update a pre-staged model, simply overwrite the file in place — Edge Core re-stamps the manifest from disk on the next call (no re-download attempted). Pre-staged files are never auto-overwritten by catalog updates; to force a re-download from Cyberwave, evict the model directory (`rm -rf ~/.cyberwave/models/{model_id}`).
+
 ## CLI Commands
 
 ```bash
@@ -63,6 +95,46 @@ Edge Core continuously monitors the worker container:
 - **Circuit-breaker**: after 5 restarts in 5 minutes, automatic restarts are suppressed until the window clears. Run `worker health` to inspect the state.
 - **Spontaneous exit detection**: if the container exits without a deliberate restart, a warning is logged.
 
+## Performance Tuning — *stub*
+
+### Model warm-up
+
+The worker runtime automatically runs two dummy inferences on each loaded model at startup to eliminate cold-start latency (JIT compilation, memory allocation). Cold vs warm latency is logged.
+
+You can also warm up models explicitly:
+
+```python
+model = cw.models.load("yolov8n")
+cold_ms, warm_ms = model.warm_up(input_shape=(640, 640, 3))
+```
+
+### Frame resolution scaling
+
+Set `CYBERWAVE_WORKER_INPUT_RESOLUTION` to downscale incoming frames before they reach your worker hooks. This reduces inference time on constrained devices without changing the camera driver's publish resolution.
+
+```bash
+export CYBERWAVE_WORKER_INPUT_RESOLUTION=640x480
+```
+
+### Shared memory transport
+
+Zenoh shared-memory (SHM) transport offers zero-copy frame delivery between the camera driver and worker containers on the same host. Edge Core leaves `ZENOH_SHARED_MEMORY` **disabled by default** because SHM between Docker containers requires them to share an IPC namespace via `--ipc=host`, which weakens container isolation and has historically been a source of instability in production.
+
+To opt in, set `ZENOH_SHARED_MEMORY=true` in the edge-core process environment **and** ensure every Cyberwave container is launched with `--ipc=host`. Edge Core then propagates the flag to both driver and worker containers through the same env-builder, keeping the two sides in lock-step.
+
 ## GPU Access
 
 Edge Core detects the NVIDIA container runtime and passes `--gpus all` to the worker container when available.
+
+### Image variants — *stub*
+
+The worker image is published in two variants on Docker Hub:
+
+| Tag | Base | ONNX Runtime | Use when |
+|---|---|---|---|
+| `cyberwaveos/edge-ml-worker:<tag>` | `ubuntu:24.04` | `onnxruntime` (CPU) | No GPU available, or inference is light enough for CPU. |
+| `cyberwaveos/edge-ml-worker:<tag>-gpu` | `nvidia/cuda:12.6.3-runtime-ubuntu24.04` | `onnxruntime-gpu` (CUDA EP) | Edge device has an NVIDIA GPU and `nvidia-container-toolkit` installed. |
+
+Both variants ship the same Python API. PyTorch/Ultralytics models pick the device automatically; ONNX models gain `CUDAExecutionProvider` only on the `-gpu` variant.
+
+Edge Core selects the variant automatically: when the NVIDIA container runtime is detected on the host, it appends `-gpu` to the configured worker image tag and falls back to the CPU tag if the GPU image cannot be pulled. No manual configuration is required in normal deployments.

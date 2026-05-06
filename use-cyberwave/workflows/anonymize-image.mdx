@@ -1,0 +1,120 @@
+---
+title: "Anonymize node"
+description: "Obscure detected people, vehicles, or other objects in workflow images or live edge frames — pixelate, blur, redact, or fill — before annotations or downstream processing."
+tag: stub
+---
+
+`anonymize` is a workflow node that de-identifies detected regions in an
+image or camera frame. It is the destructive counterpart to
+[`annotate`](./overview): where `annotate` draws *on top of* preserved
+pixels, `anonymize` replaces pixels in each detection region with a
+mosaic, blur, redaction grid, or solid fill, producing a frame safe to
+publish to downstream consumers.
+
+Execution context is inferred from the upstream graph:
+
+- Wired downstream of a `camera_frame` trigger + `call_model` chain it
+  is compiled into the edge worker and processes the live frame.
+- Wired anywhere else it runs in the cloud workflow runner against an
+  image URL.
+
+Typical chain:
+
+```
+trigger → call_model → anonymize → annotate → update_attachment
+```
+
+Order matters: anonymise first, annotate second. Reversing would
+pixelate over the drawn boxes. On the edge side the codegen normalises
+this ordering automatically regardless of graph order.
+
+## Modes
+
+| Mode | Description | Reversibility |
+|---|---|---|
+| `pixelate` (default) | Adaptive mosaic (~24 blocks across the short side). Preserves silhouette and motion. | Reversible by public depixelation models — use for casual obscuring only. |
+| `blur` | Heavy Gaussian blur (kernel 99, clamped to the region). | Hard to invert but not impossible with strong blur. |
+| `redact` | Solid fill with a visible grid, "censored document" look. Destroys source pixels. | Irreversible (pixels replaced). |
+| `bbox` | Solid colour fill. Bluntest option. | Irreversible. |
+
+## Inputs
+
+| Field | Type | Description |
+|---|---|---|
+| `image_url` | image | URL or data URL of the image to anonymise. Required on cloud chains; supplied automatically from the camera frame on edge chains. |
+| `detections` | array | Detection array from an upstream `call_model`. Same formats as `annotate` (Gemini 0-1000, normalized 0-1, pixel `xywh`, pixel `xyxy`). Required. |
+| `mode` | string | `pixelate` (default), `blur`, `redact`, or `bbox`. |
+| `target_classes` | array | Detection labels to obscure (default `["person"]`). Other labels pass through untouched. Empty array obscures every detection. Authored via the dedicated chip editor in the Anonymize inspector — writes `parameters.target_classes`. |
+| `pixel_size` | number | Optional mosaic block size for `pixelate` / `redact`. Defaults to an adaptive per-region value. |
+| `confidence_threshold` | number | Skip detections scoring below this (`0.0`–`1.0`, default `0.0` = no filtering). Matches the knob on `annotate` for composable chains. |
+
+## Outputs
+
+Cloud chains populate the output fields below. Edge chains publish the
+filtered frame directly to the camera driver's frame-filter channel
+without writing to the node output dict — the workflow inspector shows
+these fields as `cloud_only` to make that explicit.
+
+| Field | Type | Description |
+|---|---|---|
+| `result_image` | image | Data URL of the anonymised image. Preserves the source MIME type (JPEG / PNG / WebP), falling back to PNG when the source format can't be detected — echoing a 100 KB JPEG back as a megabyte PNG data-URL would balloon downstream storage. |
+| `anonymized_image` | image | Alias of `result_image` kept for backward compatibility. |
+| `source_image_url` | image | Original input URL. |
+| `detection_count` | number | Number of detection regions obscured. |
+
+## Edge implementation
+
+When compiled to the edge, `anonymize` uses
+[`cyberwave.vision.blank_persons`](https://github.com/cyberwave-os/cyberwave/blob/dev/cyberwave-sdks/cyberwave-python/cyberwave/vision/anonymize.py)
+from the Cyberwave Python SDK. The cloud and edge paths share the same
+pixel-level algorithm and emit byte-for-byte identical output for the
+same input frame + detections.
+
+### Privacy fail-closed gate
+
+`blank_persons` only obscures bounding-box regions for detections in
+the active `target_classes` set. On a frame where the model returns
+*zero* matching detections (sub-threshold confidence, occluded
+subject, partial body, transient miss) the helper returns the input
+frame untouched. To prevent that frame from being published to
+[`FILTERED_FRAME_CHANNEL`](../../edge/drivers/frame-filters) and
+silently substituted into the WebRTC stream, the generated edge
+worker wraps the publish:
+
+```python
+if any(d.label in {'person'} for d in results.detections):
+    cw.data.publish(FILTERED_FRAME_CHANNEL, _frame, twin_uuid=...)
+else:
+    cw.data.publish(FILTERED_FRAME_CHANNEL, np.zeros_like(frame), twin_uuid=...)
+```
+
+A missed detection therefore becomes an explicit black frame rather
+than a raw passthrough — matching the camera driver's existing
+fail-closed behaviour for stale and shape-mismatched filtered frames.
+
+When multiple `anonymize` nodes are chained, the gate uses the
+**union** of every node's `target_classes`. An anonymize node
+authored with an empty `target_classes` list is treated as a privacy
+lockdown — the gate becomes `set()` so every frame is replaced with
+black.
+
+`annotate`-only chains have no privacy contract and remain un-gated:
+boxes drawn over a raw frame is the intended output.
+
+## Privacy caveat
+
+These helpers are designed for casual visual obscuring, not as a
+cryptographic de-identification primitive:
+
+- `pixelate` is reversible by public depixelation models, especially at
+  the default block density.
+- `blur` with the default kernel is much harder to invert but not
+  impossible.
+- `bbox` and `redact` destroy the underlying pixel information (the
+  output contains only the solid fill + grid lines). Prefer `redact`
+  when you want the destruction to *look* deliberate (audit trails,
+  public release), `bbox` when you want a clean uniform mask.
+
+For GDPR-grade de-identification, combine with format-shifting (publish
+only detection events, not frames) or run the obscured frame through a
+second irreversible transform.

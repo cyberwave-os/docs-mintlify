@@ -1,0 +1,29 @@
+---
+title: "Environment Templates"
+description: "Clone a pre-configured environment to skip setup"
+icon: "copy"
+tag: "stub"
+---
+
+## What is a Template?
+
+An **Environment Template** is a pre-configured robot environment that any signed-in user can clone with one click. Templates include the scene, assets, twins, controller policies, and tags — everything needed to start working immediately.
+
+## Cloning a Template
+
+There are three entry points, all landing on the same gallery at **/templates**:
+
+1. **Public gallery** — visit `/templates` without signing in, click **Clone**, and (after login) the clone lands in your default workspace.
+2. **Sidebar** — once signed in, click **Templates** in the main navbar. Same gallery, same flow.
+3. **Create Environment modal** — click **New Environment** anywhere in the dashboard, then **Start from a template**. The modal closes and the gallery opens with a "Cloning into {folder}" banner, so the cloned environment lands in your current project/folder.
+
+Cloned environments are private to you and copy the template's name, description, twins, and controller policies. The original template is unaffected.
+
+## Publishing a Template
+
+Users with write access can publish templates in two ways:
+
+- **At creation time** — check **Publish as template** in the Create Environment form.
+- **Post-creation** — open workspace template management and click **Publish as template**.
+
+When publishing from workspace template management, choose **Share with everyone** for a public template or **Share with your workspace** for a workspace-only template. Publishing sets `is_template=True` and applies the selected visibility.

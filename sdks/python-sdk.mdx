@@ -270,13 +270,19 @@ This method:
 2. Creates a new twin instance in your environment, or retrieves an existing one
 3. Returns a **capability-specific Twin class** based on the asset's metadata
 
-You can also target a specific environment or retrieve a twin by UUID:
+You can also target a specific environment or retrieve a twin by UUID or [unified slug](/concepts/slug-system):
 
 ```python
+# By UUID
 robot = cw.twin("the-robot-studio/so101", environment_id="YOUR_ENVIRONMENT_UUID")
-
 twin = cw.twin(twin_id="YOUR_TWIN_UUID")
+
+# By unified slug
+robot = cw.twin("acme/catalog/so101", environment_id="acme/envs/production")
+twin = cw.twin(twin_id="acme/twins/my-arm")
 ```
+
+Slugs and UUIDs are interchangeable wherever an identifier is accepted. Access an entity's slug via the `.slug` property (e.g. `twin.slug`).
 
 If no default environment is configured (via `CYBERWAVE_ENVIRONMENT_ID` or `environment_id` parameter), the SDK auto-creates a "Quickstart Environment" and places the twin there.
 
@@ -568,10 +574,11 @@ List, trigger, and monitor workflows programmatically:
 cw = Cyberwave()
 
 for wf in cw.workflows.list():
-    print(f"{wf.name} ({wf.uuid}) — {wf.status}")
+    print(f"{wf.name} ({wf.slug}) — {wf.status}")
 
+# Trigger by UUID or unified slug
 run = cw.workflows.trigger(
-    "workflow-uuid",
+    "acme/workflows/pick-and-place",
     inputs={"target_position": [1.0, 2.0, 0.0], "speed": 0.5},
 )
 
@@ -582,9 +589,13 @@ print(run.status, run.result)
 You can also start from a Workflow object:
 
 ```python
-wf = cw.workflows.get("workflow-uuid")
+# Get by UUID or slug
+wf = cw.workflows.get("acme/workflows/pick-and-place")
 run = wf.trigger(inputs={"speed": 1.0})
 run.wait()
+
+# Dedicated slug lookup
+wf = cw.workflows.get_by_slug("acme/workflows/pick-and-place")
 ```
 
 List and filter past runs:

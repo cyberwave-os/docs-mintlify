@@ -1,0 +1,14 @@
+---
+title: Recording replay (signed URLs)
+description: stub — How environment recording playback uses signed URLs and client-side media loads.
+---
+
+{/* stub: curated later */}
+
+Recording playback loads **signed URLs** from the API instead of inlined samples:
+
+- **Camera**: MP4 (and legacy MKV chunk lists) via signed URL; the browser uses HTTP range requests as needed.
+- **Robot / actuation**: Parquet via signed URL; the web app reads a **time window** of rows around the playhead (bounded memory).
+- **Point clouds**: FlatBuffer chunk URLs plus coarse timestamp indexes from metadata.
+
+The `GET /api/v1/environments/{uuid}/recordings/{recording_uuid}/data` endpoint returns compact **source descriptors** (URLs + bounds + column hints), not dense per-frame JSON.

@@ -38,11 +38,11 @@ Register callbacks for sensor streams. Hooks are passive at import time—the ru
 
 | Decorator | Channel | Sensor kwarg |
 |---|---|---|
-| `@cw.on_frame(uuid, sensor=)` | `frames/{sensor}` | `sensor` |
-| `@cw.on_depth(uuid, sensor=)` | `depth/{sensor}` | `sensor` |
-| `@cw.on_audio(uuid, sensor=)` | `audio/{sensor}` | `sensor` |
-| `@cw.on_pointcloud(uuid, sensor=)` | `pointcloud/{sensor}` | `sensor` |
-| `@cw.on_lidar(uuid, sensor=)` | `lidar/{sensor}` | `sensor` |
+| `@cw.on_frame(uuid, sensor=None)` | `frames/{sensor}` (wildcard when omitted) | `sensor` |
+| `@cw.on_depth(uuid, sensor=None)` | `depth/{sensor}` (wildcard when omitted) | `sensor` |
+| `@cw.on_audio(uuid, sensor=None)` | `audio/{sensor}` (wildcard when omitted) | `sensor` |
+| `@cw.on_pointcloud(uuid, sensor=None)` | `pointcloud/{sensor}` (wildcard when omitted) | `sensor` |
+| `@cw.on_lidar(uuid, sensor=None)` | `lidar/{sensor}` (wildcard when omitted) | `sensor` |
 | `@cw.on_imu(uuid)` | `imu` | — |
 | `@cw.on_joint_states(uuid)` | `joint_states` | — |
 | `@cw.on_gps(uuid)` | `gps` | — |
@@ -50,6 +50,15 @@ Register callbacks for sensor streams. Hooks are passive at import time—the ru
 | `@cw.on_data(uuid, channel)` | custom | — |
 
 All callbacks receive `(sample_payload, ctx)` where `ctx` is a `HookContext` with `timestamp`, `channel`, `sensor_name`, `twin_uuid`, and `metadata`.
+
+<Note>
+  Passing `sensor=None` (or omitting it) subscribes to every sensor of that
+  type on the twin — the SDK constructs a `frames/**` (or `depth/**`, etc.)
+  wildcard key expression. `ctx.sensor_name` is populated from the observed
+  publish key so a single handler can disambiguate multi-sensor twins.
+  Pin `sensor="<name>"` (e.g. `"color_camera"`) when you need to target one
+  specific sensor — the name must match what the twin asset declares.
+</Note>
 
 ## Model Loading
 
@@ -76,7 +85,7 @@ Publishes to `cyberwave/twin/{uuid}/event` via MQTT. Payload matches the backend
 | `CYBERWAVE_TWIN_UUID` | Twin UUID, available as `cw.config.twin_uuid` |
 | `CYBERWAVE_WORKERS_DIR` | Workers directory (default: `/app/workers`) |
 | `CYBERWAVE_MODEL_DIR` | Model weights directory (default: `/app/models`) |
-| `CYBERWAVE_MODEL_DEVICE` | Default inference device (default: auto-detect) |
+| `CYBERWAVE_MODEL_DEVICE` | Default inference device. Unset = auto-detect with a cuDNN probe (falls back to `cpu` if CUDA is present but cuDNN can't execute a conv2d — e.g. Pascal/sm_61 on cuDNN 9, or very new archs not in the torch build). Set to `cuda:0` to force GPU, or `cpu` to skip the probe. |
 
 ## Runtime Entrypoint
 
@@ -87,3 +96,14 @@ from cyberwave import Cyberwave
 cw = Cyberwave(api_key=...)
 cw.run_edge_workers()  # loads workers, wires hooks, blocks
 ```
+
+## Lifecycle
+
+Edge Core starts the worker container only when at least one workflow is active for the connected twins (i.e. the latest sync produced one or more `wf_*.py` files in `{config_dir}/workers/`). When no active workflow exists, the `cyberwaveos/edge-ml-worker` image is not pulled at all.
+
+Workflow activations and deactivations are picked up automatically:
+
+- **At startup:** after the workflow sync step, the worker container is started if files exist; otherwise startup logs `No active workflows for connected twins; worker container not started` and proceeds.
+- **At runtime:** every ~5 minutes the workers directory is re-synced; the worker container is started when files appear and stopped when files disappear. Both transitions are idempotent.
+
+`cyberwave workflow sync <twin_uuid>` from the CLI continues to trigger an immediate sync via MQTT, which reuses the same lifecycle path on the next reconcile.

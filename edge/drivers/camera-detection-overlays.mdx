@@ -1,0 +1,43 @@
+---
+title: "Camera Detection Overlays"
+description: "Draw YOLO bounding boxes from an ML worker onto the camera driver's WebRTC stream."
+---
+
+<Warning>
+**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
+</Warning>
+
+The generic `cyberwave-edge-camera-driver` subscribes to detection results published by any ML worker on the same Zenoh router and renders bounding boxes + labels on the WebRTC stream before it reaches the frontend. No client-side changes are required.
+
+## How it works
+
+- Frames captured from the camera are published **clean** on `cw/<twin_uuid>/data/frames/<sensor>` — ML workers always receive unannotated images.
+- The driver also subscribes to `cw/<twin_uuid>/data/detections/**`. Any worker that publishes detections on that channel (e.g. `detections/ultralytics`, `detections/onnxruntime`) drives the overlay.
+- Bounding boxes are drawn in-place on the capture ndarray before it is handed to the WebRTC encoder, so the browser sees annotated frames without any extra infrastructure.
+- Workers publish every inference — including empty `{"detections": []}` heartbeats — so the driver's freshness timer is kept alive between non-empty frames. Batches older than 2 seconds are discarded to avoid stale overlays.
+
+## Detection payload schema
+
+```json
+{
+  "detections": [
+    {"label": "person", "confidence": 0.92, "x1": 120, "y1": 80, "x2": 340, "y2": 620}
+  ],
+  "frame_width": 1920,
+  "frame_height": 1080
+}
+```
+
+Coordinates are in pixel space of the detection frame. The driver rescales them to the capture resolution.
+
+## Configuration
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `CYBERWAVE_DETECTION_OVERLAYS` | `true` | Set to `false` to disable overlays on RGB cameras. |
+
+Overlays are disabled automatically for twins that declare a depth sensor in their capabilities.
+
+## Interop with native drivers
+
+The same channel, payload schema, and staleness policy are used by the C++ OBSBOT driver, so an ML worker only needs to publish once — both driver families render the results identically.

@@ -42,6 +42,17 @@ Every alert belongs to a workspace and must be attached to at least one of: twin
 - **Resolved**: the root cause has been addressed (by edge device or operator).
 - **Silenced**: suppressed workspace-wide without resolving the root cause.
 
+## Idempotent resolve and silence
+
+The `POST /api/v1/alerts/{uuid}/resolve` and `POST /api/v1/alerts/{uuid}/silence` endpoints are **idempotent**:
+
+- Resolving an already-resolved alert returns `200` with the alert body (no-op).
+- Resolving a silenced alert is allowed — it transitions the alert to resolved.
+- Silencing an already-silenced alert returns `200` with the alert body (no-op).
+- Silencing a resolved alert returns `400`.
+
+This means edge drivers and operator UIs can safely call resolve without checking current status first, avoiding race conditions when multiple actors act on the same alert concurrently.
+
 ## MQTT
 
 Edge devices create and resolve alerts via MQTT. Topic pattern:

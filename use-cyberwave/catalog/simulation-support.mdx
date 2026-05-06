@@ -1,0 +1,31 @@
+---
+title: Simulator compatibility
+description: Control which simulators assets and twins can participate in.
+---
+
+Every asset stores a default list of simulation backends it supports. Twins created from that asset inherit the asset's defaults and can override them individually.
+
+## How it works
+
+1. **Asset defaults** — Open any asset in the catalog and expand **Simulator compatibility** to enable or disable each backend. This becomes the starting point for all twins created from that asset.
+
+2. **Per-twin overrides** — In the environment editor, select a twin and open the twin panel. The **Simulator compatibility** section (near the Fixed base toggle) lets you override the asset default for that specific twin instance.
+
+3. **Compatibility gate** — When you try to start a remote simulation (e.g. MuJoCo), Cyberwave checks every twin in the environment. If any twin is not marked as compatible with the selected backend, the simulation will not start and the simulator panel will list the incompatible twins.
+
+## Supported backends
+
+| Backend | Description |
+|---------|-------------|
+| **Playground** | Built-in browser simulation. Does not require a compatibility check before starting. |
+| **MuJoCo** | High-fidelity physics simulation. All twins must be compatible for the simulation to start. |
+
+## Changing compatibility
+
+- **To fix a blocked MuJoCo simulation:** either enable MuJoCo on the incompatible twin(s) in the twin panel, or update the asset default so future twins are compatible by default.
+- **To exclude a twin from MuJoCo:** disable MuJoCo on that twin in the twin panel. The twin will remain in the environment for other purposes but will block MuJoCo start until re-enabled.
+
+## Notes
+
+- New twins always inherit the asset's compatibility list at creation time. Changing the asset default does not retroactively update existing twins.
+- Playground is not enforced by a server-side gate; it is always available as a local simulation option regardless of twin compatibility settings.

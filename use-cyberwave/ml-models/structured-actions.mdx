@@ -1,0 +1,244 @@
+---
+title: "Structured Actions"
+description: "The canonical catalog of structured tasks a Cyberwave ML model can run, and how to parse their output."
+---
+
+A **structured action** is a preset that tells the Playground how to shape
+the prompt and how to parse the model response so the result comes back as
+machine-readable JSON (points, bounding boxes, segmentation masks) instead
+of a free-form string.
+
+You pick one when calling the Playground `/run` endpoint, either from the
+UI, the HTTP API, or the Python SDK:
+
+```python
+import cyberwave as cw
+
+client = cw.Cyberwave(api_key="...")
+result = client.mlmodels.run(
+    "acme/models/gemini-robotics-er",
+    image="scene.jpg",
+    prompt="cups",
+    structured_task="detect_points",
+)
+print(result.output)
+# [{"point": [512, 433], "label": "red cup"}, ...]
+```
+
+<Info>
+The catalog below is the **single source of truth** for structured
+actions. It is authored in
+`cyberwave-backend/src/lib/structured_actions.py`, mirrored in the
+Python SDK at `cyberwave.mlmodels.actions`, and served live at
+`GET /api/v1/mlmodels/structured-actions` so the frontend, SDKs, and
+this doc page all agree.
+</Info>
+
+---
+
+## The catalog
+
+| `structured_task` | `output_format` | Renders as | Use it for |
+|-------------------|-----------------|------------|------------|
+| `free`            | `text`          | Raw string | Any prompt you want passed through unchanged. No output parsing. |
+| `caption`         | `text`          | Raw string | One-sentence description of the input image. |
+| `detect_points`   | `points`        | Dots overlaid on the image | "Where is X?" — object localisation, keypoint tasks. |
+| `detect_boxes`    | `boxes`         | Bounding boxes overlaid on the image | Classical object detection. |
+| `segment`         | `masks`         | Tinted silhouettes overlaid on the image | Instance segmentation. |
+
+Each action carries a **default prompt template** the backend injects when
+you pass `structured_task=...`. For example, `detect_points` expands
+`prompt="cups"` into:
+
+```
+Detect cups in the image. Return a JSON array of objects of the form
+{"point": [y, x], "label": "<name>"} where each point is in
+[y, x] normalized to 0-1000. Only output the JSON array.
+```
+
+This matches the [Gemini Robotics
+ER](https://ai.google.dev/gemini-api/docs/robotics-overview) contract.
+Other vendors (Molmo's `<point>` tags, PaliGemma's `<loc####>` tokens) use
+their native grounding syntax and the backend passes your raw `prompt`
+through unchanged when it doesn't know how to rewrite it for that
+provider.
+
+---
+
+## Output schemas
+
+### `points` — `output_format: "points"`
+
+```json
+[
+  { "point": [523, 488], "label": "red cup" },
+  { "point": [714, 232], "label": "green mug" }
+]
+```
+
+- `point` — `[y, x]` normalized to `0..1000`.
+- `label` — optional human-readable tag.
+
+Render on an image (frontend): `<PointOverlay />` component.
+Render on an image (Python): `cw.save_annotated_image(img, result, "out.png")`.
+
+### `boxes` — `output_format: "boxes"`
+
+```json
+[
+  { "box_2d": [100, 150, 400, 650], "label": "bottle" }
+]
+```
+
+- `box_2d` — `[ymin, xmin, ymax, xmax]` normalized to `0..1000`.
+
+### `masks` — `output_format: "masks"`
+
+```json
+[
+  {
+    "box_2d": [120, 80, 480, 510],
+    "mask": "iVBORw0KGgoAAAANSUhEUgAAA...",
+    "label": "fork"
+  }
+]
+```
+
+- `box_2d` — region the mask applies to.
+- `mask` — base64-encoded PNG (may be prefixed with
+  `data:image/png;base64,`). Luminance of the PNG defines the silhouette
+  within `box_2d`.
+
+---
+
+## Which models support which action?
+
+Capability is derived from the model's metadata, so the list stays in
+sync as you seed new entries. In code:
+
+```python
+from cyberwave.mlmodels import STRUCTURED_ACTIONS
+
+for action in STRUCTURED_ACTIONS:
+    print(action.id, action.output_format, action.default_prompt_template)
+```
+
+Rules applied server-side (see
+`src/lib/structured_actions.py::_supports_any_spatial`):
+
+1. The model must take an image as input (`can_take_image_as_input: true`).
+2. Output format must be `json` (or unset).
+3. Any one of:
+   - metadata declares `point_format` or `bounding_box_format`,
+   - tags include `spatial-reasoning`, `spatial-reasoner`, `grounding`,
+     `visual-grounding`, `pointing`, or `object-detection`,
+   - `model_external_id` starts with `gemini-robotics-er`, `molmo`, or
+     `paligemma`.
+
+`caption` is supported by any image-capable model; `free` is supported by
+every text-capable model (default).
+
+---
+
+## Parsing hints
+
+The backend is lenient with provider output:
+
+- Strips triple-backtick code fences (```json ... ```) some models wrap
+  JSON in.
+- Falls back to the first `[...]` or `{...}` block when the payload has
+  surrounding prose.
+- Returns `raw` on every response so you can debug when parsing fails.
+
+When you call the Python SDK, `MLModelRunResult.output` is already parsed
+JSON. When you call the HTTP API, parse as standard JSON and branch on
+`output_format`:
+
+```python
+import requests
+r = requests.post(
+    f"{API}/api/v1/mlmodels/{uuid}/run",
+    headers={"Authorization": f"Token {TOKEN}"},
+    json={"prompt": "cups", "image_base64": b64, "structured_task": "detect_points"},
+).json()
+
+if r["status"] != "completed":
+    # Async workload — poll r["poll_url"].
+    ...
+elif r["output_format"] == "points":
+    for p in r["output"]:
+        draw_point(image, *p["point"], label=p.get("label"))
+```
+
+---
+
+## Annotating images with the result
+
+Once you have the output, you usually want to **bake it onto the image**
+so you can email it, archive it, or attach it to an audit log. The SDK
+ships a one-liner for that:
+
+```python
+result = client.mlmodels.run(
+    "acme/models/gemini-robotics-er",
+    image="scene.jpg",
+    prompt="cups",
+    structured_task="segment",
+)
+result.save_annotated_image("scene.jpg", "scene.annotated.png")
+```
+
+`save_annotated_image`:
+
+- Renders each point / box / mask onto the original image.
+- Writes a **PNG tEXt chunk keyed `cyberwave.run`** with the raw JSON
+  output, the model UUID/slug, and the structured task.
+- The result is self-describing — any consumer can recover the parsed
+  output from the image alone:
+
+```python
+import cyberwave as cw
+
+meta = cw.read_annotated_metadata("scene.annotated.png")
+print(meta["output_format"], len(meta["output"]))
+# masks 3
+```
+
+Use `embed_metadata=False` to opt out of the embedded JSON (e.g. when
+sending the image to a third party).
+
+---
+
+## Extending the catalog
+
+1. Add a new `StructuredAction` to
+   `cyberwave-backend/src/lib/structured_actions.py::STRUCTURED_ACTIONS`.
+2. If the output needs a new parse branch, update
+   `MLModelPlaygroundService._parse_output`.
+3. Mirror the action in
+   `cyberwave-sdks/cyberwave-python/cyberwave/mlmodels/actions.py`.
+   The SDK test `tests/test_mlmodels_actions.py::TestBackendAlignment`
+   will fail until the two files agree.
+4. Add a frontend overlay if the new `output_format` is visual.
+5. Update this page.
+
+### Minimum path for adding a new model / provider / output format
+
+- **New model, existing output format**:
+  - Seed or create the model with backend-computed metadata
+    (`playground_kind`, `allowed_structured_tasks`, `execution_surfaces`,
+    `sdk_load_id`) and add tests.
+  - No new frontend overlay or SDK type adapter should be needed.
+- **New provider wire format, existing structured action**:
+  - Add one adapter in `cyberwave-backend/src/lib/mlmodel_output_adapters.py`.
+  - Keep provider-specific parsing out of API routers and services.
+- **New output format**:
+  - Add the backend schema/action first.
+  - Add a frontend renderer only if the format is genuinely new.
+  - Update the SDK only if the format can map cleanly onto
+    `PredictionResult`; otherwise preserve the raw structured payload.
+
+Treat the backend API response as the source of truth. Frontend and SDK
+consumers should prefer `playground_kind`, `allowed_structured_tasks`,
+`execution_surfaces`, and `sdk_load_id` from the backend instead of
+recomputing them locally.

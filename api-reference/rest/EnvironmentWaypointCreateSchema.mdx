@@ -1,0 +1,16 @@
+# EnvironmentWaypointCreateSchema
+
+stub
+
+Waypoint payload accepted by `POST /api/v1/environments/{uuid}/waypoints`.
+
+## Properties
+
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**id** | **str** | Optional waypoint identifier. | [optional]
+**name** | **str** | Optional display name. | [optional]
+**collection** | **str** | Optional grouping label. | [optional]
+**position** | **Vector3Schema** | Position with `x`, `y`, and `z`. | [optional]
+**rotation** | **QuaternionSchema** | Quaternion rotation with `w`, `x`, `y`, and `z`. | [optional]
+**metadata** | **Dict[str, object]** | Optional waypoint metadata. | [optional]

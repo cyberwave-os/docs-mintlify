@@ -116,6 +116,17 @@ flowchart LR
 
 ---
 
+## Try it in the Playground
+
+Every model detail page (`/{workspace-slug}/models/{model-slug}` or
+`/models/{uuid}` for models without a slug) has an interactive
+**Playground** tab. Gemini Robotics-ER renders detected points as an
+overlay on your image, VLMs stream back text, `im2mesh` models preview
+the generated GLB inline, and edge/VLA models surface the exact CLI +
+SDK commands needed to run them locally. See [Model Playground](/use-cyberwave/ml-models/playground).
+
+---
+
 ## Running Inference
 
 <Tabs>
@@ -152,3 +163,46 @@ for model in models:
     print(f"  Image: {model.can_take_image_as_input}")
     print(f"  Text: {model.can_take_text_as_input}")
 ```
+
+---
+
+## Vision-Language-Action (VLA) Models
+
+{/* stub - to be expanded */}
+
+VLA models combine vision, language understanding, and action generation for end-to-end robot control. Cyberwave provides infrastructure for running VLA model inference and training on Cloud Nodes.
+
+### Supported VLA Models
+
+| Model | Description | Deployment |
+|-------|-------------|------------|
+| SmolVLA | Lightweight VLA from HuggingFace LeRobot | Cloud Node |
+| OpenVLA | Open-source VLA model | Cloud Node |
+
+### Model Weights
+
+VLA models store their weights in Cyberwave and expose them via the MLModel API:
+
+```
+GET /api/v1/mlmodels/{uuid}/weights
+→ { "signed_url": "...", "expires_at": "..." }
+```
+
+This allows Cloud Nodes to fetch model weights on demand and cache them locally.
+
+### Running VLA Inference
+
+VLA inference runs on Cloud Nodes using the `CwProcessor` orchestrator:
+
+1. **Weights Download** - Fetched from MLModel API via signed URLs
+2. **Camera Binding** - Background threads continuously fetch camera frames
+3. **Control Loop** - Observe → Predict → Execute cycle
+4. **Action Publishing** - Predicted actions sent to robot via MQTT
+
+<Card
+  title="VLA Cloud Node Guide"
+  icon="brain"
+  href="/sdks/vla-cloud-node"
+>
+  Learn how to build and deploy VLA models on Cyberwave Cloud Nodes
+</Card>

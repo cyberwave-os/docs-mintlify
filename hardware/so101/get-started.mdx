@@ -474,7 +474,7 @@ Once you've created episodes:
 <Note>
 **API Reference:**
 - `GET /api/v1/datasets` - List all datasets
-- `GET /api/v1/datasets/{uuid}/zip` - Get signed URL for dataset zip file
+- `GET /api/v1/datasets/{uuid}/zip?format=openvla|lerobot` - Get signed URL for processed dataset zip file (requires `format` query parameter)
 
 **MQTT Topics:**
 Datasets are exported via API. The underlying recordings are captured via:
