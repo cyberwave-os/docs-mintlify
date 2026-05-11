@@ -8,6 +8,10 @@ iconType: "solid"
 
 By the end of this tutorial you will have an SO-101 that listens to a spoken English command, looks at its workspace through a USB webcam, and executes a short motion plan written on-the-fly by Claude. No dataset, no VLA, no training. The policy is a system prompt.
 
+<Info>
+**Reference implementation.** Full source for every module and smoke test referenced below lives in the [`nl_arm_controller`](https://github.com/cyberwave-os/cyberwave-python/tree/main/examples/nl_arm_controller) example in the [`cyberwave-os/cyberwave-python`](https://github.com/cyberwave-os/cyberwave-python) repo. Clone it to follow along, or use the snippets in each step as a guide for your own implementation.
+</Info>
+
 ## Architecture at a glance
 
 ```mermaid
@@ -60,7 +64,7 @@ flowchart LR
 
 ## Project layout
 
-The reference example lives at `cyberwave-sdks/cyberwave-python/examples/nl_arm_controller`:
+The reference example lives at [`cyberwave-os/cyberwave-python/examples/nl_arm_controller`](https://github.com/cyberwave-os/cyberwave-python/tree/main/examples/nl_arm_controller):
 
 ```
 nl_arm_controller/
@@ -73,6 +77,8 @@ nl_arm_controller/
 ├── .env.example
 └── smoke_tests/           # one self-contained script per dependency (01–08)
 ```
+
+Direct links: [`nl_arm_controller.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/nl_arm_controller.py) · [`motion.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/motion.py) · [`planner.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/planner.py) · [`vision.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/vision.py) · [`voice.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/voice.py) · [`requirements.txt`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/requirements.txt) · [`.env.example`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/.env.example) · [`smoke_tests/`](https://github.com/cyberwave-os/cyberwave-python/tree/main/examples/nl_arm_controller/smoke_tests)
 
 Each module is independent; that's why each one has its own smoke test. If a piece breaks, you isolate it in seconds.
 
@@ -125,16 +131,17 @@ The agent is five small modules on your laptop, each owning one transform. Build
 
 | Module | Input | Output | External service |
 |---|---|---|---|
-| `voice.py` | Mic audio (while SPACE held) | Transcribed text | Mistral Voxtral |
-| `vision.py` | Webcam | Base64 JPEG | n/a (local OpenCV) |
-| `planner.py` | Text + base64 JPEG | Validated `MotionPlan` | Anthropic Claude |
-| `motion.py` | `MotionPlan` | Ramped joint commands | Cyberwave SDK |
-| `nl_arm_controller.py` | CLI flags | Agent loop wiring it all together | n/a |
+| [`voice.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/voice.py) | Mic audio (while SPACE held) | Transcribed text | Mistral Voxtral |
+| [`vision.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/vision.py) | Webcam | Base64 JPEG | n/a (local OpenCV) |
+| [`planner.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/planner.py) | Text + base64 JPEG | Validated `MotionPlan` | Anthropic Claude |
+| [`motion.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/motion.py) | `MotionPlan` | Ramped joint commands | Cyberwave SDK |
+| [`nl_arm_controller.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/nl_arm_controller.py) | CLI flags | Agent loop wiring it all together | n/a |
 
 **Install and configure** (do this once, then build each modality on top):
 
 ```bash
-cd cyberwave-sdks/cyberwave-python/examples/nl_arm_controller
+git clone https://github.com/cyberwave-os/cyberwave-python.git
+cd cyberwave-python/examples/nl_arm_controller
 python -m venv .venv && source .venv/bin/activate
 pip install -e ../..                 # the Cyberwave SDK
 pip install -r requirements.txt      # anthropic, httpx, sounddevice, pynput, opencv-python-headless
@@ -145,7 +152,7 @@ Set `CW_CAMERA_INDEX` if your USB webcam isn't device 0.
 
 ### 3.1 Voice as an input modality
 
-`voice.py` is a push-to-talk mic recorder plus a Mistral Voxtral STT call. Hold SPACE to record, release to transcribe. Output is plain text.
+[`voice.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/voice.py) is a push-to-talk mic recorder plus a Mistral Voxtral STT call. Hold SPACE to record, release to transcribe. Output is plain text.
 
 - **Recording**: `sounddevice` captures 16-bit PCM at 16 kHz; `pynput` listens for the spacebar press/release. The recorder writes a temporary WAV to disk.
 - **Transcription**: the WAV is POSTed to the Voxtral endpoint. Voxtral is OpenAI-Whisper-compatible at the API level, so swapping providers later is one URL change.
@@ -163,7 +170,7 @@ python smoke_tests/02_voice.py    # hold SPACE, say something, see the transcrip
 
 ### 3.2 Vision as an input modality
 
-`vision.py` wraps `cv2.VideoCapture` and exposes `grab_frame_b64()`, which returns a base64-encoded JPEG ready to drop into a Claude `image` content block. No model runs locally; OpenCV is just for capture and JPEG encoding.
+[`vision.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/vision.py) wraps `cv2.VideoCapture` and exposes `grab_frame_b64()`, which returns a base64-encoded JPEG ready to drop into a Claude `image` content block. No model runs locally; OpenCV is just for capture and JPEG encoding.
 
 - **Resolution**: defaults to whatever the webcam reports; downscaled to 1024 px on the long edge before encoding to keep token usage reasonable.
 - **Lifecycle**: the orchestrator opens the camera once at startup and reuses the handle. A failed grab returns `None`, and the orchestrator falls back to text-only Claude calls for that turn.
@@ -179,7 +186,7 @@ Open the saved JPEG before iterating. Bad framing or lighting at this stage will
 
 ### 3.3 VLM as the planner
 
-`planner.py` calls Anthropic Claude Sonnet 4.5 with a system prompt, the user transcript, and (optionally) a base64 JPEG. It returns a validated `MotionPlan` or a structured error.
+[`planner.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/planner.py) calls Anthropic Claude Sonnet 4.5 with a system prompt, the user transcript, and (optionally) a base64 JPEG. It returns a validated `MotionPlan` or a structured error.
 
 The whole tutorial hinges on Claude returning a *strict, machine-parseable* motion plan, not prose. We do this in three layers, before any code parses anything.
 
@@ -219,7 +226,7 @@ Joint limits in `motion.DEFAULT_JOINT_LIMITS` are *conservative*: ±90° on the 
 
 ### 3.4 Orchestrate it together
 
-`motion.py` and `nl_arm_controller.py` close the loop. The executor turns plans into smooth motion; the orchestrator owns the agent loop.
+[`motion.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/motion.py) and [`nl_arm_controller.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/nl_arm_controller.py) close the loop. The executor turns plans into smooth motion; the orchestrator owns the agent loop.
 
 **Smooth motion with ramping.** The motion executor never commands a target pose in one step. Each action is split into `duration × 20` linear-interpolation steps at 20 Hz, with `time.sleep(50ms)` between them. Multi-joint moves share the same `t ∈ [0, 1]` parameter so all joints arrive at the target simultaneously.
 
@@ -231,7 +238,7 @@ Why this matters:
 
 A 4-action wave plan with 1-second actions becomes ~500 SDK calls; the SDK batches them as MQTT messages on `cyberwave/twin/{uuid}/joint_states`. The Pi's `so101-remoteoperate` is subscribed to that topic and drives the servos via `/dev/ttyACM0`.
 
-**The agent loop** (in `nl_arm_controller.py`):
+**The agent loop** (in [`nl_arm_controller.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/nl_arm_controller.py)):
 
 1. Wait for input. With `--voice`, hold SPACE to record. Without, type at the REPL.
 2. If `--vision`, grab a webcam frame.
@@ -296,7 +303,7 @@ Each is a follow-up tutorial's worth of work. Pick one after you hit the success
 
 ## Reference
 
-- **Example folder**: `cyberwave-sdks/cyberwave-python/examples/nl_arm_controller`
+- **Example folder**: [`cyberwave-os/cyberwave-python/examples/nl_arm_controller`](https://github.com/cyberwave-os/cyberwave-python/tree/main/examples/nl_arm_controller) (smoke tests under [`smoke_tests/`](https://github.com/cyberwave-os/cyberwave-python/tree/main/examples/nl_arm_controller/smoke_tests))
 - **SDK calls used**: `Cyberwave()`, `cw.affect()`, `cw.twin()`, `robot.joints.set()`. See [Python SDK](/sdks/python-sdk).
 - **MQTT topics published by the SDK**: `cyberwave/twin/{uuid}/joint_states` (source_type `tele`). See [MQTT API](/api-reference/mqtt/main).
 - **External services**: [Anthropic Claude Sonnet 4.5](https://docs.anthropic.com), [Mistral Voxtral](https://docs.mistral.ai).
