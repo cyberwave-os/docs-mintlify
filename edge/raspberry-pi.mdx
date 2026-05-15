@@ -42,7 +42,7 @@ Choose the variant that matches your Raspberry Pi model:
     4. Open Raspberry Pi Imager.
     5. Click **Choose OS** → scroll to the bottom → **Use custom**, then select the `.img.xz` file you downloaded. No need to decompress it first.
     6. Click **Choose Storage** and select your SD card.
-    7. Click **Next**. When asked about OS customisation, choose **No** — the Cyberwave image already has SSH and a default user pre-configured.
+    7. Click **Next**. If asked about OS customisation, choose **No** — the Cyberwave image already has SSH and a default user pre-configured.
     8. Click **Write** and wait for the flash and verification to complete.
 
     <Warning>
@@ -105,14 +105,14 @@ Choose the variant that matches your Raspberry Pi model:
 3. Otherwise the Pi creates a setup hotspot:
    - **SSID:** `Cyberwave-Setup`
    - **Password:** `cyberwave`
-4. Connect your laptop or phone to `Cyberwave-Setup`.
-5. The captive portal opens automatically on most phones. On a laptop, open a browser and go to `http://192.168.50.1`.
+4. Connect your laptop or phone to the wifi network `Cyberwave-Setup`.
+5. The captive portal opens automatically on most phones and laptops. If you don't get the modal of the captive portal, manually go to `http://192.168.50.1`.
 
    <Tip>
-     Use **Safari** or **Firefox** for this step. Chrome blocks local HTTP pages
-     when the active network has no internet, which prevents the portal from
-     loading. On macOS, a **"Sign in to network"** notification may appear —
-     clicking it opens the portal directly.
+     Use **Safari** or **Firefox** for this step. Chrome may block local HTTP
+     pages when the active network has no internet, which prevents the portal
+     from loading. On macOS, a **"Sign in to network"** notification may appear
+     — clicking it opens the portal directly.
    </Tip>
 
 6. Select your Wi-Fi network from the list and enter the password.
@@ -143,3 +143,7 @@ ssh pi@<pi-ip-address>
   SSH is open, and the Pi is reachable at `cyberwave.local` on your local
   network.
 </Check>
+
+## Next steps
+
+You are now ready to use your Raspberru Pi with Cyberwave! You can resume [the quickstart from here](https://docs.cyberwave.com/get-started/quickstart#step-5-install-the-cyberwave-cli)

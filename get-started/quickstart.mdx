@@ -4,12 +4,14 @@ description: "Get up and running with Cyberwave in just a few minutes"
 icon: "bolt"
 ---
 
-import EarlyAccess from '/snippets/early-access.mdx';
+import EarlyAccess from "/snippets/early-access.mdx";
 
 <EarlyAccess />
 
 <Tip>
-Want to try Cyberwave without any setup first? See [Try a Real Robot Live](/get-started/try-real-robot) to control a real SO101 arm from your browser in under 2 minutes.
+  Want to try Cyberwave without any setup first? See [Try a Real Robot
+  Live](/get-started/try-real-robot) to control a real SO101 arm from your
+  browser in under 2 minutes.
 </Tip>
 
 ## Build Your Own Setup
@@ -61,12 +63,18 @@ With your environment and digital twin ready, you can start building immediately
 
 <CardGroup cols={3}>
   <Card title="Python SDK" icon="code" href="/sdks/python-sdk">
-    Control twins, capture frames, trigger workflows, and manage infrastructure programmatically
+    Control twins, capture frames, trigger workflows, and manage infrastructure
+    programmatically
   </Card>
   <Card title="MCP Server" icon="plug" href="/sdks/mcp-server">
-    Let AI agents (Claude, GPT, Cursor) manage your robotics setup through natural language
+    Let AI agents (Claude, GPT, Cursor) manage your robotics setup through
+    natural language
   </Card>
-  <Card title="REST API" icon="brackets-curly" href="/api-reference/rest/DefaultApi">
+  <Card
+    title="REST API"
+    icon="brackets-curly"
+    href="/api-reference/rest/DefaultApi"
+  >
     Direct HTTP access to every Cyberwave operation from any language
   </Card>
 </CardGroup>
@@ -100,10 +108,11 @@ You can control your digital twin in simulation in two ways: through the **dashb
        - **Keyboard**: control individual joints using keyboard keys
     5. Start moving the twin using the assigned controller. You'll see the digital twin responding in the 3D environment in real time.
     ![](/images/develop-in-simulation.png)
-    
+
     <Check>
     Your twin is being controlled in simulation. Use this to explore how the robot behaves before writing any code or connecting real hardware.
     </Check>
+
   </Tab>
   <Tab title="Python SDK">
     Run this from your laptop, no physical robot needed. Use `affect("simulation")` to make your actions impact the digital twin instead of live hardware.
@@ -131,6 +140,7 @@ You can control your digital twin in simulation in two ways: through the **dashb
     <Info>
     Use `cw.affect("simulation")` while building against the digital twin, then switch to `cw.affect("live")` when you're ready for the physical robot.
     </Info>
+
   </Tab>
 </Tabs>
 
@@ -141,14 +151,13 @@ You can control your digital twin in simulation in two ways: through the **dashb
 Once your application works in simulation, connect it to the physical robot. These steps run on the machine that is physically connected to the robot, an edge device (Raspberry Pi, Jetson) or your laptop if the robot is plugged in directly via USB.
 
 <Info>
-If you're only working in simulation or building application code, you can skip Part 2 for now and come back when you're ready to connect hardware.
+  If you're only working in simulation or building application code, you can
+  skip Part 2 for now and come back when you're ready to connect hardware.
 </Info>
 
 #### Step 5: Install the Cyberwave CLI
 
-<Warning>
-    The Cyberwave CLI and Edge Core require a **64-bit architecture** (arm64/aarch64) on Raspberry Pi. If you are using a 32-bit OS or architecture, please wait for an updated version.
-</Warning>
+> Using a Raspberry Pi to connect to your robots? [Check out how to set it up here!](https://docs.cyberwave.com/edge/raspberry-pi)
 
 <Tabs>
   <Tab title="Remote Edge Device (Raspberry Pi, Jetson, etc.)">
@@ -163,6 +172,7 @@ If you're only working in simulation or building application code, you can skip 
     ```bash
     curl -fsSL https://cyberwave.com/install.sh | bash
     ```
+
   </Tab>
   <Tab title="Robot Connected Directly to This Machine">
     If your robot is connected via USB or serial (e.g. an SO101 arm plugged into your laptop), install the CLI on the same machine:
@@ -170,6 +180,7 @@ If you're only working in simulation or building application code, you can skip 
     ```bash
     curl -fsSL https://cyberwave.com/install.sh | bash
     ```
+
   </Tab>
 </Tabs>
 
@@ -194,7 +205,10 @@ cyberwave login --token YOUR_API_KEY
 ```
 
 <Info>
-This step is optional. If you skip it, `cyberwave edge install` will prompt you to log in interactively during installation. Pre-authenticating is useful if you're scripting the setup or want to avoid the interactive login during install.
+  This step is optional. If you skip it, `cyberwave edge install` will prompt
+  you to log in interactively during installation. Pre-authenticating is useful
+  if you're scripting the setup or want to avoid the interactive login during
+  install.
 </Info>
 
 ---
@@ -220,7 +234,8 @@ Follow the prompts in your terminal:
 3. The appropriate driver will be automatically installed and configured for your robot.
 
 <Check>
-Your physical robot is now paired with its digital twin and syncing in real time.
+  Your physical robot is now paired with its digital twin and syncing in real
+  time.
 </Check>
 
 Your application code from Part 1 now drives the physical robot. Switch the SDK to live control so your actions affect the real robot:
@@ -242,18 +257,10 @@ cw.affect("live")
   >
     Understand the full system architecture
   </Card>
-  <Card
-    title="Python SDK"
-    icon="code"
-    href="/sdks/python-sdk"
-  >
+  <Card title="Python SDK" icon="code" href="/sdks/python-sdk">
     Full SDK reference and examples
   </Card>
-  <Card
-    title="MCP Server"
-    icon="plug"
-    href="/sdks/mcp-server"
-  >
+  <Card title="MCP Server" icon="plug" href="/sdks/mcp-server">
     Let AI agents manage your infrastructure
   </Card>
 </CardGroup>
@@ -266,18 +273,10 @@ cw.affect("live")
   >
     Set up teleoperation and datasets
   </Card>
-  <Card
-    title="UGV Beast"
-    icon="robot"
-    href="/hardware/ugv/get-started"
-  >
+  <Card title="UGV Beast" icon="robot" href="/hardware/ugv/get-started">
     Get started with the UGV Beast
   </Card>
-  <Card
-    title="Unitree Go2"
-    icon="dog"
-    href="/hardware/go2/get-started"
-  >
+  <Card title="Unitree Go2" icon="dog" href="/hardware/go2/get-started">
     Connect the Go2 quadruped
   </Card>
 </CardGroup>
