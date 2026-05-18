@@ -1,25 +1,31 @@
 ---
-title: Dataset Playground
-description: stub
+title: "Dataset Playground"
+description: "Explore robot datasets with synchronised video, low-dimensional plots, and a scrubbable timeline."
+stub: true
 ---
 
-## Dataset Playground
+<Info>
+**Robot datasets first.** The playground currently supports LeRobot v2.1 and v3 datasets imported from HuggingFace or uploaded as zip files. Playback for other dataset types (image classification, video, audio, multimodal) is coming in a future release.
+</Info>
 
-stub
+## Overview
 
-The dataset playground lets you open imported datasets (starting with LeRobot
-v2.1 / v3 layouts from Hugging Face) in a structured viewer with synchronized
-video, low-dimensional plots, and a scrubbable timeline.
+The Dataset Playground lets you open an imported robot dataset in a structured viewer with:
+
+- Synchronised episode video (wrist + external cameras)
+- Low-dimensional data plots (joint positions, velocities, actions)
+- A scrubbable timeline for frame-by-frame inspection
 
 ### Supported formats
 
-stub
-
-- LeRobot v2.1 / v3 (Hugging Face lazy imports)
+| Format | Status |
+|---|:---:|
+| LeRobot v3 | ✓ Available |
+| LeRobot v2.1 | ✓ Available |
+| Other robot formats (RLDS, HDF5, Zarr, …) | 🔜 Coming soon |
+| Image / video / CV datasets | — Not yet planned |
 
 ### Related API
-
-stub
 
 - `GET /api/v1/datasets/by-slug`
 - `GET /api/v1/datasets/{uuid}/episode-manifest`

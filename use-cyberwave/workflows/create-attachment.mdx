@@ -1,0 +1,74 @@
+---
+title: Create Attachment
+description: Upload a new capture (image/file) onto a Twin from a workflow run and tag it with execution metadata.
+tag: stub
+---
+
+The **Create Attachment** node uploads a new `Attachment` onto a Twin using a URL, `data:` URL, raw bytes, or JSON-serializable payload, then enriches it with the same workflow execution metadata as `update_attachment` so the new attachment shows up under the captures section for the twin/environment and the workflow execution.
+
+## When to use it
+
+- A workflow generates a fresh image (annotated frame, model output, screenshot) that you want to persist as a *new* capture rather than overwriting an existing one.
+- You need an attachment that is discoverable under the environment **Captures** tab — the node automatically stamps `metadata.environment_uuid`.
+- You want the new attachment to appear in the workflow execution's captures list — `metadata.workflow_execution_uuid` is always set.
+
+## Supported file types
+
+The node is generic — any file type works:
+
+- **Images** — `data:image/png`, `data:image/jpeg`, `data:image/webp`, `image/gif`, `image/heic`, `image/heif`, plus `http(s)://` URLs to image files.
+- **Video** — `video/mp4`, `video/quicktime` (`.mov`), `video/webm`, `video/x-matroska` (`.mkv`), `video/x-msvideo` (`.avi`).
+- **Audio** — `audio/mpeg` (`.mp3`), `audio/wav`, `audio/ogg`, `audio/webm`.
+- **Text / documents** — `text/plain`, `text/csv`, `text/markdown`, `application/json`, `application/pdf`.
+- **Archives / 3D / binary** — `application/zip`, `model/gltf-binary` (`.glb`), `model/gltf+json` (`.gltf`), `application/octet-stream` (falls back to `.bin`).
+
+For `data:<mime>;base64,...` URLs the bytes are decoded inline; for `http(s)://...` URLs the bytes are fetched server-side regardless of `Content-Type`. The extension is auto-inferred from the MIME / URL path when the optional `name` input doesn't include one.
+
+## Inputs
+
+| Field | Required | Notes |
+| --- | --- | --- |
+| `twin_uuid` | no | UUID of the twin to attach the file to. Used to derive `environment_uuid` for the captures section. Optional — see anchor rules below. |
+| `asset_uuid` | no | UUID of the asset to attach the file to (catalog-level artifacts like generated thumbnails or reports about the asset itself). |
+| `environment_uuid` | no | UUID of the environment for environment-scoped captures (workflow-run artifacts that aren't about a specific twin). Defaults to the workflow's bound environment when neither twin nor asset is supplied. |
+| `source_url` (label: **Source**) | yes | `http(s)://...` URL, `data:<mime>;base64,...` data URL, raw bytes, OpenCV frame, or JSON-serializable `dict` / `list`. Any MIME type. |
+| `image_bytes` / `frame` | no | Implicit fallbacks — if `source_url` resolves to nothing but raw bytes (`data_source.image_bytes` for `twin_image` / `ip_camera`) or a live camera frame (`camera_frame.frame`) is available, the node uses it directly. No extra wiring needed. |
+| `name` | no | Optional file name. Extension auto-appended from MIME / URL when missing. Defaults to `workflow_capture_<timestamp>`. |
+| `capture_type` | no | Stored on `metadata.capture_type`. Defaults to `workflow_capture`. |
+| `prompt`, `result`, `detections` | no | Capture-time hints saved under `metadata.analysis`. The analysis-enrichment surface (`status` overrides, `error`, `model_name`, `model_uuid`, annotated frames) lives on `update_attachment` so the two nodes have non-overlapping responsibilities. `analysis.status` is always `completed` on create — downstream `update_attachment` overwrites it once async analysis finishes. |
+| `metadata` | no | Extra dict merged into attachment metadata. Reserved keys (`workflow_*`, `environment_uuid`, `capture_type`, `analysis`) are never overridable. |
+
+When `source_url` resolves to a `dict` or `list` (for example `call_model.model_result`, a detections array, or a telemetry row), the node JSON-encodes it (`json.dumps(..., indent=2, default=str)`) and stores it as a `.json` attachment — no explicit serialize step required.
+
+### Anchor rules
+
+Every attachment must belong to *something* so it has an ACL parent and a discoverable UI surface. The node accepts any one (or more) of `twin_uuid`, `asset_uuid`, `environment_uuid`. If none of those is supplied, the node falls back to the workflow's bound environment (when set). A workflow that is bound to neither an environment nor any of these three inputs will fail with a clear error rather than silently producing an orphan attachment.
+
+Discoverability per anchor:
+
+- `twin_uuid` → twin Captures tab + environment Captures tab (via auto-stamped `metadata.environment_uuid`) + workflow run captures.
+- `asset_uuid` → asset attachments + workflow run captures.
+- `environment_uuid` → environment Captures tab + workflow run captures.
+- workflow-only (workspace anchor via the workflow's workspace) → workflow run captures only.
+
+## Chaining with `update_attachment`
+
+`create_attachment.attachment_uuid` is designed to feed straight into `update_attachment.attachment_uuid`. The `analysis` blocks merge — `create_attachment` seeds the initial values (status, prompt, model_*) and `update_attachment` overlays additional results (`result`, `detections`, `annotated_image_url`) without disturbing top-level keys like `capture_type` or `environment_uuid`. Typical chain:
+
+```
+trigger → create_attachment → call_model → update_attachment
+                                    ↑                 ↑
+                       (analyzes the new file)   (writes detections,
+                                                  annotated frame back
+                                                  onto the same attachment)
+```
+
+## Outputs
+
+- `attachment_uuid` — UUID of the newly created attachment
+- `metadata` — final attachment metadata after enrichment
+- `created` — boolean success flag
+
+## Related
+
+- [`update_attachment`](/use-cyberwave/workflows/overview) — enrich an *existing* attachment instead of creating a new one.

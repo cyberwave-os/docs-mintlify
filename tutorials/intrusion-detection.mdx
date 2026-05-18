@@ -48,7 +48,7 @@ WebRTC stream the operator sees is privacy-preserving by construction
 1. **Create a workflow** scoped to the camera's environment, with
    `Run on edge` enabled.
 2. **Add the trigger**: drag a `Camera Frame` node from the
-   **Sources & Triggers** group, set `twin_uuid` to the camera twin.
+   **Triggers** group, set `twin_uuid` to the camera twin.
 3. **Add detection**: drag a `Call Model` node, pick `yolov8n`, set
    `target_classes` to `["person"]`. Wire `camera_frame → call_model`.
 4. **Add privacy**: drag an `Anonymize` node, set `mode` to
@@ -69,14 +69,11 @@ WebRTC stream the operator sees is privacy-preserving by construction
    alert, 30s for a "left unattended" scenario). Set `cooldown_s`
    to your alert review cadence (30–120s is typical). Wire
    `spatial_filter → timed_condition`.
-7. **Configure the alert** on the `Call Model` node's `emit_event`
-   parameters: set `event_type` (e.g. `intrusion`), `severity`
-   (`warning`), and leave `enabled=true`. The edge worker emits the
-   alert directly on the dwell-fired frame using these settings —
-   wiring an explicit `Send Alert` node downstream of
-   `timed_condition` in the same `camera_frame` workflow is harmless
-   but ignored by the edge codegen (the edge worker bypasses the
-   cloud runner for per-frame triggers).
+7. **Add the alert**: drag a `Send Alert` node downstream of
+   `timed_condition`. Set `name` (e.g. `Intrusion`), `alert_type`
+   (e.g. `intrusion`), `severity` (`warning`), and leave `category`
+   on `business`. The edge worker compiles this into a
+   `cw.publish_alert(...)` call wired to the dwell-fired frame.
 8. **Activate** the workflow. The edge runtime will pull the
    generated worker (`wf_<uuid8>.py`) on its next sync, and the
    polygon will appear as a read-only overlay on the twin's WebRTC

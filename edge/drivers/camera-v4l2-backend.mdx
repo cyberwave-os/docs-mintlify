@@ -1,0 +1,33 @@
+---
+title: "Camera Driver: V4L2 Backend Requirement"
+description: "Why the Linux camera-driver container ships with apt python3-opencv instead of the opencv-python wheel, and what to do if you hit a 5 fps YUYV stream."
+---
+
+<Warning>
+**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
+</Warning>
+
+The `cyberwaveos/camera-driver` image installs OpenCV via Debian's `python3-opencv` package, not the `opencv-python` PyPI wheel. The Debian package is built with the native V4L2 backend (`V4L/V4L2: YES` in `cv2.getBuildInformation()`); the manylinux PyPI wheel is not.
+
+Without V4L2, `cv2.VideoCapture("/dev/video0")` routes through FFmpeg's libavformat V4L2 demuxer. There `cap.set(CAP_PROP_FOURCC, MJPG)` is silently ignored, so the camera falls back to its kernel default — typically YUYV 1920×1080 at 5 fps over USB 2.0. The stream looks "up" but pushes ~58 MB/s of raw frames and blows every downstream worker's frame budget.
+
+## Self-test
+
+`CV2VideoTrack.__init__` calls `cv2.getBuildInformation()` on Linux startup and raises `RuntimeError` if the `V4L/V4L2: YES` row is missing. The same assertion runs at Docker build time so a future packaging accident fails CI rather than production.
+
+Set `CYBERWAVE_CAMERA_SKIP_V4L2_CHECK=1` to bypass the SDK check intentionally.
+
+## Strict geometry
+
+Set `CYBERWAVE_CAMERA_STRICT_GEOMETRY=1` to escalate a resolution mismatch (e.g. requested VGA, got 1080p) from a `WARNING` to a `RuntimeError`. Off by default because some cameras legitimately round to the nearest supported mode.
+
+## Platform support
+
+| Scenario | Path |
+| --- | --- |
+| Linux edge (Pi, x86) | `cyberwaveos/camera-driver` |
+| macOS native | `pip install cyberwave[camera]` (uses AVFoundation) |
+| Windows native | `pip install cyberwave[camera]` (uses MSMF / DSHOW) |
+| Docker on macOS | Not supported — Docker Desktop's LinuxKit VM does not expose host USB devices to containers. |
+
+See the public README at [`cyberwave-edge-camera-driver`](https://github.com/cyberwave-os/cyberwave-edge-camera-driver) for the full configuration matrix.

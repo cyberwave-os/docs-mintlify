@@ -138,6 +138,72 @@ Each sensor entry can include:
 
 ---
 
+## Pairing a twin with physical hardware
+
+<Warning>
+  **STUB SECTION:** This section will be expanded with screenshots and a deeper troubleshooting guide in a future update.
+</Warning>
+
+A twin is just a model until it is paired with a physical device. Cyberwave supports two pairing paths depending on where the driver runs.
+
+<CardGroup cols={2}>
+  <Card title="Edge-device pairing (CLI)" icon="terminal">
+    Run `cyberwave edge install` on the host that is physically wired to your hardware (Raspberry Pi, Jetson, industrial PC, laptop). The CLI authenticates, downloads the matching driver, and starts streaming.
+  </Card>
+  <Card title="Mobile pairing (QR code)" icon="qrcode">
+    For hardware that runs through an Android phone tethered to a controller — e.g. a DJI drone with the DJI RC2 — open the twin page, click **Pair mobile device**, and scan the QR with the phone's camera.
+  </Card>
+</CardGroup>
+
+### Path A — SSH into your edge device and run the CLI
+
+Use this when the driver runs on a Linux host that is wired to your hardware.
+
+1. Provision the edge host. Follow the platform-specific guide for the box you have:
+   - [Raspberry Pi setup](/edge/raspberry-pi) — flash the Cyberwave OS image, onboard via the captive Wi-Fi portal, SSH in.
+   - [Hardware overview](/hardware/index) — landing page with featured platforms (SO101, UGV Beast, Unitree Go2, UR7e, …).
+   - [Other hardware (Linux + custom drivers)](/hardware/other-hardware/get-started) — generic flow for any Linux edge host.
+2. SSH into the edge host and run `cyberwave edge install`. The CLI prompts for the twin you want to pair (or pass `--twin-uuid <uuid>` non-interactively), pulls the right driver from the catalog, and writes a local `.env` so subsequent restarts come up automatically.
+3. Start streaming with `cyberwave edge start`. The driver registers with the cloud over MQTT and the twin's edge-device card on the twin page flips to **Connected**.
+
+For platform-specific quick starts, jump straight to the relevant guide:
+
+<CardGroup cols={2}>
+  <Card title="Raspberry Pi" icon="microchip" href="/edge/raspberry-pi">
+    Pre-built SD card image with SSH, Docker, and Wi-Fi onboarding ready to go.
+  </Card>
+  <Card title="SO101 arms" icon="hand" href="/hardware/so101/get-started">
+    USB-tethered 6-DOF manipulators for teleop and imitation learning.
+  </Card>
+  <Card title="UGV Beast" icon="truck-monster" href="/hardware/ugv/get-started">
+    Tracked rover, Pi + ESP32 dual-controller, ROS 2 stack.
+  </Card>
+  <Card title="Unitree Go2" icon="dog" href="/hardware/go2/get-started">
+    4D LiDAR quadruped with autonomous navigation.
+  </Card>
+  <Card title="Other hardware" icon="puzzle-piece" href="/hardware/other-hardware/get-started">
+    Generic flow for any device with an API, serial, or network interface.
+  </Card>
+  <Card title="All hardware guides" icon="book-open" href="/hardware/index">
+    Browse the full catalog of supported devices and platform-specific guides.
+  </Card>
+</CardGroup>
+
+### Path B — Pair from the twin page with a QR code
+
+Use this when the driver runs on an Android phone tethered to a controller — currently the **DJI Mini 4 Pro** via the DJI RC2 / RC-N2.
+
+1. On the twin page, open the **Edge device** card and click **Pair mobile device**.
+2. The dialog mints a fresh, workspace-scoped API token (so a screenshotted QR loses its key on the next dialog open) and renders a QR that encodes the API token, the twin slug, and the backend URL.
+3. Open the Android phone's stock camera and aim at the QR. The verified Android App Link hands the URL straight to the **Cyberwave Edge for DJI** app, which writes the credentials into encrypted storage and starts streaming. If the app isn't installed yet, the camera opens an install page that points at the latest APK.
+4. The credentials never reach the Cyberwave servers — the QR carries them in the URL fragment, which browsers do not transmit. There is nothing to copy or paste manually.
+
+<Info>
+  The **Pair mobile device** button only appears for twins whose asset declares an Android driver (`metadata.drivers.android`). Twins that run through `cyberwave edge install` on a Linux host show only the CLI affordance.
+</Info>
+
+---
+
 ## Ready to Get Started?
 
 Creating your first digital twin is easy with Cyberwave. Follow our guides to set up your robot and start simulating.

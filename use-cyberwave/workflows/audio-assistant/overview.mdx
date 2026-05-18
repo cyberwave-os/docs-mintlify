@@ -1,0 +1,96 @@
+---
+title: "Audio Assistant"
+description: "VAD-powered speech segmentation and acoustic event detection for audio pipelines."
+icon: "volume-high"
+stub: true
+---
+
+The **Audio Assistant** node 🔊 sits between an [Audio Track](/use-cyberwave/workflows/audio-track/overview) trigger and downstream STT/model nodes. It uses **Silero VAD** to intelligently segment continuous audio streams into clean speech utterances before triggering the next pipeline stage.
+
+## Pipeline Position
+
+```
+Audio Track Trigger → Audio Assistant → Call Model (Whisper/STT)
+```
+
+The Audio Track trigger fires on every raw PCM chunk from a twin's microphone. Without the Audio Assistant, every chunk — including silence and noise — hits the STT API. The Audio Assistant filters and segments the stream so only meaningful speech reaches downstream models.
+
+## Modalities
+
+### 🔊 Voice Assistant (VA) — Voice Activity Detection
+
+Uses Silero VAD to detect speech start/end in continuous audio streams. Four pre-configured profiles:
+
+| Sub-Modality | Icon | Use Case |
+|---|---|---|
+| **Batch (The Librarian)** | 📖 | Offline file segmentation for STT. Groups utterances into ~28s chunks for Whisper's 30s window. |
+| **Streaming (The Butler)** | 🎬 | Real-time command endpointing. Low latency, rejects background noise. |
+| **Dictation (The Secretary)** | 🖋️ | Long-form continuous speech. Tolerates pauses for thinking. |
+| **Custom** | ⚙️ | Full manual control over all Silero VAD parameters. |
+
+### 🚨 Sound Security Guard (SSG) — Acoustic Event Detection
+
+Skeleton for future acoustic event classification using Large-Scale Pretrained Audio Neural Networks (PANNs).
+
+| Sub-Modality | Icon | Use Case |
+|---|---|---|
+| **Glass Break / Falling Objects** | 💥 | Detect glass shattering and heavy impacts. |
+| **Constant Alarm (Siren)** | 🚨 | Detect sustained alarm tones and sirens. |
+| **"Help!" / Screaming** | 🆘 | Detect human distress calls and screams. |
+| **Custom** | ⚙️ | Configure custom acoustic event detection. |
+
+<Warning>
+SSG mode is not yet implemented. Audio will be forwarded unchanged. Runtime will use Large-Scale Pretrained Audio Neural Networks in a future release.
+</Warning>
+
+## Input / Output Format
+
+| Direction | Key | Type | Description |
+|---|---|---|---|
+| **Input** | `audio` | AUDIO | Accepts PCM S16LE int16 (zero-copy), float32, WAV bytes, or raw PCM bytes. Automatically adapted to int16 @ 16 kHz mono. |
+| **Output** | `audio` | AUDIO | Extracted speech as PCM S16LE int16 numpy array. Mono, 16 kHz. Only emitted when a complete speech segment is detected (speech end). |
+| **Output** | `speech_probability` | NUMBER | Raw Silero VAD confidence (Python float, 0.0-1.0). Emitted on **every chunk** — acts as a continuous logic gate / trigger signal. |
+| **Output** | `is_speaking` | BOOLEAN | True while speech is active. Emitted on every chunk. |
+
+### Two output modes
+
+The Audio Assistant emits outputs on **every incoming audio chunk**, but the content differs depending on state:
+
+**While accumulating speech** (no complete segment yet):
+
+```json
+{ "speech_probability": 0.87, "is_speaking": true, "sample_rate_hz": 16000, "channels": 1 }
+```
+
+**When speech ends** (complete segment extracted):
+
+```json
+{
+  "audio": "<numpy int16 array>",
+  "speech_probability": 0.92,
+  "is_speaking": false,
+  "sample_rate_hz": 16000,
+  "channels": 1,
+  "start_timestamp_sec": 1.2,
+  "end_timestamp_sec": 3.8
+}
+```
+
+The `speech_probability` output is useful for:
+- Downstream logic gates that need to react before the full segment is ready
+- UI visualizations (waveform activity indicators)
+- Custom nodes that need the VAD trigger signal as a float
+
+See [Audio in Workflows](/use-cyberwave/workflows/audio-in-workflows) for the full audio format specification.
+
+## Execution Target
+
+**Edge-only.** VAD requires stateful buffering of a continuous audio stream with sub-100ms latency. This cannot run in the cloud workflow runner.
+
+## Quick Start
+
+1. Add an **Audio Track** trigger node connected to a twin with a microphone
+2. Add an **Audio Assistant** node downstream
+3. Select **Voice Assistant** → **Streaming (The Butler)** for real-time command detection
+4. Connect to a **Call Model** node with Whisper/STT model
+5. Activate the workflow

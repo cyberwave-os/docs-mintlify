@@ -1,0 +1,97 @@
+---
+title: "DJI Mini"
+sidebarTitle: "DJI Mini"
+description: "Connect your DJI Mini 3 or Mini 4 Pro to Cyberwave via a tethered Android device"
+icon: "drone"
+stub: true
+---
+
+## Goals
+
+This guide walks you through connecting a **DJI Mini 3** or **DJI Mini 4 Pro** to its digital twin on Cyberwave. By the end, you will have:
+
+- A DJI Mini drone paired to its Cyberwave digital twin
+- The **Cyberwave Edge for DJI** Android app installed on the phone tethered to your DJI RC
+- Live video + telemetry streaming from the aircraft into your environment
+
+<Info>
+The DJI Mini family has no desktop/onboard SDK, so the edge driver runs as an **Android app on the phone tethered to the DJI RC** (RC 2 / RC-N2). The phone is the edge device — there is no Raspberry Pi / Jetson involved.
+</Info>
+
+---
+
+## What You'll Need
+
+- A **DJI Mini 3** or **DJI Mini 4 Pro**
+- A **DJI RC 2** or **RC-N2** with a compatible **Android phone**
+- The USB-C cable that came with your RC
+- A Cyberwave account
+
+---
+
+## Phase 1: Configure Cyberwave Environment
+
+### Step 1: Create an Environment
+
+An [environment](/get-started/key-concepts#environments) is a 3D virtual space that mirrors your real-world setup.
+
+1. Go to the Cyberwave dashboard and click **New Environment**.
+2. Give your environment a **name** and **description**.
+
+### Step 2: Add the DJI Mini Digital Twin
+
+1. Inside your environment, click **Add from Catalog** in the left panel.
+2. Search for **DJI Mini 3** or **DJI Mini 4 Pro**.
+3. Add the digital twin to your environment.
+
+---
+
+## Phase 2: Pair the Mobile Device
+
+Unlike PC-based drivers, the DJI Mini driver ships as an Android app and is paired via a one-shot QR code from the twin editor.
+
+### Step 1: Generate the Pairing QR
+
+1. Open your DJI Mini twin in the environment.
+2. Switch to the **Live** tab.
+3. Click **Pair mobile device**.
+
+A dialog opens showing a QR code. The QR encodes a fresh API key scoped to this workspace plus the twin's slug, so each scan provisions exactly one device against exactly one twin.
+
+<Warning>
+Anyone who scans the QR can stream as you to this twin. Keep the dialog open only while you're aiming the phone at it, and close it when you're done — the next open mints a fresh key.
+</Warning>
+
+### Step 2: Scan with the Android Device
+
+**Option A (recommended):** Open the **Cyberwave Edge for DJI** app on the phone. On the pairing screen, tap **Scan QR code** to open the built-in scanner and point it at the QR code. The app reads and applies the pairing credentials directly — no app-switching needed.
+
+**Option B (fallback):** Point the phone's stock camera (or Google Lens) at the QR. The phone will offer to open the link in **Cyberwave Edge for DJI** via the verified App Link.
+
+If the app isn't installed yet, the link opens the install page — install the app, then use **Option A** to scan the QR from inside the app.
+
+<Tip>
+The pairing payload lives in the URL fragment, which browsers and CDNs never see. Credentials never hit a server log.
+</Tip>
+
+### Step 3: Connect the Phone to the DJI RC
+
+1. Connect the Android phone to the **DJI RC** with the dedicated USB-C cable.
+2. **Power on** the RC and the drone.
+3. Open **Cyberwave Edge for DJI** on the phone — it auto-registers with the MSDK and connects to the aircraft.
+
+<Check>
+Your DJI Mini is now paired with its digital twin. Live video and telemetry should appear in the environment within a few seconds of takeoff.
+</Check>
+
+---
+
+## Next Steps
+
+- Drive the drone from a [workflow](/use-cyberwave/workflows) for inspection, mapping, or scripted missions.
+- Send commands programmatically via the [Cyberwave Python SDK](/sdks/python).
+- Open the **Replay** panel to scrub through recorded flights — recording is enabled by default for paired devices.
+
+<Info>
+Continuous stick commands (`move_forward`, `ascend`, …) are intentionally not driven over MQTT — the physical RC stays in charge of the sticks. The Cyberwave driver handles discrete actions (`takeoff`, `land`, `return_to_home`, `set_home_here`, compass calibration, reboot, emergency stop).
+</Info>

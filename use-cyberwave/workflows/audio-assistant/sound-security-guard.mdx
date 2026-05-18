@@ -1,0 +1,42 @@
+---
+title: "Sound Security Guard (SSG)"
+description: "Acoustic event detection for security and safety monitoring."
+icon: "siren-on"
+stub: true
+---
+
+The **Sound Security Guard** (SSG) modality 🚨 provides acoustic event detection for security and safety monitoring scenarios.
+
+<Warning>
+SSG is a skeleton implementation. Runtime logic is not yet available. Audio will be forwarded unchanged when SSG mode is selected.
+</Warning>
+
+## Planned Architecture
+
+SSG will use **Large-Scale Pretrained Audio Neural Networks** (PANNs / AudioSet-trained models) for acoustic event classification. These models are trained on the AudioSet ontology covering 527 sound event classes.
+
+## Sub-Modalities
+
+| Sub-Modality | Icon | Target Events |
+|---|---|---|
+| **Glass Break / Falling Objects** | 💥 | Glass shattering, heavy impacts, falling object sounds |
+| **Constant Alarm (Siren)** | 🚨 | Sustained alarm tones, sirens, emergency signals |
+| **"Help!" / Screaming** | 🆘 | Human distress calls, screams, cries for help |
+| **Custom** | ⚙️ | User-configured acoustic event classes |
+
+## Outputs (Skeleton)
+
+| Output | Type | Description |
+|---|---|---|
+| `event_type` | STRING | Detected event class (e.g. `glass_break`, `siren`, `scream`) |
+| `event_confidence` | NUMBER | Classification confidence [0.0, 1.0] |
+| `event_audio_segment` | AUDIO | Audio segment that triggered the detection |
+| `event_timestamp_sec` | NUMBER | When the event was detected |
+
+## Future Implementation
+
+The SSG runtime will:
+1. Load a pretrained PANN model for the selected event class
+2. Process audio chunks in sliding windows
+3. Classify audio events against the target class
+4. Fire downstream nodes when confidence exceeds the configured threshold

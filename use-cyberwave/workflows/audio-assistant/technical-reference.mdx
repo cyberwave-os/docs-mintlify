@@ -1,0 +1,99 @@
+---
+title: "Technical Reference"
+description: "Complete output schema, input format conversion, and architecture details."
+icon: "book"
+stub: true
+---
+
+## Node Inputs
+
+The Audio Assistant consumes outputs from the upstream Audio Track trigger:
+
+| Input | Type | Required | Source |
+|---|---|---|---|
+| `audio` | AUDIO | Yes | Audio Track `audio` output (numpy PCM) |
+| `audio_bytes` | AUDIO | No | Audio Track `audio_bytes` output (WAV bytes) |
+| `sample_rate_hz` | NUMBER | Yes | Audio Track `sample_rate_hz` output |
+| `channels` | NUMBER | No | Audio Track `channels` output (default: 1) |
+| `metadata` | OBJECT | No | Audio Track `metadata` output (wire metadata passthrough) |
+
+## VA Mode Outputs
+
+| Output | Type | Description |
+|---|---|---|
+| `speech_audio_float32` | OBJECT | numpy float32 array normalized [-1.0, 1.0]. Direct input for local Whisper/PyTorch STT. |
+| `speech_audio_int16` | OBJECT | numpy int16 PCM array. |
+| `speech_pcm_bytes` | AUDIO | int16 as raw `.tobytes()`. For WebSocket streaming or raw PCM consumers. |
+| `speech_wav_bytes` | AUDIO | PCM wrapped in RIFF/WAV header. For external APIs (OpenAI, Google, Deepgram). |
+| `speech_probability` | NUMBER | Raw confidence [0.0, 1.0] from Silero for current frame. |
+| `start_timestamp_sec` | NUMBER | When user started speaking (`start_index / sample_rate`). |
+| `end_timestamp_sec` | NUMBER | When user stopped speaking (`end_index / sample_rate`). |
+| `utterance_duration_sec` | NUMBER | Duration of extracted speech segment. |
+| `is_speaking` | BOOLEAN | State flag: True while user is talking. |
+| `sample_rate_hz` | NUMBER | Sample rate used for processing (passthrough from upstream). |
+| `vad_timestamps` | OBJECT | Batch mode only: full list of speech segments. |
+| `metadata` | OBJECT | Passthrough of upstream wire metadata. |
+
+## Input Format Conversion
+
+```python
+# int16 PCM numpy array → float32 normalized
+audio_float32 = numpy_audio.astype(np.float32) / 32768.0
+
+# Raw bytes → numpy → float32
+audio_np = np.frombuffer(raw_bytes, dtype=np.int16)
+audio_float32 = audio_np.astype(np.float32) / 32768.0
+
+# float32 → PyTorch tensor (for Silero VAD)
+audio_tensor = torch.from_numpy(audio_float32)
+```
+
+## WAV Byte Generation
+
+```python
+import io, wave
+
+def create_wav_bytes(pcm_int16_array, sample_rate=16000):
+    wav_io = io.BytesIO()
+    with wave.open(wav_io, 'wb') as wav_file:
+        wav_file.setnchannels(1)
+        wav_file.setsampwidth(2)
+        wav_file.setframerate(sample_rate)
+        wav_file.writeframes(pcm_int16_array.tobytes())
+    return wav_io.getvalue()
+```
+
+## Sample Rate Handling
+
+| Source Rate | Silero Support | Action |
+|---|---|---|
+| 16000 Hz | Native | Direct processing |
+| 8000 Hz | Native | Direct processing |
+| 32000 Hz | Auto-downsample | Resampled to 16 kHz |
+| 48000 Hz | Auto-downsample | Resampled to 16 kHz |
+
+Chunk sizes must match sample rate:
+- 16 kHz: 512 samples = 32 ms (also valid: 768, 1024, 1536)
+- 8 kHz: 256 samples = 32 ms
+
+## Ring Buffer Architecture
+
+The `AudioStreamProcessor` maintains a `float32` ring buffer alongside the `VADIterator`:
+
+1. Each incoming chunk is appended to the buffer
+2. `VADIterator` returns start/end sample indices relative to the buffer
+3. On `{'end': index}`: slice buffer, extract speech, reset state
+4. Post-end audio is preserved for the next cycle
+5. Memory leak prevention: buffer cleared after 5s of silence
+
+## Stereo Audio Handling
+
+If the upstream Audio Track provides multi-channel audio (`channels > 1`), the Audio Assistant downmixes to mono before feeding Silero VAD. The original channel count is preserved in the metadata passthrough.
+
+## Edge Cases
+
+- **Empty chunks**: Skipped (guard on `sample_count < 1`)
+- **Utterance > 30s (batch)**: `max_speech_duration_s=28.0` forces split before Whisper's window
+- **Extended silence**: Buffer cleared after 5s to prevent memory leak
+- **Noise bursts**: Filtered by `min_speech_duration_ms` parameter
+- **SSG mode selected**: Logs warning, forwards audio unchanged

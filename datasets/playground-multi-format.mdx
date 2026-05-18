@@ -1,13 +1,31 @@
 ---
-title: Multi-format dataset playground
-description: Stub — multi-format dataset playground (LeRobot, Cyberwave OpenVLA, future RLDS).
+title: "Multi-format Dataset Playground"
+description: "Unified viewer for robot datasets across LeRobot, Cyberwave OpenVLA, RLDS, and other robotics formats."
+stub: true
 ---
 
-# Multi-format dataset playground
+<Info>
+**Robot datasets first.** The multi-format playground is being built specifically for robot manipulation and navigation datasets. Image, video, audio, and generic multimodal dataset formats are not in scope for the initial release.
+</Info>
 
-**stub** — See the Cyberwave codebase:
+## Overview
+
+The multi-format playground extends the standard Dataset Playground with support for additional robot dataset formats beyond LeRobot, providing a unified viewer regardless of the original source format.
+
+### Supported formats (current & planned)
+
+| Format | Status |
+|---|:---:|
+| LeRobot v3 | ✓ Available |
+| LeRobot v2.1 | ✓ Available |
+| Cyberwave OpenVLA | ✓ Available |
+| RLDS / TF-Record | 🔜 Coming soon |
+| HDF5 (Robomimic / ACT) | 🔜 Coming soon |
+| Zarr (Diffusion Policy) | 🔜 Coming soon |
+| GR00T | 🔜 Coming soon |
+| Image / video / CV datasets | — Not in scope for initial release |
+
+### Implementation reference
 
 - Backend: `cyberwave-backend/src/lib/data/dataset/manifest/` and `section_info/`
 - Frontend: `cyberwave-frontend/components/datasets/playgrounds/`
-
-Human curation pending.

@@ -70,8 +70,25 @@ so the workflow editor accepts both `annotate → anonymize` and
 | `target_classes` | `string[]` | `["person"]` | Class labels to anonymise. Empty list is a no-op. |
 | `mode` | `string` | `"pixelate"` | One of `pixelate`, `blur`, `redact`, `bbox`. |
 | `pixel_size` | `int?` | adaptive | Pixel block edge length in pixels. Omit to let the helper choose based on the bounding box size. |
+| `fallback` | `string` | `"black"` | Edge-only. What the worker publishes when no detection matches `target_classes`. One of `black`, `raw`, `hold_last`. See [On Empty Detections fallback](#on-empty-detections-fallback) below. |
 
 Internally this maps onto `cyberwave.vision.blank_persons(frame, results.detections, labels=target_classes, mode=mode, pixel_size=pixel_size)`. We use `blank_persons` rather than `anonymize_frame` so pose-model keypoints don't get unexpectedly overlaid on top of the mosaic — the UI labels this node "Anonymize" and users don't expect skeleton lines to appear. If you want both anonymisation *and* a skeleton overlay, call `anonymize_frame` from a hand-written worker.
+
+#### On Empty Detections fallback
+
+<Info>
+  Stub — a human will curate the wording before publishing.
+</Info>
+
+`blank_persons` only obscures bbox regions for detections in `target_classes`, so on a frame where the model returns *no* matching detections (occluded subject, sub-threshold confidence, transient miss) the resulting `_frame` is byte-for-byte identical to the raw capture. Publishing that to `FILTERED_FRAME_CHANNEL` would silently leak un-anonymized pixels through the WebRTC stream, so the edge worker doesn't — instead, the per-node `fallback` parameter says what to publish on the empty-detection branch:
+
+| Value | What the worker publishes on misses | Use when |
+|---|---|---|
+| `black` (default) | A `np.zeros_like(frame)` black frame. **Privacy fail-closed.** | The default. Pick this whenever the camera scene contains anything sensitive that a model miss would reveal. |
+| `raw` | The raw camera frame, un-anonymized. **Operator opt-in privacy regression.** | The camera scene is non-sensitive on its own and "always show the live scene" is a product requirement (e.g. a kiosk that pixelates passersby but should never go black when the lobby is empty). |
+| `hold_last` | Nothing — the worker skips the publish. The camera driver's freshness window (`frame_filter.py`) holds the last filtered frame until staleness, then falls back to its own black on the driver side. | You want a brief "stick" on the last anonymized frame across a transient miss without giving up the privacy contract on extended ones. |
+
+When multiple anonymize nodes are chained on the same frame, the **most-restrictive `fallback` wins** (`black` > `hold_last` > `raw`) so a downstream `raw` can't silently weaken an upstream `black`. Resolution lives in `worker_codegen.py::_resolve_anonymize_fallback`.
 
 ### Annotate parameters
 
@@ -129,7 +146,7 @@ The published frame ends up on the worker container's `cyberwave.data.FILTERED_F
 1. The driver's `CYBERWAVE_METADATA_FRAME_FILTER_ENABLED` flag is `true` for the twin.
 2. The published frame matches the raw frame's `shape` and `dtype` (the helpers preserve both by default — don't downscale or convert colour space).
 
-If the worker stops publishing, or publishes a stale frame older than the driver's freshness window (~200 ms), the driver emits a black frame so privacy never silently regresses.
+If the worker stops publishing, or publishes a stale frame older than the driver's freshness window (~200 ms), the driver emits a black frame so privacy never silently regresses. The anonymize node's [`fallback` parameter](#on-empty-detections-fallback) decides what the worker emits *before* the driver's freshness check kicks in (the worker-side gate fires every frame; the driver-side gate fires only when the worker stops publishing).
 
 See the [Frame substitution driver page](../drivers/frame-filters) for the substitution mechanics on the driver side, and the [Edge Workers overview](./overview) for the worker container lifecycle.
 

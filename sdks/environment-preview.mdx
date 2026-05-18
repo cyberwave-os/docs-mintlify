@@ -1,12 +1,8 @@
 ---
-title: "Environment Preview API (Stub)"
+title: "Environment Preview API"
 description: "Generate static PNG previews for environments from the Python SDK."
 icon: "image"
 ---
-
-## Status
-
-This page is a **stub** and will be expanded with complete examples.
 
 ## Python SDK method
 
@@ -16,6 +12,20 @@ Use:
 
 This calls `POST /api/v1/environments/{uuid}/preview` and returns an attachment
 object containing the generated PNG metadata (including `file_url`).
+
+## Renderer modes
+
+- `renderer=auto` checks the browser-published Redis cache, then uses the
+  screenshot service, then falls back to a schematic preview.
+- `renderer=browser_cache` reads the latest browser-published preview frame and
+  returns a schematic fallback on cache miss.
+- `renderer=schematic` returns a deterministic top/isometric spatial preview
+  without WebGL.
+- `renderer=headless` uses only the screenshot service and preserves capture
+  failures.
+
+Preview metadata includes `renderer`, `renderer_status`, and fallback details
+when applicable.
 
 ## Minimal example
 
@@ -31,3 +41,5 @@ print(preview.file_url)
 
 - The endpoint requires write access to the target environment.
 - The image is generated using the screenshot service and stored as an attachment.
+- Render-path counters are recorded for Redis cache hit rate, renderer status,
+  fallback frequency, and preview latency.

@@ -61,7 +61,35 @@ The driver publishes standard ROS 2 topics that any ROS 2 node can consume indep
 | `CONFIG_PROFILE`                             | (auto)               | Config profile: `jazzy`, `humble`, or `jetson`  |
 | `CYBERWAVE_PERIODIC_MAP_UPLOAD_INTERVAL_SEC` | `120`                | Periodic map cloud sync interval (0 to disable) |
 | `GO2_USE_CPP_VOXEL_DECODER`                  | `true`               | Use C++ LiDAR decoder (faster)                  |
-| `GO2_OBSTACLE_AVOIDANCE`                     | `false`              | Enable onboard obstacle avoidance               |
+| `GO2_OBSTACLE_AVOIDANCE`                     | `true`               | Enable onboard obstacle avoidance (see below)   |
+| `CYBERWAVE_ENABLE_RECORDING`                 | _(see below)_        | Global recording toggle for video streams       |
+| `CYBERWAVE_ENABLE_RECORDING_PREVIEW`         | `false`              | Record preview streams (occupancy, costmaps)    |
+
+### Obstacle Avoidance
+
+When `GO2_OBSTACLE_AVOIDANCE=true` (the default), velocity commands are routed
+through the Go2's firmware obstacle avoidance pipeline instead of the standard
+Sport API. The firmware fuses ultrasonic and LiDAR sensors to detect obstacles
+and will override velocity commands to prevent collisions.
+
+On startup the driver sends `SwitchSet` and `UseRemoteCommandFromApi` to the
+robot so the firmware accepts velocity commands from the ROS 2 stack rather than
+only the physical remote controller.
+
+<Warning>
+Onboard obstacle avoidance operates independently from Nav2's path planner. The
+firmware may intervene — slowing down or stopping the robot — even when Nav2
+considers the path clear. This can cause Nav2 goals to take longer or be aborted
+if the firmware repeatedly blocks planned motion. If you need full control over
+obstacle handling through Nav2's costmaps and local planner, set
+`GO2_OBSTACLE_AVOIDANCE=false`.
+</Warning>
+
+To disable:
+
+```bash
+GO2_OBSTACLE_AVOIDANCE=false
+```
 
 ### Robot IP discovery
 
@@ -161,6 +189,77 @@ set the robot IP or fallback list, add them to `shared_env`:
 See [Drivers overview](/edge/drivers/overview) for the full metadata schema and
 [Writing compatible drivers](/edge/drivers/writing-compatible-drivers) for the
 `edge_configs` per-device pattern.
+
+## Stream Recording
+
+The Go2 driver streams video to the Cyberwave media service via WebRTC. Each
+stream can request server-side recording (producing MP4 artifacts for later
+replay).
+
+| Variable | Default | Applies to |
+| -------- | ------- | ---------- |
+| `CYBERWAVE_ENABLE_RECORDING` | — | All streams (global override) |
+| `CYBERWAVE_ENABLE_RECORDING_PREVIEW` | `false` | Preview streams only (occupancy grid, local/global costmaps) |
+
+**Default behavior** (no env vars set):
+
+- `camera_bridge` — records by default (`true`).
+- `occupancy_grid_bridge`, `local_costmap_bridge`, `global_costmap_bridge` — do **not** record by default.
+
+**Resolution order** per bridge:
+
+1. `CYBERWAVE_ENABLE_RECORDING` — if set, overrides everything.
+2. Per-bridge env var (e.g. `CYBERWAVE_ENABLE_RECORDING_PREVIEW`) — overrides the built-in default.
+3. Built-in default.
+
+```bash
+# Record everything including previews
+CYBERWAVE_ENABLE_RECORDING_PREVIEW=true
+
+# Disable all recording (e.g. for development)
+CYBERWAVE_ENABLE_RECORDING=false
+```
+
+<Info>
+Recording is handled by the media service SFU, not on the edge device. Enabling
+recording adds negligible load to the robot's hardware.
+</Info>
+
+## Jetson Performance Tuning
+
+Running the full Go2 stack on a Jetson Orin Nano (or similar constrained hardware) requires tuning runtime rates and
+encoder settings. Add these to your `.env` file or Edge Core `shared_env`:
+
+```bash
+# ── Runtime rates (overrides vs. defaults) ───────────────────────────
+GO2_STATE_PUBLISH_HZ=15          # default 10
+GO2_POINTCLOUD_MAX_POINTS=4000   # default 25000
+GO2_POINTCLOUD_STREAM_FPS=1      # default 5
+GO2_SCAN_ANGLE_INCREMENT=0.01745 # default 0.00872
+GO2_TRAV_COSTMAP_HZ=5            # default 10
+GO2_TRAV_COSTMAP_GLOBAL_HZ=0.5   # default 1
+GO2_LOCAL_COSTMAP_FPS=10         # default 5
+GO2_GLOBAL_COSTMAP_FPS=10        # default 2
+
+# ── Obstacle avoidance ──────────────────────────────────────────────
+# Disable if Nav2 handles obstacle avoidance to save CPU.
+GO2_OBSTACLE_AVOIDANCE=false     # default true
+
+# ── H.264 encoding ──────────────────────────────────────────────────
+# Jetson Orin Nano has NO hardware H.264 encoder (no NVENC).
+# Skip codec probing and constrain libx264 to a single thread so it
+# doesn't starve SLAM/Nav2. At 424x240@1fps ultrafast this uses <5%
+# of one core.
+CYBERWAVE_H264_ENCODER=libx264   # default auto
+CYBERWAVE_H264_PRESET=ultrafast  # default veryfast
+CYBERWAVE_H264_BITRATE_KBPS=800  # default 2500
+CYBERWAVE_H264_THREADS=1         # default 0 (unlimited)
+```
+
+<Info>
+These values are tuned for a Jetson Orin Nano running the full stack (driver + Nav2 + SLAM). If your board has more
+headroom (e.g. Orin NX) or less (e.g. other services running), you can adjust camera and pointcloud rates accordingly.
+</Info>
 
 ## NVIDIA Container Toolkit (Jetson / GPU)
 

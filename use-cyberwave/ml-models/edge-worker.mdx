@@ -48,12 +48,32 @@ The well-known runtimes mirror the loaders in the Cyberwave Python SDK's `cyberw
 | `tflite` | `.tflite` | TensorFlow Lite |
 | `torch` | `.pt` / `.pth` | TorchScript / raw PyTorch |
 | `tensorrt` | `.engine` / `.trt` | TensorRT engines (GPU image only) |
+| `whisper_cpp` | `.gguf` / `.bin` | Whisper.cpp speech-to-text on CPU edge devices |
 
 Custom values are accepted via the editor's "Other" entry — used today for framework-specific identifiers like `sam2`, `sam3`, and `depth_anything_v2` that don't have an SDK loader yet but still need to round-trip through the catalog.
 
 `GET /api/v1/mlmodels/edge-runtimes` returns the current well-known list (no auth required) so external tools can mirror the dropdown without hard-coding it.
 
 > stub: ONNX YOLO postprocessing applies per-class non-max suppression with a default IoU threshold of `0.7` so swapping `yolov8s.pt` for `yolov8s.onnx` produces the same number of boxes per object instead of a cluster of overlapping anchors. Override per-call via `model.predict(frame, iou=0.5)` (stricter) or `iou=1.0` (raw output, no suppression).
+
+> stub: NMS-free detectors (YOLO26's default one-to-one head, YOLOv10) emit `[max_det, 6] = [x1, y1, x2, y2, conf, class_id]`; the SDK's ONNX runtime detects this layout automatically and parses it without the anchor-decoding step. The `iou` knob is ignored on that path — suppression is folded into the model graph. End-to-end pose / segmentation exports are not decoded yet; re-export those tasks with `end2end=False` until the e2e pose branch lands.
+
+### YOLO ONNX catalog — *stub*
+
+The public catalog ships ONNX twins for the most common YOLO entries — Cyberwave hosts the exported weights at `https://static.cyberwave.com/ml_models/{name}.onnx` so edge nodes can fetch them with no Ultralytics CDN dependency. Roughly 2× faster on CPU than the `.pt` build:
+
+| Family | Sizes | Tasks |
+|---|---|---|
+| YOLOv8 | n, s | detect; plus pose (n only) |
+| YOLO26 | n, s, m, l, x | detect, pose |
+
+Pick `Edge Runtime: ONNX Runtime` in the model editor (or `metadata.edge_runtime = "onnxruntime"` via the API) when registering a private fine-tune that you've exported via `YOLO("…").export(format="onnx")`. The SDK's `OnnxRuntime` reads `names` and `kpt_shape` from the ONNX `custom_metadata_map`, so labelled detections and keypoints work out of the box.
+
+Segmentation, OBB, and classification ONNX exports are not yet supported by the SDK runtime — use the `.pt` (`ultralytics`) variants for those tasks.
+
+### Edge speech-to-text — *stub*
+
+Seeded Whisper.cpp STT models can run from `Audio Track -> Call Model` workflows on Raspberry Pi 4-class devices. The generated worker passes the audio chunk and seeded `download_url` into the local `whisper_cpp` runtime, so the first run downloads missing weights into the Cyberwave model cache. Downstream nodes can use `text`, `transcribed_text`, and `segments`.
 
 ### Model weights resolution — *stub*
 

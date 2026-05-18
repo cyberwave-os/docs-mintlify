@@ -81,6 +81,8 @@ Supported camera types:
 - **Standard cameras** (USB/CSI via OpenCV)
 - **Intel RealSense** (RGB + depth)
 
+The media service also exposes a twin-scoped MQTT command channel for media-control operations on active WebRTC streams. This lets edge drivers and teleoperation clients request media-service actions without changing the WebRTC signaling topics.
+
 See the [Python SDK video streaming docs](/sdks/python-sdk#video-streaming-webrtc) for details on setting up camera streams from edge devices.
 
 ---

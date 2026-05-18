@@ -1,0 +1,80 @@
+---
+title: "Voice Assistant (VA)"
+description: "Silero VAD sub-modalities for speech segmentation in audio pipelines."
+icon: "microphone"
+stub: true
+---
+
+The Voice Assistant modality uses **Silero VAD** (Voice Activity Detection) to segment continuous audio streams into clean speech utterances.
+
+## Architecture
+
+- **Streaming modes** (Butler, Secretary, Custom) use `VADIterator` for real-time endpointing with a stateful ring buffer
+- **Batch mode** (Librarian) uses `get_speech_timestamps` for offline file segmentation with smart chunk merging
+
+## Sub-Modalities
+
+### 📖 Batch — The Librarian
+
+Offline file segmentation for STT. Processes pre-recorded audio to produce clean, logically split chunks.
+
+| Parameter | Silero Name | Value | Rationale |
+|---|---|---|---|
+| Activation Threshold | `threshold` | 0.5 | Balanced for clean pre-recorded audio |
+| Deactivation Threshold | `neg_threshold` | 0.35 | Standard |
+| Min Silence Duration | `min_silence_duration_ms` | 500 | Split at natural pauses |
+| Speech Padding | `speech_pad_ms` | 30 | Capture initial consonants |
+| Min Speech Duration | `min_speech_duration_ms` | 250 | Ignore background pops |
+| Max Speech Duration | `max_speech_duration_s` | 28.0 | Whisper's 30s context window safety buffer |
+
+### 🎬 Streaming — The Butler
+
+Real-time command endpointing. Responsive, rejects background noise, cuts off quickly.
+
+| Parameter | Silero Name | Value | Rationale |
+|---|---|---|---|
+| Activation Threshold | `threshold` | 0.5 | Strict to reject background noise |
+| Deactivation Threshold | `neg_threshold` | 0.35 | Cut off quickly |
+| Min Silence Duration | `min_silence_duration_ms` | 550 | Catch full commands before executing |
+| Speech Padding | `speech_pad_ms` | 30 | Low latency |
+| Min Speech Duration | `min_speech_duration_ms` | 50 | Catch short commands ("Stop", "Play") |
+| Max Speech Duration | `max_speech_duration_s` | 60.0 | Safety ceiling for commands |
+
+### 🖋️ Dictation — The Secretary
+
+Long-form continuous speech. Tolerates pauses without ending the session.
+
+| Parameter | Silero Name | Value | Rationale |
+|---|---|---|---|
+| Activation Threshold | `threshold` | 0.45 | Forgiving for quiet mumbles |
+| Deactivation Threshold | `neg_threshold` | 0.3 | Don't cut off during thinking pauses |
+| Min Silence Duration | `min_silence_duration_ms` | 2000 | 2s pause tolerance |
+| Speech Padding | `speech_pad_ms` | 75 | Capture trailing voices |
+| Min Speech Duration | `min_speech_duration_ms` | 200 | Ignore throat clears |
+| Max Speech Duration | `max_speech_duration_s` | ∞ | No limit for dictation |
+
+### ⚙️ Custom
+
+All parameters exposed as editable inputs, pre-filled with Streaming (Butler) defaults. Override any value for your specific use case.
+
+## Sample Rate Constraints
+
+<Warning>
+Silero VAD natively supports **16 kHz** and **8 kHz** only. For higher sample rates (32 kHz, 48 kHz), the Audio Assistant automatically resamples to 16 kHz before processing. An informational alert is fired when resampling occurs.
+</Warning>
+
+**Sample rate precedence:**
+```
+Wire metadata (actual hardware) > Configured node parameter > Default (16000)
+```
+
+## Streaming VAD Processing Loop
+
+1. **Buffer** — Append incoming PCM chunks to a ring buffer
+2. **Evaluate** — Pass small chunks (512 samples at 16 kHz) to `VADIterator`
+3. **Start Trigger** — `{'start': index}` → User is speaking
+4. **End Trigger** — `{'end': index}` → User finished speaking
+5. **Extract** — Slice buffer from start to end index, produce outputs
+6. **Reset** — Clear processed buffer, reset VAD state, listen for next utterance
+
+Memory leak prevention: if silent for >5 seconds, the buffer is cleared and VAD state is reset.

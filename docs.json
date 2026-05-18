@@ -17,28 +17,28 @@
             "group": "Getting started",
             "pages": [
               "get-started/index",
-              "get-started/quickstart",
               "get-started/hello-robot",
               "get-started/try-real-robot"
             ]
           },
           {
-            "group": "Capabilities",
+            "group": "SDKs and Tools",
             "pages": [
-              "capabilities/manipulation",
-              "capabilities/locomotion",
-              "capabilities/perception",
-              "capabilities/simulation"
+              "sdks/python-sdk",
+              "sdks/claude-skill",
+              "sdks/mcp-server",
+              "sdks/cpp-sdk"
             ]
           },
           {
-            "group": "Robotic Hardware",
+            "group": "Robots introduction",
             "pages": [
               "hardware/index",
-              "hardware/so101/get-started",
               "hardware/ugv/get-started",
               "hardware/go2/get-started",
+              "hardware/dji-mini/index",
               "hardware/universal-robot-7/get-started",
+              "hardware/so101/get-started",
               "hardware/boston-dynamics/get-started",
               "hardware/other-hardware/get-started",
               "hardware/other-hardware/custom-hardware"
@@ -52,48 +52,16 @@
             ]
           },
           {
-            "group": "SDKs and Tools",
+            "group": "Capabilities",
             "pages": [
-              "sdks/python-sdk",
-              "sdks/claude-skill",
-              "sdks/mcp-server",
-              {
-                "group": "Cyberwave Edge",
-                "icon": "microchip",
-                "pages": [
-                  "edge/overview",
-                  "edge/bench",
-                  "edge/raspberry-pi",
-                  "edge/drivers/overview",
-                  "edge/drivers/writing-compatible-drivers",
-                  "edge/drivers/alerts",
-                  "edge/workers/overview",
-                  "edge/workers/filter-frame",
-                  {
-                    "group": "Edge Workers",
-                    "pages": [
-                      "edge/drivers/edge-workers",
-                      "edge/drivers/data-wire-format",
-                      "edge/drivers/data-record-replay",
-                      "edge/drivers/data-fusion",
-                      "edge/drivers/data-synchronized-hooks",
-                      "edge/drivers/multi-camera-detection-routing",
-                      "edge/drivers/multi-camera-driver-orchestration",
-                      "edge/drivers/camera-detection-overlays",
-                      "edge/drivers/frame-filters",
-                      "edge/drivers/security-pipeline"
-                    ]
-                  }
-                ]
-              },
-              "sdks/cloud-node",
-              "sdks/vla-cloud-node",
-              "sdks/zenoh-mqtt-bridge",
-              "sdks/cpp-sdk"
+              "capabilities/manipulation",
+              "capabilities/locomotion",
+              "capabilities/perception",
+              "capabilities/simulation"
             ]
           },
           {
-            "group": "Examples",
+            "group": "Tutorials",
             "pages": [
               "tutorials/edge-to-cloud-vlm",
               "tutorials/so101-natural-language-agent",
@@ -108,6 +76,12 @@
             "pages": [
               "tutorials/sandwich-robot-smolvla",
               "tutorials/cloth-folding-so101"
+            ]
+          },
+          {
+            "group": "Help & Support",
+            "pages": [
+              "support/index"
             ]
           }
         ]
@@ -129,29 +103,75 @@
               "use-cyberwave/setup-cyberwave",
               "use-cyberwave/catalog",
               "use-cyberwave/digital-twins",
-              "use-cyberwave/environment-templates",
-              "use-cyberwave/environment-editor",
-              "use-cyberwave/recording-replay",
-              "use-cyberwave/workflows",
-              "use-cyberwave/workflows/anonymize-image",
-              "use-cyberwave/workflows/spatial-filter",
-              "use-cyberwave/workflows/timed-condition",
-              "use-cyberwave/ml-models",
-              "use-cyberwave/ml-models/playground",
-              "use-cyberwave/ml-models/structured-actions",
-              "use-cyberwave/manifest",
-              "use-cyberwave/access-control",
-              "concepts/slug-system",
               {
-                "group": "Live Teleoperation",
-                "icon": "gamepad",
+                "group": "Environment Editor",
+                "icon": "pen-to-square",
                 "pages": [
-                  "use-cyberwave/teleoperation",
-                  "use-cyberwave/teleoperation-latency"
+                  "use-cyberwave/environment-editor/index",
+                  "use-cyberwave/environment-editor/environment-templates",
+                  "use-cyberwave/environment-editor/teleoperation",
+                  "use-cyberwave/environment-editor/replay"
+                ]
+              },
+              {
+                "group": "Workflows",
+                "pages": [
+                  "use-cyberwave/workflows",
+                  "use-cyberwave/workflows/audio-track/overview",
+                  "use-cyberwave/workflows/anonymize-image",
+                  "use-cyberwave/workflows/spatial-filter",
+                  "use-cyberwave/workflows/timed-condition",
+                  "use-cyberwave/workflows/reusing-chains"
+                ]
+              },
+              {
+                "group": "Models",
+                "pages": [
+                  "use-cyberwave/ml-models/index",
+                  "use-cyberwave/ml-models/playground",
+                  "use-cyberwave/ml-models/structured-actions",
+                  "use-cyberwave/ml-models/smolvla-training",
+                  "use-cyberwave/ml-models/openvla-oft-training",
+                  "use-cyberwave/ml-models/speech-to-text"
                 ]
               },
               "use-cyberwave/access-control",
+              "concepts/slug-system",
               "use-cyberwave/docker-registry"
+            ]
+          },
+          {
+            "group": "Cyberwave Edge",
+            "icon": "microchip",
+            "pages": [
+              "edge/overview",
+              "edge/bench",
+              "edge/raspberry-pi",
+              "edge/drivers/overview",
+              "edge/drivers/writing-compatible-drivers",
+              "edge/drivers/native-microphone-driver",
+              "edge/drivers/alerts",
+              "edge/workers/overview",
+              "edge/workers/filter-frame",
+              "sdks/cloud-node",
+              "sdks/vla-cloud-node",
+              "sdks/zenoh-mqtt-bridge",
+              {
+                "group": "Edge Workers",
+                "pages": [
+                  "edge/drivers/edge-workers",
+                  "edge/drivers/data-wire-format",
+                  "edge/drivers/data-record-replay",
+                  "edge/drivers/data-fusion",
+                  "edge/drivers/data-synchronized-hooks",
+                  "edge/drivers/multi-camera-detection-routing",
+                  "edge/drivers/multi-camera-driver-orchestration",
+                  "edge/drivers/camera-detection-overlays",
+                  "edge/drivers/camera-v4l2-backend",
+                  "edge/drivers/frame-filters",
+                  "edge/drivers/security-pipeline"
+                ]
+              }
             ]
           },
           {
@@ -182,6 +202,12 @@
             "group": "MQTT API",
             "pages": [
               "api-reference/mqtt/main"
+            ]
+          },
+          {
+            "group": "Protobuf",
+            "pages": [
+              "api-reference/protobuf/cyberwave-schemas"
             ]
           },
           {
@@ -278,7 +304,7 @@
       "anchors": [
         {
           "anchor": "Changelog",
-          "href": "/changelog",
+          "href": "https://docs.cyberwave.com/changelog",
           "icon": "clock-rotate-left"
         }
       ]
@@ -328,6 +354,46 @@
     {
       "source": "/use-cyberwave/workflows/presence-dwell",
       "destination": "/use-cyberwave/workflows/timed-condition"
+    },
+    {
+      "source": "/use-cyberwave/twin-presence-indicator",
+      "destination": "/use-cyberwave/environment-editor#twin-presence-indicator-live-mode"
+    },
+    {
+      "source": "/use-cyberwave/environment-templates",
+      "destination": "/use-cyberwave/environment-editor/environment-templates"
+    },
+    {
+      "source": "/use-cyberwave/recording-replay",
+      "destination": "/use-cyberwave/environment-editor/replay"
+    },
+    {
+      "source": "/use-cyberwave/teleoperation",
+      "destination": "/use-cyberwave/environment-editor/teleoperation"
+    },
+    {
+      "source": "/use-cyberwave/teleoperation-latency",
+      "destination": "/use-cyberwave/environment-editor/teleoperation"
+    },
+    {
+      "source": "/faqs",
+      "destination": "/support#faqs"
+    },
+    {
+      "source": "/troubleshooting",
+      "destination": "/support"
+    },
+    {
+      "source": "/get-started/quickstart",
+      "destination": "/get-started/hello-robot"
+    },
+    {
+      "source": "/create-skill/ml-models/speech-to-text",
+      "destination": "/use-cyberwave/ml-models/speech-to-text"
+    },
+    {
+      "source": "/hardware/microphone/native-driver",
+      "destination": "/edge/drivers/native-microphone-driver"
     }
   ]
 }
