@@ -1,0 +1,161 @@
+---
+title: "Native Microphone Driver"
+sidebarTitle: "Native Driver"
+description: "Set up the native Cyberwave microphone driver for WebRTC audio, MQTT start/stop control, and Zenoh audio worker hooks."
+icon: "microphone-lines"
+---
+
+import EarlyAccess from '/snippets/early-access.mdx';
+
+<EarlyAccess />
+
+<Warning>
+**STUB DOCUMENT:** This page captures the current native-driver contract and known edge cases. A human will expand it before publishing.
+</Warning>
+
+## What It Provides
+
+The native microphone driver runs on the edge device that has the microphone attached. It captures audio through `sounddevice` / PortAudio, sends a WebRTC audio stream to the twin, and publishes raw chunks to the local Zenoh data bus on `audio/default` by default.
+
+It also subscribes to:
+
+```text
+cyberwave/twin/{twin_uuid}/command
+```
+
+Use `{"command": "start_audio", "source_type": "tele"}` and `{"command": "stop_audio", "source_type": "tele"}` to start and stop recording for the active WebRTC stream. The driver also accepts `start_recording` and `stop_recording` as direct aliases on the same topic.
+
+When WebRTC is already connected, these commands publish minimal media-service commands on `cyberwave/twin/{twin_uuid}/webrtc-command` and keep the WebRTC connection alive. `CYBERWAVE_METADATA_AUTO_RECORDING_AUDIO=false` only disables startup recording; manual commands can still start recording when `CYBERWAVE_METADATA_ENABLE_RECORDING=true`.
+
+## Setup
+
+1. Create or select a microphone twin in your Cyberwave environment.
+2. Pair the edge device through Cyberwave Edge so the driver receives `CYBERWAVE_API_KEY` and `CYBERWAVE_TWIN_UUID`.
+3. Attach a USB or built-in microphone to the edge device.
+4. Start the driver with Docker or Edge Core. On Linux Docker hosts, pass the audio device into the container:
+
+```yaml
+devices:
+  - /dev/snd:/dev/snd
+group_add:
+  - audio
+```
+
+Some systems require `--privileged` for ALSA device access. Use the narrower `/dev/snd` mapping first.
+
+## Configuration
+
+| Variable | Default | Purpose |
+|---|---:|---|
+| `CYBERWAVE_METADATA_AUDIO_DEVICE` | `default` | Select an input by index, name fragment, or `default`. |
+| `CYBERWAVE_METADATA_ENABLE_AUDIO` | `true` | Enables WebRTC startup and reconnect. If `false`, no WebRTC audio or recording starts. Maps from `enable_audio` in the twin JSON. |
+| `CYBERWAVE_METADATA_ENABLE_RECORDING` | `true` | Enables recording commands. If `false`, `start_audio` / `stop_audio` recording commands are rejected, while WebRTC audio can still run. Maps from `enable_recording` in the twin JSON. |
+| `CYBERWAVE_METADATA_AUTO_RECORDING_AUDIO` | `false` | Starts recording with the initial WebRTC offer only when audio and recording are enabled. `start_audio` can still start recording later when this is `false`. Maps from `auto_recording_audio` in the twin JSON. |
+| `CYBERWAVE_METADATA_AUDIO_CHANNEL` | `audio/default` | Zenoh channel for raw audio chunks. |
+| `CYBERWAVE_METADATA_AUDIO_MIC_NAME` | `audio` | WebRTC sensor identifier. |
+| `CYBERWAVE_METADATA_AUDIO_SAMPLE_RATE` | OS default | Capture sample rate. |
+| `CYBERWAVE_METADATA_AUDIO_CHANNELS` | `1` | Capture channels; auto-detection can upgrade to stereo. |
+
+Twin JSON sensor parameters use the same controls:
+
+```json
+{
+  "parameters": {
+    "enable_audio": "true",
+    "enable_recording": "true",
+    "auto_recording_audio": "false"
+  }
+}
+```
+
+The driver sends recording commands with the smallest payload the media service needs:
+
+```json
+{ "command": "start_recording", "source_type": "edge", "sensor": "audio" }
+```
+
+```json
+{ "command": "stop_recording", "source_type": "edge", "sensor": "audio" }
+```
+
+The media service resolves the twin UUID from the MQTT topic and defaults the stream identity to `audio/live/default`.
+
+To run multiple microphones on one device, run multiple driver instances. Give each instance a different `CYBERWAVE_TWIN_UUID` and set `CYBERWAVE_METADATA_AUDIO_DEVICE` to the desired input.
+
+## Linux Audio Notes
+
+The driver image installs `libportaudio2`, which gives `sounddevice` access to PortAudio's ALSA backend. If the host routes audio through PulseAudio or PipeWire, also make the relevant Pulse/PipeWire socket and client libraries available to the container.
+
+The driver logs all input devices at startup and publishes selected-device metadata to the twin. Set `CYBERWAVE_LOG_LEVEL=DEBUG` to see raw environment values and the resolved microphone configuration.
+
+## macOS Notes
+
+Bare-metal macOS capture uses CoreAudio through `sounddevice`. The terminal or process launcher must have microphone permission in System Settings before the driver can capture audio.
+
+`run-local.sh` support is planned; until it exists, run the Python driver from the package environment with the same `CYBERWAVE_*` variables used by Docker.
+
+## Edge Cases
+
+- No audio devices at startup: the driver enumerates devices and fails configuration if none are available. Publishing a microphone sensor-failure alert before retrying with backoff is the expected runtime behavior.
+- Device disconnected mid-stream: the Linux/macOS device monitor detects add/remove events. The expected behavior is to stop WebRTC, publish a sensor-failure alert, and reconnect when the device returns.
+- Docker access: prefer `/dev/snd` plus the `audio` group; use privileged mode only when host audio permissions require it.
+- Cloud STT URL expiry: use signed URLs with enough TTL for queued workloads, or inline `audio_base64` for small files.
+- Large STT inputs: keep Whisper jobs below roughly `25 MB`; oversized inputs should fail with a clear validation error.
+
+## Dual Audio Streaming Paths
+
+<Warning>
+**STUB DOCUMENT:** This section captures the current dual-path contract. A human will expand it before publishing.
+</Warning>
+
+The driver streams captured audio on two independent, parallel paths:
+
+| Path | Output rate | Resampling | Metadata | Consumer |
+|------|-------------|-----------|----------|----------|
+| **WebRTC** (Opus) | 48 kHz (always) | Yes, if hardware ≠ 48 kHz | `stream_attributes.sample_rate` in MQTT offer | Frontend, media service |
+| **Zenoh** (raw PCM) | Hardware native | **Never** | `sample_rate_hz`, `channels`, `encoding`, `layout` in wire header | `@cw.on_audio` workers |
+
+### WebRTC path
+
+Audio is resampled to 48 kHz (the Opus codec's internal rate) before entering the WebRTC queue. The `stream_attributes` field in the MQTT `webrtc-offer` payload includes the actual `sample_rate` used, so the media service and frontend can verify compliance. The media service router uses standard mediasoup Opus negotiation — no custom validation is needed.
+
+### Zenoh path
+
+Raw PCM chunks are published at the hardware's native capture rate with **no resampling**. On the first publish, the Zenoh wire header carries metadata:
+
+```json
+{
+  "sample_rate_hz": 32000,
+  "channels": 1,
+  "encoding": "pcm_s16le",
+  "layout": "mono"
+}
+```
+
+`@cw.on_audio` workers receive this metadata so they can correctly interpret the raw audio bytes.
+
+### Parallelism
+
+The PortAudio callback places raw audio into a zero-copy swap buffer for Zenoh (O(1)) and queues resampled audio for WebRTC. Three threads run in true parallel: PortAudio capture, Zenoh publisher, and WebRTC streamer.
+
+### Twin metadata
+
+The driver publishes both rates to the twin metadata under `audio_device`:
+
+| Field | Description |
+|-------|-------------|
+| `capture_sample_rate` | Hardware native rate (e.g. 32000) |
+| `stream_sample_rate` | WebRTC output rate (48000 when resampling is on) |
+| `channels` | Channel count |
+| `layout` | `"mono"` or `"stereo"` |
+| `software_resampling` | Whether resampling is active |
+
+## Success Checks
+
+- `docker compose up` with a USB microphone streams audio to the microphone twin.
+- Frontend MQTT `start_audio` / `stop_audio` toggles recording while preserving an already-active WebRTC connection.
+- Zenoh `audio/default` chunks are consumable by an `on_audio` worker hook at the hardware's native sample rate.
+- Startup logs list available devices; `CYBERWAVE_METADATA_AUDIO_DEVICE` selects a specific one.
+- USB disconnect and reconnect transitions through alert, reconnect, and alert resolution.
+
+For source-level details, see the [Generic Microphone Driver README](https://github.com/cyberwave-os/generic-microphone-driver).

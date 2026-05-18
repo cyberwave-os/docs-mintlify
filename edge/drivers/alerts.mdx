@@ -53,6 +53,85 @@ The `POST /api/v1/alerts/{uuid}/resolve` and `POST /api/v1/alerts/{uuid}/silence
 
 This means edge drivers and operator UIs can safely call resolve without checking current status first, avoiding race conditions when multiple actors act on the same alert concurrently.
 
+## Workflow-scoped alerts
+
+Alerts produced by a workflow's `send_alert` node carry a `workflow_uuid`, and `Alert.workflow` is set on the backend. List alerts for a single workflow with:
+
+```text
+GET /api/v1/alerts?workflow_uuid={workflow_uuid}
+```
+
+Generated edge workers call `client.publish_alert(..., workflow_uuid=WORKFLOW_UUID, workflow_node_uuid=..., workflow_execution_uuid=...)`. The SDK forwards `workflow_uuid` as a top-level field (sets the FK) and merges `workflow_node_uuid` / `workflow_execution_uuid` into `metadata` for full provenance.
+
+## Source attribution: `metadata.source_chain`
+
+<Warning>
+**STUB:** Behavior is implemented; this section will be expanded with screenshots and the full kind catalogue.
+</Warning>
+
+Every alert raised by a workflow's `send_alert` node carries an ordered `source_chain` under `metadata` describing each upstream node that fed into the decision. The chain is built generically — any node emitter that opts in by parking a `_source_summary` on its output dict contributes an entry, so the mechanism works equally well for camera-perception, audio-track, alert-triggered, manual, scheduled, or any future trigger source.
+
+Each entry includes:
+
+- `kind` — short identifier (`camera_frame`, `audio_track`, `alert_trigger`, `manual_trigger`, `schedule_trigger`, `call_model`, `detection_event_gate`, `conditional`).
+- `node_uuid` — the workflow node that contributed the entry.
+- Kind-specific fields. Examples: `twin_uuid` + `sensor` for camera/audio triggers; `model_uuid` + `model_name` + a capped `detections_sample` for `call_model`; `mode` + `matched_classes` + `cooldown_seconds` for `detection_event_gate`.
+
+Example payload for a `camera_frame → call_model → send_alert` workflow:
+
+```json
+{
+  "metadata": {
+    "workflow_uuid": "...",
+    "workflow_node_uuid": "...",
+    "workflow_execution_uuid": "...",
+    "source_chain": [
+      {
+        "kind": "camera_frame",
+        "node_uuid": "...",
+        "twin_uuid": "...",
+        "sensor": "front",
+        "frame_ts": 1746651234.5
+      },
+      {
+        "kind": "call_model",
+        "node_uuid": "...",
+        "model_uuid": "...",
+        "model_name": "YOLOv8n",
+        "modality": "image",
+        "output_format": "detections",
+        "detections_total": 2,
+        "detections_sample": [
+          { "label": "person", "confidence": 0.91, "bbox_pixels": [12, 34, 56, 78] }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Notes:
+
+- The chain is purely additive. Adding `_source_summary` does not change `dedupe_hash` (computed over `name + description + alert_type + severity + status + twin_uuid`), so dedupe behavior is unchanged.
+- `detections_sample` is capped to keep alert metadata bounded; the original `detections_total` is preserved.
+- User-supplied static `metadata` keys always win on conflict — the source chain only fills in `metadata['source_chain']` when not already provided.
+
+## Edge Core system alerts
+
+<Warning>
+**STUB:** This section will be expanded with the full alert type catalogue.
+</Warning>
+
+Edge Core automatically raises technical alerts for operational issues. These are `category: technical`, `source_type: edge`.
+
+| `alert_type` | Severity | Trigger |
+| --- | --- | --- |
+| `driver_start_failure` | `error` | Driver container cannot reach a stable running state |
+| `driver_restart_loop` | `error` | Driver restarts too frequently (circuit-breaker tripped) |
+| `driver_health` | `warning` | Driver container stopped unexpectedly |
+| `model_download_failure` | `warning` | Required ML model could not be downloaded |
+| `worker_start_failure` | `warning` | Worker container failed to start |
+
 ## MQTT
 
 Edge devices create and resolve alerts via MQTT. Topic pattern:

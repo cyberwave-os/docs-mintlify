@@ -1,43 +1,47 @@
 ---
 title: "Import Datasets"
-description: "Import datasets from HuggingFace Hub or upload zip files"
+description: "Import robot datasets from HuggingFace Hub or upload zip files."
+stub: true
 ---
 
-{/* stub - content to be reviewed and expanded */}
-
-<Note>
-This is a stub page. Content will be expanded after human review.
-</Note>
+<Info>
+**Robot datasets first.** Cyberwave currently focuses on robot manipulation and navigation datasets (LeRobot, RLDS, Cyberwave Parquet, and similar time-series formats). Image classification, video, audio, and multimodal dataset formats are detected on import but full support — playback, conversion, and training — is coming in a future release.
+</Info>
 
 ## Overview
 
-Cyberwave supports importing datasets from multiple sources:
+Cyberwave supports importing datasets from two sources:
 
-- **HuggingFace Hub** — Import datasets directly by repository ID
-- **Zip Upload** — Upload pre-packaged dataset archives
+- **HuggingFace Hub** — Import directly by repository ID (lazy, no multi-GB copy)
+- **Zip Upload** — Upload a pre-packaged dataset archive (max 10 GB)
 
-Detection of dataset format happens automatically on the server side.
+Format detection happens automatically on the server side and sets the `source_format` field on the dataset record.
 
-## Supported Formats
+## Supported formats
 
-### Robot Datasets
+### Robot datasets (full support)
 
-| Format | Description |
-|--------|-------------|
-| LeRobot v3 | Latest LeRobot format with `meta/info.json` and chunked data |
-| LeRobot v2.1 | Legacy LeRobot format with splits |
-| RLDS/TFDS | TensorFlow Datasets format (common in robotics) |
-| HDF5 | Robomimic and ACT/ALOHA style datasets |
-| Zarr | Diffusion Policy and UMI style datasets |
+These formats are fully supported for import, playback, conversion, and ML training.
 
-### Other Formats
+| Format | `source_format` value | Description |
+|---|---|---|
+| LeRobot v3 | `lerobot3` | Latest LeRobot format — parquet episodes + `meta/info.json` |
+| LeRobot v2.1 | `lerobot21` | Legacy LeRobot format with splits (normalised to v3 on export) |
+| RLDS / TFDS | `rlds` | TensorFlow Datasets format (Open-X-Embodiment style) |
+| Cyberwave Parquet | `cyberwave_parquet` | Native format for datasets generated directly on Cyberwave |
+| HDF5 | `hdf5` | Robomimic / ACT / ALOHA style datasets |
+| Zarr | `zarr` | Diffusion Policy / UMI style datasets |
+| GR00T | `gr00t` | NVIDIA Isaac GR00T (LeRobot v2 + embodiment metadata) |
+| RoboDM | `robodm` | Berkeley .vla format |
+| MCAP | `mcap` | ROS2 CDR + Foxglove Protobuf |
+| ROS bag | `rosbag` | ROS1 .bag / ROS2 SQLite3 |
 
-The detector emits a typed `source_format` on every imported dataset.
-Values mirror [FiftyOne's built-in dataset types](https://docs.voxel51.com/user_guide/dataset_types.html)
-where they overlap:
+### Other dataset types (detection only — full support coming later)
+
+Cyberwave detects these formats and stores the `source_format` value, but playback, conversion, and training pipelines for them are not yet available.
 
 | Source format | Description |
-|---------------|-------------|
+|---|---|
 | `coco_detection` | COCO object detection JSON |
 | `yolov4` / `yolov5` | YOLO format datasets |
 | `voc_detection` | Pascal VOC |
@@ -48,62 +52,45 @@ where they overlap:
 | `cvat_image` / `cvat_video` | CVAT exports |
 | `openlabel_image` / `openlabel_video` | OpenLABEL exports |
 | `bdd`, `csv`, `dicom`, `geojson`, `geotiff` | Specialty formats |
-| `unknown` | Detector couldn't classify the layout |
+| `unknown` | Detector could not classify the layout |
 
-Source format is distinct from a dataset's *trainable artifact format*
-(parquet, OpenVLA, LeRobot v2.1/v3) — those live on `ProcessedDataset`.
+## Import from HuggingFace Hub
 
-## Importing from HuggingFace Hub
+1. Navigate to your workspace and click **Import Dataset**
+2. Select **HuggingFace Hub** as the source
+3. Enter the repository ID (e.g. `lerobot/pusht`)
+4. Click **Import**
 
-To import a dataset from HuggingFace Hub:
-
-1. Navigate to your workspace
-2. Click **Import Dataset**
-3. Select **HuggingFace Hub** as the source
-4. Enter the repository ID (e.g., `lerobot/pusht`)
-5. Click **Import**
-
-Imports from HuggingFace are **lazy by default**: Cyberwave queries the
-HuggingFace API for tags, card data and the file list, and (for LeRobot
-datasets) reads only the small `meta/*.json` files. The dataset card
-appears immediately with episode counts, FPS, robot type and cameras —
-without copying the multi-GB payload anywhere.
-
-The actual frames are fetched on demand later (e.g. when a training run
-or visualization needs them). The dataset's `metadata.import.materialized`
-flag stays `false` until a follow-up materialization step runs.
+HuggingFace imports are **lazy by default**: Cyberwave queries the HF API for tags, card data, and the file list, and for LeRobot datasets reads only the small `meta/*.json` files. The dataset card appears immediately with episode counts, FPS, robot type, and cameras — without copying the multi-GB payload. Frames are fetched on demand when a training run or visualisation needs them. The `metadata.import.materialized` flag stays `false` until a follow-up materialisation step runs.
 
 <Info>
-For private HuggingFace repositories, ensure your organization has configured the HuggingFace token in the deployment settings.
+For private HuggingFace repositories, ensure your organisation has configured the HuggingFace token in the deployment settings.
 </Info>
 
-## Uploading Zip Files
+## Upload a zip file
 
-To upload a dataset as a zip file:
+1. Navigate to your workspace and click **Import Dataset**
+2. Select **Upload Zip** as the source
+3. Select your zip file (max 10 GB)
+4. Click **Upload**
 
-1. Navigate to your workspace
-2. Click **Import Dataset**
-3. Select **Upload Zip** as the source
-4. Select your zip file (max 10 GB)
-5. Click **Upload**
+The system automatically detects the format after the upload completes.
 
-The system will automatically detect the format after upload completes.
+## Monitor progress
 
-## Monitoring Progress
-
-After initiating an import, you can monitor progress through:
+After starting an import you can track it via:
 
 - The dataset list view (status indicator)
 - The dataset detail page (`metadata.upload_progress`)
 
-## API Reference
+## API reference
 
 <Card title="POST /datasets/import/init" icon="code">
-  Initialize a dataset import. Returns signed URL for zip uploads, or immediately starts HF import.
+  Initialise a dataset import. Returns a signed URL for zip uploads, or immediately starts an HF import.
 </Card>
 
 <Card title="POST /datasets/import/complete" icon="code">
-  Complete a zip upload import after file is uploaded to the signed URL.
+  Complete a zip upload import after the file has been uploaded to the signed URL.
 </Card>
 
 See the [API Reference](/api-reference/datasets) for full details.

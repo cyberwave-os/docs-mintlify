@@ -91,10 +91,7 @@ The generated module registers `@cw.on_schedule(...)`; the worker runtime
 evaluates the cron locally with `croniter` and calls the generated `run(...)`
 entrypoint when due.
 
-The `call_model` node supports configurable event emission via `emit_event`:
-
-- **emit_mode**: `always` (every detection), `on_enter` (new classes only), `on_change` (count changes)
-- **cooldown_seconds**: minimum delay between consecutive event publications (default 5s)
+Alerts are raised explicitly: wire a `send_alert` node downstream of `call_model`, optionally gated by `detection_event_gate` (class filtering, `on_enter` / `on_change` semantics) and `timed_condition` (cooldowns / dwell). The legacy implicit `emit_event` config on `call_model` is no longer compiled — see the [`emit_event` migration](/use-cyberwave/workflows#migrating-from-emit_event).
 
 ### Multi-twin perception workflows
 

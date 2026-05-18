@@ -18,11 +18,14 @@ Workflows can run **on the cloud** (Celery tasks) or **on the edge device** depe
 
 Nodes are the building blocks of workflows. Each node performs a specific action.
 
-> stub: Nodes are organised into a hybrid robotics + automation taxonomy. The same nine categories show up in the editor palette and on `GET /api/v1/workflows/config` (`node_categories`), so the docs, the API, and the UI all read from the same `WorkflowNodeCategory` enum (see `cyberwave-backend/src/lib/node_categories.py`). Categories with no nodes today (Perception) are reserved — they appear in the API response but are hidden in the palette until they ship.
+> stub: Nodes are organised into a hybrid robotics + automation taxonomy. The same categories show up in the editor palette and on `GET /api/v1/workflows/config` (`node_categories`), so the docs, the API, and the UI all read from the same `WorkflowNodeCategory` enum (see `cyberwave-backend/src/lib/node_categories.py`). Categories with no nodes today (Perception) are reserved — they appear in the API response but are hidden in the palette until they ship.
 
 <CardGroup cols={2}>
-  <Card title="Sources & Triggers" icon="bolt">
-    Bring events and raw data into the workflow: manual, schedule, webhook, event, MQTT, email, camera_frame, alert, plus sensor `data_source` nodes
+  <Card title="Triggers" icon="bolt">
+    Start the workflow on an event, schedule, or incoming message: manual, schedule, webhook, event, MQTT, email, camera_frame, alert
+  </Card>
+  <Card title="Data Sources" icon="database">
+    Pull snapshots and samples from sensors, cameras, and external systems on demand: `data_source`
   </Card>
   <Card title="Perception" icon="eye">
     Convert raw signals into reliable observations — reserved for object trackers, sensor fusion, IMU filtering, ASR (no nodes ship today)
@@ -31,7 +34,7 @@ Nodes are the building blocks of workflows. Each node performs a specific action
     Reshape, convert, route, multiplex, or fan out data: `json_parser`, `annotate`, `anonymize`
   </Card>
   <Card title="State & Memory" icon="database">
-    Store and retrieve memory over time: `create_asset`, `edit_asset`, `update_attachment`, `video_tagger`
+    Store and retrieve memory over time: `create_asset`, `edit_asset`, `create_attachment`, `update_attachment`, `video_tagger`
   </Card>
   <Card title="Intelligence" icon="brain">
     Use models for interpretation, reasoning, or prediction: `call_model` (cloud VLM/LLM and edge ML)
@@ -72,6 +75,7 @@ Connection validation prevents invalid graphs: trigger nodes cannot accept incom
 | **Webhook** | Cloud (Celery) | HTTP POST to a webhook URL |
 | **Event** | Cloud (Celery) | Business event matching conditions |
 | **MQTT** | Cloud (Celery) | MQTT message on a topic |
+| **Zenoh** | Edge/local data plane | Zenoh message on a key expression |
 | **Email** | Cloud (Celery) | Incoming email |
 | **Camera Frame** | **Edge device** | Every camera frame, locally — never sends video to the cloud |
 
@@ -92,7 +96,7 @@ Connection validation prevents invalid graphs: trigger nodes cannot accept incom
         Drag nodes from the palette to the canvas. Connect nodes by dragging from output to input ports.
       </Step>
       <Step title="Configure">
-        Configure each node's parameters (twin UUID, model, confidence threshold, emit_event settings, etc.).
+        Configure each node's parameters (twin UUID, model, confidence threshold, send-alert metadata, etc.).
       </Step>
       <Step title="Activate">
         Click **Activate**. For edge workflows, sync to the device with the CLI or wait for the next automatic sync.
@@ -169,34 +173,40 @@ sequenceDiagram
     participant BE as Backend
     participant Edge as Edge Device
 
-    UI->>BE: Activate workflow (camera_frame → call_model)
+    UI->>BE: Activate workflow (camera_frame → call_model → send_alert)
     Edge->>BE: GET /api/v1/workflows/edge-sync/{twin_uuid}
     BE->>Edge: Worker source + model requirements
     Edge->>Edge: Write wf_<uuid8>.py, install models
     Edge->>Edge: Runtime loads worker, registers @cw.on_frame
     loop Every frame
         Edge->>Edge: model.predict(frame)
-        Edge->>BE: cw.publish_event() (detections only)
+        Edge->>BE: cw.publish_alert(...) when send_alert fires
     end
 ```
 
-### emit_event configuration
+### Migrating from `emit_event`
 
-The `call_model` node's `emit_event` parameter controls when detection events are published back to the cloud. All settings are baked into the generated worker at codegen time.
+Older workflows configured implicit alerts via an `emit_event` block on the `call_model` node (`event_type`, `severity`, `emit_mode`, `cooldown_seconds`). That path was removed: `emit_event` is no longer a schema field, the next save of any `call_model` node strips leftover `emit_event` values from `parameters` and `metadata.input_mappings` so the saved graph converges to the post-migration shape, and `call_model` no longer publishes alerts on its own. Pre-migration rows that haven't been re-saved yet still load — codegen also drops `emit_event` during compilation, so they ship a worker that runs inference but publishes nothing.
 
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `enabled` | bool | `true` | Set to `false` to run inference without publishing events |
-| `event_type` | string | `"detection"` | Business event type published to the cloud |
-| `severity` | string | `"INFO"` | Event severity (`INFO`, `WARNING`, `CRITICAL`) |
-| `emit_mode` | string | `"always"` | Controls when events fire (see below) |
-| `cooldown_seconds` | float | `5.0` | Minimum seconds between consecutive events |
+To raise alerts from detections, wire an explicit `send_alert` node downstream of `call_model`. The legacy fields map onto existing nodes:
 
-**emit_mode values:**
+| Legacy `emit_event` field | Replacement |
+|---------------------------|-------------|
+| `enabled: false` | Don't add a `send_alert` node |
+| `event_type` / `severity` | `send_alert.parameters.alert_type` / `severity` |
+| `emit_mode: on_enter` / `on_change` | Insert a `detection_event_gate` between `call_model` and `send_alert` |
+| `cooldown_seconds` | Insert a `timed_condition` (`mode: debounce`, `cooldown_s: <seconds>`) before `send_alert` |
+| Implicit `force=True` (no UI knob — the legacy path always passed it) | The emitter defaults `force=True` on a `send_alert` whose direct upstream is `call_model`, so the per-frame loop bypasses the backend's content-hash dedupe and identical consecutive detections still raise distinct alerts. Set `send_alert.parameters.force` to `false` to opt back into the dedupe. When a gate or `timed_condition` sits between `call_model` and `send_alert` the heuristic backs off and the long-standing `force=False` default applies, since the gate already debounces. |
 
-- **`always`** — publishes for every detection, subject to cooldown. Skips frames with no results.
-- **`on_enter`** — publishes only when new object classes appear that were not in the previous frame. Useful for "person entered the zone" alerts.
-- **`on_change`** — publishes only when the detection count changes. Useful for occupancy tracking.
+A typical edge chain becomes:
+
+```
+camera_frame → call_model → detection_event_gate → timed_condition → send_alert
+```
+
+A `timed_condition` wired downstream of `call_model` *without* a trailing `send_alert` is now inert — the legacy implicit-alert path it used to gate is gone. The compiler surfaces a warning on the resulting compilation (the `/compile` API and `cyberwave workflow sync` preflight already render it) so the silent-skip case becomes visible instead of looking like a quietly broken alert chain.
+
+Existing workflows continue to load and run inference, but **stop emitting alerts** until you add the explicit chain — the migration is intentionally a hard break so silent regressions are impossible.
 
 ### Syncing to the edge
 
@@ -215,7 +225,7 @@ cyberwave edge sync-workflows --twin-uuid <twin-uuid>
 
 The CLI sends a `sync_workflows` command via MQTT. Edge core receives it and immediately pulls the latest worker files from the backend — no need to wait for the periodic cycle.
 
-> stub: You can also trigger the same `sync_workflows` MQTT command from the twin editor in the dashboard via the **Sync workflow** action (next to **Restart driver**). The dashboard calls `POST /api/v1/twins/{uuid}/sync-workflows`, which publishes the same MQTT command as the CLI on `cyberwave/twin/{twin_uuid}/command`.
+> stub: You can also trigger the same `sync_workflows` MQTT command from the twin editor in the dashboard via the **Sync workflow** action (next to **Restart edge core**). The dashboard calls `POST /api/v1/twins/{uuid}/sync-workflows`, which publishes the same MQTT command as the CLI on `cyberwave/twin/{twin_uuid}/command`.
 
 > stub: The CLI derives the MQTT topic prefix (`dev`, `staging`, empty for production) from `CYBERWAVE_ENVIRONMENT`/credentials and cross-checks it against the broker host before publishing. A mismatch (e.g. dev broker with production prefix) aborts with a clear error instead of silently shipping the command into a topic edge-core never subscribed to. Override with `CYBERWAVE_MQTT_TOPIC_PREFIX` if you really need to.
 

@@ -98,22 +98,34 @@ Twin behavior in Cyberwave is capability-driven. The platform computes capabilit
 
 ## Cloud Recording
 
-By default, Cyberwave saves video recordings from every twin session to cloud storage. You can disable this per twin if you do not need cloud-stored recordings (for example, during development or for privacy reasons).
+By default, Cyberwave saves video and audio recordings from every twin session to cloud storage. You can disable this per twin if you do not need cloud-stored recordings (for example, during development or for privacy reasons).
 
-### Disabling Cloud Recording
+The toggle applies to any twin with a camera (RGB or depth) and/or a microphone sensor. The setting governs **both** video and audio in a single flag.
 
-Open the twin editor in an environment, click the **three-dot menu** (&#8943;), and select **Disable cloud recording**. The option is available for any twin that has at least one RGB or depth camera sensor.
+### Seeing the current state
+
+When a twin with recordable sensors is selected, the twin editor header shows a small icon next to its name:
+
+- A **muted camera or microphone icon** means cloud recording is on.
+- An **amber camera-off or microphone-off icon** means cloud recording is off — sessions are still tracked, but no media is stored.
+
+The icon family matches what the twin actually records: a camera glyph for twins with a camera, a microphone glyph for audio-only twins. Hover the icon to see the full tooltip, including which media types are covered.
+
+### Disabling cloud recording
+
+Open the twin editor in an environment, click the **three-dot menu** (&#8943;), and select **Disable cloud recording**. The option is available for any twin that has at least one camera or microphone sensor.
 
 When cloud recording is disabled:
 
 - Telemetry lifecycle events (start/stop) are still logged normally.
-- Camera and robot recording generation tasks (parquet, MP4) are **not** spawned.
-- No video or data artifacts are uploaded to cloud storage for that twin.
+- Camera recording generation tasks (parquet, MP4) are **not** spawned.
+- Audio MP3 conversion tasks are **not** spawned.
+- No video or audio artifacts are uploaded to cloud storage for that twin.
 
 To re-enable, open the same menu and select **Enable cloud recording**.
 
 <Info>
-The setting is stored in `twin.metadata.cloud_recording_enabled`. When the key is absent or `true`, recordings are saved (default behavior). Set it to `false` to disable.
+The setting is stored in `twin.metadata.cloud_recording_enabled`. When the key is absent or `true`, recordings are saved (default behavior). Set it to `false` to disable. LiDAR point clouds are not currently gated by this flag.
 </Info>
 
 ---

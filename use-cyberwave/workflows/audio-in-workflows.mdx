@@ -1,0 +1,176 @@
+---
+title: "Audio in Workflows"
+description: "How audio transmission, encoding, and format adaptation works across workflow nodes"
+icon: "waveform-lines"
+stub: true
+---
+
+All Cyberwave audio workflow nodes share a **standard audio format** for inter-node communication. This page explains the format, how nodes adapt incoming audio, and best practices for building audio pipelines.
+
+## Standard Audio Format
+
+Every audio node in a workflow produces and consumes audio using:
+
+| Property | Value |
+|----------|-------|
+| **Container** | NumPy array (`dtype=int16`) |
+| **Encoding** | PCM S16LE (signed 16-bit little-endian) |
+| **Sample Rate** | 16,000 Hz |
+| **Channels** | 1 (mono) |
+| **Key name** | `audio` |
+
+This is raw 16-bit PCM — the same encoding used by telephony systems, Whisper, Silero VAD, and OpenWakeWord. No compression, no container overhead.
+
+## Why This Format
+
+- **Zero-copy between nodes**: NumPy int16 arrays are passed by reference. A 10-second buffer (320,000 bytes) moves between nodes as a lightweight pointer — no data duplication.
+- **Universal compatibility**: Every speech model (Whisper, Silero, OpenWakeWord) works natively at 16 kHz int16 mono.
+- **Minimal latency**: No encoding/decoding step between nodes.
+
+## Automatic Format Adaptation
+
+Every audio node includes an **ingress adapter** that automatically handles incoming audio regardless of format:
+
+| Incoming Format | What Happens | Performance |
+|-----------------|--------------|-------------|
+| int16 numpy, 16 kHz, mono | **Zero-copy passthrough** (same object) | Fastest |
+| int16 numpy, other rate | Resampled to 16 kHz | Fast |
+| int16 numpy, stereo | Downmixed to mono | Fast |
+| float32 numpy | Scaled to int16 (`× 32768`) | Fast |
+| WAV bytes (RIFF header) | Parsed, decoded, resampled if needed | Moderate |
+| Raw PCM bytes (no header) | Interpreted as int16, resampled if needed | Fast |
+
+If the format cannot be adapted (e.g. compressed MP3 bytes without a decoder), the node publishes a **human-readable alert** explaining what was received and what was expected.
+
+## Metadata Alongside Audio
+
+Audio is never passed as a naked array. Every node outputs a **dictionary** with the audio and its metadata:
+
+```python
+{
+    "audio": numpy_int16_array,      # the PCM data (zero-copy reference)
+    "sample_rate_hz": 16000,         # always 16 kHz after normalization
+    "channels": 1,                   # always mono after downmix
+    "speech_probability": 0.87,      # VAD confidence (Audio Assistant only)
+    "is_speaking": True,             # speech state flag
+    "start_timestamp_sec": 1.2,      # segment boundary (when available)
+    "end_timestamp_sec": 3.8,        # segment boundary (when available)
+}
+```
+
+This means downstream nodes always know the sample rate, channel count, and timing of what they receive — even in buffer/chunk streaming scenarios.
+
+## The Audio Pipeline
+
+A typical audio-to-text pipeline:
+
+```
+Microphone → Audio Track → Audio Assistant (VAD) → Wake Word Engine → Call Model (Whisper) → text
+```
+
+### What each node does:
+
+1. **Audio Track** — Receives raw 20 ms chunks from the edge microphone via Zenoh. Accumulates them in a FIFO buffer and emits when the buffer is full. Normalizes to int16 @ 16 kHz mono. Buffer presets:
+   - `vad`: 512 samples (32 ms) — for Audio Assistant / Silero VAD
+   - `wake-word`: 1,280 samples (80 ms) — matches OpenWakeWord's internal frame size
+   - `stt`: 64,000 samples (4 s) — for direct STT input
+   - `custom`: user-defined duration in seconds
+
+   Outputs the buffered audio via the `audio` key plus metadata (`sample_rate_hz`, `channels`, `duration_s`, `sample_count`).
+
+2. **Audio Assistant** — Runs Silero VAD on the continuous stream. Produces **two signals on every chunk**:
+   - `speech_probability` (float 0.0-1.0): The raw VAD confidence — a continuous trigger/logic gate
+   - `audio` (int16 numpy): Only emitted when a complete speech segment is detected (speech end)
+
+   This dual-output design means downstream nodes can react to the VAD trigger immediately, without waiting for the full segment extraction.
+
+3. **Wake Word Engine** — Listens for a configurable trigger phrase using [OpenWakeWord](https://github.com/dscripka/openWakeWord). Users can select from pre-trained models (alexa, hey_mycroft, hey_jarvis, etc.) or provide a custom `.onnx` model. After detection, streams **fixed-size audio chunks** to downstream nodes until silence is detected. Output chunk size is configurable:
+   - `vad` preset: 512 samples (32 ms) — for feeding another VAD stage
+   - `stt` preset: 64,000 samples (4 s) — optimized for Whisper/STT (default)
+   - `custom` preset: user-defined buffer size in seconds
+
+   Each chunk is emitted as int16 @ 16 kHz mono via the `audio` key. The final chunk before silence timeout is marked with `is_final_chunk: true` so downstream STT can finalize transcription.
+
+4. **Call Model (Whisper)** — Receives int16 audio, passes it (with `sample_rate_hz` and `channels` metadata) to the model's `predict()` function. Outputs the transcription as a string.
+
+### ML model environment
+
+Call Model nodes receive both the audio array and its metadata. The model's predict call always knows the format:
+
+```python
+model.predict(audio_int16, sample_rate_hz=16000, channels=1, twin_uuid="...")
+```
+
+For cloud APIs that require WAV, the ingress adapter automatically converts int16 to WAV bytes before upload.
+
+## Connecting Nodes
+
+All audio nodes use the **same `audio` key** for input and output. In the workflow editor, you simply connect one node's output to the next node's input — no format configuration needed.
+
+```
+Node A [audio] ──→ [audio] Node B [audio] ──→ [audio] Node C
+```
+
+The nodes handle format adaptation internally. You never need to insert format conversion nodes or configure sample rates manually.
+
+## Compile-Time Validation
+
+When you compile a workflow, the assembler validates that:
+- Audio-consuming nodes (Audio Assistant, Wake Word Engine) have an audio-producing upstream
+- The chain is topologically valid
+
+If an audio node is connected to a non-audio source (e.g. an HTTP request node), compilation fails with a clear error message.
+
+## Supported Input Formats (per node)
+
+Every audio node accepts these formats as input:
+
+| Format | Example Source |
+|--------|---------------|
+| NumPy int16 | Audio Track output, other audio nodes |
+| NumPy float32 | Custom code nodes, ML model outputs |
+| WAV bytes | File uploads, cloud API responses |
+| Raw PCM bytes | WebSocket streams, raw microphone drivers |
+
+## Error Handling
+
+When a node receives audio it cannot process:
+
+1. **Logs an error** with format details (detected type, rate, channels)
+2. **Publishes an alert** to the twin (`alert_type='audio_format_incompatible'`) visible in the Cyberwave UI
+3. **Skips the frame** gracefully — the workflow continues with the next chunk
+
+No crashes. No silent failures.
+
+## Performance Notes
+
+- **Zero-copy is the fast path**: When the upstream node outputs int16 @ 16 kHz mono (the standard), downstream nodes receive the exact same memory — no allocation, no copy.
+- **Avoid unnecessary WAV wrapping**: If your pipeline is fully edge-side, keep audio as int16 numpy throughout. Only convert to WAV when sending to external APIs.
+- **NumPy slicing is zero-copy too**: `audio[start:end]` creates a view, not a copy. The Wake Word Engine uses this for its lookback buffer.
+- **Buffered streaming**: The Wake Word Engine outputs fixed-size chunks (not one giant array). This keeps memory bounded and allows downstream STT to start processing immediately as chunks arrive.
+
+## Related Pages
+
+<CardGroup cols={3}>
+  <Card
+    title="Audio Track"
+    icon="microphone"
+    href="/use-cyberwave/workflows/audio-track/overview"
+  >
+    Edge microphone trigger node
+  </Card>
+  <Card
+    title="Audio Assistant"
+    icon="volume-high"
+    href="/use-cyberwave/workflows/audio-assistant/overview"
+  >
+    VAD-powered speech segmentation
+  </Card>
+  <Card
+    title="Wake Word Engine"
+    icon="microphone"
+    href="/use-cyberwave/workflows/wake-word-engine/overview"
+  >
+    Voice-activated trigger gate
+  </Card>
+</CardGroup>

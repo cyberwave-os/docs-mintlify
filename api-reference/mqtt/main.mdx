@@ -9,6 +9,8 @@ This page is a stub. A human will curate and expand it before publishing.
 
 The Cyberwave platform uses MQTT for real-time communication between edge drivers, the cloud backend, and the frontend. This page lists every topic and payload schema so you can write compatible drivers, simulators, or integrations without reading source code.
 
+For the authoritative `.proto` definitions (including MQTT **topic patterns** repeated in every file header alongside field-level comments), see also [Protobuf schemas](/api-reference/protobuf/cyberwave-schemas).
+
 ## Topic prefix
 
 In non-production deployments the broker may be configured with an environment prefix (e.g. `local` for local dev). When a prefix is set, every topic below is written `{prefix}cyberwave/...`. The Python SDK's `topic_prefix` parameter and the Edge Core environment variable `CYBERWAVE_TOPIC_PREFIX` handle this automatically. All topic patterns on this page omit the prefix for clarity.

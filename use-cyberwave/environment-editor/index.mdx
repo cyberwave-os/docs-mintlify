@@ -6,7 +6,7 @@ icon: "pen-to-square"
 
 ## What is the Environment Editor?
 
-The Environment Editor is a powerful 3D design tool that allows you to set up your digital twins as well as your static objects in the environment. You can simulate physics, cameras and other sensors. Useful to set up your missions and workflows.
+The Environment Editor is a 3D design tool for setting up digital twins and static objects in an environment. You can arrange robots, cameras, sensors, areas, waypoints, and scene geometry before using them in simulation or workflows.
 
 <CardGroup cols={3}>
   <Card title="Digital Twins in Env" icon="box">
@@ -95,6 +95,30 @@ Expected cores are derived from the unique edge fingerprints configured on twins
 
 ---
 
+## Twin presence indicator (Live mode)
+
+In **Live** mode, every twin that has been paired to an edge device renders a small status dot overlaid on its kind icon. The dot consumes the same `edge_health` heartbeat that powers the Edge Devices status panel.
+
+### States
+
+| Color | Meaning |
+| --- | --- |
+| Green | Connected — heartbeat fresh and all streams healthy |
+| Yellow | Degraded — heartbeat fresh but at least one stream unhealthy |
+| Red | Disconnected — no recent heartbeat (tooltip shows last-seen age) |
+| Gray | Checking — waiting for the first heartbeat after the panel mounts |
+
+### Where you see it
+
+- **Twin editor panel** (top-right, next to the twin name): a slightly larger dot for the focused twin.
+- **Scene objects panel** (left list, on each twin row): a small corner dot on the kind icon.
+
+The dot is hidden in Editor and Simulate modes, on splat twins, and on twins that have never been paired to an edge device — there is nothing to present for those.
+
+Hover (or focus via keyboard) the dot for the tooltip: `Connected`, `Degraded — 1/2 streams healthy`, `Disconnected — last seen 12s ago`, or `Checking edge connection...`.
+
+---
+
 ## Twin joint edits in edit mode
 
 stub: In **Edit** mode, changing a twin joint updates the scene immediately, publishes the edit over MQTT for local feedback, and persists the joint pose on the twin so it survives refresh and reload.
@@ -103,7 +127,7 @@ stub: In **Edit** mode, changing a twin joint updates the scene immediately, pub
 
 ## Twin position quick actions
 
-stub: In the environment editor transform panel, **Center** resets a twin to the origin. **Above** keeps the current X and Y values and only moves the twin to `z = 1` for fast vertical placement.
+stub: In the environment editor transform panel, **Center** moves the selected twin or procedural object to the world origin. **Below**, **Above**, **Left**, and **Right** ask the Environment Editor to place it relative to the nearest suitable object or support using `cw_transform_environment_object`; floor/support placement uses `snap_to_support=true`.
 
 ---
 
@@ -129,18 +153,18 @@ stub: In **Simulate → Playground**, Cyberwave now applies lightweight frontend
 
 ---
 
-## Start assistant from the Edit menu
+## Start the agent from the Edit menu
 
-stub: In the 3D editor, open **Edit → Editor Assistant** to launch a built-in MCP assistant chat. The assistant can inspect and act on your environment via Cyberwave MCP tools.
+stub: In the 3D editor, open **Edit → Editor Agent** to launch the Environment Agent. It can inspect the current environment and call Cyberwave MCP tools for supported edits.
 
-- The assistant automatically provisions a workspace-scoped API key for the session so you can start chatting immediately.
-- The assistant displays a **Used tools** line for each response so you can verify which MCP tools were invoked.
+- The agent automatically provisions a workspace-scoped API key for the session so you can start chatting immediately.
+- The agent displays a **Used tools** line for each response so you can verify which MCP tools were invoked.
 
 ---
 
 ## Workflow executions in an environment
 
-stub: In the environment editor, open **Executions → Workflow Executions** to review recent runs for mission workflows bound to the current environment.
+stub: In the environment editor, open **Executions → Workflow Executions** to review recent workflow runs bound to the current environment.
 
 - The list stays compact by default and shows workflow name, status, and run time.
 - Select a run to inspect trigger data, errors, and metadata.

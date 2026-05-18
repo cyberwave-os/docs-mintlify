@@ -1,0 +1,134 @@
+---
+title: "Dataset Export & Format Conversion"
+description: "Download and convert robot datasets to different formats from the UI, SDK, or API."
+stub: true
+---
+
+<Info>
+**Robot datasets first.** Export and format conversion is available for robot datasets (LeRobot, RLDS, Cyberwave Parquet, and other Forge-readable sources). Support for image, video, audio, and multimodal dataset formats is planned for a future release.
+</Info>
+
+## Export tab (UI)
+
+Every robot dataset detail page has an **Export** tab alongside Overview, Files, and Code. It shows a matrix of all supported output formats with their current status and a one-click conversion flow.
+
+- **Convert** — starts a conversion job for that format; the row updates live as the job runs
+- **Download** — available once a conversion is ready; generates a fresh 24-hour signed URL
+- **Retry** — re-triggers a failed conversion
+
+Datasets whose source format is not a robot format (image directories, COCO, FiftyOne, etc.) show a "Conversion not available" message in the Export tab.
+
+Formats marked **Coming soon** are planned but not yet validated end-to-end. Clicking Convert on them records your interest so we can prioritise accordingly.
+
+## Download endpoint
+
+```http
+GET /api/v1/datasets/{uuid}/download?format=<fmt>
+```
+
+This endpoint is **idempotent**: calling it multiple times does not spawn duplicate conversion tasks.
+
+### Supported output formats
+
+| `format` value | Description | Status |
+|---|---|:---:|
+| `parquet` *(alias: `plain`)* | Cyberwave joined-parquet zip — native robot format | ✓ Available |
+| `lerobot3` *(alias: `lerobot`)* | LeRobot v3 (HuggingFace, Parquet + MP4) | ✓ Available |
+| `rlds` | RLDS / TF-Record (Open-X-Embodiment style) | ✓ Available |
+| `openvla` | Cyberwave OpenVLA TFDS bundle (requires camera role assignment) | ✓ Available |
+| `robodm` | Berkeley .vla format | 🔜 Coming soon |
+| `mcap` | MCAP (Foxglove) | 🔜 Coming soon |
+| `gr00t` | NVIDIA GR00T | 🔜 Coming soon |
+| `hdf5` | HDF5 | 🔜 Coming soon |
+| `zarr` | Zarr | 🔜 Coming soon |
+| `rosbag` | ROS bag | 🔜 Coming soon |
+
+<Note>
+`lerobot21` is no longer a separate output format. The backend normalises LeRobot v2.1 source datasets to `lerobot3` automatically. Deprecated aliases `plain` and `lerobot` are accepted but new integrations should use the canonical values.
+</Note>
+
+### Response codes
+
+| Code | Meaning |
+|---|---|
+| `200` | Artifact is ready — `signed_url` is valid for 24 hours |
+| `202` | Conversion is queued or running — poll until you get a `200` |
+| `422` | Format not yet supported (coming-soon targets), or dataset is not a robot dataset |
+
+### Example — artifact ready (200)
+
+```json
+{
+  "format": "lerobot3",
+  "status": "ready",
+  "signed_url": "https://storage.googleapis.com/...",
+  "expires_at": "2026-05-05T15:00:00+00:00",
+  "processed_dataset_uuid": "a1b2c3d4-..."
+}
+```
+
+### Example — conversion in progress (202)
+
+```json
+{
+  "format": "rlds",
+  "status": "queued",
+  "message": "Dataset conversion to 'rlds' is queued. Poll /api/v1/datasets/.../download?format=rlds until status is 'ready'.",
+  "processed_dataset_uuid": "a1b2c3d4-...",
+  "poll_url": "/api/v1/datasets/{uuid}/download?format=rlds"
+}
+```
+
+## Python SDK
+
+```python
+import time
+from cyberwave import Cyberwave
+
+cw = Cyberwave(api_key="...")
+ds = cw.datasets.get("dataset-uuid")
+
+# Request a specific output format — triggers conversion if needed
+result = ds.download(format="lerobot3")
+
+if result["status"] == "ready":
+    print(result["signed_url"])   # valid for 24 hours
+else:
+    while result["status"] != "ready":
+        time.sleep(5)
+        result = ds.download(format="lerobot3", wait=False)
+    print(result["signed_url"])
+```
+
+## MCP tool
+
+```
+cw_download_dataset(dataset_uuid, format)
+```
+
+Returns `signed_url` when ready (`status: ready`) or `status: queued / processing` with a `poll_url` when conversion is in flight.
+
+## Source formats (import / detection)
+
+Cyberwave detects the source format of imported datasets and stores it on the dataset record. Only robot source formats are eligible for conversion.
+
+| Source format | Description | Conversion eligible |
+|---|---|:---:|
+| `cyberwave_parquet` | Cyberwave native joined-parquet (natively generated datasets) | ✓ |
+| `lerobot3` | LeRobot v3 | ✓ |
+| `lerobot21` | LeRobot v2.1 (normalised to `lerobot3` for output) | ✓ |
+| `lerobot` | LeRobot (version not yet determined) | ✓ |
+| `rlds` | TFDS / Open-X-Embodiment | ✓ |
+| `gr00t` | NVIDIA Isaac GR00T | ✓ |
+| `robodm` | Berkeley .vla | ✓ |
+| `hdf5` | Robomimic / ACT / ALOHA | ✓ |
+| `zarr` | Diffusion Policy / UMI | ✓ |
+| `mcap` | ROS2 CDR + Foxglove Protobuf | ✓ |
+| `rosbag` | ROS1 .bag / ROS2 SQLite3 | ✓ |
+| Image / video / CV formats | COCO, YOLO, VOC, ImageNet, FiftyOne, etc. | — Not yet |
+
+## ML Training
+
+When you start an ML training from a robot dataset, Cyberwave converts it to the required format automatically. Training launches once conversion completes — no manual action needed.
+
+Camera role assignment is required for multi-camera imported datasets when using the `openvla` format.

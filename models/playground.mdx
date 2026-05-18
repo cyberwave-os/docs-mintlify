@@ -1,0 +1,341 @@
+---
+title: "Model Playground API"
+description: "Run inference, evaluate on benchmarks, and download model weights — endpoint reference with request/response schemas."
+stub: true
+---
+
+## Overview
+
+The Model Playground provides three API surfaces for working with model inference:
+
+| Method | Endpoint | Auth | Description |
+|---|---|:---:|---|
+| `POST` | `/api/v1/mlmodels/{uuid}/run` | ✓ | Run the model synchronously or queue an async workload |
+| `POST` | `/api/v1/mlmodels/{uuid}/evaluate` | ✓ | Start a benchmark evaluation run |
+| `GET` | `/api/v1/mlmodels/{uuid}/weights` | ✓ | Get a signed URL for the model's checkpoint weights |
+| `GET` | `/api/v1/mlmodels/structured-actions` | — | List available structured task IDs (public) |
+| `GET` | `/api/v1/mlmodels/edge-runtimes` | — | List well-known edge runtime options (public) |
+
+---
+
+## `POST /api/v1/mlmodels/{uuid}/run`
+
+Run a model interactively. Used by the in-app playground and directly from the SDK.
+
+**Sync path (200):** Direct provider call (Google GenAI, OpenAI, or a custom HTTP endpoint).
+**Async path (202):** Used when a cloud-node workload is required (e.g. `im2mesh`, audio). Returns a `workload_uuid` to poll.
+
+<Warning>
+Edge-only models (`is_edge_compatible && !is_cloud_compatible`) are rejected with `400` from this endpoint.
+Use the Python SDK (`cw.models.load(entry).predict(...)`) or the `cyberwave model bind` CLI instead.
+</Warning>
+
+### Request body — `MLModelRunSchema`
+
+At least one of `prompt`, `image_base64`, or `image_url` must be provided for most model types.
+
+#### Core inputs
+
+| Field | Type | Description |
+|---|---|---|
+| `prompt` | `string` | Text prompt |
+| `image_base64` | `string` | Base64-encoded image (data URI or raw) |
+| `image_url` | `string` | Publicly accessible image URL |
+| `audio_base64` | `string` | Base64-encoded audio (audio runs are async) |
+| `audio_url` | `string` | Publicly accessible audio URL |
+| `language` | `string` | Language hint for speech/translation tasks |
+| `task` | `string` | Generic task hint passed to the provider |
+| `structured_task` | `string` | Structured task ID from `/mlmodels/structured-actions` |
+| `twin_uuid` | `string` | When set, backend auto-pulls the twin's latest state for VLA/IK models |
+| `params` | `object` | Provider-specific parameters (e.g. `temperature`, `max_tokens`) |
+
+#### Extended perception envelope (optional)
+
+These fields let runners build richer spatial context without a second API revision:
+
+| Field | Type | Description |
+|---|---|---|
+| `frames` | `MLModelFrameSchema[]` | Ordered extra frames (wrist + overhead views, short clips). `image_base64`/`image_url` is frame 0. |
+| `depth_base64` | `string` | 16-bit PNG depth map aligned to the primary frame |
+| `camera_intrinsics` | `CameraIntrinsicsSchema` | Pinhole intrinsics (`fx`, `fy`, `cx`, `cy`, `width`, `height`) |
+| `camera_pose` | `CameraPoseSchema` | World pose of the primary camera (position + quaternion) |
+| `history` | `HistoryTurnSchema[]` | Prior conversation/context turns for stateful perception |
+| `robot_state` | `RobotStateSchema` | Robot joint state + gripper state. Server auto-fills from `twin_uuid` when omitted. |
+| `robot_context` | `RobotContextSchema` | Embodiment context (schema, capabilities summary) |
+
+#### `MLModelFrameSchema`
+
+| Field | Type | Description |
+|---|---|---|
+| `image_base64` | `string` | Base64 image |
+| `image_url` | `string` | Image URL |
+| `timestamp` | `int` | Monotonic ms offset from first frame |
+| `camera_id` | `string` | Camera label, e.g. `"wrist"`, `"overhead"` |
+
+### Response — `200 OK` (sync)
+
+```json
+{
+  "status": "completed",
+  "output_format": "json",
+  "output": [
+    { "label": "box", "confidence": 0.94, "bbox": [120, 45, 380, 290] }
+  ],
+  "raw": "...",
+  "actions": null
+}
+```
+
+#### `MLModelRunResultSchema`
+
+| Field | Type | Description |
+|---|---|---|
+| `status` | `string` | Always `"completed"` |
+| `output_format` | `string` | See [Output formats](#output-formats) below |
+| `output` | `any` | Parsed model output — type depends on `output_format` |
+| `raw` | `string \| null` | Raw provider response (for debugging) |
+| `actions` | `MotionEpisodeSchema \| null` | Server-resolved motion episode when the runner computed it directly (VLA / spatial reasoners). `null` for bare perception responses. |
+
+### Response — `202 Accepted` (async / cloud-node)
+
+```json
+{
+  "status": "queued",
+  "workload_uuid": "w1b2c3d4-...",
+  "poll_url": "/api/v1/cloud-node-workloads/w1b2c3d4-..."
+}
+```
+
+Poll `GET /api/v1/cloud-node-workloads/{workload_uuid}` until `status == "completed"`.
+The result payload lands in `workload.command_params.result`.
+
+### Response codes
+
+| Code | Meaning |
+|---|---|
+| `200` | Inference completed — response body is `MLModelRunResultSchema` |
+| `202` | Workload queued — poll `poll_url` |
+| `400` | Edge-only model, bad payload, or provider error |
+| `403` | Model not accessible or feature flag not enabled |
+
+---
+
+## Output formats
+
+The `output_format` field in the run result tells you how to interpret `output`:
+
+| `output_format` | `output` type | Description |
+|---|---|---|
+| `text` | `string` | Plain text response |
+| `json` | `object` | Arbitrary structured JSON |
+| `image` | `string` | Data URL (`data:image/...;base64,...`) |
+| `points` | `[[y, x], …]` | Normalized 0-1000 point coordinates (Gemini ER / spatial tasks) |
+| `boxes` | `[[y1,x1,y2,x2], …]` | Normalized 0-1000 bounding boxes |
+| `masks` | `object[]` | Segmentation masks |
+| `detections_3d` | `object[]` | 3D bounding boxes with position + orientation |
+| `grasps` | `object[]` | Grasp candidates (position, orientation, width) |
+| `trajectory` | `object[]` | Planned end-effector trajectory |
+| `plan_steps` | `object[]` | High-level plan steps |
+| `relations` | `object[]` | Detected spatial relations between objects |
+| `mesh` | `string` | GLB URL (for `im2mesh` models) |
+| `motion_episode` | `object` | Recorded or generated motion episode |
+| `raw` | `string` | Unprocessed provider output |
+
+### Example: VLM text response
+
+```json
+{ "status": "completed", "output_format": "text", "output": "The robot arm is above the red cube." }
+```
+
+### Example: Spatial reasoner — points
+
+```json
+{
+  "status": "completed",
+  "output_format": "points",
+  "output": [[312, 450], [680, 210]]
+}
+```
+
+Points are `[y, x]` normalized to 0-1000, where `[0, 0]` is the top-left corner.
+
+### Example: Detections (structured_task = `"detect_objects"`)
+
+```json
+{
+  "status": "completed",
+  "output_format": "json",
+  "output": [
+    { "label": "bottle", "confidence": 0.92, "bbox": [50, 120, 200, 480] },
+    { "label": "cup",    "confidence": 0.88, "bbox": [310, 95, 420, 360] }
+  ]
+}
+```
+
+---
+
+## `POST /api/v1/mlmodels/{uuid}/evaluate`
+
+Start an asynchronous benchmark evaluation. Returns `202 Accepted` immediately with a poll URL.
+
+### Request body — `MLModelEvaluateSchema`
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `benchmark_slug` | `string` | `"perception-smoke-v1"` | Benchmark suite to run against |
+
+### Response — `202 Accepted`
+
+```json
+{
+  "status": "queued",
+  "workload_uuid": "e1f2a3b4-...",
+  "poll_url": "/api/v1/cloud-node-workloads/e1f2a3b4-..."
+}
+```
+
+Poll `GET /api/v1/cloud-node-workloads/{uuid}` until `status == "completed"`.
+Results are in `workload.command_params.result` — aggregate pass rate and per-case breakdown.
+
+To list available benchmark suites: `GET /api/v1/mlmodels/benchmark-suites` (public, no auth).
+
+---
+
+## `GET /api/v1/mlmodels/{uuid}/weights`
+
+Get a signed download URL for the model's checkpoint weights (tar archive containing `config.json` + adapter files from training).
+
+### Response — `200 OK`
+
+```json
+{
+  "signed_url": "https://storage.googleapis.com/...?Expires=...",
+  "expires_at": "2026-05-14T22:00:00+00:00",
+  "checkpoint_path": "models/a1b2c3d4/.../checkpoint.tar"
+}
+```
+
+The signed URL is valid for **2 hours**.
+
+### Response codes
+
+| Code | Meaning |
+|---|---|
+| `200` | Signed URL generated |
+| `404` | Model has no checkpoint, or checkpoint not found in storage |
+
+---
+
+## `GET /api/v1/mlmodels/structured-actions`
+
+Return the canonical catalog of `structured_task` values understood by the playground.
+No authentication required. Consumed by the frontend and Python SDK.
+
+```json
+{
+  "detect_objects": {
+    "label": "Detect objects",
+    "description": "...",
+    "output_format": "json"
+  },
+  "detect_points": { "..." },
+  "caption": { "..." }
+}
+```
+
+---
+
+## Python SDK
+
+Two patterns map to this API:
+
+**1 — Playground handle** (`POST /api/v1/mlmodels/{uuid}/run` with full request control):
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+handle = cw.models.playground("acme/models/gemini-robotics-er")
+
+# Returns MLModelRunResultSchema or MLModelRunQueuedSchema (not PredictionResult)
+result = handle.run(
+    image="scene.jpg",
+    prompt="Point to the red cube",
+    structured_task="detect_points",
+)
+```
+
+**2 — Unified `load()` + `predict()`** (routes cloud slugs through the playground-backed inference path where applicable; edge weights run locally):
+
+```python
+from cyberwave import Cyberwave
+from PIL import Image
+
+cw = Cyberwave()
+img = Image.open("frame.jpg").convert("RGB")
+
+entry = cw.models.list(deployment="cloud")[0]
+model = cw.models.load(entry)  # or cw.models.load("acme/models/…")
+pred = model.predict(img, confidence=0.25)
+print(pred.describe())
+```
+
+For edge-only weights, **`load().predict()`** runs on-device; **`playground(...).run()`** is for the HTTP playground contract (prompts, structured tasks, async workloads).
+
+---
+
+## cURL examples
+
+### Text-only VLM run
+
+```bash
+curl -X POST "$CYBERWAVE_API_URL/api/v1/mlmodels/$MODEL_UUID/run" \
+  -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "What objects do you see on the workbench?"}'
+```
+
+### Vision run with image URL
+
+```bash
+curl -X POST "$CYBERWAVE_API_URL/api/v1/mlmodels/$MODEL_UUID/run" \
+  -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Detect all boxes",
+    "image_url": "https://example.com/workspace_frame.jpg",
+    "structured_task": "detect_objects"
+  }'
+```
+
+### Spatial reasoning run (points)
+
+```bash
+curl -X POST "$CYBERWAVE_API_URL/api/v1/mlmodels/$MODEL_UUID/run" \
+  -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Point to the red cube",
+    "image_url": "https://example.com/scene.jpg",
+    "structured_task": "detect_points"
+  }'
+```
+
+---
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Model Catalog API" icon="list" href="/models/catalog">
+    Browse and manage model records
+  </Card>
+  <Card title="Python SDK — ML Models" icon="python" href="/sdks/models/overview">
+    SDK reference for catalog + runtime
+  </Card>
+  <Card title="Structured Actions" icon="code" href="/use-cyberwave/ml-models/structured-actions">
+    All available structured task IDs
+  </Card>
+  <Card title="Edge Workers" icon="microchip" href="/use-cyberwave/ml-models/edge-worker">
+    Run edge models on hardware
+  </Card>
+</CardGroup>

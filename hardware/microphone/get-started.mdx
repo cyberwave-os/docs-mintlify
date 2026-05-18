@@ -62,14 +62,18 @@ Cyberwave exposes three stable primitives: **controller-policy execute**, **work
     Best for autonomous deployments where the mic lives on the robot, ambient listening, multi-user spaces, or voice telemetry in datasets.
 
     ```
-    Edge mic -> edge-side STT (or upload audio) -> publish as microphone sensor
-                                                ├─> REST: execute controller policy
-                                                └─> MQTT telemetry (timestamped, for datasets)
+    Edge mic -> native microphone driver -> WebRTC audio stream (48 kHz Opus, resampled)
+                                      ├─> Zenoh audio/default (raw PCM @ hardware rate, with metadata)
+                                      └─> MQTT start_audio / stop_audio control
     ```
 
-    The Python SDK's `cyberwave.sensor` module abstracts microphone capture on the edge.
+    The native driver uses `sounddevice` / PortAudio for host capture, streams audio with the Python SDK's `MicrophoneAudioStreamer`, publishes raw chunks to Zenoh for `on_audio` worker hooks, and sends `start_recording` / `stop_recording` commands to the media service without restarting WebRTC. See the [native driver setup guide](/edge/drivers/native-microphone-driver).
   </Tab>
 </Tabs>
+
+<Info>
+For the driver source and local run examples, see the [Generic Microphone Driver README](https://github.com/cyberwave-os/generic-microphone-driver).
+</Info>
 
 ---
 

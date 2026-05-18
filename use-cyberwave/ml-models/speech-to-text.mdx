@@ -1,0 +1,31 @@
+---
+title: "Speech to Text"
+description: "Transcribe robot audio with Whisper MLModels in workflows, REST calls, or edge workers"
+icon: "microphone"
+---
+
+stub
+
+Cyberwave exposes speech-to-text as an `MLModel`, not as a ROS intelligence layer. Audio goes in, a JSON transcript comes out, and the same model can be called from `POST /api/v1/mlmodels/{uuid}/run` or a workflow `CALL_MODEL` node.
+
+The default catalog model is Whisper Large v3:
+
+```json
+{
+  "audio_url": "https://example.com/audio.wav",
+  "language": "auto",
+  "task": "transcribe"
+}
+```
+
+The Whisper Cloud Node returns:
+
+```json
+{
+  "text": "...",
+  "segments": [],
+  "language": "en"
+}
+```
+
+Use this when a microphone driver uploads audio and a workflow needs to pass the transcript into a downstream controller policy, planner, or human-in-the-loop step.

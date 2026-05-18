@@ -10,7 +10,7 @@ import EarlyAccess from "/snippets/early-access.mdx";
 
 ## Overview
 
-The Cyberwave MCP Server exposes Cyberwave platform operations as **tools** that AI agents can discover and call autonomously. Instead of manually clicking through the dashboard or writing Python scripts, an **AI model** (Claude, GPT, Gemini, or any MCP-compatible client) can inspect your environments, create digital twins, position robots, capture camera frames, trigger workflows, and verify results visually, all through natural language.
+The Cyberwave MCP Server exposes Cyberwave platform operations as **tools** that MCP-compatible clients can discover and call. Agents can inspect environments, create digital twins, position robots, capture camera frames, preview or trigger workflows, and verify results with rendered environment previews.
 
 | | |
 |---|---|
@@ -45,7 +45,7 @@ flowchart TB
 
 ## Available Tools
 
-The MCP server exposes 30 tools across six categories.
+The MCP server exposes environment, catalog, workflow, ML model, dataset, control-planning, and scene-planning tools.
 
 ### Discovery
 
@@ -55,13 +55,20 @@ The MCP server exposes 30 tools across six categories.
 | `cw_list_projects` | List projects, optionally filtered by workspace |
 | `cw_list_environments` | List environments, optionally filtered by project |
 | `cw_list_twins` | List digital twins, optionally filtered by environment |
-| `cw_search_catalog` | Search asset catalog by text query |
+| `cw_search_catalog` | Search asset catalog and procedural primitive templates by text query |
+| `cw_plan_scene` | stub: Plan a semantic scene without mutation, returning Scene DSL, catalog candidates, advisory tool steps, validation checks, and warnings |
+| `cw_list_control_surfaces` | stub: List twins and available controls before planning a control intent |
+| `cw_plan_control_action` | stub: Plan movement, stop, observation, or controller-policy intents without MCP execution |
+| `cw_resolve_control_route` | stub: Resolve a backend route into a plan without execution |
+| `cw_dispatch_control_action` | stub: Dispatch one explicit action returned by planning or route resolution |
+| legacy execute tools | stub: `cw_set_joint`, `cw_motion_pose`, `cw_navigation_goto`, and `cw_navigation_stop` auto-dispatch only when backend route resolution returns exactly one dispatchable action |
 | `cw_list_areas` | List areas (zones/regions) in an environment |
 
 ### Inspect
 
 | Tool | Description |
 |---|---|
+| `cw_get_environment_context` | Get compact environment awareness: metadata, areas, twins, workflows, session hints, and preview guidance |
 | `cw_get_twin` | Get a twin by UUID or session-resolved twin |
 | `cw_get_joint_states` | Get current joint states for a twin |
 | `cw_get_schema` | Get a twin's universal schema at a JSON Pointer path |
@@ -76,7 +83,7 @@ The MCP server exposes 30 tools across six categories.
 
 ### Twin Actions
 
-All action tools default to `execute=false` (preview mode). Set `execute=true` to commit the change.
+stub: Prefer `cw_list_control_surfaces` and `cw_plan_control_action` for assistant-driven twin control. Older twin action tools still expose `execute` for hardware/simulation safety, but Environment Assistant handoff should plan only and let the Cyberwave UI/API confirmation path dispatch supported actions. Environment object creation and transform tools apply direct edits; ask before destructive deletes.
 
 | Tool | Description |
 |---|---|
@@ -99,27 +106,49 @@ All action tools default to `execute=false` (preview mode). Set `execute=true` t
 | `cw_resize_area` | Resize an area by setting new dimensions |
 | `cw_set_area_image` | Attach or remove a background image on an area (via URL or Base64) |
 
+### Scene Planning
+
+stub: Use `cw_plan_scene(prompt, environment_uuid?, scenario_type?)` as an advisory planning aid before broad scene-generation prompts. It does not mutate the environment, auto-apply templates, or return executable mutation batches. The plan uses Scene DSL version `0.1`: zones map to areas, structures/static objects map to template-backed procedural primitives, route points map to waypoints, and catalog assets map to catalog search/add-twin hints.
+
+### Procedural Primitives
+
+stub: Discover procedural primitive templates with `cw_search_catalog`. Results include canonical slugs, `template_key`, `template_version`, parameter schemas/defaults, examples, and `cw_create_procedural_primitive` hints. Created instances persist in environment settings and include compiled bounding/collision summaries plus validation warnings.
+
 ### Workflows
 
 | Tool | Description |
 |---|---|
-| `cw_list_workflows` | List workflows visible to the current user |
+| `cw_list_workflows` | List workflows for the current or provided environment |
+| `cw_create_workflow_from_prompt` | Preview or draft a template-backed workflow from a prompt via the Workflow Agent |
 | `cw_get_workflow` | Get a workflow by UUID (nodes, connections, config) |
 | `cw_trigger_workflow` | Trigger a workflow run with optional input parameters |
 | `cw_list_workflow_runs` | List workflow runs, optionally filtered by workflow or status |
 | `cw_get_workflow_run` | Get a specific workflow run by UUID |
 | `cw_cancel_workflow_run` | Cancel an active workflow run |
 
+### ML Models
+
+| Tool | Description |
+|---|---|
+| `cw_list_models` | List ML model catalog records visible to the user; optional `workspace_uuid` (client-side filter: that workspace plus `public` rows); optional `deployment` (`"cloud"`, `"edge"`, or `"hybrid"`) |
+| `cw_get_model` | Get full details for a single model record by UUID |
+| `cw_delete_model` | Delete a model catalog record — call with `execute=false` to preview, then `execute=true` to confirm |
+
+### Datasets
+
+| Tool | Description |
+|---|---|
+| `cw_list_datasets` | List datasets, optionally filtered by workspace |
+| `cw_get_dataset` | Get full dataset details including `processed_datasets` conversion status |
+| `cw_wait_until_ready` | Poll a dataset until ingestion reaches `completed` or `failed` — use after a HuggingFace import (async) |
+| `cw_download_dataset` | Request a download URL for a specific output format — triggers conversion if needed and returns `signed_url` when ready or `status: queued` when conversion is in flight |
+| `cw_delete_dataset` | Soft-delete a dataset by UUID |
+
 ---
 
 ## Safety Pattern
 
-All mutating tools support a two-phase execution model to prevent agents from making blind changes:
-
-- **`execute=false`** (default): the server calculates the result but does **not** persist it. The agent sees what would happen.
-- **`execute=true`**: the change is committed to the platform.
-
-This gives agents (and the humans supervising them) a chance to verify before committing.
+stub: Environment object mutation tools rely on the calling agent/client for confirmation policy. Use read/list tools first, ask before destructive deletes, then call the delete tool once with normal target arguments after confirmation.
 
 **Recommended sequence for environment edits:**
 
@@ -127,11 +156,8 @@ This gives agents (and the humans supervising them) a chance to verify before co
   <Step title="Inspect">
     Call `cw_list_environments` and `cw_list_twins` to understand the current state.
   </Step>
-  <Step title="Preview">
-    Call mutating tools with `execute=false` to see what the change would look like.
-  </Step>
-  <Step title="Commit">
-    Call the same tool with `execute=true` to persist the change.
+  <Step title="Confirm Deletes">
+    For destructive deletes, resolve the target and ask the user to confirm before calling the delete tool.
   </Step>
   <Step title="Verify">
     Call `cw_render_environment_preview` to render a PNG snapshot. Multimodal agents can visually confirm the layout matches expectations.
@@ -172,12 +198,17 @@ MCP resources provide read-only data URIs that agents can fetch directly without
 
 | URI | MIME Type | Description |
 |---|---|---|
+| `cyberwave://environment/current/context` | `application/json` | Compact context for the current environment resolved from request headers, session, defaults, or the only visible environment |
+| `cyberwave://environments/{environment_uuid}/context` | `application/json` | Compact environment awareness context |
+| `cyberwave://environments/{environment_uuid}/areas` | `application/json` | All areas defined in an environment |
+| `cyberwave://environments/{environment_uuid}/twins` | `application/json` | Compact twin summaries for an environment |
+| `cyberwave://environments/{environment_uuid}/workflows` | `application/json` | Compact workflow summaries related to an environment |
 | `cyberwave://env/{environment_uuid}/areas` | `application/json` | All areas defined in an environment |
 | `cyberwave://env/{environment_uuid}/twins` | `application/json` | All twins in an environment |
 | `cyberwave://twin/{twin_uuid}/schema` | `application/json` | Twin universal schema (URDF-derived structure) |
 | `cyberwave://twin/{twin_uuid}/state` | `application/json` | Twin state plus current joint states |
 
-Resources are useful when agents need to read structured data without triggering tool calls — for example, fetching the full joint schema before deciding which joints to move.
+Resources are useful when agents need to read structured data without triggering tool calls — for example, fetching environment awareness before deciding which twins or workflows are relevant. Visual previews remain exposed through `cw_render_environment_preview` so clients opt into the larger Base64 PNG payload.
 
 ---
 
@@ -362,7 +393,7 @@ mcp_server = MCPServerStreamableHttp(
 )
 
 agent = Agent(
-    name="Cyberwave Assistant",
+    name="Cyberwave Agent",
     instructions="Use Cyberwave MCP tools to inspect before acting.",
     mcp_servers=[mcp_server],
 )
@@ -411,8 +442,8 @@ Frame data is returned as Base64-encoded JPEG. Multimodal models can inspect it 
 | Tool | Parameters |
 |---|---|
 | `cw_list_areas` | `environment_uuid?` |
-| `cw_create_area` | `name`, `environment_uuid?`, `area_id?`, `position?` (`[x,y,z]`), `size?` (`[x,y,z]`), `rotation?`, `image_url?`, `image_base64?`, `image_mime_type`, `keep_proportions`, `opacity`, `color`, `locked`, `visible`, `execute=false` |
-| `cw_resize_area` | `area_id` (required), `environment_uuid?`, `x?`, `y?`, `z?` (at least one, must be > 0), `execute=false` |
+| `cw_create_area` | `name`, `environment_uuid?`, `area_id?`, `position?` (`[x,y,z]`), `size?` (`[x,y,z]`), `rotation?`, `image_url?`, `image_base64?`, `image_mime_type`, `keep_proportions`, `opacity`, `color`, `locked`, `visible` |
+| `cw_resize_area` | `area_id` (required), `environment_uuid?`, `x?`, `y?`, `z?` (at least one, must be > 0) |
 | `cw_set_area_image` | `area_id` (required), `environment_uuid?`, `image_url?`, `image_base64?`, `image_mime_type`, `keep_proportions?`, `remove_image?` (exactly one of remove/url/base64), `execute=false` |
 
 Area images can be attached via a direct `image_url` (recommended for large images) or inline as `image_base64` bytes with `image_mime_type`. Images are stored in environment settings.
@@ -427,6 +458,20 @@ Area images can be attached via a direct `image_url` (recommended for large imag
 | `cw_list_workflow_runs` | `workflow_uuid?`, `status?` |
 | `cw_get_workflow_run` | `run_uuid` (required) |
 | `cw_cancel_workflow_run` | `run_uuid` (required), `execute=false` |
+
+### Dataset Tools
+
+| Tool | Parameters |
+|---|---|
+| `cw_list_datasets` | `workspace_uuid?` |
+| `cw_get_dataset` | `dataset_uuid` (required) |
+| `cw_wait_until_ready` | `dataset_uuid` (required), `poll_interval?` (default 5 s), `timeout?` (default 1800 s) |
+| `cw_download_dataset` | `dataset_uuid` (required), `format` (required — e.g. `parquet`, `lerobot3`, `rlds`, `openvla`) |
+| `cw_delete_dataset` | `dataset_uuid` (required) |
+
+`cw_download_dataset` mirrors the REST endpoint: returns `{ status: "ready", signed_url, expires_at }` on HTTP 200, or `{ status: "queued" | "processing", poll_url }` on HTTP 202 when conversion is running.
+
+`cw_wait_until_ready` polls `GET /datasets/{uuid}` until `processing_status` is `completed` or `failed`. Use it after `cw_list_datasets` returns a dataset with `status: pending` following a HuggingFace import.
 
 ### Environment Preview
 

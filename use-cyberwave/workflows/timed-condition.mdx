@@ -157,28 +157,30 @@ In the workflow editor inspector for the `timed_condition` node:
 
 ## Edge implementation
 
-When `timed_condition` (or its legacy `presence_dwell` alias) sits
-one hop downstream of `spatial_filter` (or directly downstream of
-`call_model`) on a `camera_frame`-triggered workflow, the codegen
-inlines the state machine into the generated `wf_*.py` worker as
-three module-level globals (`_dwell_first_seen_<n>`,
-`_dwell_alerted_<n>`, `_dwell_last_clear_<n>`) and a per-frame block
-reading either `_detections` (post-spatial-filter) or
-`results.detections` (no spatial filter). On the frame the active
-window first crosses `min_duration_s`, the implicit
-`cw.publish_alert(...)` loop fires exactly once over `_dwell_matched`.
-The gate then stays silent until the input has been empty for
-`cooldown_s`, at which point all three globals reset together so the
-next entry can fire again.
+`timed_condition` requires an explicit `send_alert` node downstream
+to publish anything. The legacy implicit-alert path on `call_model`
+that used to inline a dwell state machine into the generated
+`wf_*.py` worker has been retired — alert emission now lives
+entirely in `send_alert` (see [`send_alert`](./send-alert)).
 
-State is in-process — restart the edge runtime and the timer resets
-to IDLE.
+The dispatcher (`EdgeWorkflowCompiler`) routes any `camera_frame`
+workflow that contains a `send_alert` node through
+`WorkflowCodeAssembler` rather than the single-hop `WorkerCodegen`
+path, and the assembler emits the explicit alert calls.
 
-The edge codegen handles the detection-array signal path for all
-three modes (`sustained`, `timeout`, `debounce`) and stays bit-for-bit
-identical to the cloud executor — the codegen parity tests guard the
-algorithm. Boolean / number signals still run through the cloud
-executor for now.
+A `timed_condition` wired downstream of `call_model` *without* a
+trailing `send_alert` is reported as inert at compile time
+(`WorkerCodegen.warnings` carries the inert-timer text), so the
+editor can surface the dead-timer condition before the worker is
+deployed.
+
+The cloud workflow runner executes `timed_condition` via
+`_execute_timed_condition_node` in `src/lib/workflow_utils.py`,
+which is the canonical implementation of all three modes
+(`sustained`, `timeout`, `debounce`) and the source of the
+`min_duration_s` / `cooldown_s` defaults. State is keyed on
+`node.uuid` and lives in-process — restart the runtime and the
+timer resets to IDLE.
 
 ## End-to-end alert pipeline
 

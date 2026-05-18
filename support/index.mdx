@@ -1,0 +1,291 @@
+---
+title: "Support"
+description: "How to get help with Cyberwave — community, GitHub, FAQs, and direct contact."
+icon: "life-ring"
+---
+
+Cyberwave is built in the open with a small, responsive team and a growing community. This page is the single place to figure out **where to go when you need help** — whether you're stuck on a quickstart, hit a bug, or want to talk to a human.
+
+---
+
+## Where to get help
+
+<CardGroup cols={2}>
+  <Card
+    title="Discord community"
+    icon="discord"
+    href="https://discord.gg/dfGhNrawyF"
+  >
+    The fastest place to ask a question, share what you're building, or get
+    unstuck. The team and other builders hang out here every day.
+  </Card>
+  <Card
+    title="GitHub issues"
+    icon="github"
+    href="https://github.com/cyberwave-os"
+  >
+    Found a bug or want to request a feature? Open an issue on the relevant repo
+    under the [`cyberwave-os`](https://github.com/cyberwave-os) organization
+    (SDKs, CLIs, drivers, edge components, this docs site).
+  </Card>
+  <Card
+    title="Contact us"
+    icon="envelope"
+    href="https://cyberwave.com/contact-us"
+  >
+    For sales, partnerships, on-premises deployments, or anything that doesn't
+    belong in a public channel, reach out directly.
+  </Card>
+  <Card
+    title="Status & changelog"
+    icon="clock-rotate-left"
+    href="https://docs.cyberwave.com/changelog"
+  >
+    Check what shipped recently and whether a recent change might explain what
+    you're seeing.
+  </Card>
+</CardGroup>
+
+<Tip>
+  Not sure which channel to use? Default to **Discord** for questions and
+  **GitHub issues** for reproducible bugs or feature requests.
+</Tip>
+
+---
+
+## Filing a good GitHub issue
+
+A reproducible report gets fixed dramatically faster. When opening an issue on a [`cyberwave-os`](https://github.com/cyberwave-os) repo, please include:
+
+- **What you ran**: the command, code snippet, or UI action.
+- **What you expected** vs. **what happened** (include the full error or log output).
+- **Environment**: OS, Python / Node version, SDK or CLI version, and whether you're on cloud or self-hosted.
+- **Catalog item** (if relevant): the asset, model, or driver slug — e.g. `the-robot-studio/so101`, `unitree/go2`.
+- A **minimal reproduction** if you can — even a 10-line script helps.
+
+Pick the repo closest to where the issue lives (Python SDK, CLI, a specific edge driver, the docs, etc.). If you're not sure, ask on Discord first and we'll point you at the right place.
+
+---
+
+## Catalog-item help (robots, models, datasets)
+
+Most "how do I…" or "why isn't this working" questions about a **specific** catalog item are answered on that item's own page rather than here. Every catalog entry has its own setup guide, capabilities reference, and item-specific troubleshooting.
+
+Start there before opening a general issue:
+
+<CardGroup cols={2}>
+  <Card title="Robot hardware" icon="robot" href="/hardware/index">
+    Per-robot setup, supported features, calibration tips, and known issues for
+    each supported arm, mobile base, quadruped, and drone.
+  </Card>
+  <Card title="ML models" icon="brain" href="/use-cyberwave/ml-models">
+    Per-model usage, supported inputs/outputs, training notes, and gotchas for
+    each model in the catalog.
+  </Card>
+  <Card
+    title="Asset catalog"
+    icon="book-bookmark"
+    href="/use-cyberwave/catalog"
+  >
+    How catalog assets, registry IDs, and slugs work — and how to upload your
+    own.
+  </Card>
+  <Card
+    title="Datasets & recordings"
+    icon="database"
+    href="/use-cyberwave/recording-replay"
+  >
+    How datasets are generated from recordings, supported formats, and
+    import/export options.
+  </Card>
+</CardGroup>
+
+<Info>
+  **Rule of thumb:** if your question starts with "for the SO-101…" / "for Go2…"
+  / "for SmolVLA…", the answer is most likely on that item's page. This Support
+  page covers cross-cutting questions about the platform itself.
+</Info>
+
+---
+
+## FAQs
+
+A growing list of frequently asked questions about the platform as a whole. For item-specific questions, see the catalog links above.
+
+### General
+
+<AccordionGroup>
+  <Accordion title="What is Cyberwave?">
+    _Placeholder._ A short overview of the Cyberwave platform, what it's for, and who it's for.
+  </Accordion>
+
+<Accordion title="How does Cyberwave compare to a traditional simulator?">
+  _Placeholder._ Differences between Cyberwave's digital twins and pure
+  simulators, and when to use each.
+</Accordion>
+
+<Accordion title="Do I need hardware to get started?">
+  _Placeholder._ How to evaluate Cyberwave entirely in simulation before
+  connecting real devices. See [Getting started](/get-started/index).
+</Accordion>
+
+  <Accordion title="Is there a free tier?">
+    _Placeholder._ Free tier scope, limits, and how to upgrade.
+  </Accordion>
+</AccordionGroup>
+
+### Accounts, workspaces & pricing
+
+<AccordionGroup>
+  <Accordion title="What is a workspace?">
+    _Placeholder._ Workspaces, projects, and how isolation works across teams.
+  </Accordion>
+
+<Accordion title="How do I invite teammates?">
+  _Placeholder._ Inviting users, managing roles, and [access
+  control](/use-cyberwave/access-control).
+</Accordion>
+
+<Accordion title="How is usage billed?">
+  _Placeholder._ Pricing model, metered resources, and how to monitor usage.
+</Accordion>
+
+  <Accordion title="Can I use Cyberwave on-premises?">
+    _Placeholder._ Self-hosted and air-gapped deployment options.
+  </Accordion>
+</AccordionGroup>
+
+### Hardware compatibility
+
+<AccordionGroup>
+  <Accordion title="Which robots are officially supported?">
+    _Placeholder._ Current list of officially supported platforms. See [Robotic hardware](/hardware/index) for per-item setup and troubleshooting.
+  </Accordion>
+
+<Accordion title="Can I integrate a custom robot?">
+  _Placeholder._ Bringing your own hardware via [custom
+  hardware](/hardware/other-hardware/custom-hardware) and [writing compatible
+  drivers](/edge/drivers/writing-compatible-drivers).
+</Accordion>
+
+<Accordion title="Which cameras and sensors are supported?">
+  _Placeholder._ Supported [cameras](/hardware/camera/get-started),
+  [microphones](/hardware/microphone/get-started), and other sensors.
+</Accordion>
+
+  <Accordion title="Does Cyberwave support ROS 2?">
+    _Placeholder._ ROS 2 interoperability today and roadmap.
+  </Accordion>
+</AccordionGroup>
+
+### SDKs & integrations
+
+<AccordionGroup>
+  <Accordion title="Which SDKs are available?">
+    _Placeholder._ Overview of the [Python SDK](/sdks/python-sdk), [C++ SDK](/sdks/cpp-sdk), [MCP server](/sdks/mcp-server), and [Claude Skill](/sdks/claude-skill).
+  </Accordion>
+
+<Accordion title="How do I authenticate the SDK?">
+  _Placeholder._ Setting up tokens. See [Setup
+  Cyberwave](/use-cyberwave/setup-cyberwave).
+</Accordion>
+
+<Accordion title="Can I use Cyberwave from Cursor or Claude?">
+  _Placeholder._ Connecting agentic IDEs through the [MCP
+  server](/sdks/mcp-server).
+</Accordion>
+
+  <Accordion title="What languages does the REST API support?">
+    _Placeholder._ Any HTTP client works; see the [API reference](/api-reference/overview).
+  </Accordion>
+</AccordionGroup>
+
+### Edge & deployment
+
+<AccordionGroup>
+  <Accordion title="What is Cyberwave Edge?">
+    _Placeholder._ Overview of the [Edge runtime](/edge/overview) and where it runs.
+  </Accordion>
+
+<Accordion title="What hardware can run an Edge node?">
+  _Placeholder._ From a [Raspberry Pi](/edge/raspberry-pi) and
+  [bench](/edge/bench) to industrial gateways.
+</Accordion>
+
+<Accordion title="Can Edge nodes run offline?">
+  _Placeholder._ Offline / intermittent connectivity behaviour and buffering.
+</Accordion>
+
+  <Accordion title="How do I write a custom driver?">
+    _Placeholder._ See [Writing compatible drivers](/edge/drivers/writing-compatible-drivers).
+  </Accordion>
+</AccordionGroup>
+
+### ML models, workflows & datasets
+
+<AccordionGroup>
+  <Accordion title="Can I bring my own model?">
+    _Placeholder._ Uploading and serving custom [ML models](/use-cyberwave/ml-models).
+  </Accordion>
+
+<Accordion title="What model formats are supported?">
+  _Placeholder._ Supported formats and runtimes (PyTorch, ONNX, etc.).
+</Accordion>
+
+<Accordion title="How do I build a workflow?">
+  _Placeholder._ Authoring [workflows](/use-cyberwave/workflows) and chaining
+  nodes.
+</Accordion>
+
+  <Accordion title="How are datasets generated?">
+    _Placeholder._ Generating datasets from [recordings](/use-cyberwave/recording-replay).
+  </Accordion>
+</AccordionGroup>
+
+### Teleoperation & streaming
+
+<AccordionGroup>
+  <Accordion title="What latency can I expect?">
+    _Placeholder._ Typical latency and how to optimize. See [Teleoperation latency](/use-cyberwave/teleoperation-latency).
+  </Accordion>
+
+<Accordion title="Does teleoperation work behind a corporate firewall?">
+  _Placeholder._ NAT traversal, TURN servers, and required ports.
+</Accordion>
+
+  <Accordion title="Which browsers are supported?">
+    _Placeholder._ Tested browsers and known limitations.
+  </Accordion>
+</AccordionGroup>
+
+### Security & data
+
+<AccordionGroup>
+  <Accordion title="Where is my data stored?">
+    _Placeholder._ Data residency, hosting regions, and retention.
+  </Accordion>
+
+<Accordion title="How is data encrypted?">
+  _Placeholder._ Encryption in transit and at rest.
+</Accordion>
+
+<Accordion title="Who can access my workspace data?">
+  _Placeholder._ Roles, sharing, and [access
+  control](/use-cyberwave/access-control).
+</Accordion>
+
+  <Accordion title="Is Cyberwave compliant with SOC 2 / GDPR / HIPAA?">
+    _Placeholder._ Current and planned certifications.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Still stuck?
+
+If none of the above unblocks you:
+
+1. Search the [`cyberwave-os` GitHub org](https://github.com/cyberwave-os) for an existing issue.
+2. Ask in [Discord](https://discord.gg/dfGhNrawyF) — usually the fastest path to an answer.
+3. [Open a new GitHub issue](https://github.com/cyberwave-os) on the relevant repo with the details from the [filing a good issue](#filing-a-good-github-issue) checklist above.
+4. For private or commercial questions, [contact us](https://cyberwave.com/contact-us) directly.

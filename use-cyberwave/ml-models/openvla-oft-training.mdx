@@ -1,0 +1,56 @@
+---
+title: "OpenVLA-OFT Training"
+sidebarTitle: "OpenVLA-OFT"
+description: "Fine-tune OpenVLA-OFT models using the openvla (RLDS) dataset format"
+icon: "microchip"
+---
+
+{/* stub — content pending human curation before publishing */}
+
+## Overview
+
+OpenVLA-OFT is a LoRA-based fine-tuning framework for Vision-Language-Action models built on the `openvla-7b` base. Cyberwave supports training and deploying OpenVLA-OFT models on your custom datasets using the `openvla` (RLDS) dataset format.
+
+<Info>
+OpenVLA-OFT uses the **openvla (RLDS) dataset format** for training, which differs from the LeRobot v3 format used by SmolVLA. The platform handles format selection automatically based on the model type.
+</Info>
+
+---
+
+## Model Selection
+
+When creating an ML model on Cyberwave, select **OpenVLA-OFT** as the model type to automatically route training and inference jobs to a cloud node with the `openvla-oft-policy` profile.
+
+---
+
+## Training
+
+Training jobs are dispatched to a Cyberwave Cloud Node. The cloud node:
+
+1. Downloads the dataset in RLDS format (`format=openvla`)
+2. Downloads the base model weights (`openvla/openvla-7b` by default)
+3. Runs the LoRA fine-tuning loop, routing all metrics to the Cyberwave dashboard
+4. Compresses and uploads the final checkpoint to the platform
+
+### Key training parameters
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `max_steps` | Number of training gradient steps | 50 000 |
+| `batch_size` | Per-GPU batch size (auto-scaled to camera count if omitted) | auto |
+| `lora_rank` | LoRA adapter rank | 32 |
+| `use_l1_regression` | Use L1 regression action head instead of cross-entropy | `true` |
+| `use_proprio` | Include proprioceptive state in observations | `true` |
+| `num_images_in_input` | Number of camera feeds used during training (auto-detected if omitted) | auto |
+
+---
+
+## Inference
+
+Trained checkpoints can be deployed directly from the Cyberwave platform. The cloud node loads the fine-tuned LoRA weights and streams predictions back to your robot via MQTT.
+
+---
+
+## Dataset format
+
+OpenVLA-OFT requires datasets in the RLDS (TensorFlow Datasets) format. When you upload a dataset through the Cyberwave platform, it is automatically converted and made available for download in the `openvla` format.

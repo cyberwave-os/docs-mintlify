@@ -1,0 +1,94 @@
+---
+title: "Reusing chains across upstreams"
+description: "Fire a shared downstream chain once per inbound activation, with each firing reading its inputs from the upstream that triggered it."
+tag: stub
+---
+
+The Level 1 workflow activation primitives let you share a downstream
+chain across many upstream nodes without duplicating the chain per
+branch. They apply to **every node type** — not just `call_model` —
+so the same pattern works whether the head of the shared chain is a
+`call_model`, a `conditional`, a `send_alert`, a custom `code` node,
+or anything else.
+
+## The primitive: `caller` input-mapping mode
+
+Resolves a field from the **immediate predecessor on the current
+execution path** (the "caller"), instead of a fixed upstream UUID.
+
+```jsonc
+{
+  "input_mappings": {
+    "image_url": {
+      "mode": "caller",
+      "field": "image_url",
+      "source_port": "main",
+      "default": null
+    }
+  }
+}
+```
+
+Available on any input field of any node type. When the engine
+executes the node, it reads `image_url` from whichever upstream just
+fired on this branch.
+
+## Fan-in semantics are derived
+
+Caller-mode mappings change the node's fan-in semantics implicitly —
+there is no separate user-settable `fan_in_mode` field. The runtime
+resolver derives the mode from the graph:
+
+- **Caller-mode mapping on the node** → fires **once per inbound
+  activation** (`"any"`). Each upstream firing produces an
+  independent execution row.
+- **Single direct upstream that resolves to `"any"`** → inherits
+  `"any"` to avoid the silent-coalescing trap where a downstream
+  node would otherwise dedupe N upstream activations to one firing.
+- **Otherwise** → `"all"`: the node waits for every upstream to
+  complete and then fires once (synchronization barrier).
+
+Multi-upstream barrier nodes are intentionally **not** covered by the
+inheritance rule — they are real convergence points and propagating
+`"any"` to them would silently break valid use cases.
+
+## Example: shared call-model branch in a patrol workflow
+
+```
+trigger → move_twin_1 ┐
+trigger → move_twin_2 ├→ call_model (caller-mode: image_url)
+trigger → move_twin_3 ┤
+trigger → move_twin_4 ┘   →  conditional  →  send_alert
+```
+
+Each of the four `move_twin` nodes produces its own image URL. The
+shared `call_model` head declares a `caller`-mode mapping for
+`image_url`, which both selects the per-activation field source and
+implicitly makes the head a fan-in `"any"` node. The same downstream
+`conditional` and `send_alert` chain runs once per `move_twin`
+firing, with each run reading its image from the correct upstream.
+
+## Example: `conditional` as the activation head
+
+The primitive is not specific to `call_model`. The same shape works
+when the shared head is a `conditional`, a `send_alert`, a custom
+`code` node, etc. The diagram is identical — only the node type
+changes — and the runtime semantics are the same.
+
+## Where the primitive runs
+
+- **Cloud interpreter** (`run_on_edge=false`): supports caller-mode
+  mappings natively today.
+- **Edge codegen** (`run_on_edge=true`): supports `caller`-mode
+  mappings on linear chains. Multi-trigger workflows that include a
+  caller-mode (any-derived) node are **rejected at compile time**
+  with a clear error pointing at the offending node; full
+  activation-helper lowering is the subject of a follow-up. The cloud
+  interpreter handles the same workflow today.
+
+## Recording
+
+Each `WorkflowNodeExecution` row records `caller_uuid` and
+`activation_index` under `metadata`, so timeline replay can group runs
+by `(node_uuid, activation_index)` and reproduce the per-activation
+flow deterministically.

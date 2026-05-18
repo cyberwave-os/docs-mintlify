@@ -150,3 +150,7 @@ cyberwave edge install --reconfigure-camera
 
 This re-prompts for camera selection and restarts the stream and edge-core service.
 </Tip>
+
+<Tip>
+On macOS, `cyberwave edge restart` self-heals the camera bridge: any installed `com.cyberwave.camera-stream*` slot whose MJPEG port is silent is auto-kickstarted, and twins pointing at unserved ports surface a warning that suggests `--reconfigure-camera`. Healthy slots are left alone.
+</Tip>
