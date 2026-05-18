@@ -93,5 +93,41 @@ Your DJI Mini is now paired with its digital twin. Live video and telemetry shou
 - Open the **Replay** panel to scrub through recorded flights — recording is enabled by default for paired devices.
 
 <Info>
-Continuous stick commands (`move_forward`, `ascend`, …) are intentionally not driven over MQTT — the physical RC stays in charge of the sticks. The Cyberwave driver handles discrete actions (`takeoff`, `land`, `return_to_home`, `set_home_here`, compass calibration, reboot, emergency stop).
+Continuous stick commands (`move_forward`, `ascend`, …) are intentionally not driven over MQTT — the physical RC stays in charge of the sticks. The Cyberwave driver handles discrete actions (`takeoff`, `land`, `return_to_home`, `set_home_here`, compass calibration, reboot, emergency stop) plus **gimbal control** (`gimbal_rotate`) — point-the-camera commands that the RC's gimbal wheel doesn't fight.
 </Info>
+
+## Gimbal control
+
+The DJI controller policy (`controller:dji-keyboard:v1`) ships with a **Gimbal Pitch** slider that drags the camera between `-90°` (straight down) and `+30°` (above horizon), and an **N** key that recenters the gimbal to `0°`. Programmatic clients can publish:
+
+```json
+{
+  "source_type": "tele",
+  "command": "gimbal_rotate",
+  "data": { "pitch": -45.0, "mode": "absolute", "time": 2.0 }
+}
+```
+
+on `cyberwave/twin/<uuid>/command`. The driver translates this to MSDK v5's `GimbalKey.KeyRotateByAngle` and echoes the actual hardware angle on `cyberwave/twin/<uuid>/gimbal/attitude` (5 Hz). See the [driver README](https://github.com/cyberwave-os/cyberwave/tree/main/cyberwave-edge-nodes/cyberwave-edge-dji-mini-android#command-surface) for the full payload contract.
+
+## Python SDK
+
+The same command surface is available on `FlyingTwin` (which now inherits from `LocomoteTwin`, so the locomotion verbs work too):
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+cw.affect("real-world")  # or "simulation" for a dry run
+
+drone = cw.twin("SZ-DJI-Technology/DJI-Mini-4-Pro")
+
+drone.takeoff(altitude=2.0)
+drone.gimbal_rotate(pitch=-45.0, duration=1.5)   # tilt camera down
+drone.gimbal_rotate_speed(pitch=50.0)            # 5°/s pan (0.1°/s units)
+drone.gimbal_recenter()                          # back to 0° / absolute
+drone.return_to_home()                           # KeyStartGoHome (with confirm flow)
+drone.land()                                     # auto-arms landing-confirmation flow
+```
+
+A complete walkthrough — including takeoff, locomotion, both gimbal modes, and the safety / service commands — lives in [`examples/drone_dji_mini.py`](https://github.com/cyberwave-os/cyberwave/tree/main/cyberwave-sdks/cyberwave-python/examples/drone_dji_mini.py).
