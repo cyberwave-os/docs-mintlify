@@ -4,13 +4,13 @@ All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**src_app_api_crm_create_opportunity**](CRMApi.md#src_app_api_crm_create_opportunity) | **POST** /api/v1/crm | Create Opportunity
-[**src_app_api_crm_delete_opportunity**](CRMApi.md#src_app_api_crm_delete_opportunity) | **DELETE** /api/v1/crm/{uuid} | Delete Opportunity
-[**src_app_api_crm_get_opportunity**](CRMApi.md#src_app_api_crm_get_opportunity) | **GET** /api/v1/crm/{uuid} | Get Opportunity
-[**src_app_api_crm_get_pipeline_config**](CRMApi.md#src_app_api_crm_get_pipeline_config) | **GET** /api/v1/crm/pipeline-config | Get Pipeline Config
-[**src_app_api_crm_get_workspace_users**](CRMApi.md#src_app_api_crm_get_workspace_users) | **GET** /api/v1/crm/workspace/{workspace_uuid}/users | Get Workspace Users
-[**src_app_api_crm_list_opportunities**](CRMApi.md#src_app_api_crm_list_opportunities) | **GET** /api/v1/crm | List Opportunities
-[**src_app_api_crm_update_opportunity**](CRMApi.md#src_app_api_crm_update_opportunity) | **PUT** /api/v1/crm/{uuid} | Update Opportunity
+[**src_app_api_crm_create_opportunity**](#src_app_api_crm_create_opportunity) | **POST** /api/v1/crm | Create Opportunity
+[**src_app_api_crm_delete_opportunity**](#src_app_api_crm_delete_opportunity) | **DELETE** `/api/v1/crm/{uuid}` | Delete Opportunity
+[**src_app_api_crm_get_opportunity**](#src_app_api_crm_get_opportunity) | **GET** `/api/v1/crm/{uuid}` | Get Opportunity
+[**src_app_api_crm_get_pipeline_config**](#src_app_api_crm_get_pipeline_config) | **GET** /api/v1/crm/pipeline-config | Get Pipeline Config
+[**src_app_api_crm_get_workspace_users**](#src_app_api_crm_get_workspace_users) | **GET** `/api/v1/crm/workspace/{workspace_uuid}/users` | Get Workspace Users
+[**src_app_api_crm_list_opportunities**](#src_app_api_crm_list_opportunities) | **GET** /api/v1/crm | List Opportunities
+[**src_app_api_crm_update_opportunity**](#src_app_api_crm_update_opportunity) | **PUT** `/api/v1/crm/{uuid}` | Update Opportunity
 
 
 # **src_app_api_crm_create_opportunity**
@@ -70,15 +70,15 @@ with cyberwave.rest.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **opportunity_create_schema** | [**OpportunityCreateSchema**](OpportunityCreateSchema.md)|  | 
+ **opportunity_create_schema** | [**OpportunityCreateSchema**](/api-reference/rest/OpportunityCreateSchema)|  | 
 
 ### Return type
 
-[**OpportunitySchema**](OpportunitySchema.md)
+[**OpportunitySchema**](/api-reference/rest/OpportunitySchema)
 
 ### Authorization
 
-[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+CustomTokenAuthentication
 
 ### HTTP request headers
 
@@ -91,7 +91,6 @@ Name | Type | Description  | Notes
 |-------------|-------------|------------------|
 **200** | OK |  -  |
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **src_app_api_crm_delete_opportunity**
 > src_app_api_crm_delete_opportunity(uuid)
@@ -154,7 +153,7 @@ void (empty response body)
 
 ### Authorization
 
-[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+CustomTokenAuthentication
 
 ### HTTP request headers
 
@@ -167,7 +166,6 @@ void (empty response body)
 |-------------|-------------|------------------|
 **200** | OK |  -  |
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **src_app_api_crm_get_opportunity**
 > OpportunitySchema src_app_api_crm_get_opportunity(uuid)
@@ -229,11 +227,11 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**OpportunitySchema**](OpportunitySchema.md)
+[**OpportunitySchema**](/api-reference/rest/OpportunitySchema)
 
 ### Authorization
 
-[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+CustomTokenAuthentication
 
 ### HTTP request headers
 
@@ -246,7 +244,6 @@ Name | Type | Description  | Notes
 |-------------|-------------|------------------|
 **200** | OK |  -  |
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **src_app_api_crm_get_pipeline_config**
 > PipelineConfigSchema src_app_api_crm_get_pipeline_config()
@@ -293,7 +290,7 @@ This endpoint does not need any parameter.
 
 ### Return type
 
-[**PipelineConfigSchema**](PipelineConfigSchema.md)
+[**PipelineConfigSchema**](/api-reference/rest/PipelineConfigSchema)
 
 ### Authorization
 
@@ -310,7 +307,6 @@ No authorization required
 |-------------|-------------|------------------|
 **200** | OK |  -  |
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **src_app_api_crm_get_workspace_users**
 > List[WorkspaceUsersSchema] src_app_api_crm_get_workspace_users(workspace_uuid)
@@ -372,11 +368,11 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**List[WorkspaceUsersSchema]**](WorkspaceUsersSchema.md)
+[**List[WorkspaceUsersSchema]**](/api-reference/rest/WorkspaceUsersSchema)
 
 ### Authorization
 
-[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+CustomTokenAuthentication
 
 ### HTTP request headers
 
@@ -389,7 +385,6 @@ Name | Type | Description  | Notes
 |-------------|-------------|------------------|
 **200** | OK |  -  |
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **src_app_api_crm_list_opportunities**
 > List[OpportunitySchema] src_app_api_crm_list_opportunities(opportunity_type=opportunity_type, year=year, is_archived=is_archived, workspace_uuid=workspace_uuid)
@@ -463,11 +458,11 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**List[OpportunitySchema]**](OpportunitySchema.md)
+[**List[OpportunitySchema]**](/api-reference/rest/OpportunitySchema)
 
 ### Authorization
 
-[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+CustomTokenAuthentication
 
 ### HTTP request headers
 
@@ -480,7 +475,6 @@ Name | Type | Description  | Notes
 |-------------|-------------|------------------|
 **200** | OK |  -  |
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **src_app_api_crm_update_opportunity**
 > OpportunitySchema src_app_api_crm_update_opportunity(uuid, opportunity_update_schema)
@@ -541,15 +535,15 @@ with cyberwave.rest.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **uuid** | **str**|  | 
- **opportunity_update_schema** | [**OpportunityUpdateSchema**](OpportunityUpdateSchema.md)|  | 
+ **opportunity_update_schema** | [**OpportunityUpdateSchema**](/api-reference/rest/OpportunityUpdateSchema)|  | 
 
 ### Return type
 
-[**OpportunitySchema**](OpportunitySchema.md)
+[**OpportunitySchema**](/api-reference/rest/OpportunitySchema)
 
 ### Authorization
 
-[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+CustomTokenAuthentication
 
 ### HTTP request headers
 
@@ -562,5 +556,4 @@ Name | Type | Description  | Notes
 |-------------|-------------|------------------|
 **200** | OK |  -  |
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

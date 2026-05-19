@@ -1,0 +1,184 @@
+---
+title: "Authentication"
+description: "Set up API credentials to connect to Cyberwave"
+icon: "wrench"
+---
+
+## Overview
+
+Cyberwave uses API tokens to authenticate requests. You'll need a token to:
+
+- Connect the Python SDK
+- Make REST API calls
+- Establish MQTT connections
+
+Each token is scoped to a specific workspace, giving you isolated access per workspace.
+
+---
+
+## Creating an API Token
+
+<Steps>
+  <Step title="Sign in to Cyberwave">
+    Go to [cyberwave.com](https://cyberwave.com) and sign in to your account.
+  </Step>
+
+  <Step title="Navigate to Profile">
+    Click your profile icon and select **Profile** or go directly to
+    [cyberwave.com/profile](https://cyberwave.com/profile).
+  </Step>
+
+  <Step title="Create a Token">
+    In the **API Tokens** section, click **Create Token**. Select the workspace
+    you want the token scoped to, then copy the token immediately — it won't be
+    shown again.
+  </Step>
+</Steps>
+
+<Warning>
+  Keep your API token secure. Don't commit it to version control or share it
+  publicly.
+</Warning>
+
+---
+
+## Using Your API Token
+
+### Environment Variable (Recommended)
+
+Set your API token as an environment variable:
+
+```bash
+export CYBERWAVE_API_KEY="cw_your_token_here"
+```
+
+The SDK automatically reads this variable:
+
+```python
+import cyberwave as cw
+
+# Automatically uses CYBERWAVE_API_KEY
+robot = cw.twin("the-robot-studio/so101")
+```
+
+### Direct Configuration
+
+Pass the API token directly when initializing the client:
+
+```python
+from cyberwave import Cyberwave
+
+client = Cyberwave(api_key="cw_your_token_here")
+```
+
+---
+
+## Environment Variables
+
+The SDK supports these environment variables:
+
+| Variable                   | Description                                         |
+| -------------------------- | --------------------------------------------------- |
+| `CYBERWAVE_API_KEY`        | Your API token for authentication                   |
+| `CYBERWAVE_BASE_URL`       | API base URL (default: `https://api.cyberwave.com`) |
+| `CYBERWAVE_ENVIRONMENT_ID` | Default environment UUID                            |
+| `CYBERWAVE_WORKSPACE_ID`   | Default workspace UUID                              |
+| `CYBERWAVE_MQTT_HOST`      | MQTT broker host (default: `mqtt.cyberwave.com`)    |
+| `CYBERWAVE_MQTT_PORT`      | MQTT broker port (default: `8883`)                  |
+
+### Example `.env` File
+
+```bash
+CYBERWAVE_API_KEY=cw_a1b2c3d4e5f6...
+CYBERWAVE_ENVIRONMENT_ID=1e48b1a5-ff2b-45ba-a854-a2c2df561852
+```
+
+Load with [python-dotenv](https://pypi.org/project/python-dotenv/):
+
+```python
+from dotenv import load_dotenv
+load_dotenv()
+
+import cyberwave as cw
+robot = cw.twin("the-robot-studio/so101")
+```
+
+---
+
+## MQTT Authentication
+
+For real-time features (video streaming, teleoperation, live joint updates), the SDK connects to MQTT automatically using your API token. The MQTT connection is lazily initialized — it connects on the first call that requires it (e.g., subscribing to joint updates).
+
+```python
+from cyberwave import Cyberwave
+
+client = Cyberwave(api_key="cw_your_token_here")
+
+robot = client.twin("the-robot-studio/so101")
+# MQTT connects automatically on the first subscription
+robot.subscribe_joints(lambda data: print(f"Joints: {data}"))
+```
+
+The default MQTT connection uses TLS on port 8883.
+
+### Custom MQTT Settings
+
+Override MQTT connection settings if needed:
+
+```python
+client = Cyberwave(
+    api_key="cw_your_token_here",
+    mqtt_host="mqtt.cyberwave.com",
+    mqtt_port=8883
+)
+```
+
+---
+
+## REST API Authentication
+
+For direct REST API calls, include your API token in the `Authorization` header:
+
+```bash
+curl -X GET "https://api.cyberwave.com/api/v1/assets/" \
+  -H "Authorization: Bearer cw_your_token_here"
+```
+
+Both `Bearer` and `Token` prefixes are accepted.
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Authentication failed: Invalid or missing credentials">
+    - Verify your API token is correct and hasn't been revoked - Check that the
+    environment variable is set: `echo $CYBERWAVE_API_KEY` - Generate a new
+    token from your [profile page](https://cyberwave.com/profile) if needed
+  </Accordion>
+
+  <Accordion title="No CYBERWAVE_API_KEY found">
+    The SDK couldn't find credentials. Either: - Set the `CYBERWAVE_API_KEY`
+    environment variable - Pass `api_key` directly to `Cyberwave()`
+  </Accordion>
+
+  <Accordion title="MQTT connection failed">
+    - Check your network allows outbound connections on port **8883** (TLS) -
+    Verify your API token is valid and not revoked - The MQTT client connects
+    lazily — call a subscription method to trigger the connection
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/overview/hello-robot">
+    Create your first digital twin
+  </Card>
+
+  <Card title="Python SDK" icon="python" href="/tools/python-sdk">
+    Full SDK documentation
+  </Card>
+</CardGroup>

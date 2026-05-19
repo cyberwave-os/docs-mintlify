@@ -1,0 +1,114 @@
+---
+title: "Teleoperation & Remote Control"
+description: "Stay in the loop with your physical AI — watch every twin live, and take over any robot in one click"
+icon: "gamepad"
+---
+
+Cyberwave is built for both research projects **and** the moment those projects ship to a real customer. Once a robot is doing real work in a real place, **human override is a requirement, not a feature** — and Cyberwave gives you that override out of the box for every twin in the [catalog](https://cyberwave.com/catalog), with no extra plumbing.
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+cw.affect("live")
+
+robot = cw.twin("acme/twins/arm-station-1")
+robot.use_controller("keyboard")          # human takes the wheel
+```
+
+The robot was being driven by a model a second ago; now it's being driven by you. Same twin, same environment, same code path.
+
+---
+
+## See your fleet in real time
+
+Switch any [environment](/overview/features/environment) into **Live** mode and the dashboard becomes a window into the physical cell. You don't tab between half a dozen camera apps — Cyberwave composes the picture for you:
+
+- **Live video** from every paired camera, streamed via WebRTC into the same canvas as the 3D scene.
+- **3D twin context** — robot poses, joint states, and waypoints animate live alongside the video so you always know what's where.
+- **Spatial sensors** — [LiDAR and depth point clouds](/feature-reference/environment-editor/index#live-point-cloud-alignment) overlaid on the scene so you can see what the robot sees.
+- **Health at a glance** — per-twin [presence indicators](/feature-reference/environment-editor/index#twin-presence-indicator-live-mode) and edge-core status make it obvious which robot needs attention.
+
+See [Environment Editor → Live mode](/feature-reference/environment-editor/index#edge-core-connection-status-live-mode) for the full panel.
+
+---
+
+## Take over any robot in one click
+
+Every twin always has exactly one **controller** driving it. Swapping controllers is the entire takeover flow — there's no separate teleoperation app to launch.
+
+<CardGroup cols={2}>
+  <Card title="Keyboard" icon="keyboard">
+    Drive joints, gripper, or base motion straight from the browser. Best for
+    quick recoveries and demos.
+  </Card>
+  <Card title="Gamepad" icon="gamepad">
+    USB or Bluetooth controllers for intuitive control of mobile robots and
+    arms.
+  </Card>
+  <Card title="Leader arm" icon="hand">
+    Pair a physical leader arm (e.g. SO-101 leader/follower) and mirror your
+    motion 1:1 onto the live robot.
+  </Card>
+  <Card title="Python SDK" icon="python">
+    Script overrides from your own code with
+    [`cw.affect("live")`](/tools/python-sdk#affect-simulation-vs-live-environment)
+    and `robot.use_controller(...)`.
+  </Card>
+</CardGroup>
+
+```python
+robot.use_controller("keyboard")          # human override
+robot.use_controller("my-vla-policy")     # hand it back to the AI
+```
+
+Telemetry, recording, and the [environment replay](/feature-reference/environment-editor/replay) timeline keep running across the handoff — a single session can start with an AI policy, hand off to a human, and end with a code controller, all on the same twin.
+
+Full reference: [Live Teleoperation](/feature-reference/environment-editor/teleoperation).
+
+---
+
+## Alerts, escalation, and who can do what
+
+Real production deployments need more than "someone is watching the dashboard". Cyberwave wires the rest of the loop for you:
+
+<CardGroup cols={2}>
+  <Card title="Real-time alerts" icon="bell" href="/feature-reference/edge/drivers/alerts">
+    Per-twin and per-environment alerts with `info`/`warning`/`error`/`critical`
+    severities, acknowledgement, and resolution lifecycle — surfaced in the UI
+    and over [MQTT](/api-reference/mqtt/main).
+  </Card>
+  <Card title="Workflow-driven escalation" icon="diagram-project" href="/overview/features/workflows">
+    Use [workflows](/overview/features/workflows) to fan out alerts to email,
+    [HTTP](/feature-reference/workflows/overview#nodes), or your on-call system
+    when a model gets stuck, a confidence drops, or a sensor goes silent.
+  </Card>
+  <Card title="Role-based access" icon="shield" href="/feature-reference/access-control">
+    [Viewer / Editor / Admin](/feature-reference/access-control) roles
+    cascade from the workspace, with per-twin and per-environment overrides
+    so operators only see (and drive) what they're meant to.
+  </Card>
+  <Card title="Audit-friendly link shares" icon="link" href="/feature-reference/access-control">
+    Read-only and comment-only [link shares](/feature-reference/access-control)
+    let stakeholders watch a live cell without ever getting takeover rights.
+  </Card>
+</CardGroup>
+
+Together, this is how you take a physical AI automation from "cool demo" to "I can put it in front of a paying customer" — full real-time visibility, instant override, and a defined chain of who responds when something is off.
+
+---
+
+## What to read next
+
+<CardGroup cols={3}>
+  <Card title="Live Teleoperation reference" icon="gamepad" href="/feature-reference/environment-editor/teleoperation">
+    Controller types, WebRTC streaming, latency, and the full setup flow.
+  </Card>
+  <Card title="Go2 — digital to physical" icon="dog" href="/tutorials/go2-digital-to-physical">
+    End-to-end walkthrough of swapping a simulated policy for live override.
+  </Card>
+  <Card title="SO-101 teleop dataset" icon="record-vinyl" href="/tutorials/so101-teleop-dataset">
+    Use a leader/follower setup to teleop a real arm and record data for
+    training.
+  </Card>
+</CardGroup>

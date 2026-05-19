@@ -11,53 +11,46 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Overview",
         "groups": [
           {
             "group": "Getting started",
             "pages": [
-              "get-started/index",
-              "get-started/hello-robot",
-              "get-started/try-real-robot"
+              "overview/index",
+              "overview/hello-robot",
+              "overview/develop-remote-hardware",
+              "overview/robotic-arms",
+              "overview/robotic-dogs",
+              "overview/drones",
+              "overview/cameras"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "overview/features/digital-twin",
+              "overview/features/environment",
+              "overview/features/simulation",
+              "overview/features/workflows",
+              "overview/features/teleoperation-and-remote-control",
+              "overview/features/replay-and-historical-data",
+              "overview/features/models-and-datasets"
+            ]
+          },
+          {
+            "group": "Connecting to hardware",
+            "pages": [
+              "overview/connecting-hardware/index",
+              "overview/connecting-hardware/custom-hardware"
             ]
           },
           {
             "group": "SDKs and Tools",
             "pages": [
-              "sdks/python-sdk",
-              "sdks/claude-skill",
-              "sdks/mcp-server",
-              "sdks/cpp-sdk"
-            ]
-          },
-          {
-            "group": "Robots introduction",
-            "pages": [
-              "hardware/index",
-              "hardware/ugv/get-started",
-              "hardware/go2/get-started",
-              "hardware/dji-mini/index",
-              "hardware/universal-robot-7/get-started",
-              "hardware/so101/get-started",
-              "hardware/boston-dynamics/get-started",
-              "hardware/other-hardware/get-started",
-              "hardware/other-hardware/custom-hardware"
-            ]
-          },
-          {
-            "group": "Sensors",
-            "pages": [
-              "hardware/camera/get-started",
-              "hardware/microphone/get-started"
-            ]
-          },
-          {
-            "group": "Capabilities",
-            "pages": [
-              "capabilities/manipulation",
-              "capabilities/locomotion",
-              "capabilities/perception",
-              "capabilities/simulation"
+              "overview/tools/python-sdk",
+              "overview/tools/claude-skill",
+              "overview/tools/mcp-server",
+              "overview/tools/cpp-sdk"
             ]
           },
           {
@@ -68,7 +61,8 @@
               "tutorials/rover-ai-mission",
               "tutorials/intrusion-detection",
               "tutorials/go2-digital-to-physical",
-              "tutorials/so101-voice-pick-and-place"
+              "tutorials/so101-voice-pick-and-place",
+              "tutorials/so101-teleop-dataset"
             ]
           },
           {
@@ -87,89 +81,89 @@
         ]
       },
       {
-        "tab": "Platform Reference",
+        "tab": "Feature Reference",
         "groups": [
           {
             "group": "Concepts",
             "pages": [
-              "get-started/architecture",
-              "get-started/core-data-hierarchy",
-              "get-started/key-concepts"
+              "feature-reference/architecture/architecture",
+              "feature-reference/architecture/core-data-hierarchy",
+              "feature-reference/architecture/key-concepts"
             ]
           },
           {
             "group": "Platform Features",
             "pages": [
-              "use-cyberwave/setup-cyberwave",
-              "use-cyberwave/catalog",
-              "use-cyberwave/digital-twins",
+              "feature-reference/setup-cyberwave",
+              "feature-reference/catalog",
+              "feature-reference/digital-twins",
               {
                 "group": "Environment Editor",
                 "icon": "pen-to-square",
                 "pages": [
-                  "use-cyberwave/environment-editor/index",
-                  "use-cyberwave/environment-editor/environment-templates",
-                  "use-cyberwave/environment-editor/teleoperation",
-                  "use-cyberwave/environment-editor/replay"
+                  "feature-reference/environment-editor/index",
+                  "feature-reference/environment-editor/environment-templates",
+                  "feature-reference/environment-editor/teleoperation",
+                  "feature-reference/environment-editor/replay"
                 ]
               },
               {
                 "group": "Workflows",
                 "pages": [
-                  "use-cyberwave/workflows",
-                  "use-cyberwave/workflows/audio-track/overview",
-                  "use-cyberwave/workflows/anonymize-image",
-                  "use-cyberwave/workflows/spatial-filter",
-                  "use-cyberwave/workflows/timed-condition",
-                  "use-cyberwave/workflows/reusing-chains"
+                  "feature-reference/workflows",
+                  "feature-reference/workflows/audio-track/overview",
+                  "feature-reference/workflows/anonymize-image",
+                  "feature-reference/workflows/spatial-filter",
+                  "feature-reference/workflows/timed-condition",
+                  "feature-reference/workflows/reusing-chains"
                 ]
               },
               {
                 "group": "Models",
                 "pages": [
-                  "use-cyberwave/ml-models/index",
-                  "use-cyberwave/ml-models/playground",
-                  "use-cyberwave/ml-models/structured-actions",
-                  "use-cyberwave/ml-models/smolvla-training",
-                  "use-cyberwave/ml-models/openvla-oft-training",
-                  "use-cyberwave/ml-models/speech-to-text"
+                  "feature-reference/ml-models/index",
+                  "feature-reference/ml-models/playground",
+                  "feature-reference/ml-models/structured-actions",
+                  "feature-reference/ml-models/smolvla-training",
+                  "feature-reference/ml-models/openvla-oft-training",
+                  "feature-reference/ml-models/speech-to-text"
                 ]
               },
-              "use-cyberwave/access-control",
-              "concepts/slug-system",
-              "use-cyberwave/docker-registry"
+              "feature-reference/access-control",
+              "feature-reference/concepts/slug-system",
+              "feature-reference/docker-registry"
             ]
           },
           {
             "group": "Cyberwave Edge",
             "icon": "microchip",
             "pages": [
-              "edge/overview",
-              "edge/bench",
-              "edge/raspberry-pi",
-              "edge/drivers/overview",
-              "edge/drivers/writing-compatible-drivers",
-              "edge/drivers/native-microphone-driver",
-              "edge/drivers/alerts",
-              "edge/workers/overview",
-              "edge/workers/filter-frame",
-              "sdks/cloud-node",
-              "sdks/vla-cloud-node",
-              "sdks/zenoh-mqtt-bridge",
+              "feature-reference/edge/overview",
+              "feature-reference/edge/bench",
+              "feature-reference/edge/raspberry-pi",
+              "feature-reference/edge/drivers/overview",
+              "feature-reference/edge/drivers/writing-compatible-drivers",
+              "feature-reference/edge/drivers/native-microphone-driver",
+              "feature-reference/edge/drivers/alerts",
+              "feature-reference/edge/workers/overview",
+              "feature-reference/edge/workers/filter-frame",
+              "overview/tools/cloud-node",
+              "overview/tools/vla-cloud-node",
+              "overview/tools/zenoh-mqtt-bridge",
               {
                 "group": "Edge Workers",
                 "pages": [
-                  "edge/drivers/edge-workers",
-                  "edge/drivers/data-wire-format",
-                  "edge/drivers/data-record-replay",
-                  "edge/drivers/data-fusion",
-                  "edge/drivers/data-synchronized-hooks",
-                  "edge/drivers/multi-camera-detection-routing",
-                  "edge/drivers/multi-camera-driver-orchestration",
-                  "edge/drivers/camera-detection-overlays",
-                  "edge/drivers/camera-v4l2-backend",
-                  "edge/drivers/frame-filters",
-                  "edge/drivers/security-pipeline"
+                  "feature-reference/edge/drivers/edge-workers",
+                  "feature-reference/edge/drivers/data-wire-format",
+                  "feature-reference/edge/drivers/data-record-replay",
+                  "feature-reference/edge/drivers/data-fusion",
+                  "feature-reference/edge/drivers/data-synchronized-hooks",
+                  "feature-reference/edge/drivers/multi-camera-detection-routing",
+                  "feature-reference/edge/drivers/multi-camera-driver-orchestration",
+                  "feature-reference/edge/drivers/camera-detection-overlays",
+                  "feature-reference/edge/drivers/camera-v4l2-backend",
+                  "feature-reference/edge/drivers/frame-filters",
+                  "feature-reference/edge/drivers/security-pipeline"
                 ]
               }
             ]
@@ -177,14 +171,14 @@
           {
             "group": "Technical Reference",
             "pages": [
-              "use-cyberwave/manifest"
+              "feature-reference/manifest"
             ]
           },
           {
             "group": "Use-Case Recipes",
             "pages": [
-              "get-started/idea-cookbook",
-              "get-started/starter-kit-builders"
+              "overview/idea-cookbook",
+              "overview/starter-kit-builders"
             ]
           }
         ]
@@ -196,6 +190,12 @@
             "group": "Overview",
             "pages": [
               "api-reference/overview"
+            ]
+          },
+          {
+            "group": "Drivers",
+            "pages": [
+              "api-reference/autonomous-navigation-driver"
             ]
           },
           {
@@ -213,71 +213,236 @@
           {
             "group": "REST API",
             "pages": [
+              "api-reference/rest/DefaultApi",
+              "api-reference/rest/AddMemberByEmailRequest",
+              "api-reference/rest/AddMemberByEmailResponse",
+              "api-reference/rest/AddMemberUserSchema",
+              "api-reference/rest/AdminLabOverviewSchema",
+              "api-reference/rest/AdminSessionSchema",
+              "api-reference/rest/AlertSchema",
+              "api-reference/rest/AssetCatalogImportSchema",
               "api-reference/rest/AssetCreateSchema",
               "api-reference/rest/AssetCreateWithURDFSchema",
               "api-reference/rest/AssetGLBFromAttachmentSchema",
+              "api-reference/rest/AssetListSchema",
               "api-reference/rest/AssetSchema",
               "api-reference/rest/AssetUpdateSchema",
               "api-reference/rest/AttachmentCreateSchema",
               "api-reference/rest/AttachmentSchema",
+              "api-reference/rest/AvailableFeaturesSchema",
               "api-reference/rest/BulkJointStatesUpdateSchema",
+              "api-reference/rest/BusinessEventCreateSchema",
+              "api-reference/rest/BusinessEventListResponseSchema",
+              "api-reference/rest/BusinessEventSchema",
+              "api-reference/rest/CameraConfigUpdateSchema",
+              "api-reference/rest/CatalogApi",
+              "api-reference/rest/CatalogSeedGroupSchema",
+              "api-reference/rest/CatalogSeedItemSchema",
+              "api-reference/rest/CatalogSeedOptionSchema",
+              "api-reference/rest/CatalogSeedOptionsResponseSchema",
+              "api-reference/rest/CatalogSeedRequestSchema",
+              "api-reference/rest/CatalogSeedResponseSchema",
+              "api-reference/rest/CloudeNodeHeartbeatResponse",
+              "api-reference/rest/CloudeNodeInstanceRegisterResponse",
+              "api-reference/rest/CloudNodeApi",
+              "api-reference/rest/CloudNodeFailedRequest",
+              "api-reference/rest/CloudNodeFailedResponse",
+              "api-reference/rest/CloudNodeInstanceCreateRequest",
+              "api-reference/rest/CloudNodeInstanceLogsResponse",
+              "api-reference/rest/CloudNodeInstanceRegisterRequest",
+              "api-reference/rest/CloudNodeInstanceSchema",
+              "api-reference/rest/CloudNodeInstanceStatusResponse",
+              "api-reference/rest/CloudNodeLogEntrySchema",
+              "api-reference/rest/CloudNodeLogRequest",
+              "api-reference/rest/CloudNodeLogResponse",
+              "api-reference/rest/CloudNodeTerminatedRequest",
+              "api-reference/rest/CloudNodeTerminatedResponse",
+              "api-reference/rest/CloudNodeWorkloadAssignSchema",
+              "api-reference/rest/CloudNodeWorkloadAttachmentResponseSchema",
+              "api-reference/rest/CloudNodeWorkloadAttachmentSchema",
+              "api-reference/rest/CloudNodeWorkloadCreateSchema",
+              "api-reference/rest/CloudNodeWorkloadResultSchema",
+              "api-reference/rest/CloudNodeWorkloadsApi",
+              "api-reference/rest/CloudNodeWorkloadSchema",
+              "api-reference/rest/CloudNodeWorkloadUpdateSchema",
               "api-reference/rest/CombinedDatasetGenerationRequestSchema",
+              "api-reference/rest/CombinedRecordingGenerationRequestSchema",
               "api-reference/rest/CompleteLargeUploadSchema",
+              "api-reference/rest/ContactApi",
               "api-reference/rest/ContactFormSchema",
+              "api-reference/rest/ContactSubmissionAIResponseSchema",
+              "api-reference/rest/ContactSubmissionAISuggestSchema",
+              "api-reference/rest/ContactSubmissionSchema",
+              "api-reference/rest/ContactSubmissionUpdateSchema",
+              "api-reference/rest/ControllerPolicyCreateSchema",
+              "api-reference/rest/ControllerPolicyExecuteResponseSchema",
+              "api-reference/rest/ControllerPolicyExecuteSchema",
+              "api-reference/rest/ControllerPolicySchema",
+              "api-reference/rest/ControllerPolicyUpdateSchema",
+              "api-reference/rest/CreateAlertSchema",
+              "api-reference/rest/CreateAssetFromPromptOrImageRequestSchema",
+              "api-reference/rest/CreateMissionExecutionSchema",
+              "api-reference/rest/CreateMissionSchema",
+              "api-reference/rest/CreateTaskSchema",
+              "api-reference/rest/CRMApi",
+              "api-reference/rest/CRMInboxApi",
+              "api-reference/rest/DatasetCreateSchema",
               "api-reference/rest/DatasetGenerationRequestSchema",
               "api-reference/rest/DatasetGenerationRequestSchemaByDate",
               "api-reference/rest/DatasetGenerationResponseSchema",
-              "api-reference/rest/DefaultApi",
+              "api-reference/rest/DatasetSchema",
+              "api-reference/rest/DatasetUpdateSchema",
+              "api-reference/rest/DatasetZipUrlSchema",
+              "api-reference/rest/DeferredTaskExecutionResponseSchema",
+              "api-reference/rest/DiscoveryResponseSchema",
+              "api-reference/rest/EdgeCoreRestartResponseSchema",
               "api-reference/rest/EdgeCreateSchema",
+              "api-reference/rest/EdgeRegisterSchema",
               "api-reference/rest/EdgeSchema",
+              "api-reference/rest/EnableOrgFeatureRequest",
+              "api-reference/rest/EndSessionResponseSchema",
+              "api-reference/rest/environment-recordings-list",
               "api-reference/rest/EnvironmentCreateSchema",
-              "api-reference/rest/EnvironmentWaypointCreateSchema",
-              "api-reference/rest/EnvironmentWaypointBulkCreateSchema",
-              "api-reference/rest/EnvironmentWaypointSchema",
               "api-reference/rest/EnvironmentSchema",
+              "api-reference/rest/EnvironmentSnapshotCreateSchema",
+              "api-reference/rest/EnvironmentSnapshotSchema",
+              "api-reference/rest/EnvironmentWaypointBulkCreateSchema",
+              "api-reference/rest/EnvironmentWaypointCreateSchema",
+              "api-reference/rest/EnvironmentWaypointSchema",
+              "api-reference/rest/EpisodeCreateSchema",
+              "api-reference/rest/EpisodeSchema",
+              "api-reference/rest/EpisodeUpdateSchema",
+              "api-reference/rest/ExecuteTaskSchema",
+              "api-reference/rest/FeatureMetadataSchema",
+              "api-reference/rest/FeaturesApi",
+              "api-reference/rest/FeatureStatusSchema",
+              "api-reference/rest/GrantUserFeatureRequest",
+              "api-reference/rest/ImageBytes",
+              "api-reference/rest/ImageBytes1",
+              "api-reference/rest/ImportResultSchema",
               "api-reference/rest/InitiateLargeUploadResponse",
               "api-reference/rest/InitiateLargeUploadSchema",
+              "api-reference/rest/JointCalibrationSchema",
               "api-reference/rest/JointSchema",
               "api-reference/rest/JointStateSchema",
               "api-reference/rest/JointStatesSchema",
               "api-reference/rest/JointStateUpdateSchema",
+              "api-reference/rest/KeybindingCreateSchema",
+              "api-reference/rest/KeybindingSchema",
+              "api-reference/rest/KeybindingUpdateSchema",
+              "api-reference/rest/LabAccessResponseSchema",
+              "api-reference/rest/LabStatusResponseSchema",
               "api-reference/rest/LinkShareCreateSchema",
               "api-reference/rest/LinkShareRevokeSchema",
               "api-reference/rest/LinkShareSchema",
               "api-reference/rest/LLMGenerationSchema",
               "api-reference/rest/LLMResponseSchema",
+              "api-reference/rest/MapCreateSchema",
+              "api-reference/rest/MapDataSchema",
+              "api-reference/rest/MapStreamFinalizeSchema",
+              "api-reference/rest/MapStreamStartSchema",
+              "api-reference/rest/MapStreamStopSchema",
+              "api-reference/rest/Metadata",
+              "api-reference/rest/MissionExecutionSchema",
+              "api-reference/rest/MissionSchema",
               "api-reference/rest/MLModelCreateSchema",
               "api-reference/rest/MLModelSchema",
               "api-reference/rest/MLModelUpdateSchema",
+              "api-reference/rest/MLTrainingCreateSchema",
+              "api-reference/rest/MLTrainingDeploySchema",
+              "api-reference/rest/MLTrainingFailedCreationSchema",
+              "api-reference/rest/MLTrainingSchema",
+              "api-reference/rest/MLTrainingUpdateSchema",
+              "api-reference/rest/MotionPlanSchema",
+              "api-reference/rest/MotionPlanStepSchema",
+              "api-reference/rest/MyFeaturesResponseSchema",
+              "api-reference/rest/NavigationRotationSchema",
+              "api-reference/rest/NavigationWaypointSchema",
+              "api-reference/rest/OccupancyMapCreateSchema",
+              "api-reference/rest/OnboardingCompletionSchema",
+              "api-reference/rest/OpportunityCreateSchema",
+              "api-reference/rest/OpportunitySchema",
+              "api-reference/rest/OpportunityUpdateSchema",
+              "api-reference/rest/OrganizationCreateSchema",
               "api-reference/rest/OrganizationSchema",
               "api-reference/rest/OrganizationUpdateSchema",
+              "api-reference/rest/OrganizationWorkspaceSchema",
+              "api-reference/rest/OrgFeatureSchema",
+              "api-reference/rest/OrgMemberSchema",
+              "api-reference/rest/OrgMembersResponse",
+              "api-reference/rest/OrgMemberUserSchema",
+              "api-reference/rest/PairTwinSchema",
+              "api-reference/rest/PasswordChangeSchema",
               "api-reference/rest/Payload",
               "api-reference/rest/PermissionsSchema",
+              "api-reference/rest/PipelineConfigSchema",
+              "api-reference/rest/PipelineStagesSchema",
               "api-reference/rest/PlanSchema",
               "api-reference/rest/PopularTagSchema",
               "api-reference/rest/PopularTagsResponseSchema",
+              "api-reference/rest/ProfileApi",
+              "api-reference/rest/ProfileResponseSchema",
+              "api-reference/rest/ProfileUpdateSchema",
               "api-reference/rest/ProjectCreateSchema",
               "api-reference/rest/ProjectSchema",
               "api-reference/rest/ProjectShareResponseSchema",
               "api-reference/rest/PublicUserSchema",
               "api-reference/rest/QuaternionSchema",
+              "api-reference/rest/RecordingGenerationRequestSchema",
+              "api-reference/rest/RecordingGenerationRequestSchemaByDate",
+              "api-reference/rest/RecordingGenerationResponseSchema",
+              "api-reference/rest/ReloadCapabilitiesBulkSchema",
+              "api-reference/rest/RemoveMemberResponse",
+              "api-reference/rest/Response",
+              "api-reference/rest/RevokeUserFeatureRequest",
               "api-reference/rest/RobotDescriptionSchema",
               "api-reference/rest/ShareSchema",
               "api-reference/rest/SharesResponseSchema",
+              "api-reference/rest/SimulationStartSchema",
+              "api-reference/rest/SlugAvailabilitySchema",
+              "api-reference/rest/SyncWithAssetSchema",
+              "api-reference/rest/TaggedFramesCreateSchema",
+              "api-reference/rest/TaggedFramesSchema",
+              "api-reference/rest/TaggedFramesUpdateSchema",
+              "api-reference/rest/TaskExecutionSchema",
+              "api-reference/rest/TaskSchema",
+              "api-reference/rest/TaskStepSchema",
               "api-reference/rest/TeamMemberResponse",
               "api-reference/rest/TeamShareSchema",
+              "api-reference/rest/TwinActionRequestSchema",
+              "api-reference/rest/TwinActionResponseSchema",
+              "api-reference/rest/TwinActionStatusSchema",
+              "api-reference/rest/TwinBindingSchema",
+              "api-reference/rest/TwinConnectionEventSchema",
               "api-reference/rest/TwinCreateSchema",
+              "api-reference/rest/TwinDriverLogSchema",
+              "api-reference/rest/TwinDriverLogsResponseSchema",
+              "api-reference/rest/TwinJointCalibrationSchema",
+              "api-reference/rest/TwinMetricsQuerySchema",
+              "api-reference/rest/TwinMotionResponseSchema",
+              "api-reference/rest/TwinNavigationCommandSchema",
               "api-reference/rest/TwinRelationshipSchema",
               "api-reference/rest/TwinSchema",
               "api-reference/rest/TwinStateUpdateSchema",
               "api-reference/rest/TwinTelemetryMetadataSchema",
+              "api-reference/rest/TwinUniversalSchemaPatchSchema",
+              "api-reference/rest/UniversalSchemaPatchSchema",
+              "api-reference/rest/UpdateAlertSchema",
               "api-reference/rest/UpdateDatasetMetadataSchema",
+              "api-reference/rest/UpdateMemberRoleRequest",
+              "api-reference/rest/UpdateMemberRoleResponse",
+              "api-reference/rest/UpdateRecordingMetadataSchema",
+              "api-reference/rest/UpdateTaskSchema",
               "api-reference/rest/URDFProjectCreateSchema",
               "api-reference/rest/URDFProjectSchema",
+              "api-reference/rest/UserFeatureSchema",
               "api-reference/rest/UserSchema",
+              "api-reference/rest/UserSearchResultSchema",
               "api-reference/rest/UserShareSchema",
-              "api-reference/rest/VendorDescriptionSchema",
+              "api-reference/rest/Value",
               "api-reference/rest/Vector3Schema",
+              "api-reference/rest/VendorDescriptionSchema",
+              "api-reference/rest/Visibility",
               "api-reference/rest/VLMGenerationSchema",
               "api-reference/rest/VLMResponseSchema",
               "api-reference/rest/WorkflowConnectionCreateSchema",
@@ -291,24 +456,23 @@
               "api-reference/rest/WorkflowNodeUpdateSchema",
               "api-reference/rest/WorkflowSchema",
               "api-reference/rest/WorkflowUpdateSchema",
+              "api-reference/rest/WorkspaceCreateSchema",
               "api-reference/rest/WorkspaceResponseSchema",
               "api-reference/rest/WorkspaceSchema",
               "api-reference/rest/WorkspaceUpdateSchema",
-              "api-reference/rest/WorkspaceUserSchema"
+              "api-reference/rest/WorkspaceUserSchema",
+              "api-reference/rest/WorkspaceUsersSchema"
             ]
           }
         ]
+      },
+      {
+        "tab": "Changelog",
+        "pages": [
+          "changelog"
+        ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Changelog",
-          "href": "https://docs.cyberwave.com/changelog",
-          "icon": "clock-rotate-left"
-        }
-      ]
-    }
+    ]
   },
   "logo": {
     "light": "/images/cyberwave-logo-black.svg",
@@ -324,12 +488,7 @@
         "label": "Contact",
         "href": "https://cyberwave.com/contact-us"
       }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Sign in",
-      "href": "https://cyberwave.com/dashboard"
-    }
+    ]
   },
   "contextual": {
     "options": [
@@ -352,28 +511,28 @@
   },
   "redirects": [
     {
-      "source": "/use-cyberwave/workflows/presence-dwell",
-      "destination": "/use-cyberwave/workflows/timed-condition"
+      "source": "/feature-reference/workflows/presence-dwell",
+      "destination": "/feature-reference/workflows/timed-condition"
     },
     {
-      "source": "/use-cyberwave/twin-presence-indicator",
-      "destination": "/use-cyberwave/environment-editor#twin-presence-indicator-live-mode"
+      "source": "/feature-reference/twin-presence-indicator",
+      "destination": "/feature-reference/environment-editor#twin-presence-indicator-live-mode"
     },
     {
-      "source": "/use-cyberwave/environment-templates",
-      "destination": "/use-cyberwave/environment-editor/environment-templates"
+      "source": "/feature-reference/environment-templates",
+      "destination": "/feature-reference/environment-editor/environment-templates"
     },
     {
-      "source": "/use-cyberwave/recording-replay",
-      "destination": "/use-cyberwave/environment-editor/replay"
+      "source": "/feature-reference/recording-replay",
+      "destination": "/feature-reference/environment-editor/replay"
     },
     {
-      "source": "/use-cyberwave/teleoperation",
-      "destination": "/use-cyberwave/environment-editor/teleoperation"
+      "source": "/feature-reference/teleoperation",
+      "destination": "/feature-reference/environment-editor/teleoperation"
     },
     {
-      "source": "/use-cyberwave/teleoperation-latency",
-      "destination": "/use-cyberwave/environment-editor/teleoperation"
+      "source": "/feature-reference/teleoperation-latency",
+      "destination": "/feature-reference/environment-editor/teleoperation"
     },
     {
       "source": "/faqs",
@@ -384,16 +543,192 @@
       "destination": "/support"
     },
     {
-      "source": "/get-started/quickstart",
-      "destination": "/get-started/hello-robot"
+      "source": "/overview/quickstart",
+      "destination": "/overview/hello-robot"
     },
     {
       "source": "/create-skill/ml-models/speech-to-text",
-      "destination": "/use-cyberwave/ml-models/speech-to-text"
+      "destination": "/feature-reference/ml-models/speech-to-text"
     },
     {
       "source": "/hardware/microphone/native-driver",
-      "destination": "/edge/drivers/native-microphone-driver"
+      "destination": "/feature-reference/edge/drivers/native-microphone-driver"
+    },
+    {
+      "source": "/overview/try-real-robot",
+      "destination": "/overview/develop-remote-hardware"
+    },
+    {
+      "source": "/overview/architecture",
+      "destination": "/feature-reference/architecture/architecture"
+    },
+    {
+      "source": "/overview/core-data-hierarchy",
+      "destination": "/feature-reference/architecture/core-data-hierarchy"
+    },
+    {
+      "source": "/overview/key-concepts",
+      "destination": "/feature-reference/architecture/key-concepts"
+    },
+    {
+      "source": "/get-started/architecture",
+      "destination": "/feature-reference/architecture/architecture"
+    },
+    {
+      "source": "/get-started/core-data-hierarchy",
+      "destination": "/feature-reference/architecture/core-data-hierarchy"
+    },
+    {
+      "source": "/get-started/key-concepts",
+      "destination": "/feature-reference/architecture/key-concepts"
+    },
+    {
+      "source": "/get-started/try-real-robot",
+      "destination": "/overview/develop-remote-hardware"
+    },
+    {
+      "source": "/get-started",
+      "destination": "/overview"
+    },
+    {
+      "source": "/get-started/:slug*",
+      "destination": "/overview/:slug*"
+    },
+    {
+      "source": "/use-cyberwave/teleoperation",
+      "destination": "/feature-reference/environment-editor/teleoperation"
+    },
+    {
+      "source": "/use-cyberwave/environment-templates",
+      "destination": "/feature-reference/environment-editor/environment-templates"
+    },
+    {
+      "source": "/use-cyberwave/recording-replay",
+      "destination": "/feature-reference/environment-editor/replay"
+    },
+    {
+      "source": "/use-cyberwave/:slug*",
+      "destination": "/feature-reference/:slug*"
+    },
+    {
+      "source": "/concepts/:slug*",
+      "destination": "/feature-reference/concepts/:slug*"
+    },
+    {
+      "source": "/datasets/:slug*",
+      "destination": "/feature-reference/datasets/:slug*"
+    },
+    {
+      "source": "/edge/:slug*",
+      "destination": "/feature-reference/edge/:slug*"
+    },
+    {
+      "source": "/sdks/:slug*",
+      "destination": "/overview/tools/:slug*"
+    },
+    {
+      "source": "/tools/:slug*",
+      "destination": "/overview/tools/:slug*"
+    },
+    {
+      "source": "/models/:slug*",
+      "destination": "/api-reference/models/:slug*"
+    },
+    {
+      "source": "/capabilities/simulation",
+      "destination": "/overview/features/simulation"
+    },
+    {
+      "source": "/capabilities/locomotion",
+      "destination": "/overview/robotic-dogs"
+    },
+    {
+      "source": "/capabilities/manipulation",
+      "destination": "/overview/robotic-arms"
+    },
+    {
+      "source": "/capabilities/perception",
+      "destination": "/overview/cameras"
+    },
+    {
+      "source": "/capabilities/:slug*",
+      "destination": "/overview"
+    },
+    {
+      "source": "/mqtt/asyncapi",
+      "destination": "/api-reference/mqtt/main"
+    },
+    {
+      "source": "/mqtt/:slug*",
+      "destination": "/api-reference/mqtt/main"
+    },
+    {
+      "source": "/hardware/go2/ros2-driver",
+      "destination": "/api-reference/autonomous-navigation-driver"
+    },
+    {
+      "source": "/hardware/so101/get-started",
+      "destination": "https://cyberwave.com/the-robot-studio/so101"
+    },
+    {
+      "source": "/hardware/so101",
+      "destination": "https://cyberwave.com/the-robot-studio/so101"
+    },
+    {
+      "source": "/hardware/universal-robot-7/get-started",
+      "destination": "https://cyberwave.com/universal_robots/UR7"
+    },
+    {
+      "source": "/hardware/go2/get-started",
+      "destination": "https://cyberwave.com/unitree/go2"
+    },
+    {
+      "source": "/hardware/go2",
+      "destination": "https://cyberwave.com/unitree/go2"
+    },
+    {
+      "source": "/hardware/boston-dynamics/get-started",
+      "destination": "https://cyberwave.com/boston-dynamics/spot"
+    },
+    {
+      "source": "/hardware/dji-mini",
+      "destination": "https://cyberwave.com/dji/DJI-Mini-4-Pro"
+    },
+    {
+      "source": "/hardware/camera/get-started",
+      "destination": "https://cyberwave.com/catalog/tag/camera"
+    },
+    {
+      "source": "/hardware/camera",
+      "destination": "https://cyberwave.com/catalog/tag/camera"
+    },
+    {
+      "source": "/hardware/ugv/get-started",
+      "destination": "https://cyberwave.com/waveshare/ugv-beast"
+    },
+    {
+      "source": "/hardware/ugv",
+      "destination": "https://cyberwave.com/waveshare/ugv-beast"
+    },
+    {
+      "source": "/hardware/microphone/get-started",
+      "destination": "https://cyberwave.com/catalog/tag/microphone"
+    },
+    {
+      "source": "/hardware/other-hardware/custom-hardware",
+      "destination": "/overview/connecting-hardware/custom-hardware"
+    },
+    {
+      "source": "/hardware/other-hardware/get-started",
+      "destination": "/overview/supported-hardware"
+    },
+    {
+      "source": "/hardware",
+      "destination": "/overview/supported-hardware"
+    },
+    {
+      "source": "/hardware/:slug*",
+      "destination": "/overview/supported-hardware"
     }
   ]
 }

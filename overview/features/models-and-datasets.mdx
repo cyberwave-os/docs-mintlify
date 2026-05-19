@@ -1,0 +1,118 @@
+---
+title: "Models & Datasets"
+description: "Run any AI model — open-source, proprietary, your own — on any twin, with the data plumbing already taken care of"
+icon: "brain"
+---
+
+AI models are how your [twins](/overview/features/digital-twin) stop being puppets and start being autonomous. Cyberwave is the substrate that gets them there: a growing [catalog of models](https://cyberwave.com/models), the infrastructure to run them on cloud or edge, and the [datasets](https://cyberwave.com/datasets) you need to train your own.
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+arm = cw.twin("acme/twins/arm-station-1")
+arm.use_controller("acme/models/my-pick-and-place-vla")
+```
+
+That's it — the model is now driving the robot. Same call works in [simulation](/overview/features/simulation) (`cw.affect("simulation")`) and against live hardware.
+
+---
+
+## Bring your own model — or pick from the catalog
+
+<CardGroup cols={3}>
+  <Card title="Use the catalog" icon="book-bookmark" href="https://cyberwave.com/models">
+    Pick from open-source and proprietary models — VLAs (SmolVLA, OpenVLA, Pi 0.5),
+    VLMs (Gemini Robotics, GPT-5, Molmo, PaliGemma), detectors (YOLOv8, SAM2),
+    and image-to-3D (Hunyuan3D, TripoSR).
+  </Card>
+  <Card title="Fine-tune your own" icon="brain" href="/feature-reference/ml-models/smolvla-training">
+    Fine-tune [SmolVLA](/feature-reference/ml-models/smolvla-training) or
+    [OpenVLA](/feature-reference/ml-models/openvla-oft-training) on the data
+    you collected with your own robots — no separate training stack.
+  </Card>
+  <Card title="Register a custom model" icon="code" href="/feature-reference/ml-models/index#registering-a-model">
+    Bring your own weights or endpoint — Hugging Face, an internal inference
+    server, a custom ONNX file. Cyberwave treats it as a first-class model.
+  </Card>
+</CardGroup>
+
+Every registered model gets a [Model Playground](/feature-reference/ml-models/playground) page where you can try it on an image, see overlays, copy CLI/SDK snippets, and wire it into a workflow — so experimenting with a new model is genuinely one click.
+
+---
+
+## Use them anywhere in your stack
+
+Cyberwave models compose with the rest of the platform. Same model, different roles:
+
+| Where the model runs    | What it does                                                          | Reference                                                                              |
+| ----------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| **As a twin controller**| Drive a robot end-to-end (a VLA picks-and-places, an RL policy walks) | [Controllers](/overview/index#controllers)                                             |
+| **Inside a workflow**   | One `call_model` node — runs cloud VLM or edge ML transparently       | [Workflow nodes](/feature-reference/workflows#workflow-components)                     |
+| **From the SDK**        | Async cloud calls for VLM / LLM tasks                                 | [`vlm_generation` / `llm_generation`](/tools/python-sdk#workflows)                     |
+| **In simulation**       | The same code drives a [MuJoCo twin](/overview/features/simulation)   | [`cw.affect("simulation")`](/tools/python-sdk#affect-simulation-vs-live-environment)   |
+
+The best automations usually combine more than one — an edge YOLO that's cheap to run on every frame **and** a cloud VLM that reasons about the rare interesting frame. See the [edge-to-cloud VLM tutorial](/tutorials/edge-to-cloud-vlm) for that pattern end-to-end.
+
+---
+
+## Edge + cloud, both first-class
+
+Cyberwave runs models in both places, on purpose.
+
+<CardGroup cols={2}>
+  <Card title="Edge models" icon="microchip" href="/feature-reference/edge/workers/overview">
+    Local inference on your own hardware — fast, private, offline-capable.
+    YOLO, SAM2, ONNX/TensorRT detectors all run inside the
+    [edge worker](/feature-reference/edge/workers/overview) generated from
+    your workflow.
+  </Card>
+  <Card title="Cloud models" icon="cloud" href="/tools/cloud-node">
+    Heavy-weight VLMs and VLAs (Gemini Robotics, GPT-5, OpenVLA) run on a
+    [Cloud Node](/tools/cloud-node) or
+    [VLA Cloud Node](/tools/vla-cloud-node) with a GPU attached — Cyberwave
+    handles the provisioning.
+  </Card>
+</CardGroup>
+
+You don't manage any of the boring parts: weight downloads, GPU provisioning, picking the right edge-compatible variant, network reconnects, version pinning. Cyberwave routes the right model to the right runtime — see the [model deployment reference](/feature-reference/ml-models/deploy) for the wire-level details.
+
+---
+
+## Datasets — collect, import, export
+
+Models need data. Cyberwave gives you the loop end-to-end: record on the edge → [replay in the browser](/overview/features/replay-and-historical-data) → slice into episodes → train.
+
+<CardGroup cols={3}>
+  <Card title="From your own runs" icon="record-vinyl" href="/overview/features/replay-and-historical-data">
+    Every recording in [Replay](/overview/features/replay-and-historical-data)
+    can be turned into episodes and a dataset, ready to train on.
+  </Card>
+  <Card title="Import from anywhere" icon="file-import" href="/feature-reference/datasets/import">
+    LeRobot v3 / v2.1, RLDS, HDF5, Zarr, GR00T, MCAP, ROS bag, RoboDM, Hugging
+    Face — see the [full import matrix](/feature-reference/datasets/import).
+  </Card>
+  <Card title="Export, no lock-in" icon="file-export" href="/feature-reference/datasets/format-conversion">
+    Convert any dataset to Cyberwave Parquet, LeRobot v3, RLDS, or OpenVLA
+    TFDS via the [export tab or API](/feature-reference/datasets/format-conversion).
+  </Card>
+</CardGroup>
+
+Browse the [public dataset catalog](https://cyberwave.com/datasets), pick one, and feed it straight into [SmolVLA](/feature-reference/ml-models/smolvla-training) or [OpenVLA](/feature-reference/ml-models/openvla-oft-training) training — the format conversion happens for you.
+
+---
+
+## What to read next
+
+<CardGroup cols={3}>
+  <Card title="ML Models reference" icon="brain" href="/feature-reference/ml-models/index">
+    Capabilities, providers, registration, inference, and the full VLA stack.
+  </Card>
+  <Card title="Model Playground" icon="play" href="/feature-reference/ml-models/playground">
+    The interactive page behind every model in the catalog.
+  </Card>
+  <Card title="Sandwich robot (SmolVLA)" icon="bread-slice" href="/tutorials/sandwich-robot-smolvla">
+    A community tutorial: collect data, fine-tune SmolVLA, run it on a real
+    arm — all on Cyberwave.
+  </Card>
+</CardGroup>

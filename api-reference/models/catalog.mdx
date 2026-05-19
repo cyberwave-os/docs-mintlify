@@ -1,0 +1,324 @@
+---
+title: "Model Catalog API"
+description: "Browse, register, update, and delete ML model records in your workspace."
+stub: true
+---
+
+## Overview
+
+The model catalog is the registry of ML models available in your workspace.
+Each record stores metadata about where the model runs (cloud, edge, hybrid), what
+inputs it accepts, and how to load it via the SDK. Public models are visible without
+authentication; private models are scoped to workspace members.
+
+Browse and load catalog rows from Python with **`cw.models`** — see [ML Models (Python SDK)](/tools/models/overview). Typed **`create`** / **`update`** helpers are not on `cw.models` yet; call `POST` / `PUT` on this API or use generated `cw.api.*` wrappers until SDK methods land.
+
+| Method   | Endpoint                   | Auth | Description                              |
+| -------- | -------------------------- | :--: | ---------------------------------------- |
+| `GET`    | `/api/v1/mlmodels`         |  ✓   | List models in your workspace (+ public) |
+| `GET`    | `/api/v1/mlmodels/public`  |  —   | List public models (no auth required)    |
+| `GET`    | `/api/v1/mlmodels/by-slug` |  —   | Get a model by unified slug              |
+| `GET`    | `/api/v1/mlmodels/{uuid}`  |  ✓   | Get a model by UUID                      |
+| `POST`   | `/api/v1/mlmodels`         |  ✓   | Create a model record                    |
+| `PUT`    | `/api/v1/mlmodels/{uuid}`  |  ✓   | Update a model record                    |
+| `DELETE` | `/api/v1/mlmodels/{uuid}`  |  ✓   | Delete a model record                    |
+
+---
+
+## `GET /api/v1/mlmodels`
+
+List all ML model records visible to the authenticated user: workspace-private models plus any public ones.
+
+### Query parameters
+
+| Parameter           | Type     | Description                                                    |
+| ------------------- | -------- | -------------------------------------------------------------- |
+| `deployment`        | `string` | Filter by deployment (`cloud`, `edge`, `hybrid`)               |
+| `edge_compatible`   | `bool`   | When `true`, return only `edge` or `hybrid` models             |
+| `model_external_id` | `string` | Filter by exact external ID (e.g. `"yolov8n.pt"`)              |
+| `supported_level`   | `string` | Filter by `driver`, `cloud`, `backend`, or `not_supported_yet` |
+| `is_trainable`      | `bool`   | Filter trainable models only                                   |
+
+### Response — `200 OK`
+
+Array of [MLModelSchema](#mlmodelschema).
+
+```json
+[
+  {
+    "uuid": "a1b2c3d4-...",
+    "slug": "acme/models/yolo26n",
+    "name": "YOLO26n",
+    "description": "Compact YOLO26 nano — 320 px, 4.4 ms CPU",
+    "deployment": "edge",
+    "is_edge_compatible": true,
+    "is_cloud_compatible": false,
+    "sdk_load_id": "yolo26n.pt",
+    "model_external_id": "yolo26n.pt",
+    "model_provider_name": "ultralytics",
+    "edge_runtime": "ultralytics",
+    "can_take_image_as_input": true,
+    "can_take_video_as_input": true,
+    "can_take_text_as_input": false,
+    "can_take_audio_as_input": false,
+    "can_take_action_as_input": false,
+    "is_trainable": false,
+    "visibility": "public",
+    "tags": ["yolo", "detection"],
+    "output_format": "json",
+    "output_family": "structured_perception",
+    "playground_kind": "edge",
+    "workspace_uuid": "ws-uuid-...",
+    "created_at": "2026-01-10T08:00:00Z",
+    "updated_at": "2026-04-01T12:00:00Z"
+  }
+]
+```
+
+---
+
+## `GET /api/v1/mlmodels/public`
+
+List all public models. No authentication required.
+
+Accepts the same `deployment` query parameter as the authenticated list endpoint.
+
+---
+
+## `GET /api/v1/mlmodels/by-slug`
+
+Retrieve a model by its unified slug (`{workspace-slug}/models/{entity-slug}`).
+
+<Info>
+  Anonymous callers see public models. Authenticated callers additionally see
+  private models they have access to.
+</Info>
+
+### Query parameters
+
+| Parameter | Type                  | Description                                   |
+| --------- | --------------------- | --------------------------------------------- |
+| `slug`    | `string` **required** | Full unified slug, e.g. `acme/models/yolo26n` |
+
+### Response codes
+
+| Code  | Meaning                                               |
+| ----- | ----------------------------------------------------- |
+| `200` | Model found — returns [MLModelSchema](#mlmodelschema) |
+| `404` | Model not found or not visible to caller              |
+
+---
+
+## `GET /api/v1/mlmodels/{uuid}`
+
+Get a single model by UUID. Requires read access.
+
+### Path parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| `uuid`    | Model UUID  |
+
+---
+
+## `POST /api/v1/mlmodels`
+
+Create a new ML model record. Only admins can create `public` models.
+
+### Request body — `MLModelCreateSchema`
+
+| Field                      | Type                  | Default     | Description                                                             |
+| -------------------------- | --------------------- | ----------- | ----------------------------------------------------------------------- |
+| `name`                     | `string` **required** | —           | Human-readable model name                                               |
+| `description`              | `string` **required** | —           | Description                                                             |
+| `model_external_id`        | `string` **required** | —           | Filename or external registry key (e.g. `"yolov8n.pt"`)                 |
+| `model_provider_name`      | `string` **required** | —           | Provider label (e.g. `"ultralytics"`, `"openai"`, `"local"`)            |
+| `deployment`               | `string`              | `"cloud"`   | `cloud`, `edge`, or `hybrid`                                            |
+| `visibility`               | `string`              | `"private"` | `private`, `workspace`, `org`, `link`, or `public`                      |
+| `workspace_uuid`           | `string`              | auto        | Target workspace; omit to use the preferred workspace                   |
+| `slug`                     | `string`              | auto        | Custom slug; auto-generated from name when omitted                      |
+| `is_trainable`             | `bool`                | `false`     | Whether the model supports fine-tuning                                  |
+| `can_take_image_as_input`  | `bool`                | `false`     |                                                                         |
+| `can_take_video_as_input`  | `bool`                | `false`     |                                                                         |
+| `can_take_text_as_input`   | `bool`                | `true`      |                                                                         |
+| `can_take_audio_as_input`  | `bool`                | `false`     |                                                                         |
+| `can_take_action_as_input` | `bool`                | `false`     |                                                                         |
+| `edge_runtime`             | `string`              | `null`      | Well-known runtime key (see `GET /mlmodels/edge-runtimes`) or free-text |
+| `tags`                     | `string[]`            | `[]`        | Searchable tags                                                         |
+| `metadata`                 | `object`              | `{}`        | Arbitrary metadata bag                                                  |
+| `mapped_model_id`          | `string`              | `null`      | Provider-internal model ID                                              |
+| `output_format`            | `string`              | `null`      | Output format hint (`json`, `image`, `action`, …)                       |
+
+### Example request
+
+```json
+{
+  "name": "YOLOv8 Nano",
+  "description": "Lightweight object detector for warehouse inspection",
+  "model_external_id": "yolov8n.pt",
+  "model_provider_name": "ultralytics",
+  "deployment": "edge",
+  "edge_runtime": "ultralytics",
+  "can_take_image_as_input": true,
+  "can_take_video_as_input": true,
+  "tags": ["detection", "vision"]
+}
+```
+
+### Response — `200 OK`
+
+Returns the created [MLModelSchema](#mlmodelschema).
+
+---
+
+## `PUT /api/v1/mlmodels/{uuid}`
+
+Update a model. Write access required. Only admins can change visibility to/from `public`.
+
+### Request body — `MLModelUpdateSchema`
+
+All fields are optional. Omitting a field leaves it unchanged.
+
+| Field                 | Type       | Notes                            |
+| --------------------- | ---------- | -------------------------------- |
+| `name`                | `string`   |                                  |
+| `description`         | `string`   |                                  |
+| `model_external_id`   | `string`   |                                  |
+| `model_provider_name` | `string`   |                                  |
+| `deployment`          | `string`   | `cloud`, `edge`, `hybrid`        |
+| `visibility`          | `string`   | Admin-only for `public` changes  |
+| `is_trainable`        | `bool`     |                                  |
+| `can_take_*_as_input` | `bool`     | Any input capability flag        |
+| `edge_runtime`        | `string`   | Pass `""` to clear               |
+| `tags`                | `string[]` | Replaces the entire tag list     |
+| `metadata`            | `object`   | Replaces the entire metadata bag |
+| `mapped_model_id`     | `string`   |                                  |
+| `output_format`       | `string`   |                                  |
+
+---
+
+## `DELETE /api/v1/mlmodels/{uuid}`
+
+Delete a model record. Write access required. Only admins can delete public models.
+
+### Response — `200 OK`
+
+```json
+{ "success": true }
+```
+
+---
+
+## MLModelSchema
+
+Full model record returned by all read endpoints.
+
+| Field                      | Type             | Description                                                                    |
+| -------------------------- | ---------------- | ------------------------------------------------------------------------------ |
+| `uuid`                     | `string`         | UUID                                                                           |
+| `slug`                     | `string \| null` | Unified slug — `{workspace}/models/{name}`                                     |
+| `name`                     | `string`         | Human-readable name                                                            |
+| `description`              | `string`         |                                                                                |
+| `model_external_id`        | `string`         | Filename or external ID                                                        |
+| `model_provider_name`      | `string`         | Provider label                                                                 |
+| `deployment`               | `string`         | `cloud`, `edge`, or `hybrid`                                                   |
+| `is_edge_compatible`       | `bool`           | True when deployment is `edge` or `hybrid`                                     |
+| `is_cloud_compatible`      | `bool`           | True when deployment is `cloud` or `hybrid`                                    |
+| `sdk_load_id`              | `string \| null` | Key to pass to `cw.models.load()`                                              |
+| `edge_runtime`             | `string \| null` | Runtime/framework label (e.g. `ultralytics`, `onnx`)                           |
+| `edge_catalog_id`          | `string \| null` | Resolved edge catalog ID (equals `sdk_load_id` for edge models)                |
+| `playground_kind`          | `string \| null` | UI playground variant: `vlm`, `vlm-spatial-reasoner`, `vla`, `im2mesh`, `edge` |
+| `output_format`            | `string \| null` | Raw output format hint                                                         |
+| `output_family`            | `string \| null` | Canonical family: `structured_perception`, `action`, `text`, `image`, `mesh`   |
+| `visibility`               | `string`         | `private`, `workspace`, `org`, `link`, `public`                                |
+| `tags`                     | `string[]`       |                                                                                |
+| `is_trainable`             | `bool`           |                                                                                |
+| `can_take_image_as_input`  | `bool`           |                                                                                |
+| `can_take_video_as_input`  | `bool`           |                                                                                |
+| `can_take_text_as_input`   | `bool`           |                                                                                |
+| `can_take_audio_as_input`  | `bool`           |                                                                                |
+| `can_take_action_as_input` | `bool`           |                                                                                |
+| `allowed_structured_tasks` | `string[]`       | Playground structured task IDs available for this model                        |
+| `execution_surfaces`       | `string[]`       | Where the model can execute (`playground`, `edge_worker`, …)                   |
+| `workspace_uuid`           | `string`         | Owner workspace                                                                |
+| `created_at`               | `datetime`       |                                                                                |
+| `updated_at`               | `datetime`       |                                                                                |
+
+---
+
+## Python SDK
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+
+# List
+for m in cw.models.list():
+    print(m.slug, m.deployment, m.sdk_load_id)
+
+# Filter by deployment
+for m in cw.models.list(deployment="edge"):
+    print(m.slug)
+
+# Public models (no auth needed)
+for m in cw.models.list_public():
+    print(m.slug)
+
+# Get by slug or UUID
+m = cw.models.get("acme/models/yolo26n")
+m = cw.models.get_by_uuid("a1b2c3d4-...")
+
+# Delete
+cw.models.delete("a1b2c3d4-...")
+
+# Create / update — call the raw API client
+cw.api.src_app_api_mlmodels_create_mlmodel(
+    ml_model_create_schema={
+        "name": "YOLOv8n",
+        "description": "Edge detector",
+        "model_external_id": "yolov8n.pt",
+        "model_provider_name": "ultralytics",
+        "deployment": "edge",
+    }
+)
+```
+
+## MCP tools
+
+```
+cw_list_models(workspace_uuid?, deployment?)
+cw_get_model(model_uuid)
+cw_delete_model(model_uuid, execute?)
+```
+
+---
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Model Playground API" icon="play" href="/models/playground">
+    Run inference, evaluate, download weights
+  </Card>
+  <Card
+    title="Python SDK — ML Models"
+    icon="python"
+    href="/tools/models/overview"
+  >
+    SDK reference for catalog + runtime
+  </Card>
+  <Card
+    title="Edge Workers"
+    icon="microchip"
+    href="/use-cyberwave/ml-models/edge-worker"
+  >
+    Run edge models on hardware
+  </Card>
+  <Card
+    title="ML Models (UI overview)"
+    icon="brain"
+    href="/use-cyberwave/ml-models/overview"
+  >
+    Dashboard walkthrough
+  </Card>
+</CardGroup>

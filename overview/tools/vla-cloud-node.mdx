@@ -1,0 +1,428 @@
+---
+title: "VLA Cloud Node"
+description: "Build cloud nodes for Vision-Language-Action model inference and training with Cyberwave"
+icon: "brain"
+---
+
+import EarlyAccess from "/snippets/early-access.mdx";
+
+<EarlyAccess />
+
+{/* stub - content to be reviewed and expanded by humans */}
+
+## Overview
+
+The VLA Cloud Node architecture provides a standardized way to run Vision-Language-Action (VLA) model inference and training on Cyberwave Cloud Nodes. It handles all Cyberwave-specific concerns (SDK, MQTT, cameras, weights download) so you can focus on model-specific logic.
+
+The reference implementation is the [SmolVLA cloud node](https://github.com/cyberwave-com/cyberwave-compute-smolvla), which demonstrates the full architecture.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     VLA Cloud Node Architecture                  │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │                      deploy.py / train.py                    ││
+│  │  • Entry point (model-specific)                              ││
+│  │  • Load model, build predict_fn                              ││
+│  │  • Create CwProcessor / CwTrainer                            ││
+│  └─────────────────────────────────────────────────────────────┘│
+│                              ↓                                   │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │              cw_processor.py / cw_trainer.py                 ││
+│  │  • Cyberwave SDK + MQTT handling                             ││
+│  │  • Weights download from MLModel API                         ││
+│  │  • Background camera fetchers (inference)                    ││
+│  │  • Dataset download + metrics logging (training)             ││
+│  └─────────────────────────────────────────────────────────────┘│
+│                              ↓                                   │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │                     *_resolver.py                            ││
+│  │  • Model-specific metadata extraction                        ││
+│  │  • Camera mapping logic                                      ││
+│  │  • No torch, no Cyberwave imports                            ││
+│  └─────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Inference Architecture
+
+### CwProcessor
+
+The `CwProcessor` class orchestrates all Cyberwave I/O for inference workloads:
+
+| Responsibility         | Description                                                           |
+| ---------------------- | --------------------------------------------------------------------- |
+| **SDK Client**         | Creates Cyberwave client with auto-configured MQTT                    |
+| **Weights Download**   | Fetches model weights from MLModel API via signed URLs                |
+| **Camera Binding**     | Background daemon threads continuously fetch and decode camera frames |
+| **Joint Subscription** | MQTT subscription for real-time joint state updates                   |
+| **Action Publishing**  | Publishes predicted actions to robot via MQTT                         |
+| **Control Loop**       | Orchestrates observe → predict → execute cycle                        |
+
+```python
+from cw_processor import CwProcessor, parse_request_payload, download_weights
+
+# Parse the JSON payload from cloud node
+request = parse_request_payload(sys.argv[1])
+
+# Download weights from Cyberwave MLModel API
+if request.weights_url:
+    checkpoint = download_weights(request.weights_url)
+
+# Build your model's predict function
+predict_fn = build_predict_fn(checkpoint)
+
+# Create processor and run
+processor = CwProcessor(
+    request,
+    model_slug="smolvla",
+    checkpoint=checkpoint,
+    predict_fn=predict_fn,
+)
+processor.setup()
+result = processor.run()
+```
+
+### Background Camera Fetching
+
+`CwProcessor` spawns a daemon thread per camera that continuously polls for frames:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Camera Threads (Background)                                     │
+│                                                                  │
+│  camera_wrist thread ──► GET /twins/{uuid}/latest-frame         │
+│       └──────────────────────────▶ cache (np.ndarray + bytes)   │
+│                                                                  │
+│  camera_front thread ──► GET /twins/{uuid}/latest-frame         │
+│       └──────────────────────────▶ cache (np.ndarray + bytes)   │
+└─────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  Control Loop                                                    │
+│                                                                  │
+│  get_inputs() ──► reads cached frames (instant, no I/O wait)    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+Benefits:
+
+- Frame fetching is decoupled from inference loop
+- No I/O latency during `get_inputs()` - just reads cached numpy arrays
+- Consistent frame timing regardless of inference speed
+
+### Weights Download
+
+The `download_weights()` function handles fetching model weights from the Cyberwave MLModel API:
+
+```
+1. GET /api/v1/mlmodels/{uuid}/weights
+   └─► Returns { "signed_url": "...", "expires_at": "..." }
+
+2. GET {signed_url}
+   └─► Stream download to temp file
+
+3. Detect archive type (magic bytes + headers)
+   ├─ .tar.zst (0x28B52FFD) → zstandard + tarfile
+   ├─ .tar.gz  (0x1F8B)     → tarfile
+   └─ .zip     (PK)         → zipfile
+
+4. Extract to ~/.cache/cyberwave/weights/{hash}/
+
+5. Resolve model directory (find config.json)
+   └─► Return checkpoint path
+```
+
+---
+
+## Training Architecture
+
+### CwTrainer
+
+The `CwTrainer` class orchestrates all Cyberwave-specific training concerns:
+
+| Responsibility           | Description                                                     |
+| ------------------------ | --------------------------------------------------------------- |
+| **Dataset Download**     | Fetches and extracts dataset from `/api/v1/datasets/{uuid}/zip` |
+| **Weights Download**     | Downloads custom base model weights (optional)                  |
+| **Logger Patching**      | Replaces WandBLogger with CyberwaveLogger for metrics           |
+| **Config Building**      | Delegates to model-specific trainer for pipeline config         |
+| **Status Updates**       | Sends training status, metrics, and ETA to Cyberwave API        |
+| **Artifact Compression** | Compresses checkpoint to `.tar.zst` for upload                  |
+
+```python
+from cw_trainer import CwTrainer, load_json_argument
+
+MODEL_SLUG = "smolvla"
+
+params = load_json_argument(sys.argv[1])
+trainer = CwTrainer(params, model_slug=MODEL_SLUG)
+trainer.setup()
+result = trainer.run()
+```
+
+### CyberwaveLogger
+
+Drop-in replacement for lerobot's `WandBLogger` that sends metrics to Cyberwave:
+
+```python
+class CyberwaveLogger:
+    def log_dict(d, step, mode):
+        # Converts to Cyberwave format and queues for sending
+        # PUT /api/v1/mltrainings/{uuid}/metrics
+
+    def log_policy(checkpoint_dir):
+        # Logs checkpoint event
+
+    def log_video(...):
+        # No-op for Cyberwave
+```
+
+The logger computes and sends ETA after ~100 steps via `update_type="estimate"`.
+
+---
+
+## Resolver Interface
+
+The resolver pattern separates model-specific metadata from Cyberwave I/O. Each model needs a resolver that implements:
+
+```python
+from base_resolver import BaseVLAResolver
+
+class MyModelResolver(BaseVLAResolver):
+    MODEL_SLUG = "my-model"
+
+    def __init__(self, checkpoint: str):
+        """Load model config from checkpoint."""
+        self.checkpoint = checkpoint
+        self.training_config = self._load_training_config()
+        self.training_camera_names = self._extract_camera_names()
+        self.expected_state_dim = self._extract_state_dim()
+        self.expected_action_dim = self._extract_action_dim()
+
+    def build_camera_mapping(
+        self,
+        runtime_cameras: dict[str, str] | list[str],
+    ) -> dict[str, str]:
+        """Map training camera names to runtime identifiers."""
+        # Return: {training_name: runtime_key}
+
+    def get_expected_state_dim(self) -> int:
+        """Number of joint positions the model expects as input."""
+        return self.expected_state_dim
+
+    def get_expected_action_dim(self) -> int:
+        """Number of joint positions the model outputs."""
+        return self.expected_action_dim
+```
+
+### Resolver Guidelines
+
+<AccordionGroup>
+  <Accordion title="No torch imports">
+    The resolver should not import PyTorch or model libraries. It only reads config files (JSON, YAML) from the checkpoint directory.
+  </Accordion>
+  
+  <Accordion title="No Cyberwave imports">
+    Keep the resolver independent of Cyberwave SDK. This allows testing without network access.
+  </Accordion>
+  
+  <Accordion title="Camera mapping by position">
+    Training configs often use non-semantic camera names (e.g., UUIDs). Map by position:
+    
+    ```python
+    # Training: ["cam_7e7bf9fe", "cam_9fcace87"]
+    # Runtime:  {"camera_wrist": "...", "camera_front": "..."}
+    # Result:   {"cam_7e7bf9fe": "camera_wrist", "cam_9fcace87": "camera_front"}
+    ```
+  </Accordion>
+  
+  <Accordion title="Register in RESOLVER_REGISTRY">
+    Add your resolver to the registry in `cw_processor.py`:
+    
+    ```python
+    def _get_resolver_registry():
+        from my_resolver import MyModelResolver
+        return {
+            "smolvla": SmolVLAResolver,
+            "my-model": MyModelResolver,
+        }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Creating a New VLA Cloud Node
+
+Use the [SmolVLA cloud node](https://github.com/cyberwave-com/cyberwave-compute-smolvla) as a template:
+
+<Steps>
+  <Step title="Create project structure">
+    ```
+    my-vla-cloud-node/
+    ├── deploy.py              # Inference entry point
+    ├── train.py               # Training entry point (optional)
+    ├── cw_processor.py        # Copy from SmolVLA (shared)
+    ├── cw_trainer.py          # Copy from SmolVLA (shared)
+    ├── base_resolver.py       # Abstract resolver interface
+    ├── my_resolver.py         # Your model-specific resolver
+    ├── requirements.txt       # Dependencies
+    ├── install.sh             # Installation script
+    └── cyberwave.yml          # Cloud node configuration
+    ```
+  </Step>
+  
+  <Step title="Implement your resolver">
+    Create `my_resolver.py` that extracts camera names and dimensions from your model's config format.
+  </Step>
+  
+  <Step title="Implement deploy.py">
+    ```python
+    import sys
+    from cw_processor import CwProcessor, parse_request_payload, download_weights
+    
+    def build_predict_fn(checkpoint: str):
+        # Load your model and return predict function
+        # predict_fn(inputs) -> raw_actions tensor
+        ...
+    
+    def main():
+        request = parse_request_payload(sys.argv[1])
+        
+        if request.weights_url:
+            checkpoint = download_weights(request.weights_url)
+        else:
+            checkpoint = os.environ["MY_MODEL_CHECKPOINT"]
+        
+        predict_fn = build_predict_fn(checkpoint)
+        
+        processor = CwProcessor(
+            request,
+            model_slug="my-model",
+            checkpoint=checkpoint,
+            predict_fn=predict_fn,
+        )
+        processor.setup()
+        result = processor.run()
+        print(json.dumps(result))
+    
+    if __name__ == "__main__":
+        main()
+    ```
+  </Step>
+  
+  <Step title="Configure cyberwave.yml">
+    ```yaml
+    cyberwave-cloud-node:
+      install_script: ./install.sh
+      inference: |
+        source "$HOME/.venv/my-model/bin/activate" && \
+        python deploy.py {body}
+      training: |
+        source "$HOME/.venv/my-model/bin/activate" && \
+        python train.py {body}
+      profile_slug: my-model
+    ```
+  </Step>
+</Steps>
+
+---
+
+## JSON Payload Structure
+
+### Inference Payload
+
+```json
+{
+  "robot_twin_uuid": "e305bb3e-8c5f-4bf7-807b-21cdb24c88fc",
+  "instruction": "pick up the red block and place it in the box",
+
+  "weights_url": "https://api.cyberwave.com/api/v1/mlmodels/{uuid}/weights",
+  "policy_repo_id": "lerobot/smolvla_base",
+
+  "camera_endpoints_by_role": {
+    "camera_wrist": "https://api.cyberwave.com/api/v1/twins/{uuid}/latest-frame",
+    "camera_front": "https://api.cyberwave.com/api/v1/twins/{uuid}/latest-frame"
+  },
+
+  "twin_calibration": { ... },
+  "calibration_robot_type": "follower",
+
+  "max_steps": 1000,
+  "actions_per_cycle": 25,
+  "action_sleep_seconds": 0.1,
+  "inference_loop": true
+}
+```
+
+### Training Payload
+
+```json
+{
+  "cyberwave_training_uuid": "abc123-def456",
+  "dataset_uuid": "dataset-uuid-here",
+  "dataset_name": "my-robot-dataset",
+
+  "base_model": "lerobot/smolvla_base",
+  "weights_url": "https://api.cyberwave.com/api/v1/mlmodels/{uuid}/weights",
+
+  "max_steps": 50000,
+  "batch_size": 32,
+  "lora_r": 16,
+  "save_freq": 10000,
+  "log_freq": 100
+}
+```
+
+---
+
+## Environment Variables
+
+| Variable                 | Required | Description                                                        |
+| ------------------------ | -------- | ------------------------------------------------------------------ |
+| `CYBERWAVE_API_KEY`      | Yes      | API key for authentication                                         |
+| `CYBERWAVE_ENVIRONMENT`  | No       | "production", "development", or "local"                            |
+| `CYBERWAVE_API_URL`      | No       | Override API base URL                                              |
+| `CYBERWAVE_RUNTIME_ROOT` | No       | Directory for downloads/cache (default: `/data/cyberwave_runtime`) |
+
+---
+
+## Reference Implementation
+
+The SmolVLA cloud node is open source and serves as the reference implementation:
+
+<Card
+  title="cyberwave-compute-smolvla"
+  icon="github"
+  href="https://github.com/cyberwave-com/cyberwave-compute-smolvla"
+>
+  Complete example of VLA inference and training on Cyberwave Cloud Nodes
+</Card>
+
+Key files:
+
+- `cw_processor.py` - Inference orchestrator (SDK, MQTT, cameras, control loop)
+- `cw_trainer.py` - Training orchestrator (dataset download, logger patch, metrics)
+- `smolvla_resolver.py` - SmolVLA-specific metadata extraction
+- `deploy.py` - Inference entry point
+- `train.py` - Training entry point
+
+---
+
+## Related Resources
+
+<CardGroup cols={3}>
+  <Card title="Cloud Node" icon="cloud" href="/tools/cloud-node">
+    General Cloud Node setup and configuration
+  </Card>
+  <Card title="ML Models" icon="brain" href="/use-cyberwave/ml-models">
+    Managing ML models in Cyberwave
+  </Card>
+  <Card title="Python SDK" icon="python" href="/tools/python-sdk">
+    Cyberwave Python SDK reference
+  </Card>
+</CardGroup>

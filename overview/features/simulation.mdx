@@ -1,0 +1,125 @@
+---
+title: "Simulation"
+description: "Iterate at the speed of code — run any environment in the browser, in MuJoCo, or (soon) Isaac Sim with zero extra setup"
+icon: "atom"
+---
+
+Cyberwave turns every [environment](/overview/features/environment) into a runnable simulation. Hit **Simulate** in the editor, or flip the SDK into sim mode — same scene, same twins, same code:
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+cw.affect("simulation")
+
+robot = cw.twin("the-robot-studio/so101")
+robot.joints.set("shoulder_pan", 45, degrees=True)   # runs against the virtual twin
+```
+
+When you're done, `cw.affect("live")` points the same code at the real robot. No rewrites, no second SDK, no second environment.
+
+---
+
+## Why simulate?
+
+<CardGroup cols={2}>
+  <Card title="Develop at code speed" icon="bolt">
+    Tweak a policy, re-run, see the result in the viewport — no robot, no lab, no waiting on hardware.
+  </Card>
+  <Card title="CI for robotics" icon="circle-check">
+    Run the same scene headlessly in CI. Catch regressions in motion planners, perception, and controllers before they ship.
+  </Card>
+  <Card title="Train models" icon="brain">
+    Use simulation rollouts to train and evaluate [VLAs and RL policies](/feature-reference/ml-models/index) on the same twins you'll deploy on.
+  </Card>
+  <Card title="Synthetic data" icon="database">
+    Render camera streams, depth, and joint states from any environment to bootstrap datasets when real-world data is scarce.
+  </Card>
+</CardGroup>
+
+---
+
+## Simulation engine agnostic
+
+Set up your environment **once**. Cyberwave handles the export to each backend so you can pick the right tool for the job without re-modeling anything.
+
+<CardGroup cols={3}>
+  <Card title="Playground" icon="browser">
+    Browser-based, runs on your machine's compute. Best for fast iteration.
+  </Card>
+  <Card title="MuJoCo" icon="atom">
+    High-fidelity, contact-rich physics. Best for RL, evaluation, and reproducible sim sweeps.
+  </Card>
+  <Card title="Isaac Sim" icon="sparkles">
+    GPU-accelerated photoreal simulation. **Coming soon.**
+  </Card>
+</CardGroup>
+
+Each twin advertises which backends it supports — see [Simulator compatibility](/feature-reference/catalog/simulation-support) to control which simulators an asset or twin can participate in.
+
+---
+
+## Powered by the twin catalog
+
+There's no separate "simulation setup" step. Physics, kinematics, sensors, and collision geometry are read straight from the [digital twins](/overview/features/digital-twin) you dropped into the environment — every twin in the [catalog](/feature-reference/catalog) ships with a URDF and inertial data ready to simulate.
+
+Add a twin → it's instantly simulatable. Swap a SO-101 for a UR7e → the physics update on the next run.
+
+---
+
+## The two simulators today
+
+Open any environment in the editor and click **Simulate** in the top bar.
+
+### Playground — instant browser physics
+
+[Playground](/feature-reference/environment-editor/index#simulate-tab-playground-physics) is a lightweight rigid-body simulator that runs entirely in your browser, using your machine's compute. There's nothing to install and nothing to wait for — it's running the moment the page loads.
+
+- **Fastest feedback loop** — change a joint target in code, see the twin move in the viewport.
+- **Great for sanity checks** — verify motion plans, joint limits, and basic collisions before going live.
+- **Works offline from cloud compute** — every browser is its own simulator.
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+cw.affect("simulation")          # subsequent commands run in Playground / MuJoCo
+
+arm = cw.twin("the-robot-studio/so101")
+arm.joints.set("shoulder_pan", 30, degrees=True)
+arm.joints.set("elbow_flex",   -45, degrees=True)
+```
+
+### MuJoCo — contact-rich physics, your way
+
+Need real grasps, friction, and reproducible RL sweeps? Cyberwave one-click-exports any environment to MuJoCo, two ways:
+
+<CardGroup cols={2}>
+  <Card title="Export and run anywhere" icon="download">
+    Download a self-contained MuJoCo scene (XML + meshes) and run it on your laptop, your cluster, or your CI runner. Backed by the [environment MuJoCo export API](/api-reference/rest/DefaultApi).
+  </Card>
+  <Card title="Run in the Cyberwave cloud" icon="cloud">
+    Kick off a MuJoCo simulation from the editor and stream results straight back into the browser viewport — no local install required.
+  </Card>
+</CardGroup>
+
+All twins in the environment must be marked MuJoCo-compatible before a remote run starts — [see how the compatibility gate works](/feature-reference/catalog/simulation-support).
+
+---
+
+## See simulation in action
+
+<CardGroup cols={2}>
+  <Card title="Autonomous rover inspection" icon="route" href="/tutorials/rover-ai-mission">
+    Build and run an AI-driven inspection mission in a fully simulated environment.
+  </Card>
+  <Card title="Train a VLA with SO-101" icon="brain" href="/tutorials/train-vla-cyberwave">
+    Collect data, train a vision-language-action model, and validate in sim before touching hardware.
+  </Card>
+  <Card title="Go2: digital to physical" icon="dog" href="/tutorials/go2-digital-to-physical">
+    Configure a Unitree Go2 in simulation, then flip the same code onto the real robot.
+  </Card>
+  <Card title="Sandwich-making robot (SmolVLA)" icon="bread-slice" href="/tutorials/sandwich-robot-smolvla">
+    Train, evaluate, and iterate a manipulation policy with simulation in the loop.
+  </Card>
+</CardGroup>

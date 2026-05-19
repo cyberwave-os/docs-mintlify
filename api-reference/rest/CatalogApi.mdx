@@ -4,8 +4,8 @@ All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**src_app_api_catalog_seed_seed_catalog**](CatalogApi.md#src_app_api_catalog_seed_seed_catalog) | **POST** /api/v1/catalog/seed | Seed Catalog
-[**src_app_api_catalog_seed_seed_options**](CatalogApi.md#src_app_api_catalog_seed_seed_options) | **GET** /api/v1/catalog/seed-options | Seed Options
+[**src_app_api_catalog_seed_seed_catalog**](#src_app_api_catalog_seed_seed_catalog) | **POST** /api/v1/catalog/seed | Seed Catalog
+[**src_app_api_catalog_seed_seed_options**](#src_app_api_catalog_seed_seed_options) | **GET** /api/v1/catalog/seed-options | Seed Options
 
 
 # **src_app_api_catalog_seed_seed_catalog**
@@ -63,15 +63,15 @@ with cyberwave.rest.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **catalog_seed_request_schema** | [**CatalogSeedRequestSchema**](CatalogSeedRequestSchema.md)|  | 
+ **catalog_seed_request_schema** | [**CatalogSeedRequestSchema**](/api-reference/rest/CatalogSeedRequestSchema)|  | 
 
 ### Return type
 
-[**CatalogSeedResponseSchema**](CatalogSeedResponseSchema.md)
+[**CatalogSeedResponseSchema**](/api-reference/rest/CatalogSeedResponseSchema)
 
 ### Authorization
 
-[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+CustomTokenAuthentication
 
 ### HTTP request headers
 
@@ -84,7 +84,6 @@ Name | Type | Description  | Notes
 |-------------|-------------|------------------|
 **200** | OK |  -  |
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **src_app_api_catalog_seed_seed_options**
 > CatalogSeedOptionsResponseSchema src_app_api_catalog_seed_seed_options()
@@ -140,11 +139,11 @@ This endpoint does not need any parameter.
 
 ### Return type
 
-[**CatalogSeedOptionsResponseSchema**](CatalogSeedOptionsResponseSchema.md)
+[**CatalogSeedOptionsResponseSchema**](/api-reference/rest/CatalogSeedOptionsResponseSchema)
 
 ### Authorization
 
-[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+CustomTokenAuthentication
 
 ### HTTP request headers
 
@@ -157,5 +156,4 @@ This endpoint does not need any parameter.
 |-------------|-------------|------------------|
 **200** | OK |  -  |
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
