@@ -101,7 +101,7 @@ The `/api/v1/workflows/{uuid}/compile` endpoint returns the full set of referenc
 
 Navigation workflows (those containing a `twin_control` / Move Twin node) remain single-twin: the compiled worker is scoped to one `client.twin(...)` handle. Activate one workflow per twin if you need to drive multiple robots, or set `run_on_edge=false` to run the workflow as a cloud workflow that can address several twins from a single process.
 
-See [Edge Workers](/edge/workers/overview) for the full lifecycle, eject pattern, and generated worker format.
+See [Edge Workers](/feature-reference/workflows/workers/overview) for the full lifecycle, eject pattern, and generated worker format.
 
 For a privacy-preserving end-to-end recipe combining `camera_frame`, `call_model`, [`anonymize`](/use-cyberwave/workflows/anonymize-image), [`spatial_filter`](/use-cyberwave/workflows/spatial-filter), [`timed_condition`](/use-cyberwave/workflows/timed-condition), and `send_alert`, see the [Zone-based intrusion detection tutorial](/tutorials/intrusion-detection).
 
@@ -170,7 +170,7 @@ Workflows can be triggered by:
   <Card
     title="Edge Workers"
     icon="microchip-ai"
-    href="/edge/workers/overview"
+    href="/feature-reference/workflows/workers/overview"
   >
     Generated workers, eject pattern, and custom workers
   </Card>

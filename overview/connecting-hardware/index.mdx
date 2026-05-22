@@ -4,9 +4,19 @@ description: "80+ devices supported out of the box, with full ROS compatibility 
 icon: "microchip"
 ---
 
-Cyberwave connects to **80+ robotic devices** out of the box through its [hardware catalog](https://cyberwave.com/catalog). Every device in the catalog ships with a pre-built driver that is installed automatically when you pair hardware with a digital twin.
+import { EdgeSetup } from "/snippets/edge-setup.mdx";
 
-Beyond the catalog, **any device with an API, serial interface, or network protocol can be connected** — write a driver in Python or C++, or scaffold one in minutes with our AI tooling.
+Cyberwave connects to **80+ robotic devices** out of the box through its [hardware catalog](https://cyberwave.com/catalog). Every device in the catalog ships with a pre-built driver that is installed automatically when you pair hardware with a digital twin. Beyond the catalog, **any device with an API, serial interface, or network protocol can be connected** — write a driver in Python or C++, or scaffold one in minutes with our AI tooling.
+
+## Cyberwave Edge
+
+Cyberwave uses **[Cyberwave Edge](/edge/overview)** to bridge the gap between your physical hardware and the cloud. The Edge is the software layer that runs on any machine connected to your robot or sensor — a **Raspberry Pi** strapped to a robot, a **Jetson** on a drone, the **robot's own onboard computer** (if it has one), or even **your Mac** for quick local development.
+
+You don't need to think about which device, OS, or protocol your hardware uses. Cyberwave abstracts all of that away, so connecting **any** supported device always comes down to one command:
+
+<EdgeSetup />
+
+That's it. The CLI auto-detects your hardware, installs the right driver, and links it to the digital twin you created in the dashboard.
 
 ---
 
@@ -34,7 +44,7 @@ The same workflow scales across every form factor — pick a category to see how
 
 ---
 
-## Generic Setup
+## Step-by-Step Setup
 
 The same flow works for any hardware — catalog devices and custom rigs alike.
 
@@ -42,13 +52,7 @@ The same flow works for any hardware — catalog devices and custom rigs alike.
 
 - A Cyberwave account ([Request Early Access](https://cyberwave.com/request-early-access))
 - API token from your dashboard (**Profile → API Keys**)
-- An edge device connected to your hardware (Raspberry Pi, Jetson, industrial PC, or any Linux computer — your laptop works too)
-- Network access from the edge device to the internet
-
-<Info>
-  The edge device is the machine that is physically connected to your hardware
-  over USB, serial, Ethernet, or any other interface.
-</Info>
+- An edge device connected to your hardware (Raspberry Pi, Jetson, industrial PC, your Mac — anything that can reach the internet)
 
 ### 1. Add a Digital Twin
 
@@ -64,25 +68,18 @@ An [environment](/use-cyberwave/architecture/key-concepts) is a 3D virtual space
   model, or use the REST API to create the asset programmatically.
 </Tip>
 
-### 2. Install the Edge Stack
+### 2. Install and Pair
 
-SSH into your edge device, then install the Cyberwave CLI and [Edge Core](/edge/overview) — the orchestrator that bridges your hardware to the cloud over MQTT.
+On the machine connected to your hardware, install the CLI and pair:
 
-```bash
-curl -fsSL https://cyberwave.com/install.sh | bash
-sudo cyberwave edge install
-```
+<EdgeSetup />
+
+The CLI prompts you to log in, select your environment, and choose the digital twin. If a compatible driver exists, it is **installed and configured automatically**. Check progress with `cyberwave edge logs`.
 
 <Warning>
   The CLI and Edge Core require a **64-bit architecture** (arm64/aarch64) on
   Raspberry Pi.
 </Warning>
-
-The CLI prompts you to log in and select your environment. Check progress with `cyberwave edge logs`.
-
-### 3. Pair Your Hardware
-
-Follow the prompts to select the digital twin you added. If a compatible driver exists, it is **installed and configured automatically**.
 
 <Check>
   Your hardware is now paired with its digital twin and syncing in real time.

@@ -4,6 +4,8 @@ description: "Build inspection automations with Cyberwave, mixing and matching a
 icon: "drone"
 ---
 
+import { EdgeSetup } from "/snippets/edge-setup.mdx";
+
 Cyberwave treats every drone the same: drop a digital twin into an [environment](/use-cyberwave/architecture/key-concepts#environments), pair the aircraft, and start sending commands from the dashboard, the [Python SDK](/tools/python-sdk), or an AI controller. The same workflow scales from the low-cost [DJI Mini 3 Pro](https://cyberwave.com/dji/DJI-Mini-3-Pro) and [DJI Mini 4 Pro](https://cyberwave.com/dji/DJI-Mini-4-Pro) up to research platforms like PX4 Vision — [browse the full lineup](https://cyberwave.com/catalog/tag/drone). Each catalog page bundles the **bill of materials**, supported drivers, and **troubleshooting** for that aircraft, so start there whenever you're unboxing new hardware.
 
 <iframe
@@ -31,10 +33,7 @@ Cyberwave treats every drone the same: drop a digital twin into an [environment]
 
     - **Onboard computer (PX4, Ardupilot, custom builds).** SSH into the companion computer (Raspberry Pi, Jetson, …) on the drone and install the CLI:
 
-      ```bash
-      curl -fsSL https://cyberwave.com/install.sh | bash
-      sudo cyberwave pair
-      ```
+      <EdgeSetup exclude={["mac"]} />
 
       The CLI auto-detects the autopilot, installs the right driver, and links it to the digital twin.
 
@@ -129,13 +128,6 @@ Because Cyberwave also speaks to [cameras](/get-started/cameras), [robotic dogs]
 ## Where to go next
 
 <CardGroup cols={3}>
-  <Card
-    title="Locomotion Capability"
-    icon="route"
-    href="/capabilities/locomotion"
-  >
-    The full picture of what mobile platforms can do on Cyberwave.
-  </Card>
   <Card
     title="Browse the drone catalog"
     icon="drone"

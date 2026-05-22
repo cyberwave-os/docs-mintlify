@@ -4,6 +4,8 @@ description: "Build security and video understanding automations using off-the-s
 icon: "camera"
 ---
 
+import { EdgeSetup } from "/snippets/edge-setup.mdx";
+
 Cyberwave treats every camera the same — **USB webcams, IP cameras, depth cameras, infrared, industrial GigE** — drop a digital twin into an [environment](/use-cyberwave/architecture/key-concepts#environments), pair the hardware, and start consuming the stream from the dashboard, the [Python SDK](/tools/python-sdk), or a [Workflow](/use-cyberwave/workflows).
 
 <iframe
@@ -37,10 +39,7 @@ Every catalog page bundles the **bill of materials**, supported drivers, and **t
   <Step title="Pair the hardware">
     On any device the camera is plugged into — your laptop, a Raspberry Pi or Jetson on a robot, an NVR — or on the same network as an IP camera, install the CLI and pair:
 
-    ```bash
-    curl -fsSL https://cyberwave.com/install.sh | bash
-    sudo cyberwave pair
-    ```
+    <EdgeSetup />
 
     The CLI auto-detects the camera (USB, V4L2, RTSP, GigE Vision, RealSense, …), installs the right driver, and links it to the digital twin. If you are unsure how the camera you picked may connect, check out its dedicated page on the catalog — it details everything you need, plus troubleshooting and FAQs. Example: [Logitech C270](https://cyberwave.com/logitech/c275).
 

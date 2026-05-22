@@ -1,0 +1,254 @@
+---
+title: "Prepare your Jetson Orin Nano"
+sidebarTitle: "Jetson Orin Nano Setup"
+description: "Boot your Jetson Orin Nano from an NVMe SSD, configure headless operation, and set up network failover."
+---
+
+<Warning>
+  **STUB DOCUMENT:** This page is intentionally minimal and will be expanded
+  with deeper technical details in a future update.
+</Warning>
+
+This guide covers flashing JetPack to an SD card, migrating to an NVMe SSD for reliable storage, and configuring the Jetson for headless operation with WiFi and optional 5G modem failover.
+
+**Requirements:**
+
+- Jetson Orin Nano Developer Kit
+- microSD card (64GB UHS-1 or larger)
+- A computer with an SD card reader and [Balena Etcher](https://etcher.balena.io/) installed
+- PCIe NVMe SSD (PCIe 3.0 recommended — PCIe 4.0 may cause issues)
+
+<Warning>
+  SATA SSDs do not work on the Jetson Orin Nano — the M.2 slot only supports
+  PCIe NVMe drives.
+</Warning>
+
+---
+
+## Step 1: Flash JetPack to the SD card
+
+Follow the [official NVIDIA Getting Started guide](https://developer.nvidia.com/embedded/learn/get-started-jetson-orin-nano-devkit) for full details. The key steps are:
+
+1. **Check firmware.** Your Jetson may ship with old firmware incompatible with JetPack 6.x. If needed, [update the firmware via SD card](https://developer.nvidia.com/embedded/learn/get-started-jetson-orin-nano-devkit#firmware) before proceeding.
+2. **Download the SD card image.** Get the Jetson Orin Nano Developer Kit image from the [JetPack SDK page](https://developer.nvidia.com/embedded/jetpack). The file is a `.zip` containing a `.img`.
+3. **Write the image.** Download and install [Balena Etcher](https://etcher.balena.io/), select the `.zip` file (no need to extract), select your SD card, and click **Flash**. This takes about 10–15 minutes.
+4. **First boot.** Insert the SD card into the Jetson, connect a display, keyboard, and mouse, then power on. Complete the initial setup (language, timezone, user account, WiFi).
+
+Once JetPack is running on the SD card, you can proceed to migrate to NVMe.
+
+<Note>
+  SD cards work for initial setup but degrade over time with frequent writes.
+  Migrating to an NVMe SSD is strongly recommended for any sustained workload.
+</Note>
+
+---
+
+## Step 2: Install the SSD
+
+Power off the Jetson. Install the NVMe SSD into the M.2 Key M slot on the underside of the carrier board and secure it with the screw. Boot from your SD card as normal.
+
+Verify the Jetson sees the SSD:
+
+```bash
+lsblk
+```
+
+You should see `nvme0n1` in the list. If not, the drive isn't seated properly or is incompatible.
+
+---
+
+## Step 3: Flash JetPack to the NVMe
+
+Download the JetPack SD card image (`.zip`) from [developer.nvidia.com/embedded/jetpack](https://developer.nvidia.com/embedded/jetpack) onto the Jetson. Make sure it's the SD card image (`.zip` containing a `.img`), **not** an installer ISO.
+
+<Warning>
+  If you accidentally flash an installer ISO instead of the SD card image, the
+  NVMe will not be bootable. Verify with `file your-image.img` — it should say
+  `DOS/MBR boot sector` or similar, **not** `ISO 9660`.
+</Warning>
+
+Stream the image directly from the zip to the NVMe (avoids needing disk space for the extracted `.img`):
+
+```bash
+unzip -p jetson-orin-nano-devkit-super-SD-image_JP6.2.1.zip | \
+    sudo dd of=/dev/nvme0n1 bs=4M status=progress conv=fsync
+```
+
+This takes 5–15 minutes. Don't interrupt it.
+
+Verify the partitions were created:
+
+```bash
+ls -l /dev/disk/by-partuuid/
+```
+
+You should see entries pointing to `nvme0n1p1` through `nvme0n1p15`, mirroring the SD card partition layout.
+
+---
+
+## Step 4: Update the boot configuration
+
+The flashed image points to the SD card as root. You need to update it to point to the NVMe partition.
+
+Note the PARTUUID for `nvme0n1p1`:
+
+```bash
+ls -l /dev/disk/by-partuuid/ | grep nvme0n1p1
+```
+
+Mount the NVMe root partition and edit the bootloader config:
+
+```bash
+sudo mkdir -p /mnt/nvme
+sudo mount /dev/nvme0n1p1 /mnt/nvme
+sudo nano /mnt/nvme/boot/extlinux/extlinux.conf
+```
+
+Find the `APPEND` line and change `root=/dev/mmcblk0p1` to:
+
+```
+root=PARTUUID=<your-nvme0n1p1-uuid>
+```
+
+Leave everything else on that line untouched. Save and exit, then unmount:
+
+```bash
+sudo umount /mnt/nvme
+```
+
+---
+
+## Step 5: Boot from NVMe
+
+Power off completely:
+
+```bash
+sudo poweroff
+```
+
+Remove the SD card, then power on. The Jetson should boot from the NVMe. First boot may take a minute or two.
+
+If it drops to the UEFI shell instead of booting, type `exit` to reach the UEFI setup menu, go to **Boot Manager → Boot Maintenance Manager → Boot Options**, set the NVMe as the first boot device, and reboot.
+
+Verify root is on NVMe:
+
+```bash
+df -h /
+```
+
+You should see `/dev/nvme0n1p1` as the root filesystem.
+
+---
+
+## Step 6: Expand the partition
+
+The flashed image only uses ~14GB of your SSD. Expand it to use the full disk:
+
+```bash
+sudo parted /dev/nvme0n1 resizepart 1 100%
+sudo resize2fs /dev/nvme0n1p1
+```
+
+Verify:
+
+```bash
+df -h /
+```
+
+---
+
+## Step 7: Configure headless operation
+
+Switch the boot target from graphical desktop to console-only and enable SSH:
+
+```bash
+sudo systemctl set-default multi-user.target
+sudo systemctl enable ssh
+```
+
+---
+
+## Step 8: Configure WiFi for headless boot
+
+Make your saved WiFi connection available without a user session:
+
+```bash
+sudo nmcli connection modify <your-wifi-name> connection.autoconnect yes
+sudo nmcli connection modify <your-wifi-name> connection.autoconnect-priority 10
+sudo nmcli connection modify <your-wifi-name> connection.permissions ""
+```
+
+The `connection.permissions ""` setting is critical — it removes the "only for this user" restriction so the connection activates on boot without anyone logged in.
+
+---
+
+## Step 9: Configure 5G modem failover (optional)
+
+If you have a USB 5G modem attached, it may appear as a standard USB ethernet interface. Check with:
+
+```bash
+nmcli device status
+```
+
+If you see it connected (e.g. as `usb2` with a `Wired connection` name), set it as a lower-priority fallback:
+
+```bash
+sudo nmcli connection modify "Wired connection 2" connection.autoconnect yes
+sudo nmcli connection modify "Wired connection 2" connection.autoconnect-priority 5
+sudo nmcli connection modify "Wired connection 2" connection.permissions ""
+```
+
+Verify routing priorities:
+
+```bash
+ip route
+```
+
+WiFi should have a lower metric (higher priority) than the modem. Traffic will automatically fall over to the modem if WiFi drops.
+
+---
+
+## Reboot and verify
+
+```bash
+sudo reboot
+```
+
+Wait 30–60 seconds, then SSH in from another machine. If you connect successfully, the Jetson is running headless from NVMe with automatic network connectivity.
+
+<Check>
+  Your Jetson Orin Nano is now booting from NVMe, running headless, and
+  connecting to the network on boot without manual intervention.
+</Check>
+
+## Step 10: Configure Ethernet for robot connections (if applicable)
+
+If you are connecting the Jetson to a robot via Ethernet (e.g., a Unitree Go2), the robot's internal network uses a fixed subnet. Your Jetson's Ethernet interface needs a static IP on that subnet before the robot is reachable.
+
+Find the Ethernet interface name:
+
+```bash
+ip a
+```
+
+Look for the wired interface (typically `eth0` or `enP8p1s0`). Create a persistent connection with NetworkManager:
+
+```bash
+sudo nmcli connection add type ethernet ifname <interface-name> \
+  con-name robot-link ip4 192.168.123.11/24
+sudo nmcli connection up robot-link
+```
+
+Replace `<interface-name>` with your actual interface and `192.168.123.11/24` with an IP appropriate for your robot's subnet (the Unitree Go2 uses `192.168.123.0/24`). This connection will activate automatically on boot.
+
+Verify the robot is reachable:
+
+```bash
+ping 192.168.123.161
+```
+
+<Note>
+  Without this step, the Cyberwave driver will fail its preflight check with
+  `none of [192.168.123.161, 192.168.12.1] responded on TCP port 9991` because
+  the Ethernet interface has no IP in the robot's subnet.
+</Note>
