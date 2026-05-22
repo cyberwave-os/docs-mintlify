@@ -3,6 +3,8 @@ title: "Overview"
 description: "Cyberwave Edge Core acts as the orchestrator of Cyberwave edge drivers."
 ---
 
+import { EdgeSetup } from "/snippets/edge-setup.mdx";
+
 <Warning>
 **STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
 </Warning>
@@ -15,13 +17,7 @@ Public repository: [cyberwave-os/cyberwave-edge-core](https://github.com/cyberwa
 
 SSH to the edge device where you want to install Edge Core, then install the Cyberwave CLI and run the installer:
 
-```bash
-# Install the Cyberwave CLI (one-time setup)
-curl -fsSL https://cyberwave.com/install.sh | bash
-
-# Pair the device (interactive — alias for `cyberwave edge install`)
-sudo cyberwave pair
-```
+<EdgeSetup />
 
 <Note>
 `cyberwave pair` is the recommended top-level alias for `cyberwave edge install`. Both run the same first-time setup flow.
@@ -47,7 +43,7 @@ Manage the edge node service lifecycle, configuration, and monitoring:
 | `driver` | Manage edge driver containers (subgroup) |
 
 <Tip>
-Want to check how fast an edge device actually is? Run [`cyberwave edge bench`](/edge/bench) to micro-benchmark the Zenoh SDK hot paths and compare against a per-device baseline.
+Want to check how fast an edge device actually is? Run [`cyberwave edge bench`](/feature-reference/workflows/workers/bench) to micro-benchmark the Zenoh SDK hot paths and compare against a per-device baseline.
 </Tip>
 
 ---

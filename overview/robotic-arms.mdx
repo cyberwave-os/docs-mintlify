@@ -4,6 +4,8 @@ description: "Build manipulation automations with Cyberwave, using any type of r
 icon: "hand"
 ---
 
+import { EdgeSetup } from "/snippets/edge-setup.mdx";
+
 Cyberwave treats every arm the same: drop a digital twin into an [environment](/get-started/key-concepts#environments), pair the hardware, and start sending commands from the dashboard, the [Python SDK](/tools/python-sdk), or an AI controller. The same workflow scales from hobbyist desk arms to industrial cells.
 
 ---
@@ -34,10 +36,7 @@ Every catalog page bundles the **bill of materials**, supported drivers, and **t
   <Step title="Pair the hardware">
     On any device connected to the arm (laptop, Raspberry Pi, Jetson), install the CLI and pair:
 
-    ```bash
-    curl -fsSL https://cyberwave.com/install.sh | bash
-    sudo cyberwave pair
-    ```
+    <EdgeSetup />
 
     The CLI auto-detects the arm, installs the right driver, and links it to the digital twin. See [Cyberwave Edge](/edge/overview) for details.
 
@@ -50,11 +49,6 @@ Every catalog page bundles the **bill of materials**, supported drivers, and **t
 
   </Step>
 </Steps>
-
-<Check>
-  The arm streams joint states and camera frames into Cyberwave in real time,
-  and the dashboard can drive it back through the edge.
-</Check>
 
 ---
 

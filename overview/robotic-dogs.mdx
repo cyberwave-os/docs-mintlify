@@ -4,6 +4,8 @@ description: "Build inspection automations with Cyberwave, mixing and matching a
 icon: "dog"
 ---
 
+import { EdgeSetup } from "/snippets/edge-setup.mdx";
+
 Cyberwave treats every quadruped the same: drop a digital twin into an [environment](/get-started/key-concepts#environments), pair the hardware, and start sending commands from the dashboard, the [Python SDK](/tools/python-sdk), or an AI controller. The same workflow scales from the affordable [Unitree Go2](https://cyberwave.com/unitree/go2) all the way up to industrial platforms like the [Boston Dynamics Spot](https://cyberwave.com/boston-dynamics/spot).
 
 <iframe
@@ -37,10 +39,7 @@ Every catalog page bundles the **bill of materials**, supported drivers, and **t
   <Step title="Pair the hardware">
     On any device connected to the dog — your laptop on the same network, a Raspberry Pi/Jetson riding on the robot, or by SSH'ing into the dog's onboard computer — install the CLI and pair:
 
-    ```bash
-    curl -fsSL https://cyberwave.com/install.sh | bash
-    sudo cyberwave pair
-    ```
+    <EdgeSetup />
 
     The CLI auto-detects the dog, installs the right driver, and links it to the digital twin. If you are unsure how the dog you picked may connect, check out the its dedicated page on the catalog, as it details everything you need, as well as troubleshooting and FAQs. Example: [Page for the Go2](https://cyberwave.com/unitree/go2)
 
@@ -121,19 +120,16 @@ Because Cyberwave also speaks to [cameras](/get-started/cameras), [drones](/get-
 
 <CardGroup cols={3}>
   <Card
-    title="Locomotion Capability"
-    icon="person-walking"
-    href="/capabilities/locomotion"
+    title="Unitree Go2 Setup"
+    icon="dog"
+    href="https://cyberwave.com/unitree/go2"
   >
-    The full picture of what mobile platforms can do on Cyberwave.
-  </Card>
-  <Card title="Unitree Go2 Setup" icon="dog" href="/hardware/go2/get-started">
     Step-by-step for the low-cost quadruped.
   </Card>
   <Card
     title="Boston Dynamics Spot"
     icon="dog"
-    href="/hardware/boston-dynamics/get-started"
+    href="https://cyberwave.com/boston-dynamics/spot"
   >
     Industrial-grade quadruped setup.
   </Card>

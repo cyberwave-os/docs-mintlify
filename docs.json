@@ -115,7 +115,15 @@
                   "feature-reference/workflows/anonymize-image",
                   "feature-reference/workflows/spatial-filter",
                   "feature-reference/workflows/timed-condition",
-                  "feature-reference/workflows/reusing-chains"
+                  "feature-reference/workflows/reusing-chains",
+                  {
+                    "group": "Workers",
+                    "pages": [
+                      "feature-reference/workflows/workers/overview",
+                      "feature-reference/workflows/workers/bench",
+                      "feature-reference/workflows/workers/filter-frame"
+                    ]
+                  }
                 ]
               },
               {
@@ -139,14 +147,12 @@
             "icon": "microchip",
             "pages": [
               "feature-reference/edge/overview",
-              "feature-reference/edge/bench",
               "feature-reference/edge/raspberry-pi",
+              "feature-reference/edge/jetson-orin-nano",
               "feature-reference/edge/drivers/overview",
               "feature-reference/edge/drivers/writing-compatible-drivers",
               "feature-reference/edge/drivers/native-microphone-driver",
               "feature-reference/edge/drivers/alerts",
-              "feature-reference/edge/workers/overview",
-              "feature-reference/edge/workers/filter-frame",
               "overview/tools/cloud-node",
               "overview/tools/vla-cloud-node",
               "overview/tools/zenoh-mqtt-bridge",
@@ -509,7 +515,25 @@
       "youtube": "https://www.youtube.com/channel/UCmw6EQ1nJj7sqjkITm2wjCw"
     }
   },
+  "integrations": {
+    "posthog": {
+      "apiKey": "phc_JswM4a2VwYGkjsKr7xVYwdiX6BDSDKDXc25fkvApnhZ",
+      "apiHost": "https://eu.i.posthog.com"
+    }
+  },
   "redirects": [
+    {
+      "source": "/feature-reference/edge/bench",
+      "destination": "/feature-reference/workflows/workers/bench"
+    },
+    {
+      "source": "/feature-reference/edge/workers/overview",
+      "destination": "/feature-reference/workflows/workers/overview"
+    },
+    {
+      "source": "/feature-reference/edge/workers/filter-frame",
+      "destination": "/feature-reference/workflows/workers/filter-frame"
+    },
     {
       "source": "/feature-reference/workflows/presence-dwell",
       "destination": "/feature-reference/workflows/timed-condition"
