@@ -1,0 +1,132 @@
+---
+title: "Robotic arms"
+description: "Build manipulation automations with Cyberwave, using any type of robotic arm: from the hobbyist SO-101 to the UR7e"
+icon: "hand"
+---
+
+import { EdgeSetup } from "/snippets/edge-setup.mdx";
+
+Cyberwave treats every arm the same: drop a digital twin into an [environment](/get-started/key-concepts#environments), pair the hardware, and start sending commands from the dashboard, the [Python SDK](/tools/python-sdk), or an AI controller. The same workflow scales from hobbyist desk arms to industrial cells.
+
+---
+
+## Pick your arm
+
+Cyberwave supports **hundreds of robotic arms** out of the box, from the hobbyist [SO-101](https://cyberwave.com/the-robot-studio/so101) ([setup guide](/hardware/so101/get-started)) and the industrial [Universal Robot UR7e](https://cyberwave.com/universal_robots/UR7) ([setup guide](/hardware/universal-robot-7/get-started)) to everything in between — browse the full lineup at [cyberwave.com/catalog/tag/robotic-arm](https://cyberwave.com/catalog/tag/robotic-arm).
+
+Every catalog page bundles the **bill of materials**, supported drivers, and **troubleshooting** specific to that arm — start there whenever you're unboxing new hardware.
+
+---
+
+## Set up an arm in 4 steps
+
+<Steps>
+  <Step title="Create an environment and add the arm">
+    From the [dashboard](https://cyberwave.com/dashboard), click **New Environment**, then **Add from Catalog** and search for your arm (e.g. `SO-101`, `UR7e`). Position the twin to match your real workspace.
+
+    ![](/images/digital-twins-catalog.png)
+
+  </Step>
+
+  <Step title="Add cameras and other sensors">
+    Click **Add from Catalog** again and add a `Standard Camera` (or any other sensor twin). Dock it to the arm's wrist or place it overhead — the twin hierarchy mirrors your physical mount. With the camera attached you're already set up for [data collection](/use-cyberwave/environment-editor/replay).
+
+  </Step>
+
+  <Step title="Pair the hardware">
+    On any device connected to the arm (laptop, Raspberry Pi, Jetson), install the CLI and pair:
+
+    <EdgeSetup />
+
+    The CLI auto-detects the arm, installs the right driver, and links it to the digital twin. See [Cyberwave Edge](/edge/overview) for details.
+
+  </Step>
+
+  <Step title="Calibrate and assign a controller">
+    Open the twin in the dashboard, run **Calibrate** (required once per arm), then **Assign Controller** — pick **Keyboard**, **Local Teleop**, an AI policy, or a custom controller.
+
+    ![](/images/so101-assign-controller.png)
+
+  </Step>
+</Steps>
+
+---
+
+## Control it from Python
+
+Once the twin is paired, the [Python SDK](/tools/python-sdk) gives you the same API for any arm in the catalog:
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+arm = cw.twin("the-robot-studio/so101")   # or "universal_robots/UR7"
+
+with cw.affect("live"):
+    arm.joints.set("shoulder_pan", 30, degrees=True)
+    arm.joints.set("elbow_flex", 45, degrees=True)
+    arm.joints.set("gripper", 0, degrees=True)
+
+frame = arm.capture_frame("numpy")        # grab the wrist camera frame
+```
+
+Swap `cw.affect("live")` for `cw.affect("simulation")` to run the exact same code against the digital twin — see [Hello Robot](/get-started/hello-robot) and the [simulation capability page](/capabilities/simulation).
+
+---
+
+## Collect data, train, deploy
+
+Once an arm + camera pair is recording, you're already producing datasets.
+
+<Steps>
+  <Step title="Record episodes">
+    Switch to **Live Mode** in the dashboard and hit **Start Recording** while you teleoperate. Trim the timeline into episodes and export as a LeRobot-format [dataset](/use-cyberwave/environment-editor/replay).
+  </Step>
+
+<Step title="Train an RL or VLA policy">
+  Train directly from the dashboard or with your own pipeline. See the [SO-101
+  voice pick-and-place](/tutorials/so101-voice-pick-and-place), [SmolVLA
+  training](/use-cyberwave/ml-models/smolvla-training), and [OpenVLA-OFT
+  training](/use-cyberwave/ml-models/openvla-oft-training) tutorials.
+</Step>
+
+  <Step title="Deploy on edge or cloud">
+    Assign the trained policy as a [controller](/use-cyberwave/ml-models). Cyberwave decides whether the model runs on the edge device next to the arm or in a [cloud node](/tools/vla-cloud-node) — your code doesn't change.
+  </Step>
+</Steps>
+
+---
+
+## Safety, simulation, and orchestration
+
+- **Human takeover anytime.** When an [alert](/edge/drivers/alerts) fires (collision risk, drift, anomaly), swap the AI policy back to **Local Teleop** or **Keyboard** with one click — the twin keeps streaming so the handover is seamless.
+- **Validate in simulation first.** Every environment exports to MuJoCo and a browser playground — run the same policy against the twin before letting it touch hardware. See [Simulation](/capabilities/simulation).
+- **Compose multi-step tasks.** Wire perception, planning, and motion into repeatable sequences with [Workflows](/use-cyberwave/workflows) — e.g. `camera frame → object detection → VLA policy → gripper primitive` — and fall back to Python whenever a step needs custom logic.
+
+---
+
+## Where to go next
+
+<CardGroup cols={3}>
+  <Card
+    title="Manipulation Capability"
+    icon="hand"
+    href="/capabilities/manipulation"
+  >
+    The full picture of what arms can do on Cyberwave.
+  </Card>
+  <Card
+    title="SO-101 Tutorial"
+    icon="microchip"
+    href="/hardware/so101/get-started"
+  >
+    Step-by-step for the hobbyist arm.
+  </Card>
+  <Card
+    title="UR7e Tutorial"
+    icon="robot"
+    href="/hardware/universal-robot-7/get-started"
+  >
+    Industrial setup with ROS 2 and the MQTT bridge.
+  </Card>
+</CardGroup>

@@ -4,11 +4,11 @@ All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**src_app_api_inbox_generate_suggestion**](CRMInboxApi.md#src_app_api_inbox_generate_suggestion) | **POST** /api/v1/inbox/{uuid}/suggest | Generate Suggestion
-[**src_app_api_inbox_get_submission**](CRMInboxApi.md#src_app_api_inbox_get_submission) | **GET** /api/v1/inbox/{uuid} | Get Submission
-[**src_app_api_inbox_list_submissions**](CRMInboxApi.md#src_app_api_inbox_list_submissions) | **GET** /api/v1/inbox | List Submissions
-[**src_app_api_inbox_mark_as_read**](CRMInboxApi.md#src_app_api_inbox_mark_as_read) | **POST** /api/v1/inbox/{uuid}/mark-read | Mark As Read
-[**src_app_api_inbox_update_submission**](CRMInboxApi.md#src_app_api_inbox_update_submission) | **PUT** /api/v1/inbox/{uuid} | Update Submission
+[**src_app_api_inbox_generate_suggestion**](#src_app_api_inbox_generate_suggestion) | **POST** `/api/v1/inbox/{uuid}/suggest` | Generate Suggestion
+[**src_app_api_inbox_get_submission**](#src_app_api_inbox_get_submission) | **GET** `/api/v1/inbox/{uuid}` | Get Submission
+[**src_app_api_inbox_list_submissions**](#src_app_api_inbox_list_submissions) | **GET** /api/v1/inbox | List Submissions
+[**src_app_api_inbox_mark_as_read**](#src_app_api_inbox_mark_as_read) | **POST** `/api/v1/inbox/{uuid}/mark-read` | Mark As Read
+[**src_app_api_inbox_update_submission**](#src_app_api_inbox_update_submission) | **PUT** `/api/v1/inbox/{uuid}` | Update Submission
 
 
 # **src_app_api_inbox_generate_suggestion**
@@ -70,15 +70,15 @@ with cyberwave.rest.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **uuid** | **str**|  | 
- **contact_submission_ai_suggest_schema** | [**ContactSubmissionAISuggestSchema**](ContactSubmissionAISuggestSchema.md)|  | 
+ **contact_submission_ai_suggest_schema** | [**ContactSubmissionAISuggestSchema**](/api-reference/rest/ContactSubmissionAISuggestSchema)|  | 
 
 ### Return type
 
-[**ContactSubmissionAIResponseSchema**](ContactSubmissionAIResponseSchema.md)
+[**ContactSubmissionAIResponseSchema**](/api-reference/rest/ContactSubmissionAIResponseSchema)
 
 ### Authorization
 
-[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+CustomTokenAuthentication
 
 ### HTTP request headers
 
@@ -91,7 +91,6 @@ Name | Type | Description  | Notes
 |-------------|-------------|------------------|
 **200** | OK |  -  |
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **src_app_api_inbox_get_submission**
 > ContactSubmissionSchema src_app_api_inbox_get_submission(uuid)
@@ -153,11 +152,11 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**ContactSubmissionSchema**](ContactSubmissionSchema.md)
+[**ContactSubmissionSchema**](/api-reference/rest/ContactSubmissionSchema)
 
 ### Authorization
 
-[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+CustomTokenAuthentication
 
 ### HTTP request headers
 
@@ -170,7 +169,6 @@ Name | Type | Description  | Notes
 |-------------|-------------|------------------|
 **200** | OK |  -  |
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **src_app_api_inbox_list_submissions**
 > List[ContactSubmissionSchema] src_app_api_inbox_list_submissions(status=status, source=source, workspace_uuid=workspace_uuid)
@@ -241,11 +239,11 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**List[ContactSubmissionSchema]**](ContactSubmissionSchema.md)
+[**List[ContactSubmissionSchema]**](/api-reference/rest/ContactSubmissionSchema)
 
 ### Authorization
 
-[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+CustomTokenAuthentication
 
 ### HTTP request headers
 
@@ -258,7 +256,6 @@ Name | Type | Description  | Notes
 |-------------|-------------|------------------|
 **200** | OK |  -  |
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **src_app_api_inbox_mark_as_read**
 > ContactSubmissionSchema src_app_api_inbox_mark_as_read(uuid)
@@ -320,11 +317,11 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**ContactSubmissionSchema**](ContactSubmissionSchema.md)
+[**ContactSubmissionSchema**](/api-reference/rest/ContactSubmissionSchema)
 
 ### Authorization
 
-[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+CustomTokenAuthentication
 
 ### HTTP request headers
 
@@ -337,7 +334,6 @@ Name | Type | Description  | Notes
 |-------------|-------------|------------------|
 **200** | OK |  -  |
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **src_app_api_inbox_update_submission**
 > ContactSubmissionSchema src_app_api_inbox_update_submission(uuid, contact_submission_update_schema)
@@ -398,15 +394,15 @@ with cyberwave.rest.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **uuid** | **str**|  | 
- **contact_submission_update_schema** | [**ContactSubmissionUpdateSchema**](ContactSubmissionUpdateSchema.md)|  | 
+ **contact_submission_update_schema** | [**ContactSubmissionUpdateSchema**](/api-reference/rest/ContactSubmissionUpdateSchema)|  | 
 
 ### Return type
 
-[**ContactSubmissionSchema**](ContactSubmissionSchema.md)
+[**ContactSubmissionSchema**](/api-reference/rest/ContactSubmissionSchema)
 
 ### Authorization
 
-[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+CustomTokenAuthentication
 
 ### HTTP request headers
 
@@ -419,5 +415,4 @@ Name | Type | Description  | Notes
 |-------------|-------------|------------------|
 **200** | OK |  -  |
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

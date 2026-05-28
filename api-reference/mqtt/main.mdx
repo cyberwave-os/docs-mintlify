@@ -4,12 +4,12 @@ description: "Complete reference for all MQTT topics and payload schemas used by
 ---
 
 <Note>
-This page is a stub. A human will curate and expand it before publishing.
+  This page is a stub. A human will curate and expand it before publishing.
 </Note>
 
 The Cyberwave platform uses MQTT for real-time communication between edge drivers, the cloud backend, and the frontend. This page lists every topic and payload schema so you can write compatible drivers, simulators, or integrations without reading source code.
 
-For the authoritative `.proto` definitions (including MQTT **topic patterns** repeated in every file header alongside field-level comments), see also [Protobuf schemas](/api-reference/protobuf/cyberwave-schemas).
+For the authoritative `.proto` definitions (including MQTT **topic patterns** repeated in every file header alongside field-level comments).
 
 ## Topic prefix
 
@@ -19,16 +19,16 @@ In non-production deployments the broker may be configured with an environment p
 
 Most payloads include a `source_type` field. The allowed values are:
 
-| Value | Meaning |
-|---|---|
-| `edge` | Physical edge device / driver |
-| `edge_leader` | Leader arm (teleoperation) |
-| `edge_follower` | Follower arm (teleoperation) |
-| `tele` | Frontend teleoperation (real-world) |
-| `sim` | Simulation state (e.g. MuJoCo) |
-| `sim_tele` | Frontend teleoperation in simulation |
-| `edit` | Frontend editor |
-| `preview` | Frontend preview mode |
+| Value           | Meaning                              |
+| --------------- | ------------------------------------ |
+| `edge`          | Physical edge device / driver        |
+| `edge_leader`   | Leader arm (teleoperation)           |
+| `edge_follower` | Follower arm (teleoperation)         |
+| `tele`          | Frontend teleoperation (real-world)  |
+| `sim`           | Simulation state (e.g. MuJoCo)       |
+| `sim_tele`      | Frontend teleoperation in simulation |
+| `edit`          | Frontend editor                      |
+| `preview`       | Frontend preview mode                |
 
 ---
 
@@ -48,13 +48,13 @@ Reports the 3D world position of the twin. Published by edge drivers and simulat
 }
 ```
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `source_type` | string | yes | See [source types](#source-types) |
-| `position.x` | number | yes | X coordinate (metres) |
-| `position.y` | number | yes | Y coordinate (metres) |
-| `position.z` | number | yes | Z coordinate (metres) |
-| `timestamp` | number | no | Unix timestamp (seconds) |
+| Field         | Type   | Required | Description                       |
+| ------------- | ------ | -------- | --------------------------------- |
+| `source_type` | string | yes      | See [source types](#source-types) |
+| `position.x`  | number | yes      | X coordinate (metres)             |
+| `position.y`  | number | yes      | Y coordinate (metres)             |
+| `position.z`  | number | yes      | Z coordinate (metres)             |
+| `timestamp`   | number | no       | Unix timestamp (seconds)          |
 
 ---
 
@@ -72,14 +72,14 @@ Reports the orientation of the twin as a quaternion.
 }
 ```
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `source_type` | string | yes | See [source types](#source-types) |
-| `rotation.w` | number | no | W component (real part, default `1.0`) |
-| `rotation.x` | number | no | X component (default `0.0`) |
-| `rotation.y` | number | no | Y component (default `0.0`) |
-| `rotation.z` | number | no | Z component (default `0.0`) |
-| `timestamp` | number | no | Unix timestamp (seconds) |
+| Field         | Type   | Required | Description                            |
+| ------------- | ------ | -------- | -------------------------------------- |
+| `source_type` | string | yes      | See [source types](#source-types)      |
+| `rotation.w`  | number | no       | W component (real part, default `1.0`) |
+| `rotation.x`  | number | no       | X component (default `0.0`)            |
+| `rotation.y`  | number | no       | Y component (default `0.0`)            |
+| `rotation.z`  | number | no       | Z component (default `0.0`)            |
+| `timestamp`   | number | no       | Unix timestamp (seconds)               |
 
 ---
 
@@ -97,13 +97,13 @@ Sets the render scale of the twin's 3D model.
 }
 ```
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `source_type` | string | yes | See [source types](#source-types) |
-| `scale.x` | number | yes | X scale factor |
-| `scale.y` | number | yes | Y scale factor |
-| `scale.z` | number | yes | Z scale factor |
-| `timestamp` | number | no | Unix timestamp (seconds) |
+| Field         | Type   | Required | Description                       |
+| ------------- | ------ | -------- | --------------------------------- |
+| `source_type` | string | yes      | See [source types](#source-types) |
+| `scale.x`     | number | yes      | X scale factor                    |
+| `scale.y`     | number | yes      | Y scale factor                    |
+| `scale.z`     | number | yes      | Z scale factor                    |
+| `timestamp`   | number | no       | Unix timestamp (seconds)          |
 
 ---
 
@@ -133,15 +133,15 @@ Use this to report one joint at a time.
 }
 ```
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `source_type` | string | yes | See [source types](#source-types) |
-| `type` | string | yes | Always `"joint_state"` |
-| `joint_name` | string | yes | Joint name as defined in the asset schema |
-| `joint_state.position` | number | no | Position in radians (revolute) or metres (prismatic) |
-| `joint_state.velocity` | number | no | Velocity |
-| `joint_state.effort` | number | no | Effort / torque |
-| `timestamp` | number | no | Unix timestamp (seconds) |
+| Field                  | Type   | Required | Description                                          |
+| ---------------------- | ------ | -------- | ---------------------------------------------------- |
+| `source_type`          | string | yes      | See [source types](#source-types)                    |
+| `type`                 | string | yes      | Always `"joint_state"`                               |
+| `joint_name`           | string | yes      | Joint name as defined in the asset schema            |
+| `joint_state.position` | number | no       | Position in radians (revolute) or metres (prismatic) |
+| `joint_state.velocity` | number | no       | Velocity                                             |
+| `joint_state.effort`   | number | no       | Effort / torque                                      |
+| `timestamp`            | number | no       | Unix timestamp (seconds)                             |
 
 #### Flat multi-joint format
 
@@ -156,10 +156,10 @@ Use this to report many joints efficiently. Joint positions become top-level key
 }
 ```
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `source_type` | string | yes | See [source types](#source-types) |
-| `{joint_name}` | number | yes | One key per joint; value is position in radians or metres |
+| Field          | Type   | Required | Description                                               |
+| -------------- | ------ | -------- | --------------------------------------------------------- |
+| `source_type`  | string | yes      | See [source types](#source-types)                         |
+| `{joint_name}` | number | yes      | One key per joint; value is position in radians or metres |
 
 #### Aggregated multi-joint format
 
@@ -177,16 +177,16 @@ Use this when you also want to send velocities, efforts, or telemetry metadata.
 }
 ```
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `source_type` | string | yes | See [source types](#source-types) |
-| `positions` | object | yes | Map of joint names to position values |
-| `velocities` | object | no | Map of joint names to velocity values |
-| `efforts` | object | no | Map of joint names to effort values |
-| `timestamp` | number | yes (when using this format) | Unix timestamp (seconds) |
-| `source_subtype` | string | no | Inference model name (e.g. `"openvla"`) |
-| `workload_uuid` | string | no | UUID of the ML workload generating this update |
-| `session_id` | string | no | Session identifier for grouping related updates |
+| Field            | Type   | Required                     | Description                                     |
+| ---------------- | ------ | ---------------------------- | ----------------------------------------------- |
+| `source_type`    | string | yes                          | See [source types](#source-types)               |
+| `positions`      | object | yes                          | Map of joint names to position values           |
+| `velocities`     | object | no                           | Map of joint names to velocity values           |
+| `efforts`        | object | no                           | Map of joint names to effort values             |
+| `timestamp`      | number | yes (when using this format) | Unix timestamp (seconds)                        |
+| `source_subtype` | string | no                           | Inference model name (e.g. `"openvla"`)         |
+| `workload_uuid`  | string | no                           | UUID of the ML workload generating this update  |
+| `session_id`     | string | no                           | Session identifier for grouping related updates |
 
 ---
 
@@ -209,9 +209,7 @@ Sends a navigation command to the robot. Published by the backend in response to
   "nav_frame_coords": false,
   "position": [1.0, 2.0, 0.0],
   "rotation": [0.0, 0.0, 0.0, 1.0],
-  "waypoints": [
-    { "x": 0.5, "y": 1.0, "z": 0.0 }
-  ],
+  "waypoints": [{ "x": 0.5, "y": 1.0, "z": 0.0 }],
   "constraints": {},
   "frame_id": "map",
   "reference_frame": "map",
@@ -219,23 +217,23 @@ Sends a navigation command to the robot. Published by the backend in response to
 }
 ```
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `action_id` | string | yes | UUID of the action (use to report status back) |
-| `command` | string | yes | Navigation command string (e.g. `"navigate_to_pose"`, `"cancel"`) |
-| `twin_uuid` | string | yes | UUID of the twin to navigate |
-| `environment_uuid` | string | no | UUID of the environment |
-| `controller_policy_uuid` | string | no | UUID of the controller policy |
-| `source_type` | string | yes | See [source types](#source-types) |
-| `nav_frame_coords` | boolean | yes | Whether coordinates are already in the navigation frame |
-| `position` | array\[3\] | no | Target position `[x, y, z]` in metres |
-| `rotation` | array\[4\] | no | Target orientation as quaternion `[x, y, z, w]` |
-| `waypoints` | array | no | List of intermediate waypoints `{x, y, z}` |
-| `constraints` | object | no | Navigation constraints (planner-specific) |
-| `frame_id` | string | no | Coordinate frame for the target |
-| `reference_frame` | string | no | Same as `frame_id` |
-| `metadata` | object | no | Extra metadata forwarded to the driver |
-| `timestamp` | number | yes | Unix timestamp (seconds) |
+| Field                    | Type       | Required | Description                                                       |
+| ------------------------ | ---------- | -------- | ----------------------------------------------------------------- |
+| `action_id`              | string     | yes      | UUID of the action (use to report status back)                    |
+| `command`                | string     | yes      | Navigation command string (e.g. `"navigate_to_pose"`, `"cancel"`) |
+| `twin_uuid`              | string     | yes      | UUID of the twin to navigate                                      |
+| `environment_uuid`       | string     | no       | UUID of the environment                                           |
+| `controller_policy_uuid` | string     | no       | UUID of the controller policy                                     |
+| `source_type`            | string     | yes      | See [source types](#source-types)                                 |
+| `nav_frame_coords`       | boolean    | yes      | Whether coordinates are already in the navigation frame           |
+| `position`               | array\[3\] | no       | Target position `[x, y, z]` in metres                             |
+| `rotation`               | array\[4\] | no       | Target orientation as quaternion `[x, y, z, w]`                   |
+| `waypoints`              | array      | no       | List of intermediate waypoints `{x, y, z}`                        |
+| `constraints`            | object     | no       | Navigation constraints (planner-specific)                         |
+| `frame_id`               | string     | no       | Coordinate frame for the target                                   |
+| `reference_frame`        | string     | no       | Same as `frame_id`                                                |
+| `metadata`               | object     | no       | Extra metadata forwarded to the driver                            |
+| `timestamp`              | number     | yes      | Unix timestamp (seconds)                                          |
 
 ### `cyberwave/twin/{twin_uuid}/navigate/status`
 
@@ -253,14 +251,14 @@ Reports the execution status of a navigation command. The `action_id` must match
 }
 ```
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `action_id` | string | yes | Action UUID received in the command |
-| `status` | string | yes | `"queued"` \| `"running"` \| `"blocked"` \| `"completed"` \| `"failed"` \| `"cancelled"` |
-| `message` | string | no | Human-readable status message |
-| `progress` | number | no | Completion percentage (0–100) |
-| `source_type` | string | no | See [source types](#source-types) |
-| `timestamp` | number | no | Unix timestamp (seconds) |
+| Field         | Type   | Required | Description                                                                              |
+| ------------- | ------ | -------- | ---------------------------------------------------------------------------------------- |
+| `action_id`   | string | yes      | Action UUID received in the command                                                      |
+| `status`      | string | yes      | `"queued"` \| `"running"` \| `"blocked"` \| `"completed"` \| `"failed"` \| `"cancelled"` |
+| `message`     | string | no       | Human-readable status message                                                            |
+| `progress`    | number | no       | Completion percentage (0–100)                                                            |
+| `source_type` | string | no       | See [source types](#source-types)                                                        |
+| `timestamp`   | number | no       | Unix timestamp (seconds)                                                                 |
 
 ---
 
@@ -287,46 +285,46 @@ Sent by the Cyberwave platform when the user presses a keyboard binding.
 
 Standard locomotion command strings:
 
-| `command` | Description | `data` fields |
-|---|---|---|
-| `move_forward` | Drive forward | `linear_x` (m/s or m), `angular_z` (rad/s or rad) |
-| `move_backward` | Drive backward | `linear_x` (negative), `angular_z` |
-| `turn_left` | Rotate left | `linear_x: 0`, `angular_z` (positive) |
-| `turn_right` | Rotate right | `linear_x: 0`, `angular_z` (negative) |
-| `strafe_left` | Strafe left (drones/omni robots) | `linear_y` (negative) |
-| `strafe_right` | Strafe right | `linear_y` (positive) |
-| `ascend` | Increase altitude (drones) | `linear_z` (positive) |
-| `descend` | Decrease altitude | `linear_z` (negative) |
-| `takeoff` | Take off | — |
-| `land` | Land | — |
-| `return_to_home` | Return to home position | — |
-| `emergency_stop` | Immediate stop | — |
-| `sit_down` | Sit / crouch (quadruped) | `delta_z` (negative) |
-| `stand_up` | Stand (quadruped) | `delta_z` (positive) |
-| `recovery_stand` | Recovery stand (quadruped) | — |
+| `command`        | Description                      | `data` fields                                     |
+| ---------------- | -------------------------------- | ------------------------------------------------- |
+| `move_forward`   | Drive forward                    | `linear_x` (m/s or m), `angular_z` (rad/s or rad) |
+| `move_backward`  | Drive backward                   | `linear_x` (negative), `angular_z`                |
+| `turn_left`      | Rotate left                      | `linear_x: 0`, `angular_z` (positive)             |
+| `turn_right`     | Rotate right                     | `linear_x: 0`, `angular_z` (negative)             |
+| `strafe_left`    | Strafe left (drones/omni robots) | `linear_y` (negative)                             |
+| `strafe_right`   | Strafe right                     | `linear_y` (positive)                             |
+| `ascend`         | Increase altitude (drones)       | `linear_z` (positive)                             |
+| `descend`        | Decrease altitude                | `linear_z` (negative)                             |
+| `takeoff`        | Take off                         | —                                                 |
+| `land`           | Land                             | —                                                 |
+| `return_to_home` | Return to home position          | —                                                 |
+| `emergency_stop` | Immediate stop                   | —                                                 |
+| `sit_down`       | Sit / crouch (quadruped)         | `delta_z` (negative)                              |
+| `stand_up`       | Stand (quadruped)                | `delta_z` (positive)                              |
+| `recovery_stand` | Recovery stand (quadruped)       | —                                                 |
 
 Robot-specific command strings used by bundled controllers:
 
-| `command` | Robot | Description |
-|---|---|---|
-| `led_toggle` | Quadruped | Toggle LEDs |
-| `chassis_light_toggle` | UGV Beast | Toggle chassis light |
-| `camera_light_toggle` | UGV Beast | Toggle camera light |
-| `camera_up` / `camera_down` | UGV Beast | Tilt camera |
-| `camera_left` / `camera_right` | UGV Beast | Pan camera |
-| `camera_default` | UGV Beast | Reset camera position |
-| `take_photo` | UGV Beast, Quadruped | Trigger camera snapshot |
-| `battery_check` | UGV Beast | Request battery status |
-| `lights` | UGV Beast | Set light PWM (pass `pwm` in `data`) |
-| `set_linear_velocity` | Quadruped | Update velocity setting (`linear` in `data`) |
-| `set_angular_velocity` | Quadruped | Update velocity setting (`angular` in `data`) |
+| `command`                      | Robot                | Description                                   |
+| ------------------------------ | -------------------- | --------------------------------------------- |
+| `led_toggle`                   | Quadruped            | Toggle LEDs                                   |
+| `chassis_light_toggle`         | UGV Beast            | Toggle chassis light                          |
+| `camera_light_toggle`          | UGV Beast            | Toggle camera light                           |
+| `camera_up` / `camera_down`    | UGV Beast            | Tilt camera                                   |
+| `camera_left` / `camera_right` | UGV Beast            | Pan camera                                    |
+| `camera_default`               | UGV Beast            | Reset camera position                         |
+| `take_photo`                   | UGV Beast, Quadruped | Trigger camera snapshot                       |
+| `battery_check`                | UGV Beast            | Request battery status                        |
+| `lights`                       | UGV Beast            | Set light PWM (pass `pwm` in `data`)          |
+| `set_linear_velocity`          | Quadruped            | Update velocity setting (`linear` in `data`)  |
+| `set_angular_velocity`         | Quadruped            | Update velocity setting (`angular` in `data`) |
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `source_type` | string | yes | See [source types](#source-types) |
-| `command` | string | yes | Command name (see tables above) |
-| `data` | object | no | Command parameters (driver-specific) |
-| `timestamp` | number | yes | Unix timestamp (seconds) |
+| Field         | Type   | Required | Description                          |
+| ------------- | ------ | -------- | ------------------------------------ |
+| `source_type` | string | yes      | See [source types](#source-types)    |
+| `command`     | string | yes      | Command name (see tables above)      |
+| `data`        | object | no       | Command parameters (driver-specific) |
+| `timestamp`   | number | yes      | Unix timestamp (seconds)             |
 
 #### Video control commands
 
@@ -341,12 +339,12 @@ Sent by the backend to start or stop video streaming on the edge device.
 }
 ```
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `type` | string | yes | `"start_video"` \| `"stop_video"` |
-| `timestamp` | number | yes | Unix timestamp (seconds) |
-| `sensor_id` | string | no | Camera identifier for multi-camera setups (defaults to primary camera) |
-| `recording` | boolean | no | Whether to record the stream (`start_video` only) |
+| Field       | Type    | Required | Description                                                            |
+| ----------- | ------- | -------- | ---------------------------------------------------------------------- |
+| `type`      | string  | yes      | `"start_video"` \| `"stop_video"`                                      |
+| `timestamp` | number  | yes      | Unix timestamp (seconds)                                               |
+| `sensor_id` | string  | no       | Camera identifier for multi-camera setups (defaults to primary camera) |
+| `recording` | boolean | no       | Whether to record the stream (`start_video` only)                      |
 
 ---
 
@@ -365,23 +363,23 @@ Lifecycle events for the telemetry session. Send these to let the backend track 
 { "type": "disconnected", "timestamp": 1700000000.0 }
 ```
 
-| `type` | When to send | Extra fields |
-|---|---|---|
-| `connected` | On MQTT connect | — |
-| `telemetry_start` | When the driver starts publishing data | `fps` (optional), `observations` (optional) |
-| `telemetry_end` | When the driver stops publishing data | — |
-| `disconnected` | On MQTT disconnect | — |
-| `initial_observation` | For teleoperation: send current joint state to the leader | `observations` (object), `fps` (number) |
+| `type`                | When to send                                              | Extra fields                                |
+| --------------------- | --------------------------------------------------------- | ------------------------------------------- |
+| `connected`           | On MQTT connect                                           | —                                           |
+| `telemetry_start`     | When the driver starts publishing data                    | `fps` (optional), `observations` (optional) |
+| `telemetry_end`       | When the driver stops publishing data                     | —                                           |
+| `disconnected`        | On MQTT disconnect                                        | —                                           |
+| `initial_observation` | For teleoperation: send current joint state to the leader | `observations` (object), `fps` (number)     |
 
 Other `type` values used internally by edge drivers:
 
-| `type` | Description |
-|---|---|
-| `camera_stored` | Camera frame stored to recording |
-| `video_start_timestamp` | Timestamp of first video frame |
-| `camera_sync_frame` | Frame used to synchronise camera playback |
-| `driver_log` | Driver log message (see [driver log](#cyberwavetwintwin_uuiddriverlog)) |
-| `motor_status` | Motor controller status |
+| `type`                  | Description                                                             |
+| ----------------------- | ----------------------------------------------------------------------- |
+| `camera_stored`         | Camera frame stored to recording                                        |
+| `video_start_timestamp` | Timestamp of first video frame                                          |
+| `camera_sync_frame`     | Frame used to synchronise camera playback                               |
+| `driver_log`            | Driver log message (see [driver log](#cyberwavetwintwin_uuiddriverlog)) |
+| `motor_status`          | Motor controller status                                                 |
 
 ---
 
@@ -403,13 +401,13 @@ Depth camera frame as a base64-encoded array.
 }
 ```
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `type` | string | yes | Always `"depth_data"` |
-| `data` | string | yes | Base64-encoded uint16 depth array (millimetres) |
-| `width` | number | no | Frame width in pixels (default `640`) |
-| `height` | number | no | Frame height in pixels (default `480`) |
-| `timestamp` | number | no | Unix timestamp (seconds) |
+| Field       | Type   | Required | Description                                     |
+| ----------- | ------ | -------- | ----------------------------------------------- |
+| `type`      | string | yes      | Always `"depth_data"`                           |
+| `data`      | string | yes      | Base64-encoded uint16 depth array (millimetres) |
+| `width`     | number | no       | Frame width in pixels (default `640`)           |
+| `height`    | number | no       | Frame height in pixels (default `480`)          |
+| `timestamp` | number | no       | Unix timestamp (seconds)                        |
 
 ### `cyberwave/twin/{twin_uuid}/pointcloud`
 
@@ -425,11 +423,11 @@ Point cloud data as a base64-encoded array.
 }
 ```
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `type` | string | yes | Always `"pointcloud"` |
-| `data` | string | yes | Base64-encoded Nx3 float32 XYZ array |
-| `timestamp` | number | no | Unix timestamp (seconds) |
+| Field       | Type   | Required | Description                          |
+| ----------- | ------ | -------- | ------------------------------------ |
+| `type`      | string | yes      | Always `"pointcloud"`                |
+| `data`      | string | yes      | Base64-encoded Nx3 float32 XYZ array |
+| `timestamp` | number | no       | Unix timestamp (seconds)             |
 
 ### `cyberwave/twin/{twin_uuid}/metrics`
 
@@ -457,10 +455,10 @@ Periodic robot metrics snapshot (battery, navigation status, load, errors, etc.)
 }
 ```
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `source_type` | string | yes | Typically `"edge"` |
-| `metrics` | object | yes | Free-form dict of metric categories and values |
+| Field         | Type   | Required | Description                                    |
+| ------------- | ------ | -------- | ---------------------------------------------- |
+| `source_type` | string | yes      | Typically `"edge"`                             |
+| `metrics`     | object | yes      | Free-form dict of metric categories and values |
 
 ---
 
@@ -504,16 +502,16 @@ queue heuristics. The backend additionally bumps the corresponding
 }
 ```
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `type` | string | yes | Always `"edge_health"` |
-| `timestamp` | number | yes | Unix timestamp (seconds) |
-| `twin_uuid` | string | yes | Twin UUID |
-| `edge_id` | string | yes | Edge device identifier |
-| `uptime_seconds` | number | yes | Seconds since the driver started |
-| `streams` | object | no | Map of camera/stream IDs to stream health objects |
-| `stream_count` | number | no | Total number of streams |
-| `healthy_streams` | number | no | Number of healthy streams |
+| Field             | Type   | Required | Description                                       |
+| ----------------- | ------ | -------- | ------------------------------------------------- |
+| `type`            | string | yes      | Always `"edge_health"`                            |
+| `timestamp`       | number | yes      | Unix timestamp (seconds)                          |
+| `twin_uuid`       | string | yes      | Twin UUID                                         |
+| `edge_id`         | string | yes      | Edge device identifier                            |
+| `uptime_seconds`  | number | yes      | Seconds since the driver started                  |
+| `streams`         | object | no       | Map of camera/stream IDs to stream health objects |
+| `stream_count`    | number | no       | Total number of streams                           |
+| `healthy_streams` | number | no       | Number of healthy streams                         |
 
 ---
 
@@ -539,17 +537,17 @@ Structured log messages from edge drivers. Displayed in the platform UI.
 }
 ```
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `type` | string | yes | Always `"driver_log"` |
-| `message` | string | yes | Log message text |
-| `level` | string | yes | `"debug"` \| `"info"` \| `"warning"` \| `"error"` |
-| `container_name` | string | no | Docker container name |
-| `source` | string | no | Log source identifier |
-| `timestamp` | number | yes | Unix timestamp (seconds) |
-| `edge_core_version` | string | no | Edge Core version string |
-| `sdk_version` | string | no | SDK version string |
-| `driver_image` | string | no | Docker image that produced the log |
+| Field               | Type   | Required | Description                                       |
+| ------------------- | ------ | -------- | ------------------------------------------------- |
+| `type`              | string | yes      | Always `"driver_log"`                             |
+| `message`           | string | yes      | Log message text                                  |
+| `level`             | string | yes      | `"debug"` \| `"info"` \| `"warning"` \| `"error"` |
+| `container_name`    | string | no       | Docker container name                             |
+| `source`            | string | no       | Log source identifier                             |
+| `timestamp`         | number | yes      | Unix timestamp (seconds)                          |
+| `edge_core_version` | string | no       | Edge Core version string                          |
+| `sdk_version`       | string | no       | SDK version string                                |
+| `driver_image`      | string | no       | Docker image that produced the log                |
 
 ---
 
@@ -613,12 +611,12 @@ Generic environment update channel. `update_type` is a free-form string (e.g. `"
 }
 ```
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `type` | string | yes | Same as `update_type` in the topic |
-| `data` | object | yes | Update payload (structure depends on `type`) |
-| `timestamp` | number | yes | Unix timestamp (seconds) |
-| `source_type` | string | no | See [source types](#source-types) |
+| Field         | Type   | Required | Description                                  |
+| ------------- | ------ | -------- | -------------------------------------------- |
+| `type`        | string | yes      | Same as `update_type` in the topic           |
+| `data`        | object | yes      | Update payload (structure depends on `type`) |
+| `timestamp`   | number | yes      | Unix timestamp (seconds)                     |
+| `source_type` | string | no       | See [source types](#source-types)            |
 
 #### Sensor binding update
 
@@ -669,10 +667,10 @@ Status updates for a running workflow execution.
 { "status": "running", "timestamp": 1700000000.0 }
 ```
 
-| `status` | Description |
-|---|---|
-| `"pending"` | Queued, not yet started |
-| `"running"` | Currently executing |
-| `"completed"` | Finished successfully |
-| `"failed"` | Terminated with an error |
-| `"cancelled"` | Cancelled by the user |
+| `status`      | Description              |
+| ------------- | ------------------------ |
+| `"pending"`   | Queued, not yet started  |
+| `"running"`   | Currently executing      |
+| `"completed"` | Finished successfully    |
+| `"failed"`    | Terminated with an error |
+| `"cancelled"` | Cancelled by the user    |

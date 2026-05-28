@@ -1,0 +1,177 @@
+---
+title: "Workflows"
+description: "Automate robot operations with visual workflow orchestration"
+icon: "diagram-project"
+---
+
+## What are Workflows?
+
+Workflows in Cyberwave let you create automated sequences of robot operations. Connect nodes visually to build complex behaviors without writing procedural code.
+
+Workflows can execute in two environments:
+- **Cloud** — schedule, webhook, manual, event, MQTT, and email triggers run as Celery tasks on Cyberwave infrastructure.
+- **Edge** — the `camera_frame` trigger generates a Python worker that runs ML inference directly on the device. Raw video never leaves the edge.
+
+---
+
+## Workflow Components
+
+### Nodes
+
+Nodes are the building blocks of workflows. Each node performs a specific action:
+
+<CardGroup cols={2}>
+  <Card title="Trigger Nodes" icon="bolt">
+    Start the workflow: manual, schedule, webhook, event, MQTT, email, or camera_frame (edge-local)
+  </Card>
+  <Card title="Call Model Nodes" icon="brain">
+    Run ML inference — cloud VLM/LLM or edge-local object detection (YOLO, etc.)
+  </Card>
+  <Card title="Twin Nodes" icon="robot">
+    Control digital twin position, rotation, and state
+  </Card>
+  <Card title="Joint Nodes" icon="gear">
+    Set individual joint positions or run trajectories
+  </Card>
+  <Card title="Condition Nodes" icon="code-branch">
+    Branch based on sensor data, twin state, or model output. Includes time-based gates like [`timed_condition`](/use-cyberwave/workflows/timed-condition) for "must persist for N seconds" semantics.
+  </Card>
+  <Card title="Spatial Filter" icon="draw-polygon">
+    Polygon zones in normalized image coordinates — keep only [detections inside the zone](/use-cyberwave/workflows/spatial-filter). Pairs with `timed_condition` for zone-based intrusion alerts.
+  </Card>
+  <Card title="Delay Nodes" icon="clock">
+    Add timing between operations
+  </Card>
+</CardGroup>
+
+### Connections
+
+Connections define the execution flow between nodes:
+
+- **Sequential**: Execute nodes one after another
+- **Parallel**: Execute multiple nodes simultaneously
+- **Conditional**: Branch based on conditions
+
+The workflow editor validates connections in real time: self-connections, cycles, and invalid pairings (e.g. `camera_frame` triggers can only connect to `call_model` nodes) are blocked before saving.
+
+### Inspector: Wired vs Available inputs
+
+> stub: When you select a node, the inspector splits its Inputs and Outputs into a **Wired** group (what the node is actually consuming or feeding) and an **Available** group (everything else, collapsed by default once anything is wired). An input counts as wired when a connection lands on it explicitly, when a node-level edge satisfies the schema's sole required input, when a constant or upstream reference is set in the input's editor, or when the schema declares the input is implicitly satisfied by an upstream node type (e.g. `annotate` / `anonymize` consume the upstream frame from a `call_model` automatically on edge camera-frame chains). An output counts as wired when a downstream node references it explicitly — either via reference-mode mapping (`{ source_node_uuid, source_output }`) or via an expression like `{node-name.frame_index}`. For nodes whose every input is optional (`call_model` is the canonical case), a plain canvas-drawn edge to or from the node also lights up its inputs/outputs in the wired group — the wire itself is the signal that the node is in the pipeline.
+
+### Canvas card I/O strip
+
+> stub: Each node card on the canvas shows a compact `in:` / `out:` strip listing the inputs and outputs that are **currently wired**, not the full schema. A freshly added node with no connections shows no strip; once you wire it up the strip starts listing the ports actually in use. Drag-drawn edges between two nodes (which don't pin a specific port) credit the source node's outputs and — for nodes with no required inputs, like `call_model` — also the target's inputs, so the strip never goes silent on a node you've clearly connected. The strip caps each row at a few names and collapses the rest into a `+N` badge; **hover the row to see every wired port** with its type and a `required` marker (sorted required-first). The full schema view (with both wired and available ports) lives in the inspector — open the node to discover everything else it can consume or produce.
+
+### Missing-configuration footer
+
+> stub: Nodes whose required inputs or parameters aren't set yet show an amber "Configure …" footer on the canvas card (e.g. `Configure twin` on a `camera_frame` trigger, `Add Python code` on a fresh `code` node, `Select a model` on a `call_model` without a chosen LLM/VLM, or `3 settings required` on a `send_email` node missing recipient / subject / body). Click the footer to jump to the inspector — the same fields are highlighted there with a `Required` pill so the next step is obvious. The cue is a warning, not an error: the workflow still saves and structurally validates; it just can't execute until the items listed are filled in.
+
+---
+
+## Trigger Types
+
+| Trigger | Where it runs | Description |
+|---------|--------------|-------------|
+| Manual | Cloud | User clicks "Run" in the dashboard or calls the SDK |
+| Schedule | Cloud | Cron or interval timer |
+| Webhook | Cloud | HTTP POST to a generated URL |
+| Event | Cloud | Business event matching conditions |
+| MQTT | Cloud | Message on a subscribed MQTT topic |
+| Email | Cloud | Incoming email |
+| Camera Frame | **Edge** | Every camera frame — ML inference on-device, only events sent to cloud |
+
+---
+
+## Edge Workflow Execution
+
+When a workflow uses a `camera_frame` trigger connected to a `call_model` node with an edge-compatible model, the backend generates a Python worker file (`wf_<uuid8>.py`) via `WorkerCodegen`. The edge device pulls this file on boot and periodically, writes it to its workers directory, and the worker runtime activates the `@cw.on_frame` hook.
+
+Schedule-triggered `run_on_edge` workflows use the same worker delivery path.
+The generated module registers `@cw.on_schedule(...)`; the worker runtime
+evaluates the cron locally with `croniter` and calls the generated `run(...)`
+entrypoint when due.
+
+Alerts are raised explicitly: wire a `send_alert` node downstream of `call_model`, optionally gated by `detection_event_gate` (class filtering, `on_enter` / `on_change` semantics) and `timed_condition` (cooldowns / dwell). The legacy implicit `emit_event` config on `call_model` is no longer compiled — see the [`emit_event` migration](/use-cyberwave/workflows#migrating-from-emit_event).
+
+### Multi-twin perception workflows
+
+A single perception workflow can drive **multiple twins** by adding more than one `camera_frame` trigger, each pinned to a different twin. The compiler emits one `@cw.on_frame(<twin_uuid>, …)` handler per trigger and ships the same `wf_<uuid8>.py` to every involved twin's edge — each handler only fires for frames from its own twin's camera, so co-located edges never collide.
+
+The `/api/v1/workflows/{uuid}/compile` endpoint returns the full set of referenced twins as `twin_uuids` (sorted). For backward compatibility, the legacy `twin_uuid` field is set to the only twin for single-twin workflows and to `null` for multi-twin workflows.
+
+Navigation workflows (those containing a `twin_control` / Move Twin node) remain single-twin: the compiled worker is scoped to one `client.twin(...)` handle. Activate one workflow per twin if you need to drive multiple robots, or set `run_on_edge=false` to run the workflow as a cloud workflow that can address several twins from a single process.
+
+See [Edge Workers](/feature-reference/workflows/workers/overview) for the full lifecycle, eject pattern, and generated worker format.
+
+For a privacy-preserving end-to-end recipe combining `camera_frame`, `call_model`, [`anonymize`](/use-cyberwave/workflows/anonymize-image), [`spatial_filter`](/use-cyberwave/workflows/spatial-filter), [`timed_condition`](/use-cyberwave/workflows/timed-condition), and `send_alert`, see the [Zone-based intrusion detection tutorial](/tutorials/intrusion-detection).
+
+---
+
+## Creating a Workflow
+
+1. Navigate to **Workflows** in the dashboard
+2. Click **Create Workflow** — set a name, optional slug, and visibility
+3. Drag nodes from the palette to the canvas
+4. Connect nodes by dragging from output to input ports
+5. Configure each node's parameters
+6. Click **Activate**
+
+For edge workflows, activation also publishes a `sync_workflows` MQTT command to every twin the workflow references, so the edge picks up the new `wf_*.py` within seconds. Running `cyberwave workflow sync` or waiting for the periodic reconcile still works and is the fallback if the MQTT broker is unreachable.
+
+---
+
+## Executing Workflows
+
+Workflows can be triggered by:
+
+- **Schedule**: Run at specific times (cron)
+- **Events**: Run when sensor data matches conditions
+- **API**: Trigger from external systems
+- **Camera Frame**: Run on every frame at the edge device
+
+---
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Keep workflows focused">
+    Create separate workflows for distinct operations rather than one large
+    workflow. This makes debugging and maintenance easier.
+  </Accordion>
+
+  <Accordion title="Add error handling">
+    Include condition nodes to handle failure cases gracefully. Consider what
+    should happen if a joint can't reach its target.
+  </Accordion>
+
+  <Accordion title="Use meaningful names">
+    Name nodes and workflows descriptively. "Alert on person in zone A" is
+    better than "Node 1".
+  </Accordion>
+
+  <Accordion title="Use emit modes for edge workflows">
+    Use `on_enter` for alert-style use cases (person entering a zone) and
+    `on_change` for occupancy tracking. Set `cooldown_seconds` to avoid event floods.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="API Reference"
+    icon="code"
+    href="/api-reference/rest/WorkflowSchema"
+  >
+    Full workflow API documentation
+  </Card>
+  <Card
+    title="Edge Workers"
+    icon="microchip-ai"
+    href="/feature-reference/workflows/workers/overview"
+  >
+    Generated workers, eject pattern, and custom workers
+  </Card>
+</CardGroup>

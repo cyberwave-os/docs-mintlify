@@ -9,7 +9,13 @@ iconType: "solid"
 By the end of this tutorial you will have an SO-101 that listens to a spoken English command, looks at its workspace through a USB webcam, and executes a short motion plan written on-the-fly by Claude. No dataset, no VLA, no training. The policy is a system prompt.
 
 <Info>
-**Reference implementation.** Full source for every module and smoke test referenced below lives in the [`nl_arm_controller`](https://github.com/cyberwave-os/cyberwave-python/tree/main/examples/nl_arm_controller) example in the [`cyberwave-os/cyberwave-python`](https://github.com/cyberwave-os/cyberwave-python) repo. Clone it to follow along, or use the snippets in each step as a guide for your own implementation.
+  **Reference implementation.** Full source for every module and smoke test
+  referenced below lives in the
+  [`nl_arm_controller`](https://github.com/cyberwave-os/cyberwave-python/tree/main/examples/nl_arm_controller)
+  example in the
+  [`cyberwave-os/cyberwave-python`](https://github.com/cyberwave-os/cyberwave-python)
+  repo. Clone it to follow along, or use the snippets in each step as a guide
+  for your own implementation.
 </Info>
 
 ## Architecture at a glance
@@ -26,7 +32,9 @@ flowchart LR
 ```
 
 <Info>
-**Who provides what.** Cyberwave provides: digital twin, Python SDK, MQTT transport, edge driver, Live Mode. You provide: the laptop, the USB webcam, API keys for Anthropic Claude and Mistral Voxtral.
+  **Who provides what.** Cyberwave provides: digital twin, Python SDK, MQTT
+  transport, edge driver, Live Mode. You provide: the laptop, the USB webcam,
+  API keys for Anthropic Claude and Mistral Voxtral.
 </Info>
 
 ---
@@ -57,8 +65,8 @@ flowchart LR
 - **Hardware**: SO-101 follower on a Raspberry Pi, one USB webcam plugged into your laptop, microphone (built-in is fine).
 - **Credentials**: Cyberwave API key + twin/environment UUIDs, Anthropic API key, Mistral API key.
 - **Base setup**: [SO-101 Get Started](/hardware/so101/get-started) for the environment, edge install, and `so101-remoteoperate` running on the Pi.
-- **SDK baseline**: [Python SDK](/sdks/python-sdk).
-- **Conceptual grounding**: [Key Concepts](/get-started/key-concepts), [Voice as a Sensor](/hardware/microphone/get-started).
+- **SDK baseline**: [Python SDK](/overview/tools/python-sdk).
+- **Conceptual grounding**: [Key Concepts](/feature-reference/architecture/key-concepts), [Voice as a Sensor](/hardware/microphone/get-started).
 
 ---
 
@@ -99,14 +107,16 @@ Before you build the agent, you need a working SO-101 twin and a Cyberwave envir
 4. Note the **environment UUID** and **twin UUID** from the dashboard. You'll paste them into `.env` in [Step 3](#step-3-develop-your-agent).
 
 <Check>
-The twin appears in the dashboard, calibration is green, and `so101-remoteoperate` is running on the Pi (visible as an active driver under the twin).
+  The twin appears in the dashboard, calibration is green, and
+  `so101-remoteoperate` is running on the Pi (visible as an active driver under
+  the twin).
 </Check>
 
 ---
 
 ## Step 2: Set up remote operation
 
-The agent needs to send joint commands from your laptop to the follower without a physical leader arm. That means assigning a controller to the twin in the dashboard and verifying the cloud-to-edge path with the keyboard *before* you wire any LLM.
+The agent needs to send joint commands from your laptop to the follower without a physical leader arm. That means assigning a controller to the twin in the dashboard and verifying the cloud-to-edge path with the keyboard _before_ you wire any LLM.
 
 1. Open your environment and switch to **Live Mode**.
 2. Select the SO101 twin and click **Assign Controller**.
@@ -114,13 +124,19 @@ The agent needs to send joint commands from your laptop to the follower without 
 4. Use the on-screen key bindings to nudge each joint. If the physical arm responds, the cloud, MQTT, and edge driver are all healthy.
 
 <Tip>
-**Why bother with the keyboard step?** Once the keyboard works, every later failure is in *your* code, not in calibration, pairing, MQTT, or the edge driver. It rules out four moving parts in two minutes.
+  **Why bother with the keyboard step?** Once the keyboard works, every later
+  failure is in *your* code, not in calibration, pairing, MQTT, or the edge
+  driver. It rules out four moving parts in two minutes.
 </Tip>
 
-For background on how remote operation differs from leader/follower teleoperation, see [SO-101 Get Started: Set Up Remote Operation](/hardware/so101/get-started#set-up-remote-operation) and [Teleoperation](/use-cyberwave/teleoperation).
+For background on how remote operation differs from leader/follower teleoperation, see [SO-101 Get Started: Set Up Remote Operation](/hardware/so101/get-started#set-up-remote-operation) and [Teleoperation](/feature-reference/environment-editor/teleoperation).
 
 <Check>
-You're done with Step 2 when keyboard input in the dashboard moves the physical arm, and a one-liner Python script using `cw.twin(...).joints.set("1", 10, degrees=True)` also moves it. The platform automatically swaps the keyboard controller for the SDK session when your script connects, so you don't need to manually unassign anything.
+  You're done with Step 2 when keyboard input in the dashboard moves the
+  physical arm, and a one-liner Python script using
+  `cw.twin(...).joints.set("1", 10, degrees=True)` also moves it. The platform
+  automatically swaps the keyboard controller for the SDK session when your
+  script connects, so you don't need to manually unassign anything.
 </Check>
 
 ---
@@ -129,13 +145,13 @@ You're done with Step 2 when keyboard input in the dashboard moves the physical 
 
 The agent is five small modules on your laptop, each owning one transform. Build and smoke-test them one at a time, then orchestrate.
 
-| Module | Input | Output | External service |
-|---|---|---|---|
-| [`voice.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/voice.py) | Mic audio (while SPACE held) | Transcribed text | Mistral Voxtral |
-| [`vision.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/vision.py) | Webcam | Base64 JPEG | n/a (local OpenCV) |
-| [`planner.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/planner.py) | Text + base64 JPEG | Validated `MotionPlan` | Anthropic Claude |
-| [`motion.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/motion.py) | `MotionPlan` | Ramped joint commands | Cyberwave SDK |
-| [`nl_arm_controller.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/nl_arm_controller.py) | CLI flags | Agent loop wiring it all together | n/a |
+| Module                                                                                                                               | Input                        | Output                            | External service   |
+| ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------- | --------------------------------- | ------------------ |
+| [`voice.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/voice.py)                         | Mic audio (while SPACE held) | Transcribed text                  | Mistral Voxtral    |
+| [`vision.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/vision.py)                       | Webcam                       | Base64 JPEG                       | n/a (local OpenCV) |
+| [`planner.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/planner.py)                     | Text + base64 JPEG           | Validated `MotionPlan`            | Anthropic Claude   |
+| [`motion.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/motion.py)                       | `MotionPlan`                 | Ramped joint commands             | Cyberwave SDK      |
+| [`nl_arm_controller.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/nl_arm_controller.py) | CLI flags                    | Agent loop wiring it all together | n/a                |
 
 **Install and configure** (do this once, then build each modality on top):
 
@@ -159,7 +175,9 @@ Set `CW_CAMERA_INDEX` if your USB webcam isn't device 0.
 - **Failure mode**: silent recording or permission errors return an empty string. The orchestrator treats empty input as "skip this turn".
 
 <Tip>
-**Voice does not reach Claude directly.** The path is: audio, then Voxtral, then text, then Claude. Claude is a text+image model, so the speech-to-text step is mandatory.
+  **Voice does not reach Claude directly.** The path is: audio, then Voxtral,
+  then text, then Claude. Claude is a text+image model, so the speech-to-text
+  step is mandatory.
 </Tip>
 
 Smoke-test it:
@@ -188,7 +206,7 @@ Open the saved JPEG before iterating. Bad framing or lighting at this stage will
 
 [`planner.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/nl_arm_controller/planner.py) calls Anthropic Claude Sonnet 4.5 with a system prompt, the user transcript, and (optionally) a base64 JPEG. It returns a validated `MotionPlan` or a structured error.
 
-The whole tutorial hinges on Claude returning a *strict, machine-parseable* motion plan, not prose. We do this in three layers, before any code parses anything.
+The whole tutorial hinges on Claude returning a _strict, machine-parseable_ motion plan, not prose. We do this in three layers, before any code parses anything.
 
 **1. Pin the schema in the system prompt.** `planner.SYSTEM_PROMPT` documents the 6 joints with directional semantics (`joint "1" positive = turn RIGHT`), four allowed action types (`set_joint`, `set_pose`, `wait`, `home`), and three few-shot examples covering single-joint, multi-joint, and "stop" semantics. It also forbids markdown, code fences, and any prose outside the JSON object.
 
@@ -196,32 +214,35 @@ The whole tutorial hinges on Claude returning a *strict, machine-parseable* moti
 
 **3. Cap `max_tokens`.** A typical plan is ~120 output tokens. We allow 400 (text-only) or 500 (vision). This caps cost, latency, and worst-case output length all at once.
 
-Example plan Claude returns for *"wave at the audience"*:
+Example plan Claude returns for _"wave at the audience"_:
 
 ```json
 {
   "say": "Waving from my base.",
   "actions": [
-    {"type": "set_joint", "joint": "1", "angle": 30, "duration": 0.7},
-    {"type": "set_joint", "joint": "1", "angle": -30, "duration": 1.0},
-    {"type": "set_joint", "joint": "1", "angle": 30, "duration": 1.0},
-    {"type": "set_joint", "joint": "1", "angle": 0, "duration": 0.7}
+    { "type": "set_joint", "joint": "1", "angle": 30, "duration": 0.7 },
+    { "type": "set_joint", "joint": "1", "angle": -30, "duration": 1.0 },
+    { "type": "set_joint", "joint": "1", "angle": 30, "duration": 1.0 },
+    { "type": "set_joint", "joint": "1", "angle": 0, "duration": 0.7 }
   ]
 }
 ```
 
-The vision-aware prompt (`VISION_SYSTEM_PROMPT`) adds **decision rules**: "describe only: empty actions", "motion only: narrate briefly", "visually-grounded motion: describe + aim with joint 1", plus a rule for honest *"no, I don't see that"* answers with empty actions.
+The vision-aware prompt (`VISION_SYSTEM_PROMPT`) adds **decision rules**: "describe only: empty actions", "motion only: narrate briefly", "visually-grounded motion: describe + aim with joint 1", plus a rule for honest _"no, I don't see that"_ answers with empty actions.
 
 **Treat the LLM as untrusted input.** The LLM is the brain; safety is your code. Five layers, defense-in-depth:
 
 1. **Prompt constraints**: shape the output before it's generated (above).
 2. **Defensive parser**: `parse_plan_json` strips markdown fences, recovers from leading/trailing prose, and returns `(None, error)` on any failure. Never raises.
 3. **Schema validation**: `validate_plan` rejects unknown action types, unknown joints, negative or excessive durations, and plans with more than 8 actions. **All-or-nothing**: any single error means the entire plan is rejected and the arm doesn't move.
-4. **Per-joint clamping**: every commanded angle is squeezed into `DEFAULT_JOINT_LIMITS` *right before* the SDK call. If Claude emits `angle: 9999`, the arm receives `90`. The arm is physically incapable of executing an out-of-range request.
+4. **Per-joint clamping**: every commanded angle is squeezed into `DEFAULT_JOINT_LIMITS` _right before_ the SDK call. If Claude emits `angle: 9999`, the arm receives `90`. The arm is physically incapable of executing an out-of-range request.
 5. **Try/except containment**: any executor exception triggers a `home(duration=1.0)` and the loop continues. `Ctrl+C` always reaches the `finally` block that homes the arm and disconnects cleanly.
 
 <Warning>
-Joint limits in `motion.DEFAULT_JOINT_LIMITS` are *conservative*: ±90° on the base, ±60° on every other joint. Wide enough to look expressive on a public-demo arm; narrow enough that worst-case the arm can't bash itself, the table, or you. Loosen at your own risk.
+  Joint limits in `motion.DEFAULT_JOINT_LIMITS` are *conservative*: ±90° on the
+  base, ±60° on every other joint. Wide enough to look expressive on a
+  public-demo arm; narrow enough that worst-case the arm can't bash itself, the
+  table, or you. Loosen at your own risk.
 </Warning>
 
 ### 3.4 Orchestrate it together
@@ -247,7 +268,7 @@ A 4-action wave plan with 1-second actions becomes ~500 SDK calls; the SDK batch
 5. Hand it to the executor; the executor sends ramped commands through the SDK.
 6. Print latency for each step. Loop.
 
-*Expansion point: trapezoidal or S-curve velocity profiles for even smoother starts and stops. Not wired in yet; linear at 20 Hz is plenty for a demo.*
+_Expansion point: trapezoidal or S-curve velocity profiles for even smoother starts and stops. Not wired in yet; linear at 20 Hz is plenty for a demo._
 
 ---
 
@@ -256,31 +277,42 @@ A 4-action wave plan with 1-second actions becomes ~500 SDK calls; the SDK batch
 <Steps>
   <Step title="Pre-flight (5 min)">
     ```bash
-    python nl_arm_controller.py --check          # secrets + imports
-    python smoke_tests/01_sdk_and_arm.py         # SDK + arm
-    python smoke_tests/05_executor.py            # hand-crafted plan
-    python smoke_tests/07_camera_data.py         # webcam (open /tmp/nl_arm_camera_smoke.jpg)
-    python smoke_tests/08_vision_planner.py      # Claude Vision describes your workspace
+    python nl_arm_controller.py --check         # secrets + imports
+    python smoke_tests/01_sdk_and_arm.py        # SDK + arm
+    python smoke_tests/05_executor.py           # hand-crafted plan
+    python smoke_tests/07_camera_data.py        # webcam (open /tmp/nl_arm_camera_smoke.jpg)
+    python smoke_tests/08_vision_planner.py     # Claude Vision describes your workspace
     ```
+
     Each smoke test isolates one layer. Fix any failures here, not during the demo.
+
   </Step>
   <Step title="Aim the webcam">
-    Point the USB webcam at the SO-101 workspace. Use the JPEG saved by smoke test 07 to confirm framing and lighting.
+    Point the USB webcam at the SO-101 workspace. Use the JPEG saved by smoke
+    test 07 to confirm framing and lighting.
   </Step>
   <Step title="Launch the agent">
     ```bash
     python nl_arm_controller.py --voice --vision
     ```
+
     Wait for `✓ camera ready: ...` and `📷 ready` banners.
+
   </Step>
   <Step title="Speak a command">
-    Hold SPACE, say *"wave at the audience"*, release. Watch the terminal print the transcript, the planner latency, and the JSON plan, then watch the arm execute it.
+    Hold SPACE, say *"wave at the audience"*, release. Watch the terminal print
+    the transcript, the planner latency, and the JSON plan, then watch the arm
+    execute it.
   </Step>
   <Step title="Try vision-grounded prompts">
-    *"what do you see in front of you?"*: expect a description, **no motion**. *"is there a red cup?"*: expect a yes/no grounded in the actual frame. *"look at the red cup"*: expect a small base rotation toward whatever Claude identifies.
+    *"what do you see in front of you?"*: expect a description, **no motion**.
+    *"is there a red cup?"*: expect a yes/no grounded in the actual frame.
+    *"look at the red cup"*: expect a small base rotation toward whatever Claude
+    identifies.
   </Step>
   <Step title="Exit cleanly">
-    Say or type `bye`, or press `Ctrl+C`. The `finally` block always homes the arm before disconnecting.
+    Say or type `bye`, or press `Ctrl+C`. The `finally` block always homes the
+    arm before disconnecting.
   </Step>
 </Steps>
 
@@ -297,14 +329,14 @@ Each is a follow-up tutorial's worth of work. Pick one after you hit the success
 - **Multi-turn memory**: remember "do that again" by keeping plan history in a small in-process store.
 - **On-robot microphone (Pattern B)**: mic and STT on the edge, transcript recorded as telemetry. See [Voice as a Sensor](/hardware/microphone/get-started).
 - **Swap the planner**: GPT-4o, Gemini 2.5, or a fine-tuned local model. The planner module is one HTTP call, easy to replace.
-- **Workflow integration**: trigger Cyberwave Workflows from natural language. See [Workflows](/use-cyberwave/workflows).
+- **Workflow integration**: trigger Cyberwave Workflows from natural language. See [Workflows](/feature-reference/workflows).
 
 ---
 
 ## Reference
 
 - **Example folder**: [`cyberwave-os/cyberwave-python/examples/nl_arm_controller`](https://github.com/cyberwave-os/cyberwave-python/tree/main/examples/nl_arm_controller) (smoke tests under [`smoke_tests/`](https://github.com/cyberwave-os/cyberwave-python/tree/main/examples/nl_arm_controller/smoke_tests))
-- **SDK calls used**: `Cyberwave()`, `cw.affect()`, `cw.twin()`, `robot.joints.set()`. See [Python SDK](/sdks/python-sdk).
+- **SDK calls used**: `Cyberwave()`, `cw.affect()`, `cw.twin()`, `robot.joints.set()`. See [Python SDK](/overview/tools/python-sdk).
 - **MQTT topics published by the SDK**: `cyberwave/twin/{uuid}/joint_states` (source_type `tele`). See [MQTT API](/api-reference/mqtt/main).
 - **External services**: [Anthropic Claude Sonnet 4.5](https://docs.anthropic.com), [Mistral Voxtral](https://docs.mistral.ai).
-- **Cross-links**: [SO-101 Get Started](/hardware/so101/get-started), [SO-101 Voice Pick-and-Place](/tutorials/so101-voice-pick-and-place), [Voice as a Sensor](/hardware/microphone/get-started), [Key Concepts](/get-started/key-concepts), [Teleoperation](/use-cyberwave/teleoperation).
+- **Cross-links**: [SO-101 Get Started](/hardware/so101/get-started), [SO-101 Voice Pick-and-Place](/tutorials/so101-voice-pick-and-place), [Voice as a Sensor](/hardware/microphone/get-started), [Key Concepts](/feature-reference/architecture/key-concepts), [Teleoperation](/feature-reference/environment-editor/teleoperation).

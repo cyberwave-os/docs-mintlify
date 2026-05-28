@@ -1,0 +1,43 @@
+export const EdgeSetup = ({ exclude = [] }) => {
+  const showMac = !exclude.includes("mac");
+  const showLinux = !exclude.includes("linux");
+  const macCode = `curl -fsSL https://cyberwave.com/install.sh | bash\ncyberwave pair`;
+  const linuxCode = `curl -fsSL https://cyberwave.com/install.sh | bash\nsudo cyberwave pair`;
+  const linuxTip = (
+    <Tip>
+      First time on a Raspberry Pi? See{" "}
+      <a href="/feature-reference/edge/raspberry-pi">Raspberry Pi Setup</a>.
+      <br />
+      First time on a Jetson Orin Nano? See{" "}
+      <a href="/feature-reference/edge/jetson-orin-nano">
+        Jetson Orin Nano Setup
+      </a>
+      .
+    </Tip>
+  );
+  if (showMac && showLinux) {
+    return (
+      <Tabs>
+        <Tab title="Mac">
+          <CodeBlock language="bash">{macCode}</CodeBlock>
+        </Tab>
+        <Tab title="Linux">
+          {linuxTip}
+          <CodeBlock language="bash">{linuxCode}</CodeBlock>
+        </Tab>
+      </Tabs>
+    );
+  }
+  if (showMac) {
+    return <CodeBlock language="bash">{macCode}</CodeBlock>;
+  }
+  if (showLinux) {
+    return (
+      <>
+        {linuxTip}
+        <CodeBlock language="bash">{linuxCode}</CodeBlock>
+      </>
+    );
+  }
+  return null;
+};

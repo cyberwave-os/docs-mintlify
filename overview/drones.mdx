@@ -1,0 +1,145 @@
+---
+title: "Drones"
+description: "Build inspection automations with Cyberwave, mixing and matching any type of drone with other sensors and cameras"
+icon: "drone"
+---
+
+import { EdgeSetup } from "/snippets/edge-setup.mdx";
+
+Cyberwave treats every drone the same: drop a digital twin into an [environment](/use-cyberwave/architecture/key-concepts#environments), pair the aircraft, and start sending commands from the dashboard, the [Python SDK](/tools/python-sdk), or an AI controller. The same workflow scales from the low-cost [DJI Mini 3 Pro](https://cyberwave.com/dji/DJI-Mini-3-Pro) and [DJI Mini 4 Pro](https://cyberwave.com/dji/DJI-Mini-4-Pro) up to research platforms like PX4 Vision — [browse the full lineup](https://cyberwave.com/catalog/tag/drone). Each catalog page bundles the **bill of materials**, supported drivers, and **troubleshooting** for that aircraft, so start there whenever you're unboxing new hardware.
+
+<iframe
+  width="100%"
+  height="400"
+  src="https://www.youtube.com/embed/Ap5VDNGbvR8"
+  title="Cyberwave drones: end-to-end"
+  frameBorder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowFullScreen
+  style={{ borderRadius: "0.5rem" }}
+/>
+
+---
+
+## Set up a drone in 3 steps
+
+<Steps>
+  <Step title="Create an environment and add the drone">
+    From the [dashboard](https://cyberwave.com/dashboard), click **New Environment**, then **Add from Catalog** and search for your drone (e.g. `DJI Mini 4 Pro`, `PX4 Vision`). Position the twin to match your real-world site.
+  </Step>
+
+  <Step title="Pair the hardware">
+    Drones connect to Cyberwave through one of two edge paths, depending on the aircraft:
+
+    - **Onboard computer (PX4, Ardupilot, custom builds).** SSH into the companion computer (Raspberry Pi, Jetson, …) on the drone and install the CLI:
+
+      <EdgeSetup exclude={["mac"]} />
+
+      The CLI auto-detects the autopilot, installs the right driver, and links it to the digital twin.
+
+    - **DJI Mini family (Mini 3 / Mini 4 Pro).** Install the **Cyberwave Edge for DJI** Android app on the phone tethered to your **DJI RC**, then scan the **pairing QR** from the twin's **Live** tab. See the [DJI Mini 4 Pro catalog page](https://cyberwave.com/dji/DJI-Mini-4-Pro) for the full flow.
+
+    If you are unsure how the drone you picked may connect, check its dedicated page on the catalog — it details everything you need, plus troubleshooting and FAQs.
+
+  </Step>
+
+  <Step title="Stream sensors automatically">
+    Cyberwave already knows what's on your aircraft. As soon as pairing completes, the dashboard lights up with the **live video feed**, **gimbal attitude**, **GPS / pose**, and any other sensor the platform exposes — no per-sensor configuration required.
+  </Step>
+</Steps>
+
+<Check>
+  The drone streams video, telemetry, and gimbal state into Cyberwave in real
+  time, and the dashboard can drive discrete actions back through the edge.
+</Check>
+
+---
+
+## Control it from Python
+
+Once the twin is paired, the [Python SDK](/tools/python-sdk) gives you the same API for any drone in the catalog. Run this from your laptop or any cloud machine — Cyberwave handles the networking and orchestration end-to-end:
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+cw.affect("real-world")  # or "simulation" for a dry run
+
+drone = cw.twin("SZ-DJI-Technology/DJI-Mini-4-Pro")  # swap for any other drone
+
+drone.takeoff(altitude=2.0)
+drone.gimbal_rotate(pitch=-45.0, duration=1.5)   # tilt camera down
+frame = drone.capture_frame("numpy")             # latest frame from the gimbal cam
+drone.land()
+```
+
+Switching to a different drone is a **one-line change** — change `cw.twin(...)` to the new catalog slug and the rest of your automation stays exactly the same. A complete walkthrough — takeoff, locomotion, gimbal control, and the safety commands — lives in [`examples/drone_dji_mini.py`](https://github.com/cyberwave-os/cyberwave/tree/main/cyberwave-sdks/cyberwave-python/examples/drone_dji_mini.py).
+
+<Info>
+  On DJI aircraft the **physical RC stays in charge of the sticks** — the
+  Cyberwave driver handles **discrete actions** (`takeoff`, `land`,
+  `return_to_home`, `gimbal_rotate`, …). Continuous-stick locomotion is fully
+  wired on PX4-class builds and in the simulator.
+</Info>
+
+---
+
+## Add autonomy with waypoints
+
+Cyberwave ships with **autonomous navigation out of the box**. You don't have to write a planner — drop [waypoints](/use-cyberwave/environment-editor) on the environment map and trigger them from the dashboard, the SDK, or a workflow.
+
+<Steps>
+  <Step title="Drop waypoints">
+    Open the environment, click anywhere on the map to add a waypoint, and label
+    it (`launch-pad`, `tower-A`, `inspection-point-3`, …).
+  </Step>
+  <Step title="Trigger a mission">
+    Send the drone between waypoints from the dashboard, the SDK, or as a
+    Workflow trigger. Cyberwave plans the path and executes it through the
+    paired driver.
+  </Step>
+  <Step title="React on arrival">
+    Wire a [Workflow](/use-cyberwave/workflows) to fire on `waypoint reached` —
+    e.g. capture a frame, send it to a cloud VLM, and log the finding.
+  </Step>
+</Steps>
+
+---
+
+## Build inspection workflows
+
+Use [Workflows](/use-cyberwave/workflows) to turn waypoints into repeatable inspection missions. A typical pattern:
+
+`waypoint reached → capture frame → send to a cloud VLM → log finding / raise alert`
+
+See the [edge-to-cloud VLM tutorial](/tutorials/edge-to-cloud-vlm) and the [rover AI mission tutorial](/tutorials/rover-ai-mission) for full walkthroughs of the same pattern on other platforms — the workflow contract is identical.
+
+Because Cyberwave also speaks to [cameras](/get-started/cameras), [robotic dogs](/get-started/robotic-dogs), and [arms](/get-started/robotic-arms), you can mix and match hardware in the same workflow — for example, a fixed perimeter camera that **triggers** a drone patrol, or a drone that hands off to a quadruped once it lands at an inspection point.
+
+<Info>
+  Workflows can be authored **low-code** in the dashboard or directly in
+  **Python**. Cyberwave decides whether each step runs on the edge device next
+  to the drone, in a [cloud node](/tools/cloud-node), or a mix of both — your
+  automation and your hardware don't change.
+</Info>
+
+---
+
+## Where to go next
+
+<CardGroup cols={3}>
+  <Card
+    title="Browse the drone catalog"
+    icon="drone"
+    href="https://cyberwave.com/catalog/tag/drone"
+  >
+    Per-aircraft setup, BOM, and troubleshooting for every supported drone.
+  </Card>
+  <Card
+    title="Autonomous Navigation"
+    icon="map"
+    href="/api-reference/autonomous-navigation-driver"
+  >
+    The waypoint and navigation driver API.
+  </Card>
+</CardGroup>

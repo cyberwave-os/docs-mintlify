@@ -1,0 +1,2952 @@
+---
+title: "Protobuf schemas"
+description: "Reference for MQTT payloads, state representation types, and gRPC services."
+---
+
+Protobuf sources live under `common/protobuf`. MQTT `.proto` files document **broker topics** near the top; those paragraphs are surfaced in Mintlify `<Note>` blocks, with **`Payload`** message names listed below.
+
+You can usually **predict the MQTT path from the filepath** (`v0/` layout): omit the **`mqtt/`** directory segment while keeping **`cyberwave/<scope>/…`**, prepend `{prefix}`, and insert the UUID placeholder **after the first path segment** — for example `…/mqtt/twin/position.proto` → `{prefix}cyberwave/twin/{twin_uuid}/position`, `…/mqtt/environment/telemetry_status.proto` → `{prefix}cyberwave/environment/{environment_uuid}/telemetry-status`. Some payloads need extra suffix variables (`{update_type}`), and a few protos list **multiple** topics (`webrtc`, workflow execution). Prefer the authoritative `Topic:` / `Topics:` header in source; **path-derived hints** appear in a `<Note>` only when that header omits topic lines (see `scripts/enrich-md-proto-leads.py`).
+
+Refresh after schema edits:
+
+```bash
+cd common/protobuf && make mdx-docs
+```
+
+Running `buf generate` alone leaves `<!-- proto-lead:… -->` placeholders in this file until the Make target runs `scripts/enrich-md-proto-leads.py`.
+
+See also the topic catalogue & JSON examples at [MQTT API reference](/api-reference/mqtt/main).
+
+## common.proto
+
+<Note>
+
+Shared definitions used across all Cyberwave MQTT message payloads.
+
+Topic pattern ------------- `{prefix}cyberwave/{scope}/{uuid}/{...subtopic}`
+
+{prefix} is empty in production and equals the environment name (e.g. "local") in all other environments, concatenated directly: "localcyberwave/...".
+
+Timestamps ---------- MQTT envelope timestamps use double-precision Unix seconds (Python time.time()). Sub-second precision lives in the fractional part. The TF / state_representation protos use fixed64 nanoseconds — do not conflate.
+
+</Note>
+
+### Enum `SourceSubType`
+
+<ParamField path="VLA_POLICY" type="enum (0)">
+  No description provided.
+</ParamField>
+<ParamField path="RL_POLICY" type="enum (1)">
+  No description provided.
+</ParamField>
+<ParamField path="KEYBOARD_TELEOPERATION" type="enum (2)">
+  No description provided.
+</ParamField>
+<ParamField path="GAMEPAD_TELEOPERATION" type="enum (3)">
+  No description provided.
+</ParamField>
+<ParamField path="LEADER_FOLLOWER_TELEOPERATION" type="enum (4)">
+  No description provided.
+</ParamField>
+
+### Enum `SourceType`
+
+Origin of an MQTT message. Every payload that carries movement, sensor, or command data includes a source field so consumers can filter by producer class.
+
+<ParamField path="SOURCE_TYPE_UNSPECIFIED" type="enum (0)">
+  No description provided.
+</ParamField>
+<ParamField path="SOURCE_TYPE_EDGE" type="enum (1)">
+  Physical edge device (robot, sensor node, camera, etc.).
+</ParamField>
+<ParamField path="SOURCE_TYPE_EDGE_LEADER" type="enum (2)">
+  Edge device acting as the leader in a leader–follower configuration.
+</ParamField>
+<ParamField path="SOURCE_TYPE_EDGE_FOLLOWER" type="enum (3)">
+  Edge device acting as the follower in a leader–follower configuration.
+</ParamField>
+<ParamField path="SOURCE_TYPE_TELE" type="enum (4)">
+  Frontend teleoperation (live mode).
+</ParamField>
+<ParamField path="SOURCE_TYPE_EDIT" type="enum (5)">
+  Frontend editor (offline / staged edits).
+</ParamField>
+<ParamField path="SOURCE_TYPE_SIM" type="enum (6)">
+  MuJoCo or other physics simulator.
+</ParamField>
+<ParamField path="SOURCE_TYPE_SIM_TELE" type="enum (7)">
+  Frontend teleoperation of a simulated robot.
+</ParamField>
+<ParamField path="SOURCE_TYPE_PREVIEW" type="enum (8)">
+  Frontend preview mode (read-only visualisation).
+</ParamField>
+
+---
+
+## cyberwave/mqtt/common.proto
+
+<Note>
+
+Shared definitions used across all Cyberwave MQTT message payloads.
+
+MQTT transport note ------------------- All MQTT topics follow the pattern: `{prefix}cyberwave/{scope}/{uuid}/{...subtopic}`
+
+Where {prefix} is: - Empty string in production - The environment name (e.g. "local") in all other environments, concatenated directly: "localcyberwave/..."
+
+Timestamps ---------- All MQTT payloads use double-precision Unix timestamps in _seconds_ (e.g. 1700000000.0). This matches time.time() in Python. Sub-second precision is encoded in the fractional part. Contrast with the TF exchange (state_representation protos) which uses fixed64 nanoseconds; do not conflate the two.
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+### Enum `SourceType`
+
+Who originally produced a given MQTT message. Every payload that carries movement, sensor, or command data includes a source_type field so consumers can filter by producer class.
+
+<ParamField path="SOURCE_TYPE_UNSPECIFIED" type="enum (0)">
+  No description provided.
+</ParamField>
+<ParamField path="SOURCE_TYPE_EDGE" type="enum (1)">
+  Physical edge device (robot, sensor node, camera, etc.).
+</ParamField>
+<ParamField path="SOURCE_TYPE_EDGE_LEADER" type="enum (2)">
+  Edge device acting as the leader in a leader–follower configuration.
+</ParamField>
+<ParamField path="SOURCE_TYPE_EDGE_FOLLOWER" type="enum (3)">
+  Edge device acting as the follower in a leader–follower configuration.
+</ParamField>
+<ParamField path="SOURCE_TYPE_TELE" type="enum (4)">
+  Frontend teleoperation (live mode).
+</ParamField>
+<ParamField path="SOURCE_TYPE_EDIT" type="enum (5)">
+  Frontend editor (offline / staged edits).
+</ParamField>
+<ParamField path="SOURCE_TYPE_SIM" type="enum (6)">
+  MuJoCo or other physics simulator.
+</ParamField>
+<ParamField path="SOURCE_TYPE_SIM_TELE" type="enum (7)">
+  Frontend teleoperation of a simulated robot.
+</ParamField>
+<ParamField path="SOURCE_TYPE_PREVIEW" type="enum (8)">
+  Frontend preview mode (read-only visualization).
+</ParamField>
+
+---
+
+## cyberwave/mqtt/environment/sensor_binding.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/environment/{environment_uuid}/sensor_binding
+
+Published when the sensor-to-twin binding map for an environment changes. The Django MQTT consumer writes the bindings into Redis at `sensor_bindings:{environment_uuid}` (no TTL) so they can be looked up synchronously during point-cloud processing.
+
+The frontend subscribes via useMQTTEnvironment and refreshes the binding cache on receipt.
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `SensorBinding`
+- `SensorBindingsPayload`
+
+### Message `SensorBinding`
+
+A single sensor UUID to target UUID binding entry.
+
+<ParamField path="sensor_uuid" type="string">
+  UUID of the sensor twin.
+</ParamField>
+<ParamField path="target_uuid" type="string">
+  UUID of the target (e.g. depth-RGB pairing or twin overlay).
+</ParamField>
+
+### Message `SensorBindingsPayload`
+
+Sensor binding update payload for an environment.
+
+<ParamField path="bindings" type="SensorBinding (repeated)">
+  All active bindings for the environment.
+</ParamField>
+<ParamField path="timestamp" type="double">
+  No description provided.
+</ParamField>
+
+---
+
+## cyberwave/mqtt/environment/telemetry_status.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/environment/{environment_uuid}/telemetry-status
+
+Published by the Django MQTT consumer to the environment topic after processing a twin telemetry lifecycle event (telemetry_start, telemetry_end, camera_stored, etc.). Allows the frontend and other subscribers to display live recording status without polling the REST API.
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `TelemetryStatusPayload`
+
+### Message `TelemetryStatusPayload`
+
+Telemetry status notification for an environment. FIXME: This message is deprecated and should be removed from cyberwave-backend/src/app/tasks/telemetry_tasks.py publish_telemetry_status function. FIXME: Frontend is not using this message anymore.
+
+<ParamField path="event_type" type="string">
+  The telemetry event type that triggered this notification. Mirrors the `type`
+  field from cyberwave/twin/{uuid}/telemetry. Examples: "telemetry_start",
+  "telemetry_end", "camera_stored".
+</ParamField>
+<ParamField path="twin_uuid" type="string">
+  UUID of the twin whose telemetry changed.
+</ParamField>
+<ParamField path="message" type="string">
+  Human-readable description of the event.\
+</ParamField>
+<ParamField path="timestamp" type="double">
+  Unix timestamp in seconds (time of backend processing).
+</ParamField>
+
+---
+
+## cyberwave/mqtt/environment/update.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/environment/{environment_uuid}/{update_type}
+
+Environment-scoped event channel. The action segment (update_type) is arbitrary; the Django MQTT consumer caches every received payload at `environment:{uuid}:{update_type}` (TTL 300 s) and handles the special `sensor_binding` action separately (see sensor_binding.proto).
+
+The frontend subscribes to individual actions via useMQTTEnvironment: - "update" — general environment state changes - "twin_added" — a twin was added to the environment - "twin_deleted" — a twin was removed - "twin_updated" — twin metadata was updated - "sensor_binding" — sensor→twin binding map changed - "telemetry-status" — published by backend after twin telemetry events
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `EnvironmentUpdatePayload`
+
+### Message `EnvironmentUpdatePayload`
+
+Generic environment update message. type matches the {update_type} path segment of the topic.
+
+<ParamField path="type" type="string">Event type identifier (matches the MQTT topic action segment).
+
+</ParamField>
+<ParamField path="data_json" type="bytes">Update payload as key-value pairs. Complex values are JSON-encoded.
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+
+---
+
+## cyberwave/mqtt/joint/update.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/joint/{twin_uuid}/update
+
+Per-joint or multi-joint state updates published by the main SDK MQTT client (CyberwaveMQTTClient.update_joint_state / update_joints_state).
+
+Two wire formats co-exist:
+
+1. Single-joint format (JointSingleUpdatePayload): Published per-joint by update_joint_state(). Contains a `joint_name` field and a `joint_state` sub-object with optional position/velocity/effort. Backend rate-limits per (twin_uuid, joint_name) pair.
+
+2. Flat multi-joint format (JointFlatUpdatePayload): Published by update_joints_state() with positions-only. Joint names are top-level keys and values are floats. Lightweight and low overhead.
+
+3. Aggregated multi-joint format (JointAggregatedUpdatePayload): Published by update_joints_state() with velocities, efforts, timestamps, or inference metadata. Fully structured; used for telemetry-rich pipelines.
+
+Note: The topic scope is `joint` (not `twin`) to allow per-joint rate limiting at the broker level and to keep joint streams separate from other twin state channels.
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `CameraFrameCounter`
+- `JointAggregatedUpdatePayload`
+- `JointFlatUpdatePayload`
+- `JointPositionFlatEntry`
+- `JointSingleUpdatePayload`
+- `JointValueEntry`
+- `SingleJointState`
+
+### Message `CameraFrameCounter`
+
+Camera frame counter for one track — used for robot-camera synchronization.
+
+<ParamField path="track_id" type="string">Camera track identifier (e.g. "color", "wrist").
+
+</ParamField>
+<ParamField path="sensor_id" type="string">Name of the sensor producing this track.
+
+</ParamField>
+<ParamField path="frame_count" type="int64">Number of frames captured so far in this session.
+
+</ParamField>
+
+### Message `JointAggregatedUpdatePayload`
+
+Aggregated multi-joint update with full telemetry metadata. Used for inference workloads, leader-follower setups, and dataset recording.
+
+<ParamField path="source_type" type="cyberwave.mqtt.SourceType">No description provided.
+
+</ParamField>
+<ParamField path="positions" type="JointValueEntry (repeated)">Joint positions (required).
+
+</ParamField>
+<ParamField path="velocities" type="JointValueEntry (repeated)">Joint velocities (optional).
+
+</ParamField>
+<ParamField path="efforts" type="JointValueEntry (repeated)">Joint efforts / torques (optional).
+
+</ParamField>
+<ParamField path="timestamp" type="double">Unix timestamp in seconds (required for aggregated format).
+
+</ParamField>
+<ParamField path="source_subtype" type="string">No description provided.
+
+</ParamField>
+<ParamField path="workload_uuid" type="string">No description provided.
+
+</ParamField>
+<ParamField path="session_id" type="string">No description provided.
+
+</ParamField>
+<ParamField path="camera_frame_counters" type="CameraFrameCounter (repeated)">Camera frame counters for robot-camera synchronization.
+
+</ParamField>
+
+### Message `JointFlatUpdatePayload`
+
+Lightweight multi-joint positions snapshot. In JSON: `{ "source_type": "edge", "_1": 0.5, "_2": 0.3, ... }` Joint names are top-level keys; no nesting.
+
+<ParamField path="source_type" type="cyberwave.mqtt.SourceType">No description provided.
+
+</ParamField>
+<ParamField path="positions" type="JointPositionFlatEntry (repeated)">All joint positions in this snapshot.
+
+</ParamField>
+
+### Message `JointPositionFlatEntry`
+
+One entry in the flat format (joint_name → position).
+
+<ParamField path="joint_name" type="string">No description provided.
+
+</ParamField>
+<ParamField path="position" type="double">No description provided.
+
+</ParamField>
+
+### Message `JointSingleUpdatePayload`
+
+type = "joint_state"
+
+<ParamField path="source_type" type="cyberwave.mqtt.SourceType">Who produced this update.
+
+</ParamField>
+<ParamField path="type" type="string">Always "joint_state" in the JSON transport.
+
+</ParamField>
+<ParamField path="joint_name" type="string">Name of the joint being updated.
+
+</ParamField>
+<ParamField path="joint_state" type="SingleJointState">Joint state values.
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+
+### Message `JointValueEntry`
+
+One entry in the per-joint maps (positions / velocities / efforts).
+
+<ParamField path="joint_name" type="string">No description provided.
+
+</ParamField>
+<ParamField path="value" type="double">No description provided.
+
+</ParamField>
+
+### Message `SingleJointState`
+
+State of a single joint — all channels are optional.
+
+<ParamField path="position" type="double">No description provided.
+
+</ParamField>
+<ParamField path="velocity" type="double">No description provided.
+
+</ParamField>
+<ParamField path="effort" type="double">No description provided.
+
+</ParamField>
+
+---
+
+## cyberwave/mqtt/ping/request.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/ping/{resource_uuid}/request
+
+Health-check ping published by the SDK (CyberwaveMQTTClient.ping()) or any client to probe end-to-end MQTT broker connectivity for a given resource. The Django MQTT consumer responds on the pong topic.
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `PingPayload`
+
+### Message `PingPayload`
+
+Ping request payload.
+
+<ParamField path="type" type="string">Always "ping". Identifies the message type.
+
+</ParamField>
+<ParamField path="timestamp" type="double">Unix timestamp in seconds at the time of publication.
+
+</ParamField>
+
+---
+
+## cyberwave/mqtt/pong/response.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/pong/{resource_uuid}/response
+
+Published by the Django MQTT consumer in response to a ping on cyberwave/ping/{resource_uuid}/request. The SDK subscribes via CyberwaveMQTTClient.subscribe_pong().
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `PongPayload`
+
+### Message `PongPayload`
+
+Pong response payload.
+
+<ParamField path="type" type="string">Always "pong". Identifies the message type.
+
+</ParamField>
+<ParamField path="timestamp" type="double">Unix timestamp in seconds at the time of the pong being published by the backend (not the original ping timestamp).
+
+</ParamField>
+
+---
+
+## cyberwave/mqtt/twin/alert.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/twin/{twin_uuid}/alert
+
+Real-time alert notifications pushed to subscribers (frontend, SDK) when an alert is created, updated, or resolved on a twin. The frontend subscribes via useMQTTTwin and displays the alert in the UI.
+
+Note: Alert _creation_ goes through the REST API. MQTT is used only for broadcasting state changes to live subscribers.
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `TwinAlertPayload`
+
+### Message `TwinAlertPayload`
+
+Notification broadcast when an alert changes state.
+
+<ParamField path="alert_uuid" type="string">UUID of the alert record.
+
+</ParamField>
+<ParamField path="name" type="string">Human-readable alert name / title.
+
+</ParamField>
+<ParamField path="description" type="string">No description provided.
+
+</ParamField>
+<ParamField path="state" type="AlertState">Current state of the alert.
+
+</ParamField>
+<ParamField path="severity" type="AlertSeverity">Alert severity.
+
+</ParamField>
+<ParamField path="created_at" type="double">Unix timestamp of when the alert was created (seconds).
+
+</ParamField>
+<ParamField path="updated_at" type="double">No description provided.
+
+</ParamField>
+<ParamField path="twin_uuid" type="string">UUID of the twin this alert belongs to.
+
+</ParamField>
+
+### Enum `AlertSeverity`
+
+Alert severity level.
+
+<ParamField path="ALERT_SEVERITY_UNSPECIFIED" type="enum (0)">
+  No description provided.
+</ParamField>
+<ParamField path="ALERT_SEVERITY_INFO" type="enum (1)">
+  No description provided.
+</ParamField>
+<ParamField path="ALERT_SEVERITY_WARNING" type="enum (2)">
+  No description provided.
+</ParamField>
+<ParamField path="ALERT_SEVERITY_ERROR" type="enum (3)">
+  No description provided.
+</ParamField>
+<ParamField path="ALERT_SEVERITY_CRITICAL" type="enum (4)">
+  No description provided.
+</ParamField>
+
+### Enum `AlertState`
+
+Current state of the alert.
+
+<ParamField path="ALERT_STATE_UNSPECIFIED" type="enum (0)">
+  No description provided.
+</ParamField>
+<ParamField path="ALERT_STATE_ACTIVE" type="enum (1)">
+  No description provided.
+</ParamField>
+<ParamField path="ALERT_STATE_RESOLVED" type="enum (2)">
+  No description provided.
+</ParamField>
+<ParamField path="ALERT_STATE_ACKNOWLEDGED" type="enum (3)">
+  No description provided.
+</ParamField>
+
+---
+
+## cyberwave/mqtt/twin/command.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/twin/{twin_uuid}/command
+
+Bidirectional control channel shared by multiple actors:
+
+Inbound (frontend / SDK → edge): start_video / stop_video — camera stream lifecycle take_photo — request a still image move_forward / move_backward / turn_left / turn_right — locomotion alert ack / custom device commands
+
+Outbound (edge → backend / frontend): Command acknowledgments and status responses.
+
+Note: Navigation commands use the dedicated cyberwave/twin/{uuid}/navigate/command topic instead.
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `CommandPayload`
+- `CommandResponsePayload`
+- `StartVideoParams`
+
+### Message `CommandPayload`
+
+Inbound command sent by the frontend or SDK to the edge.
+
+<ParamField path="type" type="CommandType">The command to execute.
+
+</ParamField>
+<ParamField path="timestamp" type="double">Unix timestamp in seconds.
+
+</ParamField>
+<ParamField path="start_video_params" type="StartVideoParams">Parameters for start_video. Only inspected when type = START_VIDEO.
+
+</ParamField>
+
+### Message `CommandResponsePayload`
+
+Outbound acknowledgment / status published by the edge back to the topic.
+
+<ParamField path="command" type="string">Echoes the command type that was acknowledged (string for extensibility).
+
+</ParamField>
+<ParamField path="status" type="string">Short status string ("ok", "error", "timeout", etc.).
+
+</ParamField>
+<ParamField path="message" type="string">No description provided.
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+
+### Message `StartVideoParams`
+
+Video stream command parameters (start_video).
+
+<ParamField path="sensor_id" type="string">No description provided.
+
+</ParamField>
+<ParamField path="recording" type="bool">No description provided.
+
+</ParamField>
+
+### Enum `CommandType`
+
+All known command types on this channel. Unknown string values are permitted; the edge driver handles them.
+
+<ParamField path="COMMAND_TYPE_UNSPECIFIED" type="enum (0)">
+  No description provided.
+</ParamField>
+<ParamField path="COMMAND_TYPE_START_VIDEO" type="enum (1)">
+  Camera stream lifecycle.
+</ParamField>
+<ParamField path="COMMAND_TYPE_STOP_VIDEO" type="enum (2)">
+  No description provided.
+</ParamField>
+<ParamField path="COMMAND_TYPE_TAKE_PHOTO" type="enum (3)">
+  Request a single still photo (edge responds with camera/photo topic).
+</ParamField>
+<ParamField path="COMMAND_TYPE_MOVE_FORWARD" type="enum (4)">
+  Locomotion primitives (AMR / UGV / wheeled robots).
+</ParamField>
+<ParamField path="COMMAND_TYPE_MOVE_BACKWARD" type="enum (5)">
+  No description provided.
+</ParamField>
+<ParamField path="COMMAND_TYPE_TURN_LEFT" type="enum (6)">
+  No description provided.
+</ParamField>
+<ParamField path="COMMAND_TYPE_TURN_RIGHT" type="enum (7)">
+  No description provided.
+</ParamField>
+<ParamField path="COMMAND_TYPE_ESTOP" type="enum (8)">
+  Emergency stop.
+</ParamField>
+
+---
+
+## cyberwave/mqtt/twin/depth.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/twin/{twin_uuid}/depth
+
+Depth camera frames published by edge devices (RealSense, ZED, etc.). The Django MQTT consumer decodes, reshapes, and stores to Redis/disk, then queues a point-cloud colorization Celery task.
+
+Two wire formats co-exist (see DepthFrameData below). NOTE: This topic is excluded from cloud MQTT workflow dispatch because depth frames arrive at ~30 Hz and dispatching per-frame would be a footgun.
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `DepthDataPayload`
+- `DepthFrameData`
+
+### Message `DepthDataPayload`
+
+Depth payload published on the MQTT topic. The `data` field supports two legacy formats in JSON transport (the structured message above is the canonical form): - Object: DepthFrameData fields encoded as a nested JSON object. - String: Base64-encoded raw uint16 buffer (legacy flat format). - Array: List of uint16 values (legacy flat format).
+
+<ParamField path="type" type="string">Always "depth_data". Identifies the message type.
+
+</ParamField>
+<ParamField path="data" type="DepthFrameData">Structured depth frame. Preferred encoding.
+
+</ParamField>
+<ParamField path="width" type="int32">Frame width in pixels (used by legacy string/array formats; ignored when data.width is present).
+
+</ParamField>
+<ParamField path="height" type="int32">Frame height in pixels (same legacy fallback note as width).
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+
+### Message `DepthFrameData`
+
+Structured depth frame (current preferred format). type = "depth_data"; data = { depth_binary, width, height, dtype }
+
+<ParamField path="depth_binary" type="string">Base64-encoded raw pixel buffer.
+
+</ParamField>
+<ParamField path="width" type="int32">Frame width in pixels.
+
+</ParamField>
+<ParamField path="height" type="int32">Frame height in pixels.
+
+</ParamField>
+<ParamField path="dtype" type="string">NumPy dtype string (e.g. "uint16", "float32"). Defaults to "uint16".
+
+</ParamField>
+
+---
+
+## cyberwave/mqtt/twin/edge_health.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/twin/{twin_uuid}/edge_health
+
+Periodic liveness heartbeat published by edge devices approximately every 5 seconds. Two separate systems consume it:
+
+1. Vector — persists the full payload to app_twintelemetry for analytics and drives the twin-level "live" indicator.
+
+2. Django MQTT consumer — extracts the edge fingerprint from the associated Twin.metadata, then debounces writes to Edge.last_heartbeat (~30 s window) so that Edge.is_online remains in sync.
+
+NOTE: This topic is deliberately excluded from cloud MQTT workflow dispatch because its high frequency (~5 s per twin) would create a continuous Celery task fan-out.
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `TwinEdgeHealthPayload`
+
+### Message `TwinEdgeHealthPayload`
+
+<ParamField path="type" type="string">Always "edge_health". Identifies the message type in mixed-topic consumers.
+
+</ParamField>
+<ParamField path="edge_id" type="string">No description provided.
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+<ParamField path="healthy_streams" type="int32">No description provided.
+
+</ParamField>
+<ParamField path="stream_count" type="int32">No description provided.
+
+</ParamField>
+
+---
+
+## cyberwave/mqtt/twin/event.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/twin/{twin_uuid}/event
+
+Generic business event stream. Published by SDK drivers and edge nodes to report application-level events (object detected, task completed, anomaly, custom domain events, etc.).
+
+The Django MQTT consumer logs receipt and dispatches matching cloud MQTT workflow triggers (part of DISPATCH_ELIGIBLE_SUBTOPICS). No other persistence happens in the consumer — full payloads are captured by Vector if configured.
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `EventDataEntry`
+- `TwinEventPayload`
+
+### Message `EventDataEntry`
+
+A single key-value entry used inside TwinEventPayload.data when the event carries structured fields in the JSON transport.
+
+<ParamField path="key" type="string">No description provided.
+
+</ParamField>
+<ParamField path="value" type="string">JSON-encoded value for complex types.
+
+</ParamField>
+
+### Message `TwinEventPayload`
+
+Event published by an SDK driver or edge node.
+
+<ParamField path="event_type" type="string">Application-defined event type string (e.g. "object_detected", "task_completed", "fault_raised"). Not an enum — open for extension.
+
+</ParamField>
+<ParamField path="source" type="string">Originator description (e.g. "edge_node", "sdk", driver name).
+
+</ParamField>
+<ParamField path="data" type="EventDataEntry (repeated)">Structured event data as key-value pairs. Complex values are JSON-encoded in the `value` field.
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+<ParamField path="data_json" type="bytes">Optional: free-form JSON payload for consumers that read raw bytes.
+
+</ParamField>
+
+---
+
+## cyberwave/mqtt/twin/joint_states.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/twin/{twin_uuid}/joint_states
+
+Published by edge nodes (BaseEdgeNode.publish_joint_states) when sending a full multi-joint snapshot keyed by the twin topic rather than the dedicated joint scope.
+
+Contrast with cyberwave/joint/{twin_uuid}/update which carries per-joint or aggregated updates via the main MQTT client API. Both topics carry joint data but originate from different code paths; this one is the edge-node helper path.
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `JointPositionEntry`
+- `TwinJointStatesPayload`
+
+### Message `JointPositionEntry`
+
+A single joint name → position pair used inside TwinJointStatesPayload.
+
+<ParamField path="joint_name" type="string">No description provided.
+
+</ParamField>
+<ParamField path="position" type="double">Joint position in radians (revolute) or meters (prismatic).
+
+</ParamField>
+
+### Message `TwinJointStatesPayload`
+
+Multi-joint snapshot published by an edge node for a twin.
+
+<ParamField path="source_type" type="cyberwave.mqtt.SourceType">Who produced this update.
+
+</ParamField>
+<ParamField path="joint_states" type="JointPositionEntry (repeated)">All joint positions reported in this snapshot.
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+
+---
+
+## cyberwave/mqtt/twin/map_update.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/twin/{twin_uuid}/map_update
+
+Point cloud or occupancy-grid map snapshots published by SLAM / mapping drivers on edge devices. The Django MQTT consumer: 1. Finds or creates a MapData record for the twin. 2. Stores the point cloud in Redis via NumpyRedisStorage. 3. Queues a Celery task (update_map_from_point_cloud) to persist the map. 4. Dispatches cloud MQTT workflow triggers (part of DISPATCH_ELIGIBLE_SUBTOPICS).
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `PointXYZRGB`
+- `TwinMapUpdatePayload`
+
+### Message `PointXYZRGB`
+
+A single point in a coloured 3D point cloud. Colour components are in [0, 255].
+
+<ParamField path="x" type="float">No description provided.
+
+</ParamField>
+<ParamField path="y" type="float">No description provided.
+
+</ParamField>
+<ParamField path="z" type="float">No description provided.
+
+</ParamField>
+<ParamField path="r" type="float">No description provided.
+
+</ParamField>
+<ParamField path="g" type="float">No description provided.
+
+</ParamField>
+<ParamField path="b" type="float">No description provided.
+
+</ParamField>
+
+### Message `TwinMapUpdatePayload`
+
+Map update payload. type = "map_update"
+
+<ParamField path="map_uuid" type="string">No description provided.
+
+</ParamField>
+<ParamField path="pointcloud" type="PointXYZRGB (repeated)">Point cloud data. Required.
+
+</ParamField>
+<ParamField path="map_type" type="MapType">Map representation type.
+
+</ParamField>
+<ParamField path="resolution" type="double">No description provided.
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+
+### Enum `MapType`
+
+Supported map representation types.
+
+<ParamField path="MAP_TYPE_UNSPECIFIED" type="enum (0)">
+  No description provided.
+</ParamField>
+<ParamField path="MAP_TYPE_POINT_CLOUD" type="enum (1)">
+  No description provided.
+</ParamField>
+<ParamField path="MAP_TYPE_OCCUPANCY_GRID" type="enum (2)">
+  No description provided.
+</ParamField>
+
+---
+
+## cyberwave/mqtt/twin/metrics.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/twin/{twin_uuid}/metrics
+
+Periodic snapshots of robot / AMR operational metrics published by edge devices. The backend merges these into Twin.metadata and logs them to TwinTelemetry for analytics. Typical cadence: every few seconds.
+
+The payload is structured around well-known metric categories. Additional top-level keys not listed here are permitted in the JSON transport and are stored verbatim in Twin.metadata.
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `LoadMetrics`
+- `NavigationMetrics`
+- `PowerMetrics`
+- `TwinMetricsPayload`
+
+### Message `LoadMetrics`
+
+Payload / cargo sub-metrics.
+
+<ParamField path="loaded" type="bool">No description provided.
+
+</ParamField>
+<ParamField path="weight_kg" type="double">No description provided.
+
+</ParamField>
+<ParamField path="load_id" type="string">Operator-supplied load identifier (e.g. pallet barcode).
+
+</ParamField>
+
+### Message `NavigationMetrics`
+
+Navigation / AMR movement sub-metrics.
+
+<ParamField path="status" type="string">Current navigation state (e.g. "idle", "navigating", "docking").
+
+</ParamField>
+<ParamField path="distance_remaining_m" type="double">No description provided.
+
+</ParamField>
+<ParamField path="eta_seconds" type="double">No description provided.
+
+</ParamField>
+
+### Message `PowerMetrics`
+
+Power / battery sub-metrics.
+
+<ParamField path="battery_percent" type="double">No description provided.
+
+</ParamField>
+<ParamField path="charging" type="bool">No description provided.
+
+</ParamField>
+<ParamField path="voltage" type="double">No description provided.
+
+</ParamField>
+<ParamField path="estimated_runtime_minutes" type="double">No description provided.
+
+</ParamField>
+
+### Message `TwinMetricsPayload`
+
+Root metrics payload. JSON transport: each top-level field corresponds to a metrics category key. Unknown categories are preserved as-is in Twin.metadata on the backend.
+
+<ParamField path="source_type" type="cyberwave.mqtt.SourceType">Who produced these metrics (typically SOURCE_TYPE_EDGE).
+
+</ParamField>
+<ParamField path="power" type="PowerMetrics">Power / battery metrics. Absent when not reported.
+
+</ParamField>
+<ParamField path="navigation" type="NavigationMetrics">Navigation metrics. Absent when not reported.
+
+</ParamField>
+<ParamField path="load" type="LoadMetrics">Cargo / load metrics. Absent when not reported.
+
+</ParamField>
+<ParamField path="errors" type="string (repeated)">Active error strings. Empty list means no errors.
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+
+---
+
+## cyberwave/mqtt/twin/mission/command.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/twin/{twin_uuid}/mission/command
+
+High-level mission commands dispatched to edge nodes. Edge nodes subscribe via BaseEdgeNode.subscribe_mission_command(). Missions are sequences of steps (e.g. navigate to A, pick item, navigate to B, place item) that the edge controller executes autonomously.
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `MissionCommandPayload`
+- `MissionStep`
+
+### Message `MissionCommandPayload`
+
+Mission command sent to an edge node.
+
+<ParamField path="command" type="MissionCommandType">The command to execute.
+
+</ParamField>
+<ParamField path="mission_execution_uuid" type="string">Unique identifier for this mission execution (UUID).
+
+</ParamField>
+<ParamField path="steps" type="MissionStep (repeated)">Ordered list of steps for START commands. Empty for PAUSE/RESUME/CANCEL.
+
+</ParamField>
+<ParamField path="source_type" type="cyberwave.mqtt.SourceType">No description provided.
+
+</ParamField>
+<ParamField path="metadata_json" type="bytes">Additional metadata (e.g. priority, deadline). JSON-encoded.
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+
+### Message `MissionStep`
+
+A single step in a mission (opaque for generic dispatch).
+
+<ParamField path="type" type="string">Step type identifier (e.g. "navigate", "pick", "place").
+
+</ParamField>
+<ParamField path="params_json" type="bytes">Step parameters as JSON-encoded bytes for maximum flexibility.
+
+</ParamField>
+
+### Enum `MissionCommandType`
+
+Type of mission command.
+
+<ParamField path="MISSION_COMMAND_TYPE_UNSPECIFIED" type="enum (0)">
+  No description provided.
+</ParamField>
+<ParamField path="MISSION_COMMAND_TYPE_START" type="enum (1)">
+  No description provided.
+</ParamField>
+<ParamField path="MISSION_COMMAND_TYPE_PAUSE" type="enum (2)">
+  No description provided.
+</ParamField>
+<ParamField path="MISSION_COMMAND_TYPE_RESUME" type="enum (3)">
+  No description provided.
+</ParamField>
+<ParamField path="MISSION_COMMAND_TYPE_CANCEL" type="enum (4)">
+  No description provided.
+</ParamField>
+
+---
+
+## cyberwave/mqtt/twin/mission/status.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/twin/{twin_uuid}/mission/status
+
+Mission execution status updates published by edge nodes via BaseEdgeNode.publish_mission_status().
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `MissionStatusPayload`
+
+### Message `MissionStatusPayload`
+
+Status update for a running mission execution.
+
+<ParamField path="mission_execution_uuid" type="string">UUID of the mission execution (matches mission_execution_uuid in the command).
+
+</ParamField>
+<ParamField path="status" type="MissionStatus">Current state.
+
+</ParamField>
+<ParamField path="current_step" type="int32">Zero-based index of the step currently executing (or last executed).
+
+</ParamField>
+<ParamField path="message" type="string">No description provided.
+
+</ParamField>
+<ParamField path="result_json" type="bytes">Optional result data from the completed mission. JSON-encoded.
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+
+### Enum `MissionStatus`
+
+Current state of a mission execution.
+
+<ParamField path="MISSION_STATUS_UNSPECIFIED" type="enum (0)">
+  No description provided.
+</ParamField>
+<ParamField path="MISSION_STATUS_QUEUED" type="enum (1)">
+  No description provided.
+</ParamField>
+<ParamField path="MISSION_STATUS_RUNNING" type="enum (2)">
+  No description provided.
+</ParamField>
+<ParamField path="MISSION_STATUS_COMPLETED" type="enum (3)">
+  No description provided.
+</ParamField>
+<ParamField path="MISSION_STATUS_FAILED" type="enum (4)">
+  No description provided.
+</ParamField>
+<ParamField path="MISSION_STATUS_CANCELLED" type="enum (5)">
+  No description provided.
+</ParamField>
+
+---
+
+## state_representation/geometry/primitives.proto
+
+<Note>
+
+Shared 3D geometry primitives for Cartesian bodies, TF messages, and wrenches.
+
+Quaternion convention (Hamilton / JPL-style scalar-last on wire): Unit quaternion (x, y, z, w) rotates a vector in R^3. Components are in radians for angular quantities elsewhere in this package; the quaternion itself is unit-norm. Interop: matches common Eigen / ROS / graphics layouts when documented as xyzw; always normalize on the producer when possible.
+
+</Note>
+
+### Message `Quaterniond`
+
+<ParamField path="x" type="double">No description provided.
+
+</ParamField>
+<ParamField path="y" type="double">No description provided.
+
+</ParamField>
+<ParamField path="z" type="double">No description provided.
+
+</ParamField>
+<ParamField path="w" type="double">No description provided.
+
+</ParamField>
+
+### Message `Vector3d`
+
+<ParamField path="x" type="double">No description provided.
+
+</ParamField>
+<ParamField path="y" type="double">No description provided.
+
+</ParamField>
+<ParamField path="z" type="double">No description provided.
+
+</ParamField>
+
+---
+
+## cyberwave/mqtt/twin/motion/command.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/twin/{twin_uuid}/motion/command
+
+Velocity-based motion commands for differential-drive robots, drones, and other velocity-controlled platforms. Edge nodes subscribe via BaseEdgeNode.subscribe_motion_command().
+
+This is distinct from navigate/command (waypoint-based) — motion/command delivers instantaneous velocity setpoints, typically generated by a controller policy (keyboard teleop, joystick, etc.).
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `MotionCommandPayload`
+
+### Message `MotionCommandPayload`
+
+Velocity setpoint expressed as a twist (linear + angular). Follows the ROS geometry_msgs/Twist convention: linear.x — forward / backward m/s linear.y — lateral m/s (holonomic platforms only) linear.z — vertical m/s (drones / underwater) angular.z — yaw rate rad/s (ground robots) angular.x/y — roll/pitch rates (drones / underwater)
+
+<ParamField path="source_type" type="cyberwave.mqtt.SourceType">Who produced this setpoint.
+
+</ParamField>
+<ParamField path="linear" type="state_representation.proto.Vector3d">Linear velocity components in m/s.
+
+</ParamField>
+<ParamField path="angular" type="state_representation.proto.Vector3d">Angular velocity components in rad/s.
+
+</ParamField>
+<ParamField path="controller_policy_uuid" type="string">No description provided.
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+
+---
+
+## cyberwave/mqtt/twin/navigate/command.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/twin/{twin_uuid}/navigate/command
+
+Navigation commands published by the backend (after REST ingress from the SDK / frontend) and consumed by edge nodes and simulators via BaseEdgeNode.subscribe_navigate_command().
+
+The SDK high-level API (twin.navigation.goto / follow_path / stop) sends commands to the backend REST endpoint first; the backend then publishes on this topic. Direct MQTT publishing is also supported for latency-sensitive sim-tele scenarios.
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `GotoParams`
+- `NavigateCommand`
+- `NavigationConstraints`
+- `PathParams`
+- `RelativeMoveParams`
+- `Waypoint`
+
+### Message `GotoParams`
+
+Parameters for a goto command.
+
+<ParamField path="position" type="double (repeated)">Target position [x, y, z] in world-space meters.
+
+length = 3
+
+</ParamField>
+<ParamField path="yaw" type="double">No description provided.
+
+</ParamField>
+<ParamField path="rotation" type="double (repeated)">Target orientation quaternion [w, x, y, z]. Mutually exclusive with yaw. Length = 4.
+
+</ParamField>
+
+### Message `NavigateCommand`
+
+Root navigation command message.
+
+<ParamField path="command" type="NavigateCommandType">Discriminator — determines which params field is relevant.
+
+</ParamField>
+<ParamField path="controller_policy_uuid" type="string">No description provided.
+
+</ParamField>
+<ParamField path="environment_uuid" type="string">No description provided.
+
+</ParamField>
+<ParamField path="source_type" type="string">No description provided.
+
+</ParamField>
+<ParamField path="constraints" type="NavigationConstraints">Optional navigation constraints.
+
+</ParamField>
+<ParamField path="goto_params" type="GotoParams">No description provided.
+
+</ParamField>
+<ParamField path="relative_move_params" type="RelativeMoveParams">No description provided.
+
+</ParamField>
+<ParamField path="path_params" type="PathParams">No description provided.
+
+</ParamField>
+<ParamField path="metadata_json" type="bytes">Additional metadata (units, custom fields). JSON-encoded.
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+
+### Message `NavigationConstraints`
+
+Navigation constraints (shared across command types).
+
+<ParamField path="max_speed_ms" type="double">No description provided.
+
+</ParamField>
+<ParamField path="goal_tolerance_m" type="double">No description provided.
+
+</ParamField>
+
+### Message `PathParams`
+
+Parameters for a path-following command.
+
+<ParamField path="waypoints" type="Waypoint (repeated)">No description provided.
+
+</ParamField>
+<ParamField path="yaw" type="double">No description provided.
+
+</ParamField>
+<ParamField path="wait_s" type="double">No description provided.
+
+</ParamField>
+<ParamField path="max_loops" type="int32">No description provided.
+
+</ParamField>
+
+### Message `RelativeMoveParams`
+
+Parameters for a relative_move command.
+
+<ParamField path="relative_translation" type="double (repeated)">[dx, dy, dz] translation in meters.
+
+length = 3
+
+</ParamField>
+<ParamField path="frame" type="string">Reference frame: "body" (robot-local) or "world" (fixed-map).
+
+</ParamField>
+
+### Message `Waypoint`
+
+A single waypoint used in PathParams.
+
+<ParamField path="position" type="double (repeated)">World-space position [x, y, z] in meters.
+
+length = 3
+
+</ParamField>
+<ParamField path="yaw" type="double">No description provided.
+
+</ParamField>
+
+### Enum `NavigateCommandType`
+
+Type of navigation command.
+
+<ParamField path="NAVIGATE_COMMAND_TYPE_UNSPECIFIED" type="enum (0)">
+  No description provided.
+</ParamField>
+<ParamField path="NAVIGATE_COMMAND_TYPE_GOTO" type="enum (1)">
+  Move to an absolute world-space position.
+</ParamField>
+<ParamField path="NAVIGATE_COMMAND_TYPE_RELATIVE_MOVE" type="enum (2)">
+  Move relative to the robot's current pose.
+</ParamField>
+<ParamField path="NAVIGATE_COMMAND_TYPE_PATH" type="enum (3)">
+  Follow a sequence of waypoints.
+</ParamField>
+<ParamField path="NAVIGATE_COMMAND_TYPE_STOP" type="enum (4)">
+  Cancel current navigation and stop in place.
+</ParamField>
+
+---
+
+## cyberwave/mqtt/twin/navigate/status.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/twin/{twin_uuid}/navigate/status
+
+Navigation action status updates published by edge devices and simulators. The Django MQTT consumer calls update_action_status() to persist the transition in the database and dispatches cloud MQTT workflow triggers.
+
+The SDK's TwinNavigationHandle subscribes to this topic and unblocks async navigation calls when a terminal status is received.
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `NavigationStatusPayload`
+
+### Message `NavigationStatusPayload`
+
+Status update for an in-flight navigation action.
+
+<ParamField path="action_id" type="string">Identifies the navigation action. Matches the action_id returned by the REST endpoint that accepted the navigate command.
+
+</ParamField>
+<ParamField path="status" type="NavigationStatus">Current state of the action.
+
+</ParamField>
+<ParamField path="message" type="string">No description provided.
+
+</ParamField>
+<ParamField path="progress" type="double">No description provided.
+
+</ParamField>
+<ParamField path="source_type" type="cyberwave.mqtt.SourceType">No description provided.
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+
+### Enum `NavigationStatus`
+
+Possible states for a navigation action.
+
+<ParamField path="NAVIGATION_STATUS_UNSPECIFIED" type="enum (0)">
+  No description provided.
+</ParamField>
+<ParamField path="NAVIGATION_STATUS_QUEUED" type="enum (1)">
+  No description provided.
+</ParamField>
+<ParamField path="NAVIGATION_STATUS_RUNNING" type="enum (2)">
+  No description provided.
+</ParamField>
+<ParamField path="NAVIGATION_STATUS_BLOCKED" type="enum (3)">
+  No description provided.
+</ParamField>
+<ParamField path="NAVIGATION_STATUS_COMPLETED" type="enum (4)">
+  No description provided.
+</ParamField>
+<ParamField path="NAVIGATION_STATUS_FAILED" type="enum (5)">
+  No description provided.
+</ParamField>
+<ParamField path="NAVIGATION_STATUS_CANCELLED" type="enum (6)">
+  No description provided.
+</ParamField>
+
+---
+
+## cyberwave/mqtt/twin/pointcloud.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/twin/{twin_uuid}/pointcloud
+
+Colored point cloud frames, typically produced by a Celery task that combines a depth frame (twin/depth) with an RGB frame from the camera. Consumed by the frontend for 3D visualization.
+
+Also carries the Redis-key variant (ColoredPointCloudKeysPayload) used when the backend stores the frame buffer in Redis and only publishes a reference.
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `ColoredPointCloudKeysPayload`
+- `PointCloudPayload`
+
+### Message `ColoredPointCloudKeysPayload`
+
+Lightweight variant that carries a Redis key instead of the raw buffer. Used internally when the Celery worker stores the colored point cloud in Redis and publishes only a lookup key to avoid large MQTT payloads.
+
+<ParamField path="data" type="string">Redis key under which the colored point cloud NumPy array is stored.
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+
+### Message `PointCloudPayload`
+
+Full point cloud frame serialized as Base64-encoded bytes. type = "pointcloud"
+
+<ParamField path="type" type="string">Always "pointcloud".
+
+</ParamField>
+<ParamField path="data" type="string">Base64-encoded point cloud array (NumPy float32, shape [N, 6]). Each row: [x, y, z, r, g, b] where r,g,b are in [0, 255].
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+
+---
+
+## cyberwave/mqtt/twin/position.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/twin/{twin_uuid}/position
+
+Published by edge devices, simulators, and the frontend editor to update the XYZ world-space position of a digital twin. Rate-limited at the SDK publisher (duplicate positions are skipped).
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `TwinPositionPayload`
+
+### Message `TwinPositionPayload`
+
+<ParamField path="source_type" type="cyberwave.mqtt.SourceType">Who produced this update.
+
+</ParamField>
+<ParamField path="position" type="state_representation.proto.Vector3d">World-space position in meters.
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+
+---
+
+## cyberwave/mqtt/twin/rotation.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/twin/{twin_uuid}/rotation
+
+Published by edge devices, simulators, and the frontend editor to update the orientation of a digital twin expressed as a unit quaternion (x, y, z, w). Rate-limited at the SDK publisher (duplicate rotations are skipped).
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `TwinRotationPayload`
+
+### Message `TwinRotationPayload`
+
+<ParamField path="source_type" type="cyberwave.mqtt.SourceType">Who produced this update.
+
+</ParamField>
+<ParamField path="rotation" type="state_representation.proto.Quaterniond">Orientation quaternion. Convention: (x, y, z, w) unit quaternion. Default (all-zero on wire) is treated as identity [w=1] by consumers that need a valid rotation; producers MUST normalise before publishing.
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+
+---
+
+## cyberwave/mqtt/twin/scale.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/twin/{twin_uuid}/scale
+
+Published by the frontend editor (or any source) to resize the 3D representation of a digital twin in the environment. The backend (Django MQTT consumer) persists scale_x / scale_y / scale_z on the Twin model and logs to TwinTelemetry.
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `TwinScalePayload`
+
+### Message `TwinScalePayload`
+
+<ParamField path="source_type" type="cyberwave.mqtt.SourceType">Who produced this update.
+
+</ParamField>
+<ParamField path="scale" type="state_representation.proto.Vector3d">Per-axis scale factors (1.0 = natural size on each axis).
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+
+---
+
+## cyberwave/mqtt/twin/telemetry.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/twin/{twin_uuid}/telemetry
+
+Lifecycle and metadata events for digital twin recording sessions and camera synchronization. The Django MQTT consumer dispatches on the `type` discriminator field to dedicated Celery tasks.
+
+All messages on this topic share the envelope structure: `{ "type": "<TelemetryMessageType>", "timestamp": <float>, ...fields }`
+
+The `type` values are intentionally kept as string constants on the wire (not proto3 enum integers) because the topic is consumed by both the Django backend and the Vector telemetry pipeline.
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `AudioStoredPayload`
+- `CameraSegmentStoredPayload`
+- `CameraStoredPayload`
+- `CameraSyncFramePayload`
+- `ConnectedPayload`
+- `DisconnectedPayload`
+- `DriverLogPayload`
+- `InitialObservationEntry`
+- `InitialObservationPayload`
+- `MotorStatusPayload`
+- `TelemetryEndPayload`
+- `TelemetryStartPayload`
+- `VideoStartTimestampPayload`
+
+### Message `AudioStoredPayload`
+
+Audio track file stored for this session. Triggers log_audio_stored_async on the backend.
+
+<ParamField path="type" type="string">"audio_stored"
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+<ParamField path="paths" type="string (repeated)">No description provided.
+
+</ParamField>
+<ParamField path="track_id" type="string">No description provided.
+
+</ParamField>
+<ParamField path="sensor_id" type="string">No description provided.
+
+</ParamField>
+<ParamField path="stream_source" type="string">No description provided.
+
+</ParamField>
+<ParamField path="stream_instance_id" type="string">No description provided.
+
+</ParamField>
+
+### Message `CameraSegmentStoredPayload`
+
+A segmented video chunk has been written. Triggers log_camera_segment_stored_async on the backend.
+
+<ParamField path="type" type="string">"camera_segment_stored"
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+<ParamField path="recording_id" type="string">No description provided.
+
+</ParamField>
+<ParamField path="track_id" type="string">No description provided.
+
+</ParamField>
+<ParamField path="stream_source" type="string">e.g. "edge", "recorder"
+
+</ParamField>
+<ParamField path="stream_instance_id" type="string">No description provided.
+
+</ParamField>
+<ParamField path="chunk_index" type="int32">No description provided.
+
+</ParamField>
+<ParamField path="is_final" type="bool">No description provided.
+
+</ParamField>
+<ParamField path="sensor_id" type="string">No description provided.
+
+</ParamField>
+<ParamField path="path" type="string">No description provided.
+
+</ParamField>
+<ParamField path="sei_path" type="string">No description provided.
+
+</ParamField>
+<ParamField path="idempotency_key" type="string">No description provided.
+
+</ParamField>
+<ParamField path="start_timestamp_us" type="int64">No description provided.
+
+</ParamField>
+<ParamField path="end_timestamp_us" type="int64">No description provided.
+
+</ParamField>
+
+### Message `CameraStoredPayload`
+
+One or more video files have been stored for this session. Triggers log_camera_stored_async on the backend.
+
+<ParamField path="type" type="string">"camera_stored"
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+<ParamField path="paths" type="string (repeated)">Storage paths of the stored video files.
+
+</ParamField>
+<ParamField path="source_type" type="string">No description provided.
+
+</ParamField>
+<ParamField path="track_id" type="string">No description provided.
+
+</ParamField>
+<ParamField path="stream_source" type="string">No description provided.
+
+</ParamField>
+<ParamField path="stream_instance_id" type="string">No description provided.
+
+</ParamField>
+<ParamField path="authoritative_video_start_json" type="bytes">Authoritative video start timestamp: `{ "source_type": ..., "timestamp": ... }` Stored verbatim in recording metadata for alignment purposes.
+
+</ParamField>
+
+### Message `CameraSyncFramePayload`
+
+Anchor frame for video ↔ robot state synchronization. Published by two sources: 1. Edge camera (source="edge"): contains pts + sync_timestamp. 2. Media-service recorder (source="recorder"): contains first_rtp_timestamp. Triggers log_camera_sync_frame_async on the backend.
+
+<ParamField path="type" type="string">"camera_sync_frame"
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+<ParamField path="track_id" type="string">No description provided.
+
+</ParamField>
+<ParamField path="sensor_id" type="string">No description provided.
+
+</ParamField>
+<ParamField path="source" type="string">No description provided.
+
+</ParamField>
+<ParamField path="pts" type="int64">No description provided.
+
+</ParamField>
+<ParamField path="sync_timestamp" type="double">No description provided.
+
+</ParamField>
+<ParamField path="sync_timestamp_monotonic" type="double">No description provided.
+
+</ParamField>
+<ParamField path="first_rtp_timestamp" type="uint32">No description provided.
+
+</ParamField>
+<ParamField path="pre_keyframe_rtp_packets_dropped" type="int32">No description provided.
+
+</ParamField>
+<ParamField path="pre_keyframe_frames_dropped" type="int32">No description provided.
+
+</ParamField>
+<ParamField path="start_timestamp_us" type="int64">No description provided.
+
+</ParamField>
+
+### Message `ConnectedPayload`
+
+Edge device has connected to the session (no persistent side-effect; used for status display only).
+
+<ParamField path="type" type="string">"connected"
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+
+### Message `DisconnectedPayload`
+
+Edge device has disconnected from the session.
+
+<ParamField path="type" type="string">"disconnected"
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+
+### Message `DriverLogPayload`
+
+Structured log line from an edge driver. Consumed by Vector only; the Django consumer ignores these (logging only).
+
+<ParamField path="type" type="string">"driver_log"
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+<ParamField path="message" type="string">No description provided.
+
+</ParamField>
+<ParamField path="level" type="string">Log level string: "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL".
+
+</ParamField>
+
+### Message `InitialObservationEntry`
+
+Initial observations keyed by source_type (e.g. "edge_leader", "edge_follower") or a flat dict for legacy single-source sessions. In proto we model a flat entry; the full map lives in the JSON transport.
+
+<ParamField path="source_type" type="string">No description provided.
+
+</ParamField>
+<ParamField path="observation_json" type="bytes">JSON-encoded observation dict for this source.
+
+</ParamField>
+
+### Message `InitialObservationPayload`
+
+Mid-session observation snapshot (e.g. after reconnect). Triggers log_twin_initial_observation_async on the backend.
+
+<ParamField path="type" type="string">"initial_observation"
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+<ParamField path="observations" type="InitialObservationEntry (repeated)">No description provided.
+
+</ParamField>
+<ParamField path="fps" type="double">No description provided.
+
+</ParamField>
+<ParamField path="source_type" type="string">No description provided.
+
+</ParamField>
+<ParamField path="environment_uuid" type="string">No description provided.
+
+</ParamField>
+
+### Message `MotorStatusPayload`
+
+Actuator / motor status telemetry. Triggers log_twin_telemetry_async on the backend. All motor-specific fields are open-ended in the JSON transport.
+
+<ParamField path="type" type="string">"motor_status"
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+<ParamField path="motor_id" type="string">No description provided.
+
+</ParamField>
+<ParamField path="status" type="string">No description provided.
+
+</ParamField>
+<ParamField path="temperature_celsius" type="double">No description provided.
+
+</ParamField>
+<ParamField path="current_a" type="double">No description provided.
+
+</ParamField>
+<ParamField path="torque_nm" type="double">No description provided.
+
+</ParamField>
+
+### Message `TelemetryEndPayload`
+
+Signals that a recording session has ended. Triggers log_twin_recording_stop_async on the backend.
+
+<ParamField path="type" type="string">"telemetry_end"
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+<ParamField path="source_type" type="string">No description provided.
+
+</ParamField>
+<ParamField path="environment_uuid" type="string">No description provided.
+
+</ParamField>
+
+### Message `TelemetryStartPayload`
+
+Signals that a recording session has started. Triggers log_twin_recording_start_with_initial_observation on the backend.
+
+<ParamField path="type" type="string">"telemetry_start"
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+<ParamField path="observations" type="InitialObservationEntry (repeated)">Observation snapshot at session start. Keyed by source_type or flat.
+
+</ParamField>
+<ParamField path="fps" type="double">No description provided.
+
+</ParamField>
+<ParamField path="camera_participants" type="string (repeated)">Which camera sensors participate in this recording session.
+
+</ParamField>
+<ParamField path="environment_uuid" type="string">No description provided.
+
+</ParamField>
+
+### Message `VideoStartTimestampPayload`
+
+First frame timestamp from the camera, used for robot-camera alignment. Triggers log_camera_recording_start_async on the backend.
+
+<ParamField path="type" type="string">"video_start_timestamp"
+
+</ParamField>
+<ParamField path="timestamp" type="double">Wall-clock time of the first camera frame.
+
+</ParamField>
+<ParamField path="track_id" type="string">No description provided.
+
+</ParamField>
+<ParamField path="timestamp_monotonic" type="double">No description provided.
+
+</ParamField>
+<ParamField path="source_type" type="string">No description provided.
+
+</ParamField>
+
+---
+
+## cyberwave/mqtt/twin/webrtc.proto
+
+<Note>
+
+Topics: {prefix}cyberwave/twin/{twin_uuid}/webrtc-offer {prefix}cyberwave/twin/{twin_uuid}/webrtc-answer {prefix}cyberwave/twin/{twin_uuid}/webrtc-candidate {prefix}cyberwave/twin/{twin_uuid}/webrtc (generic fallback)
+
+WebRTC signaling channel for camera video / audio streaming. The edge device publishes an SDP offer; the backend or frontend responds with an SDP answer; ICE candidates are exchanged on the candidate topic.
+
+The Rust media-service and Python sensor drivers all share this topic set. Topic routing: the SDK's publish_webrtc_message() picks the right sub-topic from the `type` field of the payload.
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `WebRTCAnswerPayload`
+- `WebRTCCandidatePayload`
+- `WebRTCOfferPayload`
+
+### Message `WebRTCAnswerPayload`
+
+SDP answer published on the webrtc-answer topic. type = "answer"
+
+<ParamField path="type" type="string">Always "answer".
+
+</ParamField>
+<ParamField path="sdp" type="string">Session Description Protocol answer body.
+
+</ParamField>
+<ParamField path="target" type="WebRTCRole">Intended recipient role.
+
+</ParamField>
+<ParamField path="sender" type="WebRTCRole">Originating role.
+
+</ParamField>
+<ParamField path="frontend_type" type="string">No description provided.
+
+</ParamField>
+<ParamField path="timestamp" type="double">Unix timestamp in seconds.
+
+</ParamField>
+
+### Message `WebRTCCandidatePayload`
+
+ICE candidate published on the webrtc-candidate topic. type = "candidate"
+
+<ParamField path="type" type="string">Always "candidate".
+
+</ParamField>
+<ParamField path="candidate" type="string">ICE candidate string (a=candidate:... line from SDP).
+
+</ParamField>
+<ParamField path="sdp_m_line_index" type="int32">No description provided.
+
+</ParamField>
+<ParamField path="sdp_mid" type="string">No description provided.
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+
+### Message `WebRTCOfferPayload`
+
+SDP offer published on the webrtc-offer topic. type = "offer"
+
+<ParamField path="type" type="string">Always "offer".
+
+</ParamField>
+<ParamField path="sdp" type="string">Session Description Protocol offer body.
+
+</ParamField>
+<ParamField path="target" type="WebRTCRole">Intended recipient role.
+
+</ParamField>
+<ParamField path="sender" type="WebRTCRole">Originating role.
+
+</ParamField>
+<ParamField path="frontend_type" type="string">No description provided.
+
+</ParamField>
+<ParamField path="color_track_id" type="string">No description provided.
+
+</ParamField>
+<ParamField path="depth_track_id" type="string">No description provided.
+
+</ParamField>
+<ParamField path="timestamp" type="double">Unix timestamp in seconds.
+
+</ParamField>
+
+### Enum `WebRTCRole`
+
+Identifies the participant role in the WebRTC handshake.
+
+<ParamField path="WEBRTC_ROLE_UNSPECIFIED" type="enum (0)">
+  No description provided.
+</ParamField>
+<ParamField path="WEBRTC_ROLE_BACKEND" type="enum (1)">
+  No description provided.
+</ParamField>
+<ParamField path="WEBRTC_ROLE_FRONTEND" type="enum (2)">
+  No description provided.
+</ParamField>
+<ParamField path="WEBRTC_ROLE_EDGE" type="enum (3)">
+  No description provided.
+</ParamField>
+
+---
+
+## cyberwave/mqtt/workflow/execution.proto
+
+<Note>
+
+Topics: {prefix}cyberwave/workflow/{workflow_uuid}/execution/started {prefix}cyberwave/workflow/{workflow_uuid}/execution/{execution_uuid}/node/{node_uuid} {prefix}cyberwave/workflow/{workflow_uuid}/execution/{execution_uuid}/finished
+
+MQTT ingress for workflow execution lifecycle events. Published by edge workers, SDK WorkflowExecutionReporter, and cloud workers. The Django MQTT consumer funnels all three into the workflow_execution_ingress service, producing the same DB state as the equivalent REST ingress endpoints.
+
+All three message types are kept in this single file because they form a logical unit (started → node events → finished) and are consumed together.
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `WorkflowExecutionFinishedPayload`
+- `WorkflowExecutionStartedPayload`
+- `WorkflowNodeEventPayload`
+
+### Message `WorkflowExecutionFinishedPayload`
+
+Signals a terminal outcome for a workflow execution. Idempotent: subsequent events after the first terminal write are no-ops.
+
+<ParamField path="status" type="WorkflowExecutionStatus">Terminal status of the execution.
+
+</ParamField>
+<ParamField path="error_message" type="string">No description provided.
+
+</ParamField>
+<ParamField path="source_type" type="string">No description provided.
+
+</ParamField>
+
+### Message `WorkflowExecutionStartedPayload`
+
+Signals that a workflow execution has started. Materialises WorkflowExecution + pre-seeded WorkflowNodeExecution rows. Idempotent on execution_uuid: re-publishing with the same UUID is a no-op.
+
+<ParamField path="execution_uuid" type="string">No description provided.
+
+</ParamField>
+<ParamField path="trigger_data_json" type="bytes">Arbitrary context data from the trigger (e.g. MQTT payload that fired it). JSON-encoded.
+
+</ParamField>
+<ParamField path="source_type" type="string">No description provided.
+
+</ParamField>
+
+### Message `WorkflowNodeEventPayload`
+
+Reports the status of a single node within a running execution. First terminal write wins; subsequent events for the same node are no-ops.
+
+<ParamField path="status" type="WorkflowNodeStatus">Current node status.
+
+</ParamField>
+<ParamField path="input_data_json" type="bytes">Input data items consumed by this node. JSON-encoded list.
+
+</ParamField>
+<ParamField path="output_data_json" type="bytes">Output data items produced by this node. JSON-encoded list.
+
+</ParamField>
+<ParamField path="error_message" type="string">No description provided.
+
+</ParamField>
+<ParamField path="execution_time_ms" type="int64">No description provided.
+
+</ParamField>
+<ParamField path="metadata_json" type="bytes">Additional node metadata. JSON-encoded.
+
+</ParamField>
+<ParamField path="source_type" type="string">No description provided.
+
+</ParamField>
+
+### Enum `WorkflowExecutionStatus`
+
+Execution-level terminal status values.
+
+<ParamField path="WORKFLOW_EXECUTION_STATUS_UNSPECIFIED" type="enum (0)">
+  No description provided.
+</ParamField>
+<ParamField path="WORKFLOW_EXECUTION_STATUS_SUCCESS" type="enum (1)">
+  No description provided.
+</ParamField>
+<ParamField path="WORKFLOW_EXECUTION_STATUS_ERROR" type="enum (2)">
+  No description provided.
+</ParamField>
+<ParamField path="WORKFLOW_EXECUTION_STATUS_CANCELED" type="enum (3)">
+  No description provided.
+</ParamField>
+
+### Enum `WorkflowNodeStatus`
+
+Node status values.
+
+<ParamField path="WORKFLOW_NODE_STATUS_UNSPECIFIED" type="enum (0)">
+  No description provided.
+</ParamField>
+<ParamField path="WORKFLOW_NODE_STATUS_PENDING" type="enum (1)">
+  No description provided.
+</ParamField>
+<ParamField path="WORKFLOW_NODE_STATUS_RUNNING" type="enum (2)">
+  No description provided.
+</ParamField>
+<ParamField path="WORKFLOW_NODE_STATUS_SUCCESS" type="enum (3)">
+  No description provided.
+</ParamField>
+<ParamField path="WORKFLOW_NODE_STATUS_ERROR" type="enum (4)">
+  No description provided.
+</ParamField>
+<ParamField path="WORKFLOW_NODE_STATUS_SKIPPED" type="enum (5)">
+  No description provided.
+</ParamField>
+
+---
+
+## cyberwave/mqtt/workflow_run/status.proto
+
+<Note>
+
+Topic: {prefix}cyberwave/workflow-run/{workflow_run_uuid}/status
+
+Real-time status notifications for a WorkflowRun (legacy V1 workflow execution model, distinct from the V2 WorkflowExecution ingress topics under cyberwave/workflow/{uuid}/execution/...).
+
+The SDK's WorkflowRun.on_status_change() subscribes here so callers can react to run state transitions without polling the REST API.
+
+</Note>
+
+### MQTT topic & payloads
+
+**Protobuf message types in this file** (serialized shapes on MQTT unless noted otherwise):
+
+- `WorkflowRunStatusPayload`
+
+### Message `WorkflowRunStatusPayload`
+
+Real-time status change notification for a WorkflowRun.
+
+<ParamField path="status" type="string">New status string (e.g. "pending", "running", "completed", "failed"). Kept as a string (not enum) for forward compatibility with new statuses.
+
+</ParamField>
+<ParamField path="workflow_run_uuid" type="string">UUID of the workflow run.
+
+</ParamField>
+<ParamField path="timestamp" type="double">No description provided.
+
+</ParamField>
+
+---
+
+## state_representation/geometry/tf.proto
+
+<Note>
+
+ROS2 / tf2-aligned geometry messages for transforms and twists on the wire. Used for MQTT pub/sub streaming AND as the shared message type for the cyberwave.tfexchange.v1 gRPC service.
+
+Frame ID semantics (MessageHeader.frame_id): - In TransformStamped: frame_id is the PARENT frame. child_frame_id is the child. - In TwistStamped: frame_id is the frame in which the twist is expressed.
+
+</Note>
+
+### Message `FrameTransformBundle`
+
+Snapshot of multiple transforms — mirrors ROS1 tf/tfMessage.
+
+<ParamField path="transforms" type="TransformStamped (repeated)">No description provided.
+
+</ParamField>
+
+### Message `MessageHeader`
+
+<ParamField path="stamp_unix_ns" type="fixed64">No description provided.
+
+</ParamField>
+<ParamField path="frame_id" type="string">No description provided.
+
+</ParamField>
+
+### Message `Transform`
+
+<ParamField path="translation" type="Vector3d">No description provided.
+
+</ParamField>
+<ParamField path="rotation" type="Quaterniond">No description provided.
+
+</ParamField>
+
+### Message `TransformStamped`
+
+A stamped transform edge: header.frame_id (parent) -> child_frame_id.
+
+<ParamField path="header" type="MessageHeader">header.frame_id = parent frame (see file comment above).
+
+</ParamField>
+<ParamField path="child_frame_id" type="string">No description provided.
+
+</ParamField>
+<ParamField path="transform" type="Transform">No description provided.
+
+</ParamField>
+<ParamField path="authority" type="string">Who published this transform (e.g. "urdf_publisher", "slam_node").
+
+</ParamField>
+<ParamField path="is_static" type="bool">True for transforms that are valid forever (/tf_static in ROS2).
+
+</ParamField>
+<ParamField path="sequence" type="uint64">Monotonically increasing counter per (parent, child) pair.
+
+</ParamField>
+<ParamField path="twin_uuid" type="string">Cyberwave digital twin this transform belongs to.
+
+</ParamField>
+
+### Message `Twist`
+
+<ParamField path="linear" type="Vector3d">No description provided.
+
+</ParamField>
+<ParamField path="angular" type="Vector3d">No description provided.
+
+</ParamField>
+
+### Message `TwistStamped`
+
+<ParamField path="header" type="MessageHeader">No description provided.
+
+</ParamField>
+<ParamField path="twist" type="Twist">No description provided.
+
+</ParamField>
+
+---
+
+## cyberwave/tfexchange/v1/tf_service.proto
+
+<Note>
+
+TF query service: request/response lookup of transforms in a TF tree. Mirrors the tf2_ros::Buffer::lookupTransform / canTransform interface.
+
+Transport: gRPC (betterproto generates async client/server stubs). Streaming: see tf.proto + RobotStateMessage for the MQTT pub/sub side.
+
+</Note>
+
+### gRPC service surface
+
+Request/response message types are listed below. This service is exercised over **gRPC**, not MQTT.
+
+### Message `CanTransformResponse`
+
+<ParamField path="can_transform" type="bool">No description provided.
+
+</ParamField>
+
+### Message `LookupRequest`
+
+Request a single transform between two frames at a given time.
+
+<ParamField path="target_frame" type="string">The frame to transform INTO (target).
+
+</ParamField>
+<ParamField path="source_frame" type="string">The frame to transform FROM (source).
+
+</ParamField>
+<ParamField path="timestamp_ns" type="fixed64">Lookup time in nanoseconds since Unix epoch. 0 = latest available.
+
+</ParamField>
+<ParamField path="timeout_ms" type="uint32">Maximum time to wait for the transform to become available (ms).
+
+</ParamField>
+<ParamField path="twin_uuid" type="string">Scope the lookup to a specific Cyberwave digital twin.
+
+</ParamField>
+
+### Message `LookupResponse`
+
+<ParamField path="success" type="bool">No description provided.
+
+</ParamField>
+<ParamField path="error" type="string">Human-readable error if success == false.
+
+</ParamField>
+<ParamField path="transform" type="state_representation.proto.TransformStamped">No description provided.
+
+</ParamField>
+
+### Message `ServiceStatusRequest`
+
+### Message `ServiceStatusResponse`
+
+<ParamField path="alive" type="bool">No description provided.
+
+</ParamField>
+<ParamField path="ready" type="bool">No description provided.
+
+</ParamField>
+<ParamField path="detail" type="string">No description provided.
+
+</ParamField>
+
+### Service `TfQueryService`
+
+#### RPC `LookupTransform`
+
+Look up a single transform between two frames.
+
+<ParamField path="request" type="LookupRequest">
+  Unary or client-streaming request payload.
+</ParamField>
+
+<ParamField path="response" type="LookupResponse">
+  Unary or server-streaming response payload.
+</ParamField>
+#### RPC `CanTransform`
+
+Check whether a transform can be looked up (non-blocking).
+
+<ParamField path="request" type="LookupRequest">
+  Unary or client-streaming request payload.
+</ParamField>
+
+<ParamField path="response" type="CanTransformResponse">
+  Unary or server-streaming response payload.
+</ParamField>
+#### RPC `GetServiceStatus`
+
+Health / readiness probe.
+
+<ParamField path="request" type="ServiceStatusRequest">
+  Unary or client-streaming request payload.
+</ParamField>
+
+<ParamField path="response" type="ServiceStatusResponse">
+  Unary or server-streaming response payload.
+</ParamField>
+
+---
+
+## state_representation/state.proto
+
+### Message `State`
+
+<ParamField path="name" type="string">No description provided.
+
+</ParamField>
+<ParamField path="empty" type="bool">No description provided.
+
+</ParamField>
+
+---
+
+## state_representation/space/spatial_state.proto
+
+### Message `SpatialState`
+
+<ParamField path="state" type="State">No description provided.
+
+</ParamField>
+<ParamField path="reference_frame" type="string">No description provided.
+
+</ParamField>
+
+---
+
+## state_representation/space/cartesian/cartesian_state.proto
+
+### Message `CartesianAcceleration`
+
+<ParamField path="spatial_state" type="SpatialState">No description provided.
+
+</ParamField>
+<ParamField path="linear_acceleration" type="Vector3d">No description provided.
+
+</ParamField>
+<ParamField path="angular_acceleration" type="Vector3d">No description provided.
+
+</ParamField>
+
+### Message `CartesianPose`
+
+<ParamField path="spatial_state" type="SpatialState">No description provided.
+
+</ParamField>
+<ParamField path="position" type="Vector3d">No description provided.
+
+</ParamField>
+<ParamField path="orientation" type="Quaterniond">No description provided.
+
+</ParamField>
+
+### Message `CartesianState`
+
+<ParamField path="spatial_state" type="SpatialState">No description provided.
+
+</ParamField>
+<ParamField path="position" type="Vector3d">No description provided.
+
+</ParamField>
+<ParamField path="orientation" type="Quaterniond">No description provided.
+
+</ParamField>
+<ParamField path="linear_velocity" type="Vector3d">No description provided.
+
+</ParamField>
+<ParamField path="angular_velocity" type="Vector3d">No description provided.
+
+</ParamField>
+<ParamField path="linear_acceleration" type="Vector3d">No description provided.
+
+</ParamField>
+<ParamField path="angular_acceleration" type="Vector3d">No description provided.
+
+</ParamField>
+<ParamField path="force" type="Vector3d">No description provided.
+
+</ParamField>
+<ParamField path="torque" type="Vector3d">No description provided.
+
+</ParamField>
+
+### Message `CartesianTwist`
+
+<ParamField path="spatial_state" type="SpatialState">No description provided.
+
+</ParamField>
+<ParamField path="linear_velocity" type="Vector3d">No description provided.
+
+</ParamField>
+<ParamField path="angular_velocity" type="Vector3d">No description provided.
+
+</ParamField>
+
+### Message `CartesianWrench`
+
+<ParamField path="spatial_state" type="SpatialState">No description provided.
+
+</ParamField>
+<ParamField path="force" type="Vector3d">No description provided.
+
+</ParamField>
+<ParamField path="torque" type="Vector3d">No description provided.
+
+</ParamField>
+
+---
+
+## state_representation/space/joint/jacobian.proto
+
+### Message `Jacobian`
+
+<ParamField path="state" type="State">No description provided.
+
+</ParamField>
+<ParamField path="joint_names" type="string (repeated)">No description provided.
+
+</ParamField>
+<ParamField path="frame" type="string">No description provided.
+
+</ParamField>
+<ParamField path="reference_frame" type="string">No description provided.
+
+</ParamField>
+<ParamField path="rows" type="uint32">No description provided.
+
+</ParamField>
+<ParamField path="cols" type="uint32">No description provided.
+
+</ParamField>
+<ParamField path="data" type="double (repeated)">No description provided.
+
+</ParamField>
+
+---
+
+## state_representation/space/joint/joint_state.proto
+
+<Note>
+
+Multi-joint and single-joint state representations. joint_names[i] always corresponds to the i-th element of every populated channel array. All channel arrays within a given message must be the same length when present. Unpopulated channels are omitted (empty repeated).
+
+</Note>
+
+### Message `JointAccelerations`
+
+Acceleration-only joint state.
+
+<ParamField path="state" type="State">No description provided.
+
+</ParamField>
+<ParamField path="joint_names" type="string (repeated)">No description provided.
+
+</ParamField>
+<ParamField path="accelerations" type="double (repeated)">No description provided.
+
+</ParamField>
+
+### Message `JointPositions`
+
+Position-only joint state. Use for position-only telemetry.
+
+<ParamField path="state" type="State">No description provided.
+
+</ParamField>
+<ParamField path="joint_names" type="string (repeated)">No description provided.
+
+</ParamField>
+<ParamField path="positions" type="double (repeated)">No description provided.
+
+</ParamField>
+
+### Message `JointState`
+
+Full joint state with all channels (some may be empty). Use when publishing a complete snapshot; omit channels not available.
+
+<ParamField path="state" type="State">No description provided.
+
+</ParamField>
+<ParamField path="joint_names" type="string (repeated)">No description provided.
+
+</ParamField>
+<ParamField path="positions" type="double (repeated)">No description provided.
+
+</ParamField>
+<ParamField path="velocities" type="double (repeated)">No description provided.
+
+</ParamField>
+<ParamField path="accelerations" type="double (repeated)">No description provided.
+
+</ParamField>
+<ParamField path="torques" type="double (repeated)">No description provided.
+
+</ParamField>
+
+### Message `JointTorques`
+
+Torque-only joint state.
+
+<ParamField path="state" type="State">No description provided.
+
+</ParamField>
+<ParamField path="joint_names" type="string (repeated)">No description provided.
+
+</ParamField>
+<ParamField path="torques" type="double (repeated)">No description provided.
+
+</ParamField>
+
+### Message `JointVelocities`
+
+Velocity-only joint state.
+
+<ParamField path="state" type="State">No description provided.
+
+</ParamField>
+<ParamField path="joint_names" type="string (repeated)">No description provided.
+
+</ParamField>
+<ParamField path="velocities" type="double (repeated)">No description provided.
+
+</ParamField>
+
+### Message `SingleJointState`
+
+Single-joint update. Used for per-joint MQTT messages or sparse actuator updates where only one joint is reported at a time. Each channel uses a synthetic oneof (wire-identical to proto3 optional) so receivers can distinguish "not provided" from zero. betterproto generates these as Optional[float] in Python.
+
+<ParamField path="state" type="State">No description provided.
+
+</ParamField>
+<ParamField path="joint_name" type="string">No description provided.
+
+</ParamField>
+<ParamField path="position" type="double">No description provided.
+
+</ParamField>
+<ParamField path="velocity" type="double">No description provided.
+
+</ParamField>
+<ParamField path="acceleration" type="double">No description provided.
+
+</ParamField>
+<ParamField path="torque" type="double">No description provided.
+
+</ParamField>
+
+---
+
+## state_representation/space/joint/joint_variable.proto
+
+<Note>
+
+Variable-topology / heterogeneous joint state. Cross-group array sizes have no alignment requirement. Within a single JointGroup every channel uses the same format (dense OR sparse) selected via the JointChannel oneof — no dual-field ambiguity.
+
+</Note>
+
+### Message `DenseJointValues`
+
+Dense channel: values[i] corresponds to the i-th joint in the group.
+
+<ParamField path="values" type="double (repeated)">No description provided.
+
+</ParamField>
+
+### Message `JointChannel`
+
+A single per-channel wrapper: either dense or sparse, never both.
+
+<ParamField path="dense" type="DenseJointValues">No description provided.
+
+</ParamField>
+<ParamField path="sparse" type="SparseJointValues">No description provided.
+
+</ParamField>
+
+### Message `JointGroup`
+
+One subsystem / group with its own independent joint topology. group_id identifies the subsystem (e.g. "left_arm", "wheels"). state.name identifies the robot/twin.
+
+<ParamField path="state" type="State">No description provided.
+
+</ParamField>
+<ParamField path="group_id" type="string">No description provided.
+
+</ParamField>
+<ParamField path="positions" type="JointChannel">No description provided.
+
+</ParamField>
+<ParamField path="velocities" type="JointChannel">No description provided.
+
+</ParamField>
+<ParamField path="accelerations" type="JointChannel">No description provided.
+
+</ParamField>
+<ParamField path="torques" type="JointChannel">No description provided.
+
+</ParamField>
+
+### Message `JointGroupBundle`
+
+Full variable-topology robot state: one or more groups.
+
+<ParamField path="groups" type="JointGroup (repeated)">No description provided.
+
+</ParamField>
+
+### Message `SparseJointValues`
+
+Sparse channel: indices[i] selects a joint; values[i] is that joint's value. Both arrays must be the same length.
+
+<ParamField path="indices" type="uint32 (repeated)">No description provided.
+
+</ParamField>
+<ParamField path="values" type="double (repeated)">No description provided.
+
+</ParamField>
+
+---
+
+## state_representation/robot_state_message.proto
+
+<Note>
+
+Top-level robot state envelope. Flat oneof over all kinematic / joint / TF payload types. Field numbers are stable and must not be renumbered once consumed on the wire.
+
+</Note>
+
+### Message `RobotStateMessage`
+
+<ParamField path="state" type="State">── Identity / spatial ──────────────────────────────────────────── 1–2
+
+</ParamField>
+<ParamField path="spatial_state" type="SpatialState">No description provided.
+
+</ParamField>
+<ParamField path="cartesian_state" type="CartesianState">── Cartesian kinematics ────────────────────────────────────────── 3–7
+
+</ParamField>
+<ParamField path="cartesian_pose" type="CartesianPose">No description provided.
+
+</ParamField>
+<ParamField path="cartesian_twist" type="CartesianTwist">No description provided.
+
+</ParamField>
+<ParamField path="cartesian_acceleration" type="CartesianAcceleration">No description provided.
+
+</ParamField>
+<ParamField path="cartesian_wrench" type="CartesianWrench">No description provided.
+
+</ParamField>
+<ParamField path="jacobian" type="Jacobian">── Jacobian ─────────────────────────────────────────────────────── 8
+
+</ParamField>
+<ParamField path="joint_state" type="JointState">── Multi-joint (ordered, self-describing with joint_names) ──── 9–13
+
+</ParamField>
+<ParamField path="joint_positions" type="JointPositions">No description provided.
+
+</ParamField>
+<ParamField path="joint_velocities" type="JointVelocities">No description provided.
+
+</ParamField>
+<ParamField path="joint_accelerations" type="JointAccelerations">No description provided.
+
+</ParamField>
+<ParamField path="joint_torques" type="JointTorques">No description provided.
+
+</ParamField>
+<ParamField path="transform_stamped" type="TransformStamped">── TF / twists (tf2-aligned) ────────────────────────────────── 14–16
+
+</ParamField>
+<ParamField path="twist_stamped" type="TwistStamped">No description provided.
+
+</ParamField>
+<ParamField path="frame_transform_bundle" type="FrameTransformBundle">No description provided.
+
+</ParamField>
+<ParamField path="joint_group_bundle" type="JointGroupBundle">── Variable-topology joints (heterogeneous / sparse) ──────────── 17
+
+</ParamField>
+<ParamField path="single_joint_state" type="SingleJointState">── Single-joint update (per-joint MQTT / sparse actuator) ──────── 18
+
+</ParamField>
+
+---
+
+## twin/state/kinematics.proto
+
+<Note>
+
+MQTT topic : twin/{uuid}/state/kinematics Published by: edge node / SDK Subscribed by: backend, frontend
+
+High-frequency kinematic stream. Each message carries exactly one reading inside RobotStateMessage. The oneof inside that message discriminates the payload type (CartesianPose, JointState, FrameTransformBundle, …); consumers should switch on the inner oneof rather than using separate topics per type.
+
+Publish rate guidance: joint / cartesian state — up to 100 Hz on capable hardware TF bundles — 10–50 Hz full CartesianState — match control loop rate
+
+</Note>
+
+### Message `KinematicsState`
+
+source, source_subtype, and timestamp are carried by the MqttMessage envelope and must not be repeated here.
+
+<ParamField path="data" type="state_representation.proto.RobotStateMessage">The kinematic reading. Exactly one branch of the inner oneof is set. Field numbers inside RobotStateMessage are stable; do not renumber.
+
+</ParamField>
+
+---
+
+## twin/state/sensors.proto
+
+<Note>
+
+MQTT topic : twin/{uuid}/state/sensors Published by: edge node / SDK Subscribed by: backend, frontend
+
+Low-frequency sensor readings. Each message carries one reading via oneof. Use sensor_id to identify which physical sensor produced the reading when the twin has multiple sensors of the same type (e.g. two temperature probes). Leave sensor_id empty for singletons (e.g. main battery).
+
+Sensor types model the common capability set from schema_capabilities.py. Use GenericReading for vendor-specific or future types not yet modelled here.
+
+</Note>
+
+### Message `GenericReading`
+
+Escape hatch for vendor-specific or future sensor types. key — a stable, lowercase_underscore name for the quantity (e.g. "air_pressure") value — the scalar reading unit — SI unit string (e.g. "Pa", "lux", "rpm", "m/s")
+
+<ParamField path="key" type="string">No description provided.
+
+</ParamField>
+<ParamField path="value" type="double">No description provided.
+
+</ParamField>
+<ParamField path="unit" type="string">No description provided.
+
+</ParamField>
+
+### Message `ImuReading`
+
+Angular velocity and linear acceleration in the sensor body frame. orientation is the fused estimate when available (e.g. from AHRS filter); leave unset if the driver does not produce a fused output.
+
+<ParamField path="angular_velocity" type="state_representation.proto.Vector3d">rad/s
+
+</ParamField>
+<ParamField path="linear_acceleration" type="state_representation.proto.Vector3d">m/s²
+
+</ParamField>
+<ParamField path="orientation" type="state_representation.proto.Quaterniond">optional
+
+</ParamField>
+
+### Message `OdometryReading`
+
+2D/3D odometry from wheel encoders, VIO, or similar. Set only the fields the driver produces; consumers must treat unset fields as "not available this tick" rather than zero.
+
+<ParamField path="position" type="state_representation.proto.Vector3d">No description provided.
+
+</ParamField>
+<ParamField path="orientation" type="state_representation.proto.Quaterniond">No description provided.
+
+</ParamField>
+<ParamField path="linear_velocity" type="state_representation.proto.Vector3d">m/s in world frame
+
+</ParamField>
+<ParamField path="angular_velocity" type="state_representation.proto.Vector3d">rad/s in body frame
+
+</ParamField>
+
+### Message `PowerReading`
+
+<ParamField path="voltage_v" type="double">No description provided.
+
+</ParamField>
+<ParamField path="current_a" type="double">No description provided.
+
+</ParamField>
+<ParamField path="battery_percent" type="double">0.0–100.0. Omit (leave 0) when the hardware does not report charge level.
+
+</ParamField>
+
+### Message `ProximityReading`
+
+<ParamField path="distance_m" type="double">No description provided.
+
+</ParamField>
+
+### Message `SensorState`
+
+source, source_subtype, and timestamp are carried by the MqttMessage envelope and must not be repeated here.
+
+<ParamField path="sensor_id" type="string">Asset sensor slug (e.g. "front_camera", "left_lidar"). Empty for singletons.
+
+</ParamField>
+<ParamField path="temperature" type="TemperatureReading">No description provided.
+
+</ParamField>
+<ParamField path="power" type="PowerReading">No description provided.
+
+</ParamField>
+<ParamField path="imu" type="ImuReading">No description provided.
+
+</ParamField>
+<ParamField path="odometry" type="OdometryReading">No description provided.
+
+</ParamField>
+<ParamField path="proximity" type="ProximityReading">No description provided.
+
+</ParamField>
+<ParamField path="generic" type="GenericReading">No description provided.
+
+</ParamField>
+
+### Message `TemperatureReading`
+
+<ParamField path="celsius" type="double">No description provided.
+
+</ParamField>
+
+---
+
+## twin/message.proto
+
+<Note>
+
+TwinMessage — discriminated union of all twin-scoped MQTT payloads. Carried as the `twin` branch inside MqttMessage.
+
+Topic → data mapping (expand as capability protos are added): twin/{uuid}/state/kinematics → kinematics twin/{uuid}/state/sensors → sensors
+
+</Note>
+
+### Message `TwinMessage`
+
+<ParamField path="twin_uuid" type="string">No description provided.
+
+</ParamField>
+<ParamField path="kinematics" type="state.KinematicsState">No description provided.
+
+</ParamField>
+<ParamField path="sensors" type="state.SensorState">Reserve 4–19 for future capability payloads: sys_status = 4; // twin/{uuid}/sys/status navigate = 5; // twin/{uuid}/navigate/status motion = 6; // twin/{uuid}/motion/status mission = 7; // twin/{uuid}/mission/status actuate = 8; // twin/{uuid}/actuate/status video = 9; // twin/{uuid}/video/status telemetry = 10; // twin/{uuid}/telemetry event = 11; // twin/{uuid}/event metrics = 12; // twin/{uuid}/metrics map_update = 13; // twin/{uuid}/map alert = 14; // twin/{uuid}/alert
+
+</ParamField>
+
+---
+
+## message.proto
+
+<Note>
+
+MqttMessage — single top-level envelope for every Cyberwave MQTT payload.
+
+timestamp, source, and source_subtype are defined exactly once here and apply to the whole payload. Individual sub-messages must not repeat them.
+
+Consumers: deserialise MqttMessage first, then switch on the payload oneof to obtain the scope-specific message, then switch on the inner oneof for the concrete data type.
+
+</Note>
+
+### Message `MqttMessage`
+
+<ParamField path="timestamp" type="double">Unix epoch seconds (time.time()). Sub-second precision in fractional part.
+
+</ParamField>
+<ParamField path="source" type="common.SourceType">Who produced this message.
+
+</ParamField>
+<ParamField path="source_subtype" type="common.SourceSubType">No description provided.
+
+</ParamField>
+<ParamField path="twin" type="twin.TwinMessage">Reserve for future scopes: EnvironmentMessage environment = 5; // proto/environment/message.proto WorkflowMessage workflow = 6; // proto/workflow/message.proto SysMessage sys = 7; // proto/sys/message.proto (ping/pong)
+
+</ParamField>
+
+---
+
+## Scalar value types
+
+Reference: [Language guide (scalar)](https://protobuf.dev/programming-guides/proto3/#scalar).
+
+| Proto type | Notes                                                                                                                                           |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| double     |                                                                                                                                                 |
+| float      |                                                                                                                                                 |
+| int32      | Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint32 instead. |
+| int64      | Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint64 instead. |
+| uint32     | Uses variable-length encoding.                                                                                                                  |
+| uint64     | Uses variable-length encoding.                                                                                                                  |
+| sint32     | Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int32s.                            |
+| sint64     | Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int64s.                            |
+| fixed32    | Always four bytes. More efficient than uint32 if values are often greater than 2^28.                                                            |
+| fixed64    | Always eight bytes. More efficient than uint64 if values are often greater than 2^56.                                                           |
+| sfixed32   | Always four bytes.                                                                                                                              |
+| sfixed64   | Always eight bytes.                                                                                                                             |
+| bool       |                                                                                                                                                 |
+| string     | A string must always contain UTF-8 encoded or 7-bit ASCII text.                                                                                 |
+| bytes      | May contain any arbitrary sequence of bytes.                                                                                                    |

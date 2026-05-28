@@ -1,0 +1,144 @@
+---
+title: "Overview"
+description: "Cyberwave Edge Core acts as the orchestrator of Cyberwave edge drivers."
+---
+
+import { EdgeSetup } from "/snippets/edge-setup.mdx";
+
+<Warning>
+**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
+</Warning>
+
+Cyberwave Edge Core acts as the orchestrator of Cyberwave edge drivers.
+
+Public repository: [cyberwave-os/cyberwave-edge-core](https://github.com/cyberwave-os/cyberwave-edge-core)
+
+## Use Cyberwave Edge with the CLI
+
+SSH to the edge device where you want to install Edge Core, then install the Cyberwave CLI and run the installer:
+
+<EdgeSetup />
+
+<Note>
+`cyberwave pair` is the recommended top-level alias for `cyberwave edge install`. Both run the same first-time setup flow.
+</Note>
+
+<Note>
+**Prerequisites by platform** (stub):
+- **Linux**: Docker is auto-installed via `apt-get` when missing (Ubuntu / Debian / Raspbian).
+- **macOS**: Docker Desktop must be installed and running before `cyberwave edge install` (the installer aborts early with a hint if not). The Rust toolchain is auto-installed via `rustup` (with confirmation) when missing — it is needed to compile the USB/IP server used for USB device passthrough.
+</Note>
+
+Manage the edge node service lifecycle, configuration, and monitoring:
+
+| Subcommand | Description |
+| --- | --- |
+| `install` | Install cyberwave-edge-core and register systemd service. On macOS, also sets up the camera stream bridge and prompts for camera selection. |
+| `install --reconfigure-camera` | Re-select camera and restart the stream and edge-core without a full reinstall |
+| `start` | Start the edge node |
+| `stop` | Stop the edge node |
+| `restart` | Restart the edge node (systemd or process) |
+| `status` | Check if the edge node is running |
+| `logs` | Show edge node logs |
+| `driver` | Manage edge driver containers (subgroup) |
+
+<Tip>
+Want to check how fast an edge device actually is? Run [`cyberwave edge bench`](/feature-reference/workflows/workers/bench) to micro-benchmark the Zenoh SDK hot paths and compare against a per-device baseline.
+</Tip>
+
+---
+
+## Host telemetry
+
+<Warning>
+**STUB:** content below pending human curation.
+</Warning>
+
+Every `edge_health` heartbeat carries the host's dynamic resource pressure alongside the per-stream health it has always carried:
+
+- `host_memory_percent`, `host_memory_available_mb`
+- `cpu_temp_c`
+- `consecutive_critical` — reconcile cycles where memory or CPU sat above the critical threshold; resets when pressure clears
+- `watchdog_layers` — e.g. `["systemd"]` on a developer laptop or `["systemd", "hardware"]` on a Raspberry Pi with `/dev/watchdog`
+
+Driver containers see their container's `/proc`, not the host's, and omit these fields. Only the bootstrap publisher running on the edge host populates them.
+
+Static hardware identity — total RAM, CPU model, kernel, thermal source, hardware-watchdog availability — is uploaded via `POST /api/v1/edges/discover` and stored on `Edge.metadata.host_facts`. The first POST runs synchronously at startup; a background daemon then re-POSTs every ~30 s so the backend can tell "edge daemon alive" apart from "edge daemon dead" even when no twin MQTT traffic is flowing. The Edge Devices tab renders both signals: a colour-coded pressure pill from the live heartbeat plus a "what hardware is this" row from the REST identity.
+
+The REST keepalive powers a three-state liveness pill — **Online** (twin MQTT activity), **Idle** (edge alive, no twin work; `liveness_state="standby"` on the wire), **Offline** (neither signal within window). Idle is what shows up on a freshly-paired edge that hasn't had any twins bound to it yet: previously such an edge would render as "Offline" even though `edge-core` was running fine. The Edge Devices tab sorts rows by liveness — online → idle → offline → unresolved binding — so working edges land at the top and broken bindings sink to the bottom.
+
+Static facts work on both Linux and macOS: Linux reads `/proc/{meminfo,cpuinfo}` and `/sys/class/thermal`; Darwin shells out to `sysctl` for RAM, CPU model and (logical) core count. Dynamic host pressure (memory %, CPU temp) remains Linux-only for now — the dashboard hides the pressure pill on macOS edges and shows only the static identity row, and `thermal_source` is omitted on macOS so it never claims a sensor that isn't being sampled.
+
+---
+
+## Per-stream configuration
+
+<Warning>
+**STUB:** content below pending human curation.
+</Warning>
+
+Each entry under `streams[id]` in an `edge_health` heartbeat carries an optional typed `stream_config` block describing the runtime-negotiated config for that stream. The block is a discriminated union keyed by `kind`:
+
+```json
+{
+  "streams": {
+    "rgb-0":      { "stream_config": { "kind": "camera", "source": "/dev/video0", "resolution": "1280x720", "fps": 15, "camera_type": "cv2" } },
+    "mic-0":      { "stream_config": { "kind": "audio",  "source": "alsa:hw:1,0", "sample_rate_hz": 48000, "channels": 2 } },
+    "lidar-front":{ "stream_config": { "kind": "lidar",  "source": "/dev/ttyUSB0", "scan_rate_hz": 10, "points_per_second": 200000 } }
+  }
+}
+```
+
+Drivers attach a block one of two ways:
+
+- `EdgeHealthCheck.register_stream_config(stream_id, config)` for static configs known at startup; the publisher keeps the snapshot and merges it into every heartbeat.
+- `EdgeHealthCheck(..., stream_config_provider=callable)` for dynamic configs where some fields are only known after streamer startup (post-V4L2 `actual_fps`, post-handshake codec, ...). The callable is invoked on every heartbeat and its values override registered statics on key collision.
+
+`register_stream_config` enforces a per-kind required-field contract: `kind: "camera"` must carry `source`, `resolution`, `fps`; `kind: "audio"` must carry `source`, `sample_rate_hz`, `channels`; `kind: "lidar"` requires `source` and `scan_rate_hz`; `kind: "imu"` requires `source` and `rate_hz`. Unknown kinds pass through additively. URL-shaped `source` values must have `user:pass@` stripped before they reach the wire — the SDK's `CV2CameraStreamer` does this automatically for RTSP and HTTP sources.
+
+A top-level `camera_config` slot remains populated for one deprecation release for out-of-tree consumers that still read the legacy single-camera shape. New consumers must read `streams[id].stream_config` instead — the legacy slot only ever covers one camera and is silent for audio / lidar / IMU streams. When more than one camera-kind `stream_config` is registered, the legacy slot deterministically reflects the lexicographically-smallest `stream_id` so multi-camera devices don't flap identities heartbeat-to-heartbeat.
+
+---
+
+## Upgrading
+
+<Warning>
+**STUB:** content below pending human curation.
+</Warning>
+
+Edge Core ships the orchestrator binary and a systemd unit file. From the high-availability watchdog release onward the unit uses `Type=notify` and the binary issues a `READY=1` notification at startup — the two must match.
+
+When upgrading on an existing device, re-run `sudo cyberwave edge install` after the package upgrade to regenerate the systemd unit. Skipping this step results in one of two states:
+
+- **Old binary, new unit (`Type=notify`):** systemd waits the full `TimeoutStartSec` (300 s) for a `READY=1` that never arrives and marks the service failed.
+- **New binary, old unit (`Type=simple`):** the service runs, but `WatchdogSec`/`OOMScoreAdjust`/`TimeoutStartSec` are not in effect — no watchdog protection.
+
+The Debian package post-install script regenerates the unit automatically, but manually installed binaries (e.g. `pip install cyberwave-edge-core` then `cyberwave edge install`) require the manual step.
+
+---
+
+## Related
+
+<CardGroup cols={3}>
+  <Card
+    title="Live Teleoperation"
+    icon="gamepad"
+    href="/use-cyberwave/teleoperation"
+  >
+    Control robots in real time through Edge Core
+  </Card>
+  <Card
+    title="Quick Start"
+    icon="bolt"
+    href="/overview/develop-remote-hardware"
+  >
+    Connect real hardware step by step
+  </Card>
+  <Card
+    title="Edge Drivers"
+    icon="truck-ramp-box"
+    href="/edge/drivers/overview"
+  >
+    Write and manage hardware drivers
+  </Card>
+</CardGroup>

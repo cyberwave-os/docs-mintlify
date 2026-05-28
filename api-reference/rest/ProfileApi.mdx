@@ -4,9 +4,9 @@ All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**src_users_api_profile_change_password**](ProfileApi.md#src_users_api_profile_change_password) | **PUT** /api/v1/users/@me/password/ | Change Password
-[**src_users_api_profile_complete_onboarding**](ProfileApi.md#src_users_api_profile_complete_onboarding) | **POST** /api/v1/users/@me/onboarding/complete/ | Complete Onboarding
-[**src_users_api_profile_update_profile**](ProfileApi.md#src_users_api_profile_update_profile) | **PATCH** /api/v1/users/@me/profile/ | Update Profile
+[**src_users_api_profile_change_password**](#src_users_api_profile_change_password) | **PUT** /api/v1/users/@me/password/ | Change Password
+[**src_users_api_profile_complete_onboarding**](#src_users_api_profile_complete_onboarding) | **POST** /api/v1/users/@me/onboarding/complete/ | Complete Onboarding
+[**src_users_api_profile_update_profile**](#src_users_api_profile_update_profile) | **PATCH** /api/v1/users/@me/profile/ | Update Profile
 
 
 # **src_users_api_profile_change_password**
@@ -63,7 +63,7 @@ with cyberwave.rest.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **password_change_schema** | [**PasswordChangeSchema**](PasswordChangeSchema.md)|  | 
+ **password_change_schema** | [**PasswordChangeSchema**](/api-reference/rest/PasswordChangeSchema)|  | 
 
 ### Return type
 
@@ -71,7 +71,7 @@ void (empty response body)
 
 ### Authorization
 
-[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+CustomTokenAuthentication
 
 ### HTTP request headers
 
@@ -84,7 +84,6 @@ void (empty response body)
 |-------------|-------------|------------------|
 **200** | OK |  -  |
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **src_users_api_profile_complete_onboarding**
 > OnboardingCompletionSchema src_users_api_profile_complete_onboarding()
@@ -142,11 +141,11 @@ This endpoint does not need any parameter.
 
 ### Return type
 
-[**OnboardingCompletionSchema**](OnboardingCompletionSchema.md)
+[**OnboardingCompletionSchema**](/api-reference/rest/OnboardingCompletionSchema)
 
 ### Authorization
 
-[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+CustomTokenAuthentication
 
 ### HTTP request headers
 
@@ -159,7 +158,6 @@ This endpoint does not need any parameter.
 |-------------|-------------|------------------|
 **200** | OK |  -  |
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **src_users_api_profile_update_profile**
 > ProfileResponseSchema src_users_api_profile_update_profile(profile_update_schema)
@@ -218,15 +216,15 @@ with cyberwave.rest.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **profile_update_schema** | [**ProfileUpdateSchema**](ProfileUpdateSchema.md)|  | 
+ **profile_update_schema** | [**ProfileUpdateSchema**](/api-reference/rest/ProfileUpdateSchema)|  | 
 
 ### Return type
 
-[**ProfileResponseSchema**](ProfileResponseSchema.md)
+[**ProfileResponseSchema**](/api-reference/rest/ProfileResponseSchema)
 
 ### Authorization
 
-[CustomTokenAuthentication](../README.md#CustomTokenAuthentication)
+CustomTokenAuthentication
 
 ### HTTP request headers
 
@@ -239,5 +237,4 @@ Name | Type | Description  | Notes
 |-------------|-------------|------------------|
 **200** | OK |  -  |
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

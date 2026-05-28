@@ -1,0 +1,136 @@
+---
+title: "Robotic dogs"
+description: "Build inspection automations with Cyberwave, mixing and matching any type of robotic dog"
+icon: "dog"
+---
+
+import { EdgeSetup } from "/snippets/edge-setup.mdx";
+
+Cyberwave treats every quadruped the same: drop a digital twin into an [environment](/get-started/key-concepts#environments), pair the hardware, and start sending commands from the dashboard, the [Python SDK](/tools/python-sdk), or an AI controller. The same workflow scales from the affordable [Unitree Go2](https://cyberwave.com/unitree/go2) all the way up to industrial platforms like the [Boston Dynamics Spot](https://cyberwave.com/boston-dynamics/spot).
+
+<iframe
+  width="100%"
+  height="400"
+  src="https://www.youtube.com/embed/Ap5VDNGbvR8"
+  title="Cyberwave robotic dogs: end-to-end"
+  frameBorder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowFullScreen
+  style={{ borderRadius: "0.5rem" }}
+/>
+
+---
+
+## Pick your dog
+
+Cyberwave supports **every major quadruped** out of the box, from the low-cost [Unitree Go2](https://cyberwave.com/unitree/go2) ([setup guide](/hardware/go2/get-started)) and the industrial-grade [Boston Dynamics Spot](https://cyberwave.com/boston-dynamics/spot) ([setup guide](/hardware/boston-dynamics/get-started)) to everything in between — browse the full lineup at [cyberwave.com/catalog/tag/dog](https://cyberwave.com/catalog/tag/dog).
+
+Every catalog page bundles the **bill of materials**, supported drivers, and **troubleshooting** specific to that dog — start there whenever you're unboxing new hardware.
+
+---
+
+## Set up a dog in 3 steps
+
+<Steps>
+  <Step title="Create an environment and add the dog">
+    From the [dashboard](https://cyberwave.com/dashboard), click **New Environment**, then **Add from Catalog** and search for your dog (e.g. `Go2`, `Spot`). Position the twin to match your real-world site.
+  </Step>
+
+  <Step title="Pair the hardware">
+    On any device connected to the dog — your laptop on the same network, a Raspberry Pi/Jetson riding on the robot, or by SSH'ing into the dog's onboard computer — install the CLI and pair:
+
+    <EdgeSetup />
+
+    The CLI auto-detects the dog, installs the right driver, and links it to the digital twin. If you are unsure how the dog you picked may connect, check out the its dedicated page on the catalog, as it details everything you need, as well as troubleshooting and FAQs. Example: [Page for the Go2](https://cyberwave.com/unitree/go2)
+
+  </Step>
+
+  <Step title="Stream sensors automatically">
+    Cyberwave already knows what's on your dog. As soon as `sudo cyberwave pair` completes, the dashboard lights up with the **video feed**, **LiDAR point cloud**, **audio**, and any other sensor the platform exposes — no per-sensor configuration required.
+  </Step>
+</Steps>
+
+<Check>
+  The dog streams pose, joint states, video, and LiDAR into Cyberwave in real
+  time, and the dashboard can drive it back through the edge.
+</Check>
+
+---
+
+## Control it from Python
+
+Once the twin is paired, the [Python SDK](/tools/python-sdk) gives you the same API for any dog in the catalog. Run this from your laptop or any cloud machine — Cyberwave handles the networking and orchestration end-to-end:
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+dog = cw.twin("unitree/go2")          # swap for "boston-dynamics/spot" or any other quadruped
+
+with cw.affect("live"):
+    dog.move_forward(distance=1.0)    # meters
+    frame = dog.capture_frame("numpy")  # latest frame from the dog's camera
+```
+
+Switching to a different dog is a **one-line change** — the rest of your automation stays exactly the same.
+
+---
+
+## Add autonomy with waypoints
+
+Cyberwave ships with **autonomous navigation out of the box**. You don't have to write a planner — just let the dog explore the environment, place [waypoints](/use-cyberwave/environment-editor) on the resulting map, and ask the dog to drive between them.
+
+<Steps>
+  <Step title="Explore">
+    Send the dog around the space in **Live Mode** or with the SDK. Cyberwave
+    builds an occupancy map from the LiDAR and camera streams.
+  </Step>
+  <Step title="Drop waypoints">
+    Open the environment, click anywhere on the map to add a waypoint, and label
+    it (`charging-dock`, `aisle-3`, `inspection-point-A`, …).
+  </Step>
+  <Step title="Drive between waypoints">
+    Trigger navigation from the dashboard, the SDK, or a workflow. The dog plans
+    and executes the path autonomously.
+  </Step>
+</Steps>
+
+---
+
+## Build inspection workflows
+
+Use [Workflows](/use-cyberwave/workflows) to turn waypoints into repeatable inspection missions. A typical pattern:
+
+`waypoint reached → capture frame → send to a cloud VLM → log finding / raise alert`
+
+See the [Go2 end-to-end tutorial](/tutorials/go2-digital-to-physical), the [rover AI mission tutorial](/tutorials/rover-ai-mission), and the [edge-to-cloud VLM tutorial](/tutorials/edge-to-cloud-vlm) for full walkthroughs.
+
+Because Cyberwave also speaks to [cameras](/get-started/cameras), [drones](/get-started/drones), and [arms](/get-started/robotic-arms), you can mix and match hardware in the same workflow — for example, a fixed ceiling camera that **triggers** the dog patrol, or a Spot that hands off to a UGV when it can't fit through a doorway.
+
+<Info>
+  Workflows can be authored **low-code** in the dashboard or directly in
+  **Python**. Cyberwave decides whether each step runs on the edge device next
+  to the dog, in a [cloud node](/tools/cloud-node), or a mix of both — your
+  automation and your hardware don't change.
+</Info>
+
+---
+
+## Where to go next
+
+<CardGroup cols={3}>
+  <Card
+    title="Unitree Go2 Setup"
+    icon="dog"
+    href="https://cyberwave.com/unitree/go2"
+  >
+    Step-by-step for the low-cost quadruped.
+  </Card>
+  <Card
+    title="Boston Dynamics Spot"
+    icon="dog"
+    href="https://cyberwave.com/boston-dynamics/spot"
+  >
+    Industrial-grade quadruped setup.
+  </Card>
+</CardGroup>

@@ -7,11 +7,19 @@ iconType: "solid"
 ---
 
 <Info>
-**Community tutorial.** Contributed by **Siddharth Mehta** through the [Cyberwave Builder Program](https://cyberwave.com/builders). Built and verified on the author's own SO-101 setup; your mileage may vary depending on hardware revision and environment.
+  **Community tutorial.** Contributed by **Siddharth Mehta** through the
+  [Cyberwave Builder Program](https://cyberwave.com/builders). Built and
+  verified on the author's own SO-101 setup; your mileage may vary depending on
+  hardware revision and environment.
 </Info>
 
 <Tip>
-**Reference implementation.** Full source for the helper scripts referenced below (`record_demos.py`, `convert_dataset.py`, training, inference, and config) lives in the author's repo: [siddharth270/Cyberwave-RoboticChef](https://github.com/siddharth270/Cyberwave-RoboticChef). Clone it to follow along, or use the snippets in each step as a guide for your own implementation.
+  **Reference implementation.** Full source for the helper scripts referenced
+  below (`record_demos.py`, `convert_dataset.py`, training, inference, and
+  config) lives in the author's repo:
+  [siddharth270/Cyberwave-RoboticChef](https://github.com/siddharth270/Cyberwave-RoboticChef).
+  Clone it to follow along, or use the snippets in each step as a guide for your
+  own implementation.
 </Tip>
 
 ## Introduction
@@ -66,14 +74,16 @@ Follow the prompts to log in and select your environment. The CLI will install a
 
 Before calibrating, you need a Cyberwave environment with the SO-101 arm and camera twins added and paired to the hardware. The full reference is in [SO-101 Get Started: Set Up the Cyberwave Environment](/hardware/so101/get-started#step-1-set-up-the-cyberwave-environment).
 
-1. In the Cyberwave dashboard, click **New Environment** and give it a name (e.g. *"Sandwich Bot"*).
+1. In the Cyberwave dashboard, click **New Environment** and give it a name (e.g. _"Sandwich Bot"_).
 2. Click **Add from Catalog**, search for **SO101**, and add it to the environment. Position it to roughly match your physical setup.
 3. Click **Add from Catalog** again, search for **Standard Camera**, and add it.
 4. Open the camera twin in **Edit Mode**, set **Dock to Twin** to the **SO101** twin, and set **Parent Root** to **wrist**. The camera will now follow the arm's end-effector during teleoperation and recording.
 5. Pair the hardware by following the terminal prompts from `cyberwave edge install`: select your environment, select the SO101 twin (the driver auto-installs), then repeat for the camera twin.
 
 <Tip>
-The wrist-mounted camera is the visual input SmolVLA learns from. Lock the dock position now: any later change invalidates the demonstrations you'll record in Step 3.
+  The wrist-mounted camera is the visual input SmolVLA learns from. Lock the
+  dock position now: any later change invalidates the demonstrations you'll
+  record in Step 3.
 </Tip>
 
 ### Calibrate the arms in the product UI
@@ -81,7 +91,8 @@ The wrist-mounted camera is the visual input SmolVLA learns from. Lock the dock 
 Calibration teaches the software where each joint's zero position is, what its valid movement range is, and how the physical arm maps to the software model. Without it, joint commands won't translate correctly to hardware. For the full reference, see [SO-101 Get Started](/hardware/so101/get-started#step-3-calibrate-the-arms).
 
 <Warning>
-You must calibrate each arm individually. For this dual-arm setup, complete calibration for both the leader and the follower.
+  You must calibrate each arm individually. For this dual-arm setup, complete
+  calibration for both the leader and the follower.
 </Warning>
 
 1. Open the **Cyberwave dashboard** and navigate to your environment.
@@ -92,7 +103,9 @@ You must calibrate each arm individually. For this dual-arm setup, complete cali
 6. Once both arms are calibrated, the platform will confirm calibration is complete.
 
 <Tip>
-Move each joint slowly and through its full range. Accurate calibration directly improves control precision during teleoperation and the quality of the demonstrations you'll record in Step 3.
+  Move each joint slowly and through its full range. Accurate calibration
+  directly improves control precision during teleoperation and the quality of
+  the demonstrations you'll record in Step 3.
 </Tip>
 
 ### Calibrate the arms via the CLI (alternative)
@@ -125,7 +138,9 @@ robot = cw.twin(
 ```
 
 <Tip>
-**Key discovery.** `cw.affect("live")` must be called before any robot interaction. Without it, MQTT never connects and all joint commands silently fail.
+  **Key discovery.** `cw.affect("live")` must be called before any robot
+  interaction. Without it, MQTT never connects and all joint commands silently
+  fail.
 </Tip>
 
 ## Step 2: Understand the Cyberwave SDK
@@ -179,7 +194,7 @@ jpg_bytes = robot.capture_frame("bytes", sensor_id="wrist_cam")
 frame     = robot.capture_frame("numpy", sensor_id="wrist_cam")  # for ML inference
 ```
 
-See the [Python SDK reference](/sdks/python-sdk#frame-capture) for all supported output formats (`"numpy"`, `"pil"`, `"bytes"`, or a temp JPEG file path).
+See the [Python SDK reference](/tools/python-sdk#frame-capture) for all supported output formats (`"numpy"`, `"pil"`, `"bytes"`, or a temp JPEG file path).
 
 ## Step 3: Record demonstrations
 
@@ -198,7 +213,8 @@ Each episode captures:
 - Output written to `data/episodes/episode_NNNN/` as `states.npy`, `actions.npy`, `timestamps.npy`, plus a `frames/` directory of JPEGs and an `episode.json` manifest
 
 <Tip>
-Record 10 to 15 consistent demonstrations. Vary the starting positions slightly between episodes for better generalization.
+  Record 10 to 15 consistent demonstrations. Vary the starting positions
+  slightly between episodes for better generalization.
 </Tip>
 
 ## Step 4: Convert to LeRobot format
@@ -224,7 +240,11 @@ data/processed/
 To upload directly to the Hugging Face Hub after conversion, add `--upload`.
 
 <Tip>
-If LeRobot's loader rejects the dataset, rebuild with the native API for guaranteed compatibility. See [LeRobotDataset.create](https://github.com/huggingface/lerobot) and adapt the same `state` / `action` / `observation.images.image` keys the converter writes.
+  If LeRobot's loader rejects the dataset, rebuild with the native API for
+  guaranteed compatibility. See
+  [LeRobotDataset.create](https://github.com/huggingface/lerobot) and adapt the
+  same `state` / `action` / `observation.images.image` keys the converter
+  writes.
 </Tip>
 
 ## Step 5: Fine-tune SmolVLA
@@ -265,4 +285,4 @@ A complete imitation learning pipeline, from teleoperation to autonomous executi
 
 ---
 
-*Built by Siddharth Mehta as part of the Cyberwave Builder Program.*
+_Built by Siddharth Mehta as part of the Cyberwave Builder Program._
