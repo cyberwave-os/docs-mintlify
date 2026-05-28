@@ -62,6 +62,7 @@
               "tutorials/intrusion-detection",
               "tutorials/go2-digital-to-physical",
               "tutorials/so101-voice-pick-and-place",
+              "tutorials/ugv-voice-controlled"
               "tutorials/so101-teleop-dataset"
             ]
           },
