@@ -47,7 +47,25 @@
           {
             "group": "SDKs and Tools",
             "pages": [
-              "overview/tools/python-sdk",
+              {
+                "group": "Python SDK",
+                "icon": "python",
+                "pages": [
+                  "overview/tools/python-sdk",
+                  "overview/tools/python-sdk/quickstart",
+                  "overview/tools/python-sdk/workspaces-projects-environments",
+                  "overview/tools/python-sdk/twin-control",
+                  "overview/tools/python-sdk/joints-and-poses",
+                  "overview/tools/python-sdk/frames-and-cameras",
+                  "overview/tools/python-sdk/streaming",
+                  "overview/tools/python-sdk/drones",
+                  "overview/tools/python-sdk/agents",
+                  "overview/tools/python-sdk/edge-workers-data",
+                  "overview/tools/python-sdk/ml-models",
+                  "overview/tools/python-sdk/datasets",
+                  "overview/tools/python-sdk/workflows-alerts"
+                ]
+              },
               "overview/tools/claude-skill",
               "overview/tools/mcp-server",
               "overview/tools/cpp-sdk"

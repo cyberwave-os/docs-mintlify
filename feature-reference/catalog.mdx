@@ -173,6 +173,43 @@ curl -X POST "https://api.cyberwave.com/api/v1/assets/create-with-urdf" \
 
 ### Upload via Python SDK
 
+The SDK supports large GLB uploads by automatically switching to an attachment + signed-URL flow
+when files exceed the standard upload limit. Create the asset first, then upload the mesh by UUID:
+
 ```python
-cw.assets.upload_glb("path/to/model.glb", name="My Robot", description="Custom robot model")
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+
+asset = cw.assets.create(
+    name="Warehouse Shelf",
+    description="Large GLB upload example",
+)
+
+# Automatically chooses direct upload (small files) or signed-URL flow (large files)
+updated_asset = cw.assets.upload_glb(asset.uuid, "/path/to/warehouse_shelf.glb")
+print(updated_asset.glb_file)
+```
+
+---
+
+## Primitive Assets
+
+Primitive assets are curated public catalog entries with a short **alias** (e.g. `camera`,
+`lidar`). They can be instantiated directly by alias without knowing the full `vendor/slug`
+registry ID — making it easy to quickly populate an environment.
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+
+# List all catalog primitives (public assets with a registry_id_alias)
+primitives = cw.assets.list_primitives()
+for asset in primitives:
+    print(f"{asset.registry_id_alias!r:20} -> {asset.registry_id}")
+
+# Instantiate a primitive directly by its alias
+camera = cw.twin("camera")
+lidar  = cw.twin("lidar")
 ```

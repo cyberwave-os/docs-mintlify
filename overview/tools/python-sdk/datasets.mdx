@@ -1,0 +1,89 @@
+---
+title: "Datasets"
+description: "Import, convert, and export robotics datasets with cw.datasets (LeRobot, RLDS, parquet, and more)"
+icon: "database"
+---
+
+import EarlyAccess from "/snippets/early-access.mdx";
+
+<EarlyAccess />
+
+Import, manage, and export robotics datasets with `cw.datasets`.
+
+## Import
+
+```python
+# Import from HuggingFace.
+# Idempotent by default: if the same repo was already imported it is reused.
+# Pass reuse_existing=False to force a fresh import.
+ds = cw.datasets.add("lerobot/pusht", name="pusht")
+
+# Import with a specific revision / subset
+ds = cw.datasets.add(
+    "lerobot/aloha_sim_insertion_human",
+    name="aloha-insertion",
+    hf_revision="main",
+    hf_subset="default",
+)
+
+# Upload a local dataset (directory or zip)
+ds = cw.datasets.add("./my_lerobot_dataset", name="my-dataset")
+
+# List, get, delete
+datasets = cw.datasets.list(limit=20, processing_status="completed")
+ds = cw.datasets.get("dataset-uuid")
+cw.datasets.delete("dataset-uuid")
+
+# Get the frontend URL (does not print — caller decides what to do with it)
+url = cw.datasets.visualize(ds)
+print(url)  # → https://cyberwave.com/acme/datasets/pusht
+```
+
+Wait until an async HuggingFace import completes:
+
+```python
+# Default on_poll prints one status line per poll; pass on_poll=None to silence.
+ds = cw.datasets.wait_until_ready(ds)
+
+ds = cw.datasets.wait_until_ready(
+    ds,
+    poll_interval=5.0,
+    timeout=1800,
+    on_poll=lambda d: print(f"{d.processing_status} {d.processed_episodes}/{d.total_episodes}"),
+)
+
+# Fully silent (for libraries / production)
+ds = cw.datasets.wait_until_ready(ds, on_poll=None)
+```
+
+## Export / download a converted format
+
+Both calls are idempotent — if a conversion artifact already exists it is returned immediately;
+otherwise conversion is kicked off automatically.
+
+```python
+# Block until backend conversion is done; returns the signed download URL.
+url = cw.datasets.convert(ds, "rlds")
+print(url)   # signed URL valid for 24 h
+
+# Convert AND stream the zip to disk in one call.
+path = cw.datasets.download(ds, "rlds", dest="./data")
+print(path)  # absolute path to the saved file
+
+# Silence progress output
+url  = cw.datasets.convert(ds, "rlds", on_poll=None)
+path = cw.datasets.download(ds, "rlds", dest="./data", on_poll=None)
+```
+
+| `format` | Description |
+| --- | --- |
+| `parquet` | Cyberwave joined-parquet zip (native) |
+| `lerobot3` | LeRobot v3 — recommended for LeRobot training pipelines |
+| `lerobot21` | LeRobot v2.1 |
+| `rlds` | RLDS / TF-Record (Open-X-Embodiment) |
+| `openvla` | Cyberwave OpenVLA TFDS bundle |
+| `robodm` | Berkeley `.vla` format |
+
+<Card title="Models & Datasets" icon="database" href="/overview/features/models-and-datasets">
+  Training datasets and how they fit into the platform.
+</Card>
