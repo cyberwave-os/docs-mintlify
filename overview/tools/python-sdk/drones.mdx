@@ -1,0 +1,74 @@
+---
+title: "Drones & Flying Twins"
+description: "Control flying twins from the SDK: takeoff, landing, hover, gimbal, return-to-home, and hovering intent"
+icon: "helicopter"
+---
+
+import EarlyAccess from "/snippets/early-access.mdx";
+
+<EarlyAccess />
+
+Twins whose asset has `can_fly: true` are returned as `FlyingTwin` instances. `FlyingTwin` inherits
+from `LocomoteTwin`, so flying twins also expose the locomotion verbs (`move_forward`,
+`move_backward`, `turn_left`, `turn_right`) on top of their aerial-specific surface.
+
+| Surface | Methods |
+| --- | --- |
+| Flight phase | `takeoff()`, `land()`, `hover()`, `cancel_takeoff()`, `cancel_landing()` |
+| Return to home | `return_to_home()`, `cancel_return_to_home()`, `set_home_here()` |
+| Service / safety | `start_compass_calibration()`, `stop_compass_calibration()`, `reboot()`, `emergency_stop()` |
+| Gimbal | `gimbal_rotate(pitch=…, roll=…, yaw=…, mode=…, duration=…)`, `gimbal_recenter()`, `gimbal_rotate_speed(pitch=…, roll=…, yaw=…)` |
+| Locomotion (inherited) | `move_forward()`, `move_backward()`, `turn_left()`, `turn_right()` |
+
+All commands publish on the canonical `{topic_prefix}cyberwave/twin/{uuid}/command` topic with the
+standard `{source_type, command, data, timestamp}` envelope — the same contract every Cyberwave
+drone driver listens on. See the [MQTT API Reference](/api-reference/mqtt/main) for the envelope
+details.
+
+## Flight control
+
+```python
+from cyberwave import Cyberwave
+from cyberwave.twin import FlyingTwin
+
+cw = Cyberwave()
+cw.affect("real-world")  # or "simulation" for a dry run
+
+drone: FlyingTwin = cw.twin("SZ-DJI-Technology/DJI-Mini-4-Pro")  # type: ignore[assignment]
+
+drone.takeoff(altitude=2.0)
+drone.move_forward(1.5)                          # locomotion (sim + future off-RC teleop)
+drone.gimbal_rotate(pitch=-45.0, duration=1.5)   # tilt camera 45° down
+drone.gimbal_rotate_speed(pitch=50.0)            # cinematic pan
+drone.gimbal_recenter()                          # back to 0° / absolute
+drone.return_to_home()                           # with confirm flow
+drone.land()                                     # auto-arms landing-confirmation flow
+```
+
+## Hovering intent
+
+Hovering helpers persist the controller's *intent* in `twin.metadata.status` (useful in the
+Cyberwave playground simulator, where `controller_requested_hovering=True` disables gravity for that
+twin so it stays at its current altitude visually):
+
+```python
+if drone.is_hovering():
+    status = drone.get_hovering_status()
+    print(f"Hovering at {status['controller_requested_hovering_altitude']} m")
+```
+
+```json
+{
+  "status": {
+    "controller_requested_hovering": true,
+    "controller_requested_hovering_altitude": 2.0
+  }
+}
+```
+
+The `controller_requested_` prefix makes it clear these are controller intentions, not ground-truth
+sensor readings from the drone.
+
+<Card title="Drones" icon="helicopter" href="/overview/drones">
+  Supported aircraft, bills of materials, and per-drone troubleshooting.
+</Card>

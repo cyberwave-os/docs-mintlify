@@ -1,0 +1,123 @@
+---
+title: "Quickstart"
+description: "Get an API key, create your first digital twin, and control it from Python"
+icon: "rocket"
+---
+
+import EarlyAccess from "/snippets/early-access.mdx";
+
+<EarlyAccess />
+
+This is the canonical first run for the `cyberwave` Python SDK. By the end you'll have a digital
+twin created from the catalog and a working control loop.
+
+<Note>
+  New to the SDK? Start with [Overview & Installation](/overview/tools/python-sdk) for
+  `pip install cyberwave` and the optional extras.
+</Note>
+
+## 1. Get your API key
+
+<Steps>
+  <Step title="Log in">
+    Log in to your Cyberwave instance.
+  </Step>
+  <Step title="Open API Tokens">
+    Navigate to [Profile](https://cyberwave.com/profile) → **API Tokens**.
+  </Step>
+  <Step title="Create and copy a key">
+    Create an API key and copy it. Treat it like a password.
+  </Step>
+</Steps>
+
+See [Setup & Authentication](/feature-reference/setup-cyberwave) for the full authentication
+reference.
+
+## 2. Create your first digital twin
+
+```python
+from cyberwave import Cyberwave
+
+# Configure with your API key
+cw = Cyberwave(api_key="your_api_key_here")
+
+# For simulator-first scripts, initialize with simulation defaults
+sim_cw = Cyberwave(api_key="your_api_key_here", mode="simulation")
+
+# Create a digital twin from an asset
+robot = cw.twin("the-robot-studio/so101")
+
+# If no default environment is configured, this creates a "Quickstart Environment"
+# and places the twin there automatically.
+
+# Change position and rotation in the environment editor
+robot.edit_position(x=1.0, y=0.0, z=0.5)
+robot.edit_rotation(yaw=90)  # degrees
+```
+
+`cw.twin(...)` is the primary entry point (singular). Pass an asset registry ID
+(`vendor/model`), a UUID, or a [unified slug](/feature-reference/concepts/slug-system) — they're
+interchangeable wherever an identifier is accepted.
+
+### Target a specific environment
+
+```python
+# Get-or-create a twin in an environment you created
+robot = cw.twin("the-robot-studio/so101", environment_id="YOUR_ENVIRONMENT_ID")
+
+# Fetch an existing twin by UUID or slug
+twin = cw.twin(twin_id="YOUR_TWIN_UUID")
+twin = cw.twin(twin_id="acme/twins/my-arm")
+```
+
+## 3. Move and control the twin
+
+```python
+import math
+
+# For locomotion twins, declare whether you want to affect the simulation
+# or the live robot, then call movement methods without source_type arguments
+rover = cw.twin("unitree/go2")
+cw.affect("simulation")   # or cw.affect("live") for the physical robot
+rover.move_forward(distance=1.0)
+rover.turn_left(angle=1.57)
+
+# Move a joint by name (from joints.list())
+joint_names = robot.joints.list()
+if joint_names:
+    robot.set_joints({joint_names[0]: -0.2})
+    print(joint_names[0], ":", robot.joints[joint_names[0]])
+
+# Or read everything back
+print(robot.get_joints())
+```
+
+Next: [Twin Control](/overview/tools/python-sdk/twin-control) for locomotion, commands, and
+runtime modes, and [Joints & Poses](/overview/tools/python-sdk/joints-and-poses) for articulated
+control.
+
+## Environment variables
+
+If you always use the same key and environment, set them once and call `Cyberwave()` with no
+arguments:
+
+```bash
+export CYBERWAVE_API_KEY="YOUR_TOKEN"
+export CYBERWAVE_ENVIRONMENT_ID="YOUR_ENVIRONMENT_ID"
+python your_script.py
+```
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+robot = cw.twin("the-robot-studio/so101")
+```
+
+With `CYBERWAVE_ENVIRONMENT_ID` set, this returns the first SO101 twin in your environment, or
+creates it if it doesn't exist.
+
+| Variable | Purpose |
+| --- | --- |
+| `CYBERWAVE_API_KEY` | API token used to authenticate the client |
+| `CYBERWAVE_ENVIRONMENT_ID` | Default environment for `cw.twin()` when no `environment_id` is passed |

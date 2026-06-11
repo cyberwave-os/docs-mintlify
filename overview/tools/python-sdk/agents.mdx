@@ -1,0 +1,73 @@
+---
+title: "Agents"
+description: "Use the typed agent namespaces under cw.agents for backend planning, previews, and explicit dispatch"
+icon: "robot"
+---
+
+import EarlyAccess from "/snippets/early-access.mdx";
+
+<EarlyAccess />
+
+The SDK exposes typed agent namespaces under `cw.agents`. Use direct resource APIs for
+deterministic commands, and agent APIs when you want backend planning, previews, setup guidance, or
+explicit dispatch.
+
+- `cw.agents.environment` — environment editor agent messages and agent-created environments.
+- `cw.agents.workflow` — workflow planning, preview, setup-and-draft, and constrained workflow edits.
+- `cw.agents.control` — control surfaces, route/action planning, route resolution, and explicit dispatch.
+- `cw.agents.embodiment` — server-built embodiment context for an environment or twin.
+
+`cw.control` is a convenience alias for `cw.agents.control`.
+
+## Control: plan and dispatch
+
+Inspect metadata-derived twin controls with `cw.agents.control.surfaces(...)`, get a plan with
+`cw.agents.control.plan(...)` or `cw.agents.control.resolve_route(...)`, dispatch one selected action
+with `cw.control.dispatch(..., confirmed=True)`, then monitor it with `cw.actions.wait(...)`.
+
+```python
+cw = Cyberwave(mode="simulation")
+
+surfaces = cw.agents.control.surfaces("environment-uuid")
+print(surfaces[0]["capabilities"])
+
+plan = cw.agents.control.plan(
+    "environment-uuid",
+    "Move the Go2 to Waypoint A",
+    twin_uuid="twin-uuid",
+    mode="simulation",
+)
+
+response = cw.control.dispatch(
+    "environment-uuid",
+    plan["dispatchable_actions"][0],
+    confirmed=True,
+)
+
+status = cw.actions.wait(
+    response["action_id"],
+    twin_uuid="twin-uuid",
+    timeout=60,
+)
+```
+
+## Workflow and environment agents
+
+Workflow and environment agents follow the same plan / preview / apply shape:
+
+```python
+draft = cw.agents.workflow.plan(
+    "environment-uuid",
+    "inspect every pallet and alert if damage is detected",
+)
+
+preview = cw.agents.workflow.preview(
+    "environment-uuid",
+    "inspect every pallet and alert if damage is detected",
+)
+
+context = cw.agents.embodiment.context(
+    "environment-uuid",
+    twin_uuid="twin-uuid",
+)
+```

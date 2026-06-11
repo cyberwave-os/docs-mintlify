@@ -1,0 +1,188 @@
+---
+title: "Frames & Cameras"
+description: "Grab still frames from a twin via get_frame(), pick the right transport, and discover CV2 and RealSense cameras"
+icon: "camera"
+---
+
+import EarlyAccess from "/snippets/early-access.mdx";
+
+<EarlyAccess />
+
+`twin.get_frame()` is the single entry point for still images. It has two independent parameters:
+
+- `source=` — **where** the pixels are produced (default `"cloud"`).
+- `format=` — **how** you want them back: `"bytes"`, `"numpy"`, `"pil"`, or `"path"` (write a JPEG
+  and return the file path). Default: `"bytes"`.
+
+<Note>
+  For continuous WebRTC video and audio streaming, see
+  [Streaming](/overview/tools/python-sdk/streaming).
+</Note>
+
+## Runtime mode — `cw.affect()` (cloud only)
+
+Sim vs. live is **not** a `source=` option. Set it once on the client with `cw.affect()` and it
+applies to `twin.get_frame()` as well as other twin getters/setters. By default the runtime mode is
+`live`.
+
+| `cw.affect(...)` | What `robot.get_frame()` sees (`source="cloud"`) |
+| --- | --- |
+| `"simulation"` | Latest frame from the **simulator** bucket (virtual camera in the scene). |
+| `"live"` | Latest frame from the **live / teleoperation** bucket (edge or active stream mirrored to the platform). |
+
+```python
+cw.affect("simulation")
+sim_jpeg = robot.get_frame()    # sim latest-frame — no edge hardware required
+
+cw.affect("live")
+live_jpeg = robot.get_frame()   # live latest-frame — what the UI / teleop path sees
+```
+
+When the client is in **simulation** runtime mode, only `source="cloud"` is allowed. `local`,
+`zenoh`, and `remote_edge` raise — those transports are for on-machine / edge workflows, not the
+sim-first client default.
+
+## Frame sources — `source=`
+
+Pick the transport that matches **where your script runs** relative to the camera.
+
+<Tabs>
+  <Tab title="cloud (default)">
+    Works from anywhere with API access — notebooks, Colab, CI. Calls the platform
+    `/latest-frame` API. No local driver, Zenoh, or stream required.
+
+    **Fail-soft:** returns `None` if the endpoint has no frame yet. Sim vs. live bucket is
+    determined by `cw.affect()`.
+
+    ```python
+    jpeg  = robot.get_frame()                                   # bytes from latest-frame
+    arr   = robot.get_frame("numpy")                            # decoded array
+    wrist = robot.get_frame("numpy", sensor_id="wrist_cam")     # multi-camera twins
+    ```
+  </Tab>
+  <Tab title="remote_edge">
+    Still from hardware over MQTT. Sends the twin's MQTT `take_photo` command and waits for a JPEG
+    on the driver photo topic. Useful when there is **no active video stream** but the edge driver
+    can capture a single image on demand.
+
+    **Raises** on timeout or driver error (unlike cloud, which is fail-soft).
+
+    ```python
+    edge_jpeg = robot.get_frame("bytes", source="remote_edge")
+    ```
+  </Tab>
+  <Tab title="local (advanced)">
+    Same process as your stream — typical when writing or testing drivers. After
+    `twin.start_streaming()`, `source="local"` reads the current frame from the in-process
+    `CameraStreamer` **without** a round trip to Cyberwave servers.
+
+    ```python
+    robot.start_streaming()   # publishes via MQTT; streamer lives on this process
+    frame = robot.get_frame("numpy", source="local")
+    ```
+
+    **Scope:** only meaningful in the process that owns the stream. If no streamer is running,
+    `local` falls back to a single OpenCV grab from device `idx` (default `0`).
+  </Tab>
+  <Tab title="zenoh (advanced)">
+    Same machine as the driver. Reads the latest sample on the twin's `cw.data` `frames` channel.
+    Use when your script runs on the **same device (or Zenoh-reachable LAN)** as the edge camera
+    driver.
+
+    ```python
+    frame = robot.get_frame("numpy", source="zenoh")
+    ```
+
+    **Scope:** does not work from arbitrary remote hosts unless Zenoh is explicitly reachable.
+  </Tab>
+</Tabs>
+
+### Quick reference
+
+| `source` | Runs from | Needs |
+| --- | --- | --- |
+| `cloud` | Anywhere with API key | Twin has a latest-frame; `cw.affect()` for sim vs live |
+| `remote_edge` | Anywhere with MQTT to twin | Driver supports `take_photo` |
+| `local` | Same process as `start_streaming()` | Active `CameraStreamer`, or local OpenCV device |
+| `zenoh` | Same host / Zenoh LAN as driver | Driver publishing `cw.data` frames |
+
+## Output format and bursts
+
+```python
+path = robot.get_frame("path")                                  # temp JPEG on disk
+path = robot.get_frame("path", path="/tmp/frame.jpg", source="local")
+
+folder = robot.get_frames(5, interval_ms=200)                   # numbered JPEGs in a temp dir
+frames = robot.get_frames(5, format="bytes")                    # list of raw JPEG bytes
+```
+
+<Warning>
+  `twin.get_latest_frame()` remains for backward compatibility (raises on error). Deprecated
+  aliases on `twin.camera` (`latest_frame`, `capture`, `read`, `snapshot`, `edge_photo`, …) and the
+  older `capture_frame` helper delegate to `get_frame` with a `DeprecationWarning`. New code should
+  use `get_frame`.
+</Warning>
+
+## Camera & sensor discovery
+
+Discover the CV2 (standard webcam) devices attached to your machine:
+
+```python
+from cyberwave.sensor import CV2VideoTrack, CV2CameraStreamer, CameraConfig, Resolution
+
+# Supported resolutions for a camera
+supported = CV2VideoTrack.get_supported_resolutions(camera_id=0)
+print(f"Supported: {[str(r) for r in supported]}")
+
+# Camera info
+info = CV2VideoTrack.get_camera_info(camera_id=0)
+
+# Build a streamer from a config
+config = CameraConfig(resolution=Resolution.HD, fps=30, camera_id=0)
+streamer = CV2CameraStreamer.from_config(cw.mqtt, config, twin_uuid="...")
+```
+
+## RealSense (RGB + Depth)
+
+```python
+from cyberwave.sensor import RealSenseDiscovery, RealSenseConfig, RealSenseStreamer, Resolution
+
+if RealSenseDiscovery.is_available():
+    devices = RealSenseDiscovery.list_devices()
+    for dev in devices:
+        print(f"{dev.name} (SN: {dev.serial_number})")
+
+    info = RealSenseDiscovery.get_device_info()
+    print(f"Color resolutions: {info.get_color_resolutions()}")
+    print(f"Depth resolutions: {info.get_depth_resolutions()}")
+
+# Auto-detect and create a streamer from device capabilities
+streamer = RealSenseStreamer.from_device(
+    cw.mqtt,
+    prefer_resolution=Resolution.HD,
+    prefer_fps=30,
+    enable_depth=True,
+    twin_uuid="your_twin_uuid",
+)
+
+# Or use a validated manual configuration
+config = RealSenseConfig(
+    color_resolution=Resolution.HD,
+    depth_resolution=Resolution.VGA,
+    color_fps=30,
+    depth_fps=15,
+    enable_depth=True,
+)
+is_valid, errors = config.validate()
+streamer = RealSenseStreamer.from_config(cw.mqtt, config, twin_uuid="...")
+```
+
+<Info>
+  **Raspberry Pi / ARM64:** `pip install cyberwave[realsense]` installs the Python wrapper, but you
+  must also have the `librealsense` SDK. On Raspberry Pi OS (ARM64) there are no pre-built packages —
+  build from source per the [Raspberry Pi setup guide](/feature-reference/edge/raspberry-pi).
+</Info>
+
+<Card title="Camera Features" icon="camera" href="/overview/cameras">
+  Supported camera types and how cameras integrate with workflows.
+</Card>
