@@ -1,7 +1,5 @@
 # Cyberwave Docs
 
-## Overview
-
 This repository contains the Cyberwave documentation site, including quickstart guides, API references, SDK examples, and conceptual overviews. The content is written in Markdown/MDX and organized to mirror the product areas, making it easy to update or extend alongside product changes.
 
 Key directories:
