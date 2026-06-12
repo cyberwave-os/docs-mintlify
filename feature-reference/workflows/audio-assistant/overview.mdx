@@ -1,119 +1,81 @@
 ---
 title: "Audio Assistant"
-description: "VAD-powered speech segmentation and acoustic event detection for audio pipelines."
+description: "Voice Activity Detection (VA) and acoustic event detection (SSG) for edge audio workflows."
 icon: "volume-high"
 stub: true
 ---
 
-The **Audio Assistant** node 🔊 sits between an [Audio Track](/use-cyberwave/workflows/audio-track/overview) trigger and downstream STT/model nodes. It uses **Silero VAD** to intelligently segment continuous audio streams into clean speech utterances before triggering the next pipeline stage.
+The **Audio Assistant** node sits between an [Audio Track](/use-cyberwave/workflows/audio-track/overview) trigger and downstream nodes (STT, alerts, models). It normalizes all input to **PCM S16LE int16 @ 16 kHz mono** via the shared audio ingress layer—the same contract as the rest of the audio pipeline.
 
-## Pipeline Position
+## Pipeline position
 
 ```
-Audio Track Trigger → Audio Assistant → Call Model (Whisper/STT)
+Audio Track Trigger → Audio Assistant → Call Model / Send Alert / …
 ```
-
-The Audio Track trigger fires on every raw PCM chunk from a twin's microphone. Without the Audio Assistant, every chunk — including silence and noise — hits the STT API. The Audio Assistant filters and segments the stream so only meaningful speech reaches downstream models.
 
 ## Modalities
 
-### 🔊 Voice Assistant (VA) — Voice Activity Detection
-
-Uses Silero VAD to detect speech start/end in continuous audio streams. Four pre-configured profiles:
-
-| Sub-Modality | Icon | Use Case |
+| Modality | Purpose | Engine |
 |---|---|---|
-| **Batch (The Librarian)** | 📖 | Offline file segmentation for STT. Groups utterances into ~28s chunks for Whisper's 30s window. |
-| **Streaming (The Butler)** | 🎬 | Real-time command endpointing. Low latency, rejects background noise. |
-| **Dictation (The Secretary)** | 🖋️ | Long-form continuous speech. Tolerates pauses for thinking. |
-| **Custom** | ⚙️ | Full manual control over all Silero VAD parameters. |
+| **Voice Assistant (VA)** | Segment speech utterances | Silero VAD |
+| **Sound Security Guard (SSG)** | Detect security-related acoustic events | MIT AST (AudioSet) |
 
-### 🚨 Sound Security Guard (SSG) — Acoustic Event Detection
+Only one modality is active per node instance.
 
-Skeleton for future acoustic event classification using Large-Scale Pretrained Audio Neural Networks (PANNs).
+## Shared audio contract
 
-| Sub-Modality | Icon | Use Case |
+| Direction | Key | Format |
 |---|---|---|
-| **Glass Break / Falling Objects** | 💥 | Detect glass shattering and heavy impacts. |
-| **Constant Alarm (Siren)** | 🚨 | Detect sustained alarm tones and sirens. |
-| **"Help!" / Screaming** | 🆘 | Detect human distress calls and screams. |
-| **Custom** | ⚙️ | Configure custom acoustic event detection. |
+| Input | `audio` | PCM S16LE numpy `int16`, float32, raw bytes, or WAV—adapted to int16 @ 16 kHz mono |
+| Output | `audio` | int16 mono @ 16 kHz (when a segment or alert window is emitted) |
+| Output | `sample_rate_hz` | Always `16000` |
+| Output | `channels` | Always `1` |
 
-<Warning>
-SSG mode is not yet implemented. Audio will be forwarded unchanged. Runtime will use Large-Scale Pretrained Audio Neural Networks in a future release.
-</Warning>
+Upstream **Audio Track** buffer presets control chunk size into the node:
 
-## Input / Output Format
+| Preset | Chunk size | Typical use |
+|---|---|---|
+| Voice Assistant (32 ms) | 512 samples | VA streaming (matches Silero frame size) |
+| Wake Word (80 ms) | 1280 samples | Wake Word Engine |
+| Speech-To-Text (4 s) | 64000 samples | Batch / long windows |
 
-| Direction | Key | Type | Description |
-|---|---|---|---|
-| **Input** | `audio` | AUDIO | Accepts PCM S16LE int16 (zero-copy), float32, WAV bytes, or raw PCM bytes. Automatically adapted to int16 @ 16 kHz mono. |
-| **Output** | `audio` | AUDIO | Extracted speech as PCM S16LE int16 numpy array. Mono, 16 kHz. Only emitted when a complete speech segment is detected (speech end). |
-| **Output** | `speech_probability` | NUMBER | Raw Silero VAD confidence (Python float, 0.0-1.0). Emitted on **every chunk** — acts as a continuous logic gate / trigger signal. |
-| **Output** | `is_speaking` | BOOLEAN | True while speech is active. Emitted on every chunk. |
+For **SSG**, prefer accumulating at least **1–4 s** per analysis window (default analysis preset: Speech-To-Text 4 s).
 
-### Two output modes
+## Edge execution
 
-The Audio Assistant emits outputs on **every incoming audio chunk**, but the content differs depending on state:
+Audio Assistant nodes are **edge-only**. Workflows compile to a `wf_*.py` worker module and sync to the device:
 
-**While accumulating speech** (no complete segment yet):
-
-```json
-{ "speech_probability": 0.87, "is_speaking": true, "sample_rate_hz": 16000, "channels": 1 }
+```bash
+cyberwave workflow compile <workflow-uuid>    # inspect emitted source + warnings
+cyberwave workflow sync --twin-uuid <twin>  # deploy to edge
 ```
 
-**When speech ends** (complete segment extracted):
+Typical chain:
 
-```json
-{
-  "audio": "<numpy int16 array>",
-  "speech_probability": 0.92,
-  "is_speaking": false,
-  "sample_rate_hz": 16000,
-  "channels": 1,
-  "start_timestamp_sec": 1.2,
-  "end_timestamp_sec": 3.8
-}
+```
+Audio Track (@cw.on_audio) → Audio Assistant → Send Alert / Call Model
 ```
 
-The `speech_probability` output is useful for:
-- Downstream logic gates that need to react before the full segment is ready
-- UI visualizations (waveform activity indicators)
-- Custom nodes that need the VAD trigger signal as a float
+Compile checks:
 
-### Output Buffer Preset
+- **VA** upstream Audio Track must use buffer preset **Voice Assistant (32 ms)**.
+- **SSG** upstream Audio Track should use **Speech-To-Text (4 s)** (or custom ≥1 s).
 
-By default, the Audio Assistant emits the full speech segment as-is when speech ends. For downstream nodes that require fixed-size audio chunks (e.g. a Wake Word Engine expecting 80 ms frames), you can enable **output buffering**:
+The compiler emits a warning listing required Python extras when VA/SSG nodes are present.
 
-| Preset | Chunk Size | Samples | Use Case |
-|--------|-----------|---------|----------|
-| `none` | — | — | Pass full speech segment unchanged (default) |
-| `wake-word` | 80 ms | 1,280 | Feed a Wake Word Engine (openWakeWord native frame) |
-| `speech-to-text` | 4 s | 64,000 | Feed Whisper or other STT models |
-| `custom` | User-defined | `int(16000 * output_buffer_size_s)` | Any custom duration |
+## Edge dependencies
 
-When a buffer preset is active, the extracted speech segment is re-chunked into fixed-size frames. Each frame is emitted individually to downstream nodes. The final frame may be shorter than the preset size and is zero-padded to maintain consistency.
+```bash
+pip install "cyberwave[ml-vad]"      # Voice Assistant (Silero)
+pip install "cyberwave[ml-aed]"      # Sound Security Guard (transformers + AST)
+```
 
-See [Audio in Workflows](/use-cyberwave/workflows/audio-in-workflows) for the full audio format specification.
+The **edge-ml-worker** container image pre-installs `zenoh`, `ml-vad`, `ml-aed`, and `ml-wakeword`, and pre-downloads AST and OpenWakeWord weights for air-gapped use.
 
-## Execution Target
+SSG on bare-metal edges downloads `MIT/ast-finetuned-audioset-10-10-0.4593` on first run (~340 MB) unless baked into the image.
 
-**Edge-only.** VAD requires stateful buffering of a continuous audio stream with sub-100ms latency. This cannot run in the cloud workflow runner.
+## Pages
 
-## Dependencies
-
-| Layer | Requirement |
-|---|---|
-| **Compile server** | `silero-vad` in `cyberwave-backend/requirements/base.txt` (+ torch transitive). Compile fails if Silero cannot be imported. |
-| **Edge worker** | `cyberwave[ml-audio]` or `cyberwave-edge-core[ml-audio]` |
-| **edge-sync** | `model_requirements`: `edge_package: ml-audio`, `edge_runtime: silero-vad` |
-
-See [Edge workflow dependencies](/feature-reference/workflows/edge-dependencies). Do not use `ml-all` on constrained edge hosts.
-
-## Quick Start
-
-1. Add an **Audio Track** trigger node connected to a twin with a microphone
-2. Add an **Audio Assistant** node downstream
-3. Select **Voice Assistant** → **Streaming (The Butler)** for real-time command detection
-4. Connect to a **Call Model** node with Whisper/STT model
-5. Activate the workflow
+- [Voice Assistant (VAD)](/use-cyberwave/workflows/audio-assistant/voice-assistant)
+- [Sound Security Guard (AED)](/use-cyberwave/workflows/audio-assistant/sound-security-guard)
+- [Technical reference](/use-cyberwave/workflows/audio-assistant/technical-reference)

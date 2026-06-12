@@ -1,99 +1,118 @@
 ---
 title: "Technical Reference"
-description: "Complete output schema, input format conversion, and architecture details."
+description: "Audio Assistant I/O schema, buffering, and runtime architecture."
 icon: "book"
 stub: true
 ---
 
-## Node Inputs
+## Node inputs (configuration)
 
-The Audio Assistant consumes outputs from the upstream Audio Track trigger:
+Stored in `node.parameters` unless wired from upstream:
 
-| Input | Type | Required | Source |
+| Field | VA | SSG | Description |
 |---|---|---|---|
-| `audio` | AUDIO | Yes | Audio Track `audio` output (numpy PCM) |
-| `audio_bytes` | AUDIO | No | Audio Track `audio_bytes` output (WAV bytes) |
-| `sample_rate_hz` | NUMBER | Yes | Audio Track `sample_rate_hz` output |
-| `channels` | NUMBER | No | Audio Track `channels` output (default: 1) |
-| `metadata` | OBJECT | No | Audio Track `metadata` output (wire metadata passthrough) |
+| `modality` | ✓ | ✓ | `voice_assistant` or `sound_security_guard` |
+| `sub_modality` | ✓ | ✓ | VAD profile or security scenario |
+| `vad_*` | ✓ | — | Silero thresholds (advanced) |
+| `output_buffer_preset` | ✓ | ✓ | VA: output re-chunking; SSG: analysis window |
+| `output_buffer_size_s` | ✓ | ✓ | Custom buffer/window seconds |
+| `confidence_threshold` | — | ✓ | SSG alert threshold (0–1) |
+| `event_cooldown_s` | — | ✓ | SSG seconds between alerts |
+| `custom_event_labels` | — | ✓ | SSG custom scenario label list |
 
-## VA Mode Outputs
+Runtime audio is resolved automatically from upstream `audio` via `_CwAudioIngress` (no manual `sample_rate_hz` input).
 
-| Output | Type | Description |
+## VA outputs
+
+| Output | Type | When emitted |
 |---|---|---|
-| `speech_audio_float32` | OBJECT | numpy float32 array normalized [-1.0, 1.0]. Direct input for local Whisper/PyTorch STT. |
-| `speech_audio_int16` | OBJECT | numpy int16 PCM array. |
-| `speech_pcm_bytes` | AUDIO | int16 as raw `.tobytes()`. For WebSocket streaming or raw PCM consumers. |
-| `speech_wav_bytes` | AUDIO | PCM wrapped in RIFF/WAV header. For external APIs (OpenAI, Google, Deepgram). |
-| `speech_probability` | NUMBER | Raw confidence [0.0, 1.0] from Silero for current frame. |
-| `start_timestamp_sec` | NUMBER | When user started speaking (`start_index / sample_rate`). |
-| `end_timestamp_sec` | NUMBER | When user stopped speaking (`end_index / sample_rate`). |
-| `utterance_duration_sec` | NUMBER | Duration of extracted speech segment. |
-| `is_speaking` | BOOLEAN | State flag: True while user is talking. |
-| `sample_rate_hz` | NUMBER | Sample rate used for processing (passthrough from upstream). |
-| `vad_timestamps` | OBJECT | Batch mode only: full list of speech segments. |
-| `metadata` | OBJECT | Passthrough of upstream wire metadata. |
+| `audio` | AUDIO (int16 @ 16 kHz mono) | Speech segment complete |
+| `speech_probability` | NUMBER | Every chunk |
+| `is_speaking` | BOOLEAN | Every chunk |
+| `start_timestamp_sec` | NUMBER | With `audio` |
+| `end_timestamp_sec` | NUMBER | With `audio` |
+| `sample_rate_hz` | NUMBER | Always `16000` |
+| `channels` | NUMBER | Always `1` |
 
-## Input Format Conversion
+## SSG outputs
 
-```python
-# int16 PCM numpy array → float32 normalized
-audio_float32 = numpy_audio.astype(np.float32) / 32768.0
+| Output | Type | When emitted |
+|---|---|---|
+| `audio` | AUDIO | Alert fired (analysis window) |
+| `event_detected` | BOOLEAN | Every chunk |
+| `event_confidence` | NUMBER | Every chunk (best scenario match) |
+| `event_label` | STRING | Best matching AudioSet label |
+| `event_type` | STRING | Active scenario key |
+| `active_scenario` | STRING | Same as `event_type` |
+| `start_timestamp_sec` | NUMBER | With alert |
+| `end_timestamp_sec` | NUMBER | With alert |
+| `sample_rate_hz` | NUMBER | Always `16000` |
+| `channels` | NUMBER | Always `1` |
 
-# Raw bytes → numpy → float32
-audio_np = np.frombuffer(raw_bytes, dtype=np.int16)
-audio_float32 = audio_np.astype(np.float32) / 32768.0
+## Audio ingress (shared)
 
-# float32 → PyTorch tensor (for Silero VAD)
-audio_tensor = torch.from_numpy(audio_float32)
+All modalities use `_CwAudioIngress.adapt_safe()`:
+
+- **Canonical format:** numpy `int16`, 16000 Hz, mono, key `audio`
+- **Accepted inputs:** int16/float32 numpy, raw PCM bytes, WAV bytes
+- **Passthrough:** int16 @ 16 kHz mono is zero-copy
+
+## VA architecture
+
+`_CwAudioStreamProcessor` + Silero `VADIterator`:
+
+1. Incoming chunks reframed to **512 samples** (32 ms @ 16 kHz)
+2. Ring buffer stores float32 audio; indices from VAD mark utterance bounds
+3. On speech end: slice buffer → int16 segment → emit
+
+## SSG architecture
+
+`_CwAaAstGuard` + Hugging Face AST:
+
+1. Accumulate int16 chunks until `window_samples` (from buffer preset, default 4 s)
+2. Convert to float32, run `ASTFeatureExtractor` + `ASTForAudioClassification`
+3. Multi-label sigmoid over 527 classes; filter by active scenario labels only
+4. If `max(matching_probs) >= confidence_threshold` → emit alert + audio window
+5. Slide buffer by `hop_samples` (50% overlap); enforce `event_cooldown_s`
+
+### Model
+
+- **ID:** `MIT/ast-finetuned-audioset-10-10-0.4593`
+- **Training:** AudioSet (527 classes)
+- **Inference:** `torch.sigmoid(logits)` per class
+
+### Scenario label maps (built-in)
+
+```text
+glass_break      → Glass, Shatter, Smash crash, Thump, Crash, Bang
+constant_alarm   → Alarm, Car alarm, Smoke detector, Siren, …
+screaming        → Screaming, Yell, Shout, Children shouting
+custom           → user-provided substrings
 ```
 
-## WAV Byte Generation
+Matching is case-insensitive substring: `target in class_label.lower()`.
 
-```python
-import io, wave
+## Buffer presets (shared field)
 
-def create_wav_bytes(pcm_int16_array, sample_rate=16000):
-    wav_io = io.BytesIO()
-    with wave.open(wav_io, 'wb') as wav_file:
-        wav_file.setnchannels(1)
-        wav_file.setsampwidth(2)
-        wav_file.setframerate(sample_rate)
-        wav_file.writeframes(pcm_int16_array.tobytes())
-    return wav_io.getvalue()
-```
+| Preset | Seconds | Samples @ 16 kHz | Typical modality |
+|---|---|---|---|
+| `none` | — | — | VA: full utterance |
+| `wake-word` | 0.08 | 1280 | VA downstream / not recommended for SSG |
+| `speech-to-text` | 4.0 | 64000 | VA STT chunks / **SSG default analysis window** |
+| `custom` | `output_buffer_size_s` | — | User-defined |
 
-## Sample Rate Handling
+SSG enforces a minimum analysis window of **1.0 s**.
 
-| Source Rate | Silero Support | Action |
-|---|---|---|
-| 16000 Hz | Native | Direct processing |
-| 8000 Hz | Native | Direct processing |
-| 32000 Hz | Auto-downsample | Resampled to 16 kHz |
-| 48000 Hz | Auto-downsample | Resampled to 16 kHz |
+## Alert attribution
 
-Chunk sizes must match sample rate:
-- 16 kHz: 512 samples = 32 ms (also valid: 768, 1024, 1536)
-- 8 kHz: 256 samples = 32 ms
+On SSG alert, `_source_summary` includes `kind: audio_assistant`, `modality: sound_security_guard`, `sub_modality`, `event_label`, and `event_confidence` for Send Alert `source_chain` metadata.
 
-## Ring Buffer Architecture
+## Edge cases
 
-The `AudioStreamProcessor` maintains a `float32` ring buffer alongside the `VADIterator`:
-
-1. Each incoming chunk is appended to the buffer
-2. `VADIterator` returns start/end sample indices relative to the buffer
-3. On `{'end': index}`: slice buffer, extract speech, reset state
-4. Post-end audio is preserved for the next cycle
-5. Memory leak prevention: buffer cleared after 5s of silence
-
-## Stereo Audio Handling
-
-If the upstream Audio Track provides multi-channel audio (`channels > 1`), the Audio Assistant downmixes to mono before feeding Silero VAD. The original channel count is preserved in the metadata passthrough.
-
-## Edge Cases
-
-- **Empty chunks**: Skipped (guard on `sample_count < 1`)
-- **Utterance > 30s (batch)**: `max_speech_duration_s=28.0` forces split before Whisper's window
-- **Extended silence**: Buffer cleared after 5s to prevent memory leak
-- **Noise bursts**: Filtered by `min_speech_duration_ms` parameter
-- **SSG mode selected**: Logs warning, forwards audio unchanged
+| Case | Behavior |
+|---|---|
+| Empty audio chunk | Skipped |
+| SSG during cooldown | Analysis skipped until cooldown expires |
+| Custom scenario with no labels | No matches; never alerts |
+| Upstream non-16 kHz | Resampled by audio ingress |
+| VA oversized chunks | Reframed to 512 samples with one-time warning |
