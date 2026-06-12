@@ -1,0 +1,21 @@
+---
+title: "Spot"
+description: "Redirect stub to the Spot asset page."
+canonical: "https://cyberwave.com/boston-dynamics/spot"
+---
+
+import { useEffect } from "react";
+
+export default function SpotRedirectPage() {
+  useEffect(() => {
+    window.location.replace("https://cyberwave.com/boston-dynamics/spot");
+  }, []);
+
+  return (
+    <>
+      # Redirecting to Spot
+
+      If you are not redirected automatically, [open the Spot asset page](https://cyberwave.com/boston-dynamics/spot).
+    </>
+  );
+}

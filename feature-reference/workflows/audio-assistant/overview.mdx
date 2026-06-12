@@ -81,11 +81,34 @@ The `speech_probability` output is useful for:
 - UI visualizations (waveform activity indicators)
 - Custom nodes that need the VAD trigger signal as a float
 
+### Output Buffer Preset
+
+By default, the Audio Assistant emits the full speech segment as-is when speech ends. For downstream nodes that require fixed-size audio chunks (e.g. a Wake Word Engine expecting 80 ms frames), you can enable **output buffering**:
+
+| Preset | Chunk Size | Samples | Use Case |
+|--------|-----------|---------|----------|
+| `none` | — | — | Pass full speech segment unchanged (default) |
+| `wake-word` | 80 ms | 1,280 | Feed a Wake Word Engine (openWakeWord native frame) |
+| `speech-to-text` | 4 s | 64,000 | Feed Whisper or other STT models |
+| `custom` | User-defined | `int(16000 * output_buffer_size_s)` | Any custom duration |
+
+When a buffer preset is active, the extracted speech segment is re-chunked into fixed-size frames. Each frame is emitted individually to downstream nodes. The final frame may be shorter than the preset size and is zero-padded to maintain consistency.
+
 See [Audio in Workflows](/use-cyberwave/workflows/audio-in-workflows) for the full audio format specification.
 
 ## Execution Target
 
 **Edge-only.** VAD requires stateful buffering of a continuous audio stream with sub-100ms latency. This cannot run in the cloud workflow runner.
+
+## Dependencies
+
+| Layer | Requirement |
+|---|---|
+| **Compile server** | `silero-vad` in `cyberwave-backend/requirements/base.txt` (+ torch transitive). Compile fails if Silero cannot be imported. |
+| **Edge worker** | `cyberwave[ml-audio]` or `cyberwave-edge-core[ml-audio]` |
+| **edge-sync** | `model_requirements`: `edge_package: ml-audio`, `edge_runtime: silero-vad` |
+
+See [Edge workflow dependencies](/feature-reference/workflows/edge-dependencies). Do not use `ml-all` on constrained edge hosts.
 
 ## Quick Start
 

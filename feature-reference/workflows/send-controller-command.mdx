@@ -1,0 +1,93 @@
+---
+title: "Send Controller Command node"
+description: "Send a specific controller command to a twin with explicit controller and command selection."
+tag: stub
+---
+
+The **Send Controller Command** (`send_controller_command`) node provides a direct way to dispatch controller commands to a digital twin. Unlike Virtual Controller (which resolves commands dynamically from upstream strings), this node lets you **explicitly select** the twin, controller policy, and specific command at configuration time.
+
+<Note>
+**Palette category:** Actuation. Runs on **cloud** (Celery MQTT or inference dispatch) and **edge** (worker `client.mqtt.publish`, keyboard/teleop only). Model controllers (mlmodel/vla) are cloud-only.
+</Note>
+
+## Configuration flow
+
+The inspector guides you through a three-step cascade:
+
+1. **Select digital twin** — choose the target twin in the bound environment
+2. **Select controller policy** — pick from compatible controllers (filtered by the twin's asset)
+3. **Select command** (keyboard/teleop) or **configure instruction** (model controllers)
+
+For keyboard/teleop controllers the command dropdown lists every available actuation from the policy's `keyboard_bindings` and `display_config.widgets`. For model controllers the **instruction** input accepts a text prompt for inference.
+
+## Inputs
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `twin_uuid` | string | Yes | Target twin. Set in inspector (Twin combobox). |
+| `controller_policy_uuid` | string | Yes | Controller policy. Set in inspector (Controller dropdown). |
+| `command` | string | No | Actuation string for keyboard/teleop controllers (e.g. `move_forward`). Set in inspector or wired from upstream. |
+| `params` | object | No | Command parameters (e.g. `{"linear_x": 1.5}`). Overrides binding defaults. Can be wired from upstream. |
+| `instruction` | string | No | Text prompt for model/VLA controllers. Ignored for keyboard controllers. |
+
+## Keyboard/teleop controllers
+
+When a keyboard or teleop controller is selected:
+
+- The command dropdown shows all available actuations with labels and key bindings
+- The `params` input can override the binding's default `playground` data (velocity, etc.)
+- At runtime the node publishes to `cyberwave/twin/{uuid}/command` with the same MQTT payload shape as keyboard teleoperation
+
+### MQTT payload
+
+```json
+{
+  "source_type": "tele",
+  "command": "move_forward",
+  "data": {"linear_x": 1.5},
+  "timestamp": 1710000000.0
+}
+```
+
+| Field | Cloud workflow | Edge worker |
+|---|---|---|
+| `source_type` | `tele` (live) or `sim_tele` (simulation) | `edge` |
+| `command` | Selected actuation slug | Selected actuation slug |
+| `data` | From `params` input or binding defaults | From `params` input |
+| `timestamp` | Server-side `time.time()` | Worker-side `time.time()` |
+
+## Model controllers (mlmodel/vla)
+
+When a model controller is selected:
+
+- The instruction input accepts a natural language prompt (e.g. "pick up the red block")
+- Additional parameters (max_steps, mode) can be passed via `params`
+- At runtime the node dispatches inference through `ControllerPolicyExecutionService`
+- Model controllers run **cloud-only** — edge compilation will fail
+
+## Outputs
+
+| Field | Type | Description |
+|---|---|---|
+| `twin_uuid` | string | Target twin |
+| `controller_policy_uuid` | string | Controller policy used |
+| `controller_type` | string | e.g. `teleop`, `mlmodel`, `vla` |
+| `command` | string | Actuation or instruction sent |
+| `sent` | boolean | Whether the command was dispatched |
+| `topic` | string | MQTT topic (keyboard/teleop) |
+| `payload` | object | Full MQTT payload or inference result |
+| `source_type` | string | `tele` / `sim_tele` / `edge` |
+
+## When to use
+
+| Scenario | Recommended node |
+|---|---|
+| Send a **specific known command** (e.g. "move forward at speed 1.5") | **Send Controller Command** |
+| Resolve a **dynamic command** from voice/text input | **Virtual Controller** + Fuzzy Matcher pipeline |
+| Send a **raw MQTT message** with custom topic and payload | **Send MQTT** |
+
+## Related nodes
+
+- **Virtual Controller** — dynamic command resolution from upstream strings
+- **Info Controller** — read controller policy metadata
+- **Send MQTT** — generic MQTT publish

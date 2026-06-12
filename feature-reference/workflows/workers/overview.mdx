@@ -28,11 +28,7 @@ Worker files live in `{CONFIG_DIR}/workers/` (default `~/.cyberwave/workers/`).
 
 ## Container Image
 
-The worker container image (`cyberwaveos/edge-ml-worker`) is pulled automatically during `cyberwave edge install`. To skip it:
-
-```bash
-cyberwave edge install --without-workers
-```
+The worker container image (`cyberwaveos/edge-ml-worker`) is pulled automatically by edge-core on first startup, in the background. This keeps `cyberwave edge install` fast and non-blocking — there is no need to wait for the image download during installation.
 
 Edge-core manages the container lifecycle — you don't need to run it manually. The container mounts worker scripts and model weights from the host as read-only volumes.
 
@@ -202,8 +198,21 @@ files are left untouched to avoid spurious worker container restarts.
 4. The WorkerWatcher detects the new file and restarts the worker container.
 5. The worker container loads the new module and activates the hook.
 
-**Deactivating** a workflow removes the `wf_*.py` file on the next sync,
-which triggers a container restart without that worker.
+<Warning>
+  **STUB:** This subsection will be expanded with a deeper diagram of the
+  remove path.
+</Warning>
+
+**Deactivating, soft-deleting, or flipping `run_on_edge` off** publishes a
+surgical `remove_workflow_worker` MQTT command to each affected twin
+command topic, naming the specific worker file(s) to unlink. Edge core
+deletes the matching `wf_*.py` and immediately reconciles the worker
+container lifecycle — the workflow stops running on the device within
+seconds rather than waiting up to one full periodic interval (~5 minutes)
+plus the bulk-sync two-strikes cleanup. The same path is used for the
+cascade cases (workspace or environment deletion that removes the
+workflow). The periodic reconcile remains the correctness backstop if
+the MQTT publish is dropped.
 
 ---
 

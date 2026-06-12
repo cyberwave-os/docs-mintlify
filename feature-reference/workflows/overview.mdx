@@ -21,40 +21,53 @@ Nodes are the building blocks of workflows. Each node performs a specific action
 
 <CardGroup cols={2}>
   <Card title="Triggers" icon="bolt">
-    Start the workflow on an event, schedule, or incoming message: manual, schedule, webhook, event, MQTT, email, camera_frame, audio_track, alert
+    Start the workflow on an event, schedule, or incoming message: manual,
+    schedule, webhook, event, MQTT, email, camera_frame, audio_track, alert
   </Card>
   <Card title="Data Sources" icon="database">
-    Pull snapshots and samples from sensors, cameras, and external systems on demand: `data_source`
+    Pull snapshots and samples from sensors, cameras, and external systems on
+    demand: `data_source`, `twin` (twin + controller metadata for voice
+    pipelines)
   </Card>
   <Card title="Perception" icon="eye">
-    Convert raw signals into reliable observations — reserved for object trackers, sensor fusion, IMU filtering, ASR (no nodes ship today)
+    Convert raw signals into reliable observations — reserved for object
+    trackers, sensor fusion, IMU filtering, ASR (no nodes ship today)
   </Card>
   <Card title="Transform & Routing" icon="shuffle">
-    Reshape, convert, route, multiplex, or fan out data: `json_parser`, `annotate`, `anonymize`
+    Reshape, convert, route, multiplex, or fan out data: `json_parser`,
+    `fuzzy_matcher`, `annotate`, `anonymize`
   </Card>
   <Card title="State & Memory" icon="database">
-    Store and retrieve memory over time: `create_asset`, `edit_asset`, `create_attachment`, `update_attachment`, `video_tagger`
+    Store and retrieve memory over time: `create_asset`, `edit_asset`,
+    `create_attachment`, `update_attachment`, `video_tagger`
   </Card>
   <Card title="Intelligence" icon="brain">
-    Use models for interpretation, reasoning, or prediction: `call_model` (cloud VLM/LLM and edge ML)
+    Use models for interpretation, reasoning, or prediction: `call_model` (cloud
+    VLM/LLM and edge ML)
   </Card>
   <Card title="Decision & Control Flow" icon="code-branch">
-    Choose what happens next: `conditional`, `loop`; FSM / Behavior Tree / Rule Engine on the roadmap
+    Choose what happens next: `conditional`, `loop`; FSM / Behavior Tree / Rule
+    Engine on the roadmap
   </Card>
   <Card title="Actuation" icon="robot">
-    Execute physical or twin-side actions: `twin_control` (Move Twin); future joint / gripper / navigation primitives
+    Execute physical or twin-side actions: `twin_control` (Move Twin),
+    `virtual_controller` (MQTT controller commands), `recorder` (start/stop
+    audio/video recording via media service); future joint / gripper primitives
   </Card>
   <Card title="Integration" icon="plug">
-    Talk to external systems and run user-supplied logic: `http_request`, `send_email`, `code` (edge-only)
+    Talk to external systems and run user-supplied logic: `http_request`,
+    `send_email`, `code` (edge-only)
   </Card>
   <Card title="Observability & Safety" icon="shield-halved">
-    Guard, validate, observe, and alert: `send_alert`; validators, watchdogs, e-stop guards, and anomaly detectors are on the roadmap
+    Guard, validate, observe, and alert: `send_alert`; validators, watchdogs,
+    e-stop guards, and anomaly detectors are on the roadmap
   </Card>
 </CardGroup>
 
 ### Connections
 
 Connections define the execution flow between nodes:
+
 - **Sequential**: Execute nodes one after another
 - **Parallel**: Execute multiple nodes simultaneously
 - **Conditional**: Branch based on conditions
@@ -76,7 +89,11 @@ Connection validation prevents invalid graphs: self-connections, cycles, and inv
 5. Configure each node's parameters
 6. Click **Activate**
 
-> stub: The bottom-right toolbar of the workflow canvas now includes a multi-select tool. Toggle it on, drag a marquee across the canvas (or shift-click individual nodes) to pick a group, then drag any selected node to shift the whole group, or press **Delete** / use the floating **Delete** button to remove them in bulk. Press **Esc** to leave multi-select mode.
+> stub: The workflow canvas supports two ways to multi-select nodes:
+> - **Modifier-click** — hold **Cmd / Ctrl / Alt** and click nodes to add them to (or remove them from) the current selection. Works without entering any tool. The previously-selected single node is folded into the group on the first modifier-click. Click the canvas background to clear the whole group.
+> - **Multi-select tool** (bottom-right toolbar) — toggle it on, then marquee-drag across the canvas or **Shift-click** individual nodes to pick a group. Press **Esc** to leave the tool.
+>
+> Once a group is selected (either way), drag any selected node to shift the whole group, and press **Delete** / **Backspace** or the floating **Delete** button to remove them in bulk.
 
 > stub: The workflow editor supports undo (**Ctrl/Cmd + Z**) and redo (**Ctrl/Cmd + Shift + Z**, or **Ctrl + Y**), with up to 50 steps per session. It covers node creation, deletion (single & bulk), node moves (single & group), connection wiring, node renames / notes, and workflow-level changes (name, description, slug, visibility, activation). Toolbar buttons next to the **Hide/Show Nodes** button mirror the same actions.
 
@@ -130,11 +147,28 @@ print(f"Run ID: {run.uuid}, Status: {run.status}")
 ### Triggered Execution
 
 Workflows can be triggered by:
+
 - **Schedule**: Run at specific times (cron)
 - **Events**: Run when sensor data matches conditions
 - **API**: Trigger from external systems via REST or MCP
 - **Camera Frame**: Run on every camera frame at the edge device
-- **Audio Track**: Run on every audio chunk from an edge microphone ([docs](/use-cyberwave/workflows/audio-track/overview))
+- **Audio Track**: Run on every audio chunk from an edge microphone ([docs](/feature-reference/workflows/audio-track/overview))
+
+---
+
+## Edge voice workflows (audio + STT + control)
+
+Voice pipelines chain **Audio Track**, **Audio Assistant**, **Wake Word Engine**, **Call Model** (STT), **Fuzzy Matcher**, **Twin**, and **Virtual Controller**. Each node declares a minimal Python/SDK extra; the compile server validates imports before shipping `wf_*.py`.
+
+See **[Edge workflow dependencies](/feature-reference/workflows/edge-dependencies)** for the full matrix (compile server `base.txt`, edge worker extras, catalog STT models).
+
+| Doc                                                                        | Topic                                |
+| -------------------------------------------------------------------------- | ------------------------------------ |
+| [Audio in Workflows](/feature-reference/workflows/audio-in-workflows)      | PCM format, pipeline, compile checks |
+| [Call Model STT on edge](/feature-reference/workflows/call-model-stt-edge) | Whisper.cpp vs Faster Whisper        |
+| [Fuzzy Matcher](/feature-reference/workflows/fuzzy-matcher)                | Command matching after STT           |
+| [Twin](/feature-reference/workflows/twin)                                  | Twin + policy outputs → candidates   |
+| [Virtual Controller](/feature-reference/workflows/virtual-controller)      | MQTT dispatch                        |
 
 ---
 
@@ -214,6 +248,13 @@ flowchart LR
 ## Next Steps
 
 <CardGroup cols={2}>
+  <Card
+    title="Edge workflow dependencies"
+    icon="puzzle-piece"
+    href="/feature-reference/workflows/edge-dependencies"
+  >
+    Voice pipeline packages (compile + edge + STT catalog)
+  </Card>
   <Card
     title="API Reference"
     icon="code"

@@ -122,15 +122,114 @@ Notes:
 **STUB:** This section will be expanded with the full alert type catalogue.
 </Warning>
 
-Edge Core automatically raises technical alerts for operational issues. These are `category: technical`, `source_type: edge`.
+Edge Core automatically raises technical alerts for operational issues. These are `category: technical`, `source_type: edge` unless noted otherwise.
 
-| `alert_type` | Severity | Trigger |
+| `alert_type` | Severity | Source | Trigger |
+| --- | --- | --- | --- |
+| `driver_start_failure` | `error` | `edge` | Driver container cannot reach a stable running state |
+| `driver_restart_loop` | `error` | `edge` | Driver restarts too frequently (circuit-breaker tripped) |
+| `driver_health` | `warning` | `edge` | Driver container stopped unexpectedly |
+| `model_download_failure` | `warning` | `edge` | Required ML model could not be downloaded |
+| `worker_start_failure` | `warning` | `edge` | Worker container failed to start |
+| `edge_core_restart` | `info` | `cloud` | Backend has accepted an edge-core restart request and is tracking the lifecycle (see below) |
+
+### `edge_core_restart` lifecycle alert
+
+`POST /api/v1/edges/{uuid}/restart-core` creates a single `edge_core_restart` alert that tracks the restart end-to-end. The alert is scoped to the environment of the first bound twin (alerts always need a twin / environment / workflow anchor), with `source_type: cloud` because the request originates from the backend, not from the edge.
+
+The current phase is carried on `metadata.phase`:
+
+| Phase | Written by | Meaning |
 | --- | --- | --- |
-| `driver_start_failure` | `error` | Driver container cannot reach a stable running state |
-| `driver_restart_loop` | `error` | Driver restarts too frequently (circuit-breaker tripped) |
-| `driver_health` | `warning` | Driver container stopped unexpectedly |
-| `model_download_failure` | `warning` | Required ML model could not be downloaded |
-| `worker_start_failure` | `warning` | Worker container failed to start |
+| `requested` | Backend, on accepting the API call | MQTT restart command queued |
+| `in_progress` | Edge-core, when it picks the command off MQTT | Restart actually running |
+| `completed` | Edge-core, after a successful relaunch | Happy path; alert is resolved |
+| `failed` | Edge-core, if `_perform_edge_core_restart` raises | Restart attempt failed; alert resolved with `phase: failed` |
+| `timed_out` | Backend reaper (`reap_stuck_edge_core_restart_alerts`) | Alert stuck in `requested` / `in_progress` past 5 min — typically the MQTT command never landed or edge-core crashed mid-restart |
+
+The same `alert_uuid` is returned in the API response **and** included in the MQTT command payload, so edge-core can transition the alert without a lookup.
+
+### Restart-driven pre-resolution
+
+When `restart-core` is accepted, the backend also pre-resolves any active alerts on the requesting edge's bound twins whose root cause a clean container relaunch genuinely fixes:
+
+- `driver_start_failure`
+- `driver_restart_loop`
+- `worker_start_failure`
+
+This keeps the workbench from carrying stale failure noise that the operator's restart just made irrelevant. Each pre-resolved alert is annotated with:
+
+```json
+{
+  "metadata": {
+    "resolved_by_restart_request_id": "<request_id>",
+    "resolved_by_restart_alert_uuid": "<edge_core_restart uuid>"
+  }
+}
+```
+
+and the `edge_core_restart` alert's own metadata gets `pre_resolved_alert_uuids: [...]` so the audit trail links both ways.
+
+Other alert types are deliberately **not** pre-resolved (a restart doesn't actually fix them, and silently closing them would lie to the operator). The authoritative allow-list and excluded set live on [`EDGE_CORE_RESTART_RESOLVABLE_ALERT_TYPES`](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-backend/src/app/api/edge_nodes.py) — change the constant and this section together.
+
+The response schema is [`EdgeCoreRestartResponseSchema`](/api-reference/rest/EdgeCoreRestartResponseSchema). Note that `alert_uuid` is `null` when no environment can be resolved for the edge (typically: no bound twin yet); the restart still happens, just untracked.
+
+## Frontend display contract
+
+<Warning>
+**Read this before adding a new `alert_type`.** Every alert that the backend or an edge driver can raise must either render correctly with the generic alert card, or have a documented specialised renderer linked from this section. Skipping this step is how we end up with overlapping alert types that nobody can untangle six months later.
+</Warning>
+
+The workbench renders every alert through a single `AlertCard` ([`cyberwave-frontend/components/alerts/alert.tsx`](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-frontend/components/alerts/alert.tsx)). The generic path uses **only** these fields and needs nothing else from the producer:
+
+| Field | Display |
+| --- | --- |
+| `severity` | Left border colour + leading icon (`info` / `warning` / `error` / `critical` — see [`alert-display.ts`](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-frontend/components/alerts/alert-display.ts)) |
+| `status` | Status pill (`Active` / `Acknowledged` / `Resolved` / `Silenced`). `resolved` and `silenced` also dim the card to 60% opacity. |
+| `source_type` | Small outline badge |
+| `alert_type` | Small mono-font outline badge — this is what tells the operator which producer raised the alert, so make it specific and stable. |
+| `name` | Card title |
+| `description` | Body text. URLs are auto-linked. |
+| `media` | Inline image (`.png`/`.gif`) or autoplaying muted video (`.mp4`). |
+| `created_at` | Relative timestamp with absolute on hover. |
+| `metadata.buttons` | Generic action buttons that publish back on `cyberwave/twin/{twin_uuid}/command` as a `button` command — see [Metadata buttons](#metadata-buttons-cyb-1274). |
+
+The new `edge_core_restart` alert deliberately uses **only** the generic path. The lifecycle is encoded in `metadata.phase`, so any UI that wants to surface "Restart in progress vs. completed vs. failed" can read that field without a dedicated component, and the audit trail (`request_id`, `pre_resolved_alert_uuids`, `previous_phase`, `timed_out_at`) is plain JSON.
+
+Specialised renderers exist for a handful of historical alert types that need bespoke interactions; each one is a known cost, not a pattern to copy:
+
+| `alert_type` | Specialised behaviour |
+| --- | --- |
+| `robot_setup` | Spinner replaces the severity icon while `status` is `active` / `acknowledged` |
+| `robot_setup_done` | Green success panel with a check mark and amber/green accent |
+| `calibration_needed` | Inline `Next` / `Complete` / `Restart calibration` actions that publish to `cyberwave/twin/{twin_uuid}/command` instead of using metadata buttons |
+| `camera_default_device` | `Default is fine` action that writes the chosen device into twin metadata and resolves the alert |
+| `driver_starting` | Phase-aware spinner with rewritten copy (`Downloading driver image…` / `Installing driver image…` / `Starting driver container…`) driven by `metadata.phase`, plus a byte/percent suffix when the pull is mid-flight — see [`driver_starting` progress metadata](#driver_starting-progress-metadata) |
+
+### Adding a new `alert_type`
+
+Before you introduce a new `alert_type`:
+
+1. **Check this page.** If an existing type fits — even loosely — extend its `metadata` instead of forking a new code.
+2. **Default to the generic path.** Pick a sensible `severity`, write a clear `name` + `description`, and put any structured state on `metadata`. The generic card will render it correctly.
+3. **Only add a specialised renderer when the interaction itself is novel** (e.g. a calibration step that needs custom MQTT commands). Generic `metadata.buttons` cover most operator-confirms-something flows without new code.
+4. **Document the type in this page** before merging — both the catalogue row above and, if specialised, the table in this section. A new `alert_type` constant that does not have a row here should not pass review.
+
+### `driver_starting` progress metadata
+
+Edge-core writes byte-aggregated `docker pull` progress directly onto the active `driver_starting` alert's `metadata`, so the workbench renders a live `"Downloading driver image (cyberwaveos/ugv-driver:dev) — 745 MB of 1.55 GB (47%)"` line without any extra round-trip. The fields are:
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `phase` | string | Lifecycle marker. Pull walks `pull_started → downloading → installing → pull_complete → pull_stream_finished`, then `container_starting → driver_running` once the container is up. Failure phases are `pull_spawn_failed` / `pull_timed_out` / `pull_exit_error`. |
+| `image` | string | The driver image being pulled. |
+| `progress_percent` | int (0–100) | Integer percent of `downloaded_bytes / total_bytes`. `0` until the first `docker pull` byte-bar lands; `100` at `pull_complete`. |
+| `downloaded_bytes` / `total_bytes` | int | Raw byte totals aggregated across all layers. |
+| `downloaded_human` / `total_human` | string \| null | Same values rendered in SI units (`"745 MB"`, `"1.55 GB"`). `null` before docker emits any byte-bar (e.g. when every layer is `Already exists`). |
+| `layers_total` / `layers_complete` | int | Number of layers seen so far and number with `Pull complete`. Only used to caption the brief `installing` phase between the last byte landing and `Status: Downloaded …`. |
+| `last_docker_pull_line` | string | Most recent raw `docker pull` line (truncated to 500 chars), kept for debugging. |
+
+The frontend renderer is in [`cyberwave-frontend/components/alerts/alert.tsx`](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-frontend/components/alerts/alert.tsx) — search for `getDriverStartingDisplayText`.
 
 ## MQTT
 

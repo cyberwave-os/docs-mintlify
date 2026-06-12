@@ -1,0 +1,123 @@
+---
+title: "Wake Word — testing"
+description: "Offline WAV tests and live edge worker diagnostics"
+icon: "vial"
+stub: true
+---
+
+## Detection threshold
+
+Production and offline tests use the same rule: **score ≥ workflow threshold** (default **0.5**). The Wake Word node exposes one **Threshold** field in the editor — it applies to all selected models (`alexa`, `hey_jarvis`, etc.), not per model.
+
+Pass `--threshold` to offline tools to mirror the value saved on the node:
+
+```bash
+# Match a workflow node set to 0.35 for hey_jarvis
+python manage.py test_wake_word_wav clip.wav --model hey_jarvis --threshold 0.35
+```
+
+| Model (fixture) | Typical peak on committed WAV | Often works at default 0.5? |
+|-----------------|------------------------------|-----------------------------|
+| `alexa` | ~1.0 | Yes |
+| `hey_mycroft` | ~0.68 | Yes |
+| `hey_jarvis` | ~0.41 | Often no — try **0.35–0.40** |
+
+## Offline WAV test (edge worker)
+
+Use a recording that contains the wake phrase (e.g. someone saying "alexa"). Copy into the worker container and run the bundled script:
+
+```bash
+docker cp scripts/test_wake_word_wav.py cyberwave-worker-<ENV_UUID>:/tmp/
+docker cp alexa-sample.wav cyberwave-worker-<ENV_UUID>:/tmp/
+
+docker exec -it cyberwave-worker-<ENV_UUID> python3 /tmp/test_wake_word_wav.py \
+  /tmp/alexa-sample.wav --wake-words alexa --threshold 0.5
+```
+
+Success (management command on compile host):
+
+```text
+  HIT @ 1.28s scores={'alexa': 0.512} (threshold=0.5)
+Done: frames=... max_score=0.9998 @ ...s hits_above_threshold=1
+```
+
+On a live edge worker, look for:
+
+```text
+Wake word detected: 'alexa' scores={'alexa': 0.512} threshold=0.50, switching to AWAKE
+```
+
+The script:
+
+- Resamples any WAV rate/channels to **16 kHz mono int16**
+- Scores **80 ms** frames (1,280 samples)
+- Uses the same `Model(wakeword_models=[...])` keys as production
+
+## Django management command (compile host)
+
+If `openwakeword` is installed on the backend container:
+
+```bash
+docker compose -f local.yml exec django python manage.py test_wake_word_wav \
+  src/app/tests/fixtures/audio/alexa_sample.wav --model alexa --threshold 0.5
+
+docker compose -f local.yml exec django python manage.py test_wake_word_wav \
+  src/app/tests/fixtures/audio/hey_mycroft_sample.wav --model hey_mycroft --threshold 0.5
+
+docker compose -f local.yml exec django python manage.py test_wake_word_wav \
+  src/app/tests/fixtures/audio/hey_jarvis_sample.wav --model hey_jarvis --threshold 0.5
+```
+
+Committed fixtures under `cyberwave-backend/src/app/tests/fixtures/audio/` cover alexa, hey_mycroft, and hey_jarvis.
+
+- **Pytest** (`test_wake_word_wav_detection.py`, `@pytest.mark.integration`): asserts each fixture reaches an expected **peak** score (not that 0.5 always fires for every model).
+- If `hey_jarvis` at `--threshold 0.5` prints `No frame reached threshold`, lower `--threshold` to match your workflow node or inspect `max_score` in the summary line.
+
+## Live workflow checklist
+
+| Check | Expected |
+|-------|----------|
+| Audio Track buffer | **Wake Word (80 ms)** — codegen shows `_CwAudioFifoBuffer(1280)` |
+| Worker init log | `wake_words=['alexa'] prediction_keys=['alexa']` |
+| Say wake phrase | `Wake word detected: 'alexa' scores={'alexa': 0.5+}` |
+| Send Alert downstream | Alert name = detected wake word |
+| Assistant signaling | `start_assistant` / `stop_assistant` on twin MQTT topic |
+
+## Common failures
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| No detection, scores always 0 | Stale worker using `alexa_v0.1` prediction keys | Recompile + sync |
+| Scores rise but never cross threshold | Threshold too high for that model (common with `hey_jarvis` at 0.5) | Lower **Detection Threshold** on the node; confirm with `test_wake_word_wav` and `max_score` |
+| No logs from wake word node | Audio Track 4 s buffer | Set Wake Word (80 ms) buffer |
+| `Could not find pretrained model hey_siri` | Removed model still in saved params | Re-save node; pick a built-in word |
+| Compile error: openwakeword not installed | Django image lacks ml-wakeword | Install on compile host or compile from CI with deps |
+| No assistant sounds | Twin not set on Wake Word node or FE not on environment | Enable signaling + select microphone twin |
+
+## Log levels
+
+```bash
+# docker-compose or worker env
+CYBERWAVE_WORKER_LOG_LEVEL=INFO   # detection + periodic score heartbeat
+CYBERWAVE_WORKER_LOG_LEVEL=DEBUG  # per-frame scores when best ≥ 0.15
+```
+
+## Regression tests (repo)
+
+Backend (Docker):
+
+```bash
+cd cyberwave-backend
+docker compose -f local.yml exec -T django pytest \
+  src/app/tests/test_wake_word_engine_emitter.py \
+  src/app/tests/test_wake_word_engine_inputs_outputs.py
+```
+
+Frontend:
+
+```bash
+cd cyberwave-frontend
+pnpm test:run __tests__/openwakeword-models.test.ts __tests__/workflow-audio-chain.test.ts
+```
+
+Integration WAV test (requires openwakeword in test env): `test_wake_word_wav_detection.py` (marked `@pytest.mark.integration`).

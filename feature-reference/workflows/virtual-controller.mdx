@@ -1,0 +1,171 @@
+---
+title: "Virtual Controller node"
+description: "Dispatch controller actuations to a twin over MQTT from workflow automation."
+tag: stub
+---
+
+The **Virtual Controller** (`virtual_controller`) resolves a **command** string against the **keyboard controller policy assigned to a digital twin** and publishes the matching actuation on `cyberwave/twin/{uuid}/command`. The MQTT payload matches keyboard teleoperation (`KeyboardTeleoperationController` / `useMQTTTwin.publishCommand`) — nothing is hardcoded per robot; bindings come from the twin's policy at runtime.
+
+<Note>
+**Palette category:** Actuation. Runs on **cloud** (Celery MQTT) and **edge** (worker `client.mqtt.publish`). Locomotion uses the MQTT command topic, not WebRTC; media streaming stays on separate channels.
+</Note>
+
+## Voice-to-actuation pipeline
+
+```
+audio_track
+  → audio_assistant (optional VAD)
+  → wake_word_engine (optional)
+  → call_model (STT)
+  → fuzzy_matcher ← twin (control_actuations / control_labels)
+  → conditional (optional, branch on matched)
+  → virtual_controller
+       → cyberwave/twin/{uuid}/command
+```
+
+| Step | Node | Key wiring |
+|---|---|---|
+| 1 | **Twin** | Select target twin → wire `control_actuations` → Fuzzy Matcher `candidates` |
+| 2 | **Call Model** | STT `result` → Fuzzy Matcher `query` |
+| 3 | **Fuzzy Matcher** | `match_string` → Virtual Controller `command` (when `match` is true) |
+| 4 | **Virtual Controller** | Same twin as Twin node → publishes resolved actuation |
+
+## Inputs
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `twin_uuid` | string | Yes | Twin whose controller policy resolves commands. Set in inspector (Twin combobox). |
+| `command` | string | Yes | Label or actuation to dispatch. Wire from Fuzzy Matcher `match_string` or another upstream string. |
+
+Precedence: wired input mapping → node parameters.
+
+### Command matching
+
+The node accepts **either** form (normalization is shared with Fuzzy Matcher):
+
+| Input | Resolves to actuation |
+|---|---|
+| `camera_right` | `camera_right` |
+| `Camera Right` | `camera_right` |
+| `W` (single key) | binding for that key |
+
+Resolution order:
+
+1. Exact actuation (case / punctuation insensitive)
+2. Exact human label
+3. Keyboard key
+4. Substring containment (label inside longer STT phrase)
+
+Bindings are collected from:
+
+- `metadata.keyboard_bindings` (`actuation`, `label`, `key`, optional `playground` data)
+- `metadata.display_config.widgets` (button `command`, slider `command`)
+- **Universal keyboard** policies with `supports_locomotion` and no bindings → default WASD locomotion actuations (`move_forward`, `turn_left`, …)
+
+## Inspector
+
+- **Digital Twin** — combobox; policy is never hardcoded in the node.
+- **command** — wire from upstream (typically Fuzzy Matcher `match_string`).
+
+### Inspector preview
+
+When a twin is selected, the panel shows:
+
+| Section | Contents |
+|---|---|
+| **Twin** | Name, slug, UUID, environment, asset UUID |
+| **Controller** | Policy name, type (`teleop`), control mode (`command` / `velocity` / `joint_control`), input device, asset slug, policy UUID |
+| **Forwardable commands** | Scrollable list: actuation slug, label, optional key |
+
+Use this list to verify what voice commands the pipeline can dispatch before running the workflow.
+
+## MQTT payload
+
+Published to `cyberwave/twin/{twin_uuid}/command`:
+
+```json
+{
+  "source_type": "tele",
+  "command": "move_forward",
+  "data": {},
+  "timestamp": 1710000000.0
+}
+```
+
+| Field | Cloud workflow | Edge worker |
+|---|---|---|
+| `source_type` | `tele` (live) or `sim_tele` (simulation execution target) | `edge` |
+| `command` | Resolved **actuation** slug (not the raw input label) |
+| `data` | From binding `playground` when present, else `{}` |
+
+Same shape as manual keyboard teleop so edge drivers and simulators consume workflow commands without special cases.
+
+## Outputs
+
+| Field | Type | Description |
+|---|---|---|
+| `command` | string | Resolved actuation that was last sent on MQTT |
+| `available_commands` | array | `{actuation, label, key}` for every forwardable binding |
+| `twin_name` | string | Twin display name |
+| `controller_name` | string | Policy name |
+| `controller_type` | string | e.g. `teleop` |
+| `matched` | boolean | `true` when resolution succeeded |
+| `sent` | boolean | Cloud: MQTT queued; edge: publish attempted |
+
+On resolution failure the node raises an error (unknown command, missing policy, missing twin).
+
+## Execution targets
+
+| Target | Behavior |
+|---|---|
+| **Cloud** | `run_virtual_controller_node` → `send_update_to_mqtt.delay` |
+| **Edge** | Emitter caches policy per twin (`_CW_VC_POLICY_CACHE`) via API on first use; `client.mqtt.publish` with QoS 0 |
+
+Edge workers **save** the resolved controller snapshot (UUID, name, metadata, parsed `entries`) in process memory so repeat commands on the same twin do not re-fetch the policy every frame.
+
+## Recommended Conditional gate
+
+Only run Virtual Controller when Fuzzy Matcher succeeded:
+
+```
+fuzzy_matcher.match → conditional (equals true) → virtual_controller
+```
+
+Pass `fuzzy_matcher.match_string` into `virtual_controller.command` on the true branch.
+
+## Dependencies
+
+| Layer | Requirement |
+|---|---|
+| **Compile server** | No ML extras. `paho-mqtt` and `httpx` are base Django/SDK deps. |
+| **Edge worker** | Base `cyberwave` — `client.twins.get`, controller-policies API, `client.mqtt.publish` |
+| **edge-sync** | No `model_requirements` (no ML weights) |
+
+`rapidfuzz` is only required on the **Fuzzy Matcher** node upstream, not on Virtual Controller.
+
+Full voice-pipeline matrix: [Edge workflow dependencies](/feature-reference/workflows/edge-dependencies).
+
+## Controller policy examples
+
+Command-mode UGV policies (`control_mode: "command"`) define bindings like:
+
+```json
+{
+  "key": "W",
+  "label": "Forward",
+  "actuation": "move_forward",
+  "continuous": true
+}
+```
+
+Virtual Controller sends `move_forward` on MQTT when the pipeline passes `"Forward"`, `"move_forward"`, or fuzzy-matched variants. See seeded policies in `seed_controllers.py` (e.g. `controller:ugv-beast:v1`).
+
+Universal keyboard (`controller:keyboard-locomotion:v1`) has no per-asset bindings in seed data; the node uses built-in locomotion defaults when `supports_locomotion` is true.
+
+## Related nodes
+
+- **Twin** — supplies Fuzzy Matcher `candidates` from `control_actuations` / `control_labels`
+- **Fuzzy Matcher** — maps noisy STT (uncertain string) → `match_string` from a source-of-truth string or array
+- **Call Model** — STT text → Fuzzy Matcher `query`
+- **Conditional** — gate on `matched`
+- **Send MQTT** — generic publish; Virtual Controller is purpose-built for controller actuations

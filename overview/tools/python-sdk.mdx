@@ -15,12 +15,13 @@ The Cyberwave Python SDK (`cyberwave`) is a unified client that wraps both the C
 | Capability                       | Protocol      | Description                                                             |
 | -------------------------------- | ------------- | ----------------------------------------------------------------------- |
 | Digital Twin management          | REST          | Create, query, move, and configure digital twins                        |
-| Joint control                    | MQTT          | Send real-time joint position commands (degrees or radians)             |
+| Joint control                    | MQTT          | Send real-time joint position commands (radians by default; optional degrees) |
 | Position, rotation, scale        | MQTT          | Update a twin's 3D pose in the environment                              |
 | Video streaming                  | WebRTC + MQTT | Stream camera feeds (standard + RealSense) to the cloud                 |
 | Frame capture                    | WebRTC        | Grab individual frames as files, numpy arrays, PIL images, or raw bytes |
 | Asset catalog                    | REST          | Search, create, and upload robot assets (including large GLB files)     |
 | Workspace and project management | REST          | List workspaces, create projects and environments                       |
+| GPS telemetry                    | MQTT          | Publish raw GNSS data (lat/lon/alt/satellites) for storage and replay   |
 | Edge management                  | REST          | Register, update, and delete edge devices                               |
 | Workflows                        | REST          | List, trigger, and monitor workflow executions                          |
 | Alerts                           | REST          | Create, acknowledge, resolve, and manage twin alerts                    |
@@ -106,11 +107,11 @@ robot.edit_rotation(yaw=90)
 robot.edit_scale(x=1.5, y=1.5, z=1.5)
 
 # ──────────────────────────────────────────────
-# 3. Control joints (degrees or radians)
+# 3. Control joints (radians by default)
 # ──────────────────────────────────────────────
 
-robot.joints.set("shoulder_pan", 45, degrees=True)
-robot.joints.set("elbow_flex", math.pi / 4, degrees=False)
+robot.joints.set("shoulder_pan", math.pi / 4)
+robot.joints.set("elbow_flex", 45, degrees=True)
 
 angle = robot.joints.get("shoulder_pan")
 all_joints = robot.joints.get_all()
@@ -329,7 +330,7 @@ This operation:
 
 ## Joint Control
 
-Send real-time joint commands to a robot arm or any articulated twin. You can use **degrees** or **radians**:
+Send real-time joint commands to a robot arm or any articulated twin. Positions are **radians by default**; pass `degrees=True` for degrees:
 
 ```python
 import math
@@ -337,9 +338,10 @@ import math
 cw.affect("simulation")
 robot = cw.twin("the-robot-studio/so101")
 
-robot.joints.set("shoulder_pan", 45, degrees=True)
-
-robot.joints.set("elbow_flex", math.pi/4, degrees=False)
+robot.joints.list()
+robot.joints.get()
+robot.joints.set("shoulder_pan", math.pi / 4)
+robot.joints.set("elbow_flex", 45, degrees=True)
 
 angle = robot.joints.get("shoulder_pan")
 
@@ -366,7 +368,9 @@ shoulder_pan              0.7854 rad      45.00 °
 
 | Method                                  | Description                                                          |
 | --------------------------------------- | -------------------------------------------------------------------- |
-| `joints.set(name, value, degrees=True)` | Set a joint to a target position                                     |
+| `joints.list()` | Controllable joint names from schema |
+| `joints.get(what_joints=..., what_data=[...])` | Read cached joint state (default: all positions in radians) |
+| `joints.set(values, what_data="position", ...)` | Set one joint kind (position, velocity, acceleration) |
 | `joints.get(name)`                      | Get the current position of a specific joint (radians)               |
 | `joints.list()`                         | List all joint names for the twin                                    |
 | `joints.get_all()`                      | Get all joint states as a `dict[name, radians]`                      |

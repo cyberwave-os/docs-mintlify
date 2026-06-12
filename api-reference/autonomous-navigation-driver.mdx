@@ -56,6 +56,7 @@ The driver publishes standard ROS 2 topics that any ROS 2 node can consume indep
 | `CYBERWAVE_API_KEY`                          | —                              | Cyberwave API token                                                  |
 | `CYBERWAVE_TWIN_UUID`                        | —                              | Digital twin UUID                                                    |
 | `CYBERWAVE_MQTT_HOST`                        | `mqtt.cyberwave.com`           | MQTT broker                                                          |
+| `GO2_AES_128_KEY`                            | —                              | Per-device AES-128 key for firmware ≥ 1.1.15 (see below)            |
 | `ROBOT_IP`                                   | (auto-discovered)              | Go2 IP — validated on startup; see below                             |
 | `ROBOT_IP_FALLBACKS`                         | `192.168.12.1,192.168.123.161` | Comma-separated IPs to probe when `ROBOT_IP` is unset or unreachable |
 | `CONFIG_PROFILE`                             | (auto)                         | Config profile: `jazzy`, `humble`, or `jetson`                       |
@@ -90,6 +91,68 @@ To disable:
 ```bash
 GO2_OBSTACLE_AVOIDANCE=false
 ```
+
+### Obstacle Avoidance & Teleoperation
+
+There are two layers of obstacle avoidance on the Go2:
+
+1. **Onboard** — the robot's built-in ultrasonic + LiDAR avoidance at the
+   firmware level.
+2. **Driver-level** — path planning avoidance through costmaps constructed
+   in real time by the navigation stack.
+
+When `GO2_OBSTACLE_AVOIDANCE=true` (configurable in the twin metadata;
+enabled by default), the driver activates **both layers** for autonomous
+navigation.
+
+<Info>
+**Recommended teleoperation during mapping:**
+
+- **Cyberwave keyboard controller** — obstacle avoidance is active
+  (onboard + driver-level). This is the recommended way to drive the robot
+  while building a map of your environment.
+- **Unitree physical remote** — always retains onboard obstacle avoidance
+  regardless of driver configuration.
+
+Both options are safe for teleoperation during mapping.
+</Info>
+
+<Warning>
+Bluetooth gamepad obstacle avoidance now depends on the active controller
+policy:
+
+- **Local Bluetooth controller (`local`)**: obstacle avoidance stays on the
+  robot-side local controller path.
+- **Keyboard teleop** and **autonomous navigation**: the driver switches to the
+  autonomy/remote-command path, and the gamepad does not keep independent
+  obstacle avoidance.
+</Warning>
+
+### AES-128 Key (firmware ≥ 1.1.15)
+
+Go2 firmware **1.1.15+** uses a per-device AES-128 key (`data2=3` protocol) to
+encrypt the WebRTC LAN handshake. Without this key, both the driver node and
+native video node will fail to connect.
+
+Fetch the key using the `unitree_webrtc_connect` CLI (requires the Unitree
+account used in the Unitree Go/Explore mobile app):
+
+```bash
+pip install unitree_webrtc_connect
+unitree-fetch-aes-key --email your@email.com --password 'your-password' --device-type Go2
+```
+
+Set the 32-hex-char key in your env file or Edge Core `shared_env`:
+
+```bash
+GO2_AES_128_KEY=abcdef0123456789abcdef0123456789
+```
+
+<Info>
+Older firmware (below 1.1.15) uses a static key built into the driver and does
+not require this variable. If `GO2_AES_128_KEY` is unset and the robot returns
+`data2=3`, the driver will log a clear error with instructions.
+</Info>
 
 ### Robot IP discovery
 

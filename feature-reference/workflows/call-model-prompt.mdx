@@ -1,0 +1,177 @@
+---
+title: "Prompting Call Model"
+description: "Drive open-vocabulary and multimodal models from the Call Model node by setting a text prompt — works the same on cloud and edge."
+tag: stub
+---
+
+The `prompt` input on a `call_model` node is the steering knob for any
+model that accepts free-form text. Set it once in the inspector (or
+wire it from an upstream node) and the value flows through to the
+selected model at inference time on every execution path — cloud
+runner, edge mission worker, and edge `camera_frame` worker.
+
+## Where the prompt is stored
+
+The inspector persists the value in one of two places, depending on
+the editor row used:
+
+| Storage | When |
+|---|---|
+| `parameters.default_prompt` | Dedicated `Prompt` row in the inspector |
+| `metadata.input_mappings.prompt` (`mode: "value"`) | Generic `InputMappingEditor` row, or set via the API |
+
+Both stores are honored at compile time, so a workflow can come back
+from a clone, import, or API edit with the value in either place and
+still work. Pick one and stick with it — the editor populates
+`parameters.default_prompt` by default, so that is the right place
+to author the field if you have the choice.
+
+## What `prompt` means for each model family
+
+| Model family | What the prompt does |
+|---|---|
+| **Open-vocab detectors / segmenters** — YOLOE-26 text/visual, SAM 3 text mode, YOLO-World | Reconfigures the classification head to detect exactly the classes you name. Single class (`"helmet"`), comma-separated for multiple (`"helmet, safety vest"`), or a list when wired from an upstream node (`["helmet", "safety vest"]`). |
+| **VLMs / LLMs** — Gemini, Gemini Robotics ER, Molmo | The prompt *is* the model input — paired with an image or video for vision tasks. |
+| **STT / Whisper** | Optional biasing hint that helps the decoder lock onto jargon, proper nouns, or expected phrases. Edge STT catalog models and packages: [Call Model STT on edge](/feature-reference/workflows/call-model-stt-edge). |
+| **Diffusion / Im2Mesh** | The text-to-image / text-to-3D prompt. |
+| **Closed-set YOLOv8 / YOLOv11 / classifier nets** | Not consumed. `cyberwave workflow sync` rejects the workflow with a `text_prompt_unsupported` error so you don't silently ship a configuration where the prompt does nothing. |
+
+## Edge open-vocabulary detection
+
+For an edge `camera_frame → call_model` chain, the prompt is the
+cleanest way to add custom classes without retraining:
+
+```
+camera_frame → call_model (YOLOE-26 Small, prompt: "helmet") → send_alert
+```
+
+The camera worker codegen forwards the resolved prompt into the
+generated `model.predict(frame, ..., prompt=..., twin_uuid=...)` call.
+The Ultralytics runtime configures the head once via `set_classes()`
+and caches that configuration on the model handle, so subsequent
+frames at 10–30 fps don't pay the re-parameterization cost. If the
+underlying call fails (bad tokenizer state, OOM during text
+encoding), the runtime logs a warning and the previously active
+class set stays live — the worker keeps producing detections rather
+than crashing, and the warning surfaces the regression.
+
+### Camera-frame limitation: static prompts only
+
+Camera workers compile through the legacy `WorkerCodegen` path,
+which only resolves prompts that are statically known at compile
+time — `parameters.default_prompt` or `input_mappings.prompt` with
+`mode: "value"`. Reference-mode mappings that read from an upstream
+node's output are **accepted by the compatibility gate** (the model
+takes text, after all) but **dropped by the camera codegen** with a
+clear warning in the compile output:
+
+```
+worker_codegen: call_model <uuid> has a 'reference'-mode prompt mapping;
+camera-frame workers can only forward static literal prompts...
+```
+
+If you need an upstream-wired prompt for a vision workflow, move
+the trigger off `camera_frame` so the assembler renders the graph
+instead — that path threads `_node_outputs` through every node and
+honors reference / expression mappings end-to-end.
+
+## Single class vs multi-class
+
+The inspector's `prompt` field is a single string, so the way to ask
+for multiple classes is to **comma-separate them**:
+
+```yaml
+prompt: "helmet, safety vest, person"
+```
+
+The SDK splits on commas, strips whitespace from each entry, and
+re-parameterizes the head with the resulting class list. Empty
+entries (`"helmet, , vest"`) are dropped silently. When the prompt
+is wired from an upstream node whose output is already a list of
+strings, that form is accepted as-is — no comma-splitting needed:
+
+```yaml
+prompt: ["helmet", "safety vest", "person"]
+```
+
+The runtime returns detections labeled with whichever class fired,
+and you can filter downstream with `classes: ["helmet"]` or split on
+the label in a `code` node.
+
+### Prompt-free variants
+
+YOLOE checkpoints come in two flavours. Text/visual variants
+(`yoloe-26*-seg`, `yoloe-26*-det`) re-parameterize the head from
+your prompt at runtime. **Prompt-free** variants
+(`yoloe-26*-seg-pf`) bake the vocabulary into the checkpoint at
+train time — typing a prompt against one would be silently ignored,
+so the inspector hides the prompt row when a prompt-free variant is
+selected.
+
+## Attribute binding
+
+Open-vocabulary detectors are reliable at *object identity*
+("helmet", "ladder", "forklift") and noticeably less reliable at
+*attribute binding* ("**red** helmet", "**tall** person", "person
+**with glasses**"). Two patterns help, depending on the workflow
+shape:
+
+**Compound prompt (camera workflows).** Express the attribute as
+part of a single phrase rather than a comma-separated class list:
+
+```yaml
+prompt: "person wearing glasses"
+```
+
+A comma would create two independent classes (`person` OR
+`glasses`); a single phrase keeps `set_classes` configuring **one**
+open-vocab class whose text embedding encodes the attribute. Quality
+depends on how well the phrasing matches what the model saw during
+training — try a couple of variants ("person with glasses",
+"person wearing eyeglasses") and tune `confidence_threshold` (often
+0.4–0.55 for compound prompts vs. 0.5 default).
+
+**Two-stage filter (non-camera workflows).** When you can afford a
+`code` node — i.e. the workflow is not on a `camera_frame` trigger,
+which the compiler currently blocks Code nodes on — do:
+
+1. Use `prompt` for the **object** class.
+2. Add a downstream `code` node that crops each detection's bounding
+   box and checks the attribute (mean RGB / HSV for color, simple
+   geometry for size).
+3. Gate with `detection_event_gate` + `timed_condition` before
+   `send_alert` to debounce.
+
+See [`spatial-filter`](./spatial-filter) and [`timed-condition`](./timed-condition)
+for the surrounding nodes; the prompt change here is purely on the
+intelligence step.
+
+## When the prompt is rejected at compile time
+
+`cyberwave workflow sync` (the backend codegen) fails with a clear
+message when a `prompt` is configured on a model whose catalog
+metadata says `can_take_text_as_input = False`. The same rule fires
+for both edge-activated and cloud-activated workflows — the model
+either accepts text or it doesn't, regardless of where the
+inference runs. The inspector mirrors the rule by hiding the prompt
+row on those models, but the backend is the source of truth: a
+workflow created through the API or imported from another
+workspace will be rejected at sync even if it never passed through
+the editor.
+
+To resolve the error, pick an open-vocabulary model (YOLOE-26
+text/visual, YOLO-World, SAM 3 text mode), clear the prompt field,
+or — if the prompt is wired from an upstream node — disconnect that
+input edge.
+
+## Soft breaking change (CYB-2042)
+
+Before this release, configuring a prompt against a model that
+couldn't consume text compiled silently and the prompt was dropped
+on the floor at runtime (closed-set YOLO ignored the kwarg,
+non-image models never received it). Existing workflows in that
+state will now fail `workflow sync` with the
+`text_prompt_unsupported` error. Clear the prompt or switch the
+model — the new behaviour matches the previous runtime effect, just
+surfaced at deploy time instead of after a silent detection
+regression.

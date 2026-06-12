@@ -1,15 +1,17 @@
 ---
 title: "Writing compatible drivers"
-description: "A driver bridges your hardware's native API and the Cyberwave platform, exposing it as a digital twin."
+description: "Build a platform-compliant edge driver for your own asset: container contract, cw-driver.yml interface manifest, MQTT catalog, and sensor output."
 ---
 
 ## What is a compatible driver?
 
-A compatible driver creates the connection between a hardware device's own API and the Cyberwave platform. It is responsible for translating the device's native protocol into the twin model that the rest of the platform understands.
+A compatible driver connects **your hardware's native API** to a **Cyberwave asset and twin**: it translates the device's protocol into MQTT topics, command envelopes, and (optionally) edge data channels that the UI, workflows, and SDK understand.
 
-Drivers can run anywhere — on a dedicated edge device, directly on the robot hardware, in the cloud, or on a developer laptop. In production, they typically run on edge hardware co-located with the device they control.
+This guide is for **integrators building a driver from scratch** for a custom or third-party asset in your workspace. Cyberwave-maintained drivers use the same rules; their `cw-driver.yml` files are linked later as examples only.
 
-Each driver is packaged as a **Docker container image**. Edge Core pulls and runs that image, injecting the environment variables described below. This means you can develop and test your driver locally using the same image that will run in production.
+Drivers can run on edge hardware, on the robot, in the cloud, or on a developer laptop. In production they usually run beside the device under **Edge Core**.
+
+Each driver ships as a **Docker image**. Edge Core pulls and runs it with the environment variables below, so local development matches production deployment.
 
 ## Quickstart: scaffold with the Claude skill
 
@@ -83,6 +85,233 @@ Drivers may read and modify this file. Edge Core syncs any changes back to the b
 Drivers should treat `metadata["edge_configs"]` as the source of truth for per-device runtime configuration, and `metadata["edge_fingerprint"]` as the edge identity (not duplicated inside `edge_configs`).
 
 Read `edge_configs` from `CYBERWAVE_TWIN_JSON_FILE` at startup to obtain per-device settings without hardcoding them in the image.
+
+## Declare your driver interface (`cw-driver.yml`)
+
+To make a **custom asset** work with Cyberwave, your driver project should include a **`cw-driver.yml`** at the repository root (next to your `Dockerfile`). The file is the **contract** between your hardware bridge, the platform APIs, the web UI, and the SDK: it lists which MQTT topics you use and which command strings you accept.
+
+Cyberwave’s own edge drivers (Go2, SO-101, DJI Mini, and others) use the same format — treat them as **reference implementations**, not as something you must fork. Copy the patterns that match your robot (locomotion, joint bus, camera stream, etc.) and trim what you do not implement.
+
+### Compliance checklist
+
+| Step | What you do |
+| ---- | ----------- |
+| 1. **Asset** | Create an asset in your workspace for the hardware type you are integrating. Note its `registry_id` (or `slug`) — your manifest must target that id. |
+| 2. **Manifest** | Add `cw-driver.yml` to your driver repo. Declare every topic segment and `commands.supported` entry your code actually handles. |
+| 3. **Implement** | Subscribe/publish on the MQTT topics from your catalog (e.g. `cyberwave/twin/{uuid}/command`); see [Runtime messaging (MQTT)](#runtime-messaging-mqtt) and [MQTT API Reference](/api-reference/mqtt/main). |
+| 4. **Register interface** | `twin.commands.set_schema("./cw-driver.yml")` → `PUT /api/v1/twins/{uuid}` (see [Apply the manifest](#apply-the-manifest-to-your-twin) and [Platform API reference](#platform-api-reference)). |
+| 5. **Deploy** | Run the image with Edge Core (or locally with the same env vars). New twins spawned from that asset inherit `metadata["mqtt"]`. |
+
+If the manifest and the running driver disagree (undeclared command, wrong topic), teleop, agents, and SDK helpers will not line up with what the hardware actually does.
+
+### Why you need it
+
+Without a declared interface catalog, the platform cannot know which MQTT topics your driver uses, which command strings are valid on `cyberwave/twin/{uuid}/command`, or whether a command is **continuous** (stick-held) vs **discrete** (one-shot). That metadata drives:
+
+| Consumer | What it uses from the catalog |
+| -------- | ----------------------------- |
+| **Web UI** | Dynamic control surfaces — e.g. the keyboard teleop overlay lists only `commands.supported` entries and respects `commands.specs[name].continuous` |
+| **Python SDK** | `twin.commands.get_schema()` and catalog methods such as `twin.commands.move_forward(...)` bound from `commands.supported` |
+| **Your driver** | A single source of truth for reviews, tests, and parity with production behavior |
+
+<Note>
+  **Planned** — topic entries will also reference dedicated payload schemas (protobuf / robot-native layouts) for typed robot data on the wire. Today, `payload_schema_ref` names the logical schema; strict validation against those refs is not enforced yet.
+</Note>
+
+### What `cw-driver.yml` contains
+
+Top-level fields:
+
+| Field | Purpose |
+| ----- | ------- |
+| `registry_ids` | One or more asset `registry_id` values this manifest describes — use the id of **your** workspace asset (e.g. `acme-corp/my-arm-v1`) |
+| `mqtt.schema_version` | Catalog format version (currently `1`) |
+| `mqtt.driver_family` | Implementation hint (`ros_cpp`, `python`, `android`, …) |
+| `mqtt.<namespace>.<leaf>` | Per-topic contract — see [YAML path → MQTT topic](#yaml-path--mqtt-topic) below |
+| `mqtt.commands.supported` | Command names the driver accepts on the twin command topic — plain strings (discrete) or `{name, continuous, rate_hz}` objects |
+| `mqtt.commands.routers` | Optional routing hints for the edge bridge (e.g. `actuation`, `get_status`) |
+| `mqtt.commands.constraints` | Human-readable rules (source types, safety notes) surfaced to agents and docs |
+
+### YAML path → MQTT topic
+
+Topic entries are nested as **`mqtt.<namespace>.<leaf>`**. The leaf key is the **MQTT path segment** (use hyphens in YAML, e.g. `webrtc-offer`). Each entry becomes a flat key in `metadata["mqtt"]["topics"]` by joining a namespace prefix with the leaf:
+
+| YAML path | Compiled slug | Example live topic (`twin_uuid = abc`) |
+| --------- | ------------- | --------------------------------------- |
+| `mqtt.joint.update` | `cyberwave/joint/{twin_uuid}/update` | `cyberwave/joint/abc/update` |
+| `mqtt.joint.+` | `cyberwave/joint/{twin_uuid}/+` | `cyberwave/joint/abc/+` (wildcard) |
+| `mqtt.twin.command` | `cyberwave/twin/{twin_uuid}/command` | `cyberwave/twin/abc/command` |
+| `mqtt.twin.position` | `cyberwave/twin/{twin_uuid}/position` | `cyberwave/twin/abc/position` |
+| `mqtt.twin.telemetry` | `cyberwave/twin/{twin_uuid}/telemetry` | `cyberwave/twin/abc/telemetry` |
+| `mqtt.twin.webrtc-offer` | `cyberwave/twin/{twin_uuid}/webrtc-offer` | `cyberwave/twin/abc/webrtc-offer` |
+| `mqtt.twin.webrtc-answer` | `cyberwave/twin/{twin_uuid}/webrtc-answer` | `cyberwave/twin/abc/webrtc-answer` |
+| `mqtt.twin.webrtc-candidate` | `cyberwave/twin/{twin_uuid}/webrtc-candidate` | `cyberwave/twin/abc/webrtc-candidate` |
+| `mqtt.environment.<leaf>` | `cyberwave/environment/{environment_uuid}/<leaf>` | environment-scoped |
+
+**Namespace prefixes:**
+
+| `mqtt` namespace | MQTT prefix |
+| ---------------- | ----------- |
+| `joint` | `cyberwave/joint/{twin_uuid}` |
+| `twin` | `cyberwave/twin/{twin_uuid}` |
+| `environment` | `cyberwave/environment/{environment_uuid}` |
+
+Each leaf entry sets `direction`, `payload_schema_ref`, `description`, and optional `source_types`.
+
+**WebRTC** signaling is always on the **twin** prefix (`cyberwave/twin/{uuid}/webrtc-offer`, `webrtc-answer`, `webrtc-candidate`, and `webrtc-command` for media-service commands). Declare them under **`mqtt.twin`** with hyphenated leaf names — not as a separate top-level namespace:
+
+```yaml
+mqtt:
+  twin:
+    command:
+      # ...
+    webrtc-offer:
+      direction: both
+      payload_schema_ref: WebRTCOfferPayload
+    webrtc-answer:
+      direction: both
+      payload_schema_ref: WebRTCAnswerPayload
+```
+
+Only list WebRTC leaves when **this twin** participates in signaling (e.g. onboard camera or gimbal stream). Arm-only or joint-bus drivers (such as SO-101) should omit them; camera video uses **child camera twins** and the media service, not WebRTC topics on the arm twin.
+
+<Note>
+  In some first-party Cyberwave profiles you may see a legacy `mqtt.webrtc.offer` shorthand (`offer` → `webrtc-offer` under the twin prefix). For **new** drivers, use `mqtt.twin.webrtc-*` only.
+</Note>
+
+### Compiled catalog shape
+
+On the platform, your asset (and twins created from it) store a JSON bundle at **`metadata["mqtt"]`**:
+
+- `topics` — map of canonical slug → `{ direction, payload_schema_ref, description, … }`
+- `commands.supported` — list of command name strings
+- `commands.specs` — per-command flags such as `continuous` and `rate_hz`
+- `schema_version`, `driver_family` — format and implementation hints
+
+Author in YAML for readability; the SDK compiles it into `metadata["mqtt"]` when you call `set_schema` on a twin.
+
+### Reference implementations (Cyberwave drivers)
+
+Use these open-source manifests as templates — copy the namespaces and command style that match your hardware, then delete what you do not implement:
+
+| Profile | Manifest | Good template for |
+| ------- | -------- | ------------------- |
+| UGV Beast | [cw-driver.yml](https://github.com/cyberwave-os/cyberwave-edge-ros-ugv/blob/main/cw-driver.yml) | Mobile base, continuous locomotion, discrete utilities |
+| SO-101 arm | [cw-driver.yml](https://github.com/cyberwave-os/cyberwave-edge-so101/blob/main/cw-driver.yml) | `joint` bus + `twin.command` script commands (no WebRTC on the arm twin) |
+
+### Apply the manifest to your twin
+
+After you author `cw-driver.yml`, register it on a **twin you own** with the Python SDK. You do not need to hand-build JSON or call low-level asset APIs — point `set_schema` at your manifest file and the platform updates that twin's `metadata["mqtt"]`, refreshes the catalog cache, and binds **catalog-derived command methods** on `twin.commands` (for example `twin.commands.stop()`, `twin.commands.move_forward(...)` when those names appear in `commands.supported`).
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave(api_key="...")
+twin = cw.twin("your-twin-uuid")  # or resolve from environment
+
+# Compile cw-driver.yml, persist on this twin, re-bind catalog methods
+twin.commands.set_schema("./cw-driver.yml")
+
+# Inspect the catalog the UI and SDK now use
+print(twin.commands.get_schema()["commands"]["supported"])
+
+# Call any command you declared — derived from the manifest
+twin.commands.stop()
+twin.commands.move_forward(linear_x=0.3, duration=0.5, rate_hz=10)
+```
+
+Set `registry_ids` in the YAML to match the asset your twin was created from. Re-run `set_schema` whenever you change the manifest so teleop, agents, and SDK callers stay aligned with your driver.
+
+#### `set_schema` — REST and SDK
+
+| | |
+| --- | --- |
+| **Python SDK** | `twin.commands.set_schema(path_or_dict, merge=True)` — compiles `cw-driver.yml`, calls the twin update API, re-binds `twin.commands.<name>` |
+| **REST** | `PUT /api/v1/twins/{uuid}` |
+| **Auth** | `Authorization: Bearer <token>` (same as `CYBERWAVE_API_KEY`) |
+| **Request body** | `{ "metadata": { "mqtt": { "schema_version": 1, "topics": { ... }, "commands": { "supported": [...], "specs": { ... } }, ... } } }` — only fields you want to change need to be sent; `set_schema` sends the full `metadata` object with `mqtt` set or merged |
+| **Response** | `TwinSchema` including updated `metadata` |
+| **Read back** | `GET /api/v1/twins/{uuid}` → `metadata.mqtt`; SDK: `twin.commands.get_schema()` |
+
+Full OpenAPI entry: [Update Twin](/api-reference/rest/DefaultApi#src_app_api_twins_update_twin).
+
+`merge=True` (default) deep-merges the new `metadata.mqtt` into existing twin metadata. `merge=False` replaces the entire `mqtt` block.
+
+Invoke catalog commands after `set_schema` — they publish over **MQTT**, not REST:
+
+| SDK | Wire |
+| --- | --- |
+| `twin.commands.<command>(**kwargs)` | Publish to `cyberwave/twin/{twin_uuid}/command` with envelope `{ source_type, command, data, timestamp }` |
+
+### Platform API reference
+
+Use the **Python SDK** for day-to-day driver work; use **REST** when integrating from another language or CI. All REST paths are under `/api/v1` and require a bearer token unless noted otherwise. See the [REST API reference](/api-reference/rest/DefaultApi) for request/response schemas.
+
+#### Bring-up (workspace)
+
+| Step | REST | Python SDK |
+| ---- | ---- | ------------ |
+| Create catalog asset | `POST /api/v1/assets` — [Create Asset](/api-reference/rest/DefaultApi#src_app_api_assets_create_asset) | `client.assets.create(...)` |
+| Check `registry_id` free | `GET /api/v1/assets/check-registry-id/{registry_id}` — [Check Registry Id](/api-reference/rest/DefaultApi#src_app_api_assets_check_registry_id_availability) | — |
+| Update asset (optional shared catalog on asset) | `PUT /api/v1/assets/{uuid}` — [Update Asset](/api-reference/rest/DefaultApi#src_app_api_assets_update_asset) — set `metadata.mqtt` on the asset if every new twin should inherit the same manifest | `client.assets.update(asset_uuid, {"metadata": {"mqtt": ...}})` |
+| Create twin | `POST /api/v1/twins` — [Create Twin](/api-reference/rest/DefaultApi#src_app_api_twins_create_twin) | `client.twins.create(...)` |
+| List twins in environment | `GET /api/v1/environments/{uuid}/twins` — [Get Environment Twins](/api-reference/rest/DefaultApi#src_app_api_environments_get_environment_twins) | environment helpers / twin resolution |
+| Register driver manifest on **one twin** | `PUT /api/v1/twins/{uuid}` — [Update Twin](/api-reference/rest/DefaultApi#src_app_api_twins_update_twin) | `twin.commands.set_schema("./cw-driver.yml")` |
+| Read twin + catalog | `GET /api/v1/twins/{uuid}` — [Get Twin](/api-reference/rest/DefaultApi#src_app_api_twins_get_twin) | `twin.commands.get_schema()` or `twin.refresh()` |
+
+#### Runtime state (REST alternatives to MQTT)
+
+Drivers normally stream state over **MQTT** (see below). These REST endpoints are available for tools, simulators, or HTTP-only bridges:
+
+| Data | REST | Python SDK |
+| ---- | ---- | ------------ |
+| Pose (position / rotation / scale) | `PATCH /api/v1/twins/{uuid}/state` — [Update Twin State](/api-reference/rest/DefaultApi#src_app_api_twins_update_twin_state) | `client.twins.update_state(twin_uuid, {...})` |
+| Joint states (HTTP) | `PUT /api/v1/twins/{uuid}/joint_states` — [Update Twin Joint States](/api-reference/rest/DefaultApi#src_app_api_urdf_update_twin_joint_states) | `client.twins.update_joint_state(...)` / URDF helpers |
+| Single joint | `PUT /api/v1/twins/{uuid}/joints/{joint_name}/state` — [Update Twin Joint State](/api-reference/rest/DefaultApi#src_app_api_urdf_update_twin_joint_state) | — |
+| Latest camera frame | `GET /api/v1/twins/{uuid}/latest-frame` — [Get Twin Latest Frame](/api-reference/rest/DefaultApi#src_app_api_twins_get_twin_latest_frame) | `client.twins.get_latest_frame(...)` |
+| Driver logs | `GET /api/v1/twins/{uuid}/logs` — [Get Twin Driver Logs](/api-reference/rest/DefaultApi#src_app_api_twins_get_twin_driver_logs) | — |
+
+#### Runtime messaging (MQTT)
+
+Declared in `cw-driver.yml` → compiled into `metadata.mqtt.topics`. At runtime the driver (or SDK teleop) uses the **MQTT broker** (WebSocket URL in `NEXT_PUBLIC_MQTT_URL` for frontends; port `1883` / `9001` locally for edge). Topic prefix may include an environment segment in deployed stacks; slugs below are canonical.
+
+| Catalog slug (`metadata.mqtt.topics` key) | Example topic | Typical driver role |
+| ----------------------------------------- | ------------- | ------------------- |
+| `cyberwave/twin/{twin_uuid}/command` | `cyberwave/twin/abc/command` | **Subscribe** for `source_type: tele` commands; map `command` string to hardware |
+| `cyberwave/joint/{twin_uuid}/update` | `cyberwave/joint/abc/update` | **Subscribe** for tele joint targets; **publish** follower/sim observations |
+| `cyberwave/twin/{twin_uuid}/position` | `cyberwave/twin/abc/position` | **Publish** pose updates |
+| `cyberwave/twin/{twin_uuid}/telemetry` | `cyberwave/twin/abc/telemetry` | **Publish** lifecycle / status JSON |
+| `cyberwave/twin/{twin_uuid}/webrtc-offer` | `cyberwave/twin/abc/webrtc-offer` | **Subscribe/publish** signaling (camera twins) |
+| `cyberwave/twin/{twin_uuid}/webrtc-answer` | `cyberwave/twin/abc/webrtc-answer` | Signaling |
+| `cyberwave/twin/{twin_uuid}/webrtc-candidate` | `cyberwave/twin/abc/webrtc-candidate` | ICE candidates |
+
+| SDK publish helper | MQTT topic pattern |
+| ---------------- | ------------------ |
+| `twin.commands.<name>(...)` | `cyberwave/twin/{uuid}/command` |
+| `client.mqtt.update_joints_state(...)` | `cyberwave/joint/{uuid}/update` |
+| `client.mqtt.update_twin_position(...)` | `cyberwave/twin/{uuid}/position` |
+| `client.mqtt.update_twin_rotation(...)` | `cyberwave/twin/{uuid}/rotation` |
+
+Payload shapes: [MQTT API Reference](/api-reference/mqtt/main).
+
+#### Edge data bus (local, not REST)
+
+| SDK | Key expression |
+| --- | -------------- |
+| `cw.data.publish("joint_states", {...})` | `cw/{twin_uuid}/data/joint_states` |
+| `cw.data.publish("frames/default", ndarray)` | `cw/{twin_uuid}/data/frames/default` |
+
+See [Data Wire Format](/edge/drivers/data-wire-format) for encoding rules.
+
+### Assets, twins, and public catalog entries
+
+| Layer | Who controls it | Behavior |
+| ----- | --------------- | -------- |
+| **Your asset** | Your workspace | Defines the hardware type; twins usually start with asset metadata. |
+| **Your twin** | Your workspace | `set_schema` updates **this twin's** `metadata["mqtt"]` so you can iterate without changing a shared asset definition. |
+| **Public Cyberwave assets** | Cyberwave | You can spawn twins from them; use `set_schema` on **your** twin if you need a custom command surface for a private integration. |
+
+First-party Cyberwave drivers ship a `cw-driver.yml` in their repositories for reference — you follow the same file format, then apply it to **your** twin with `set_schema` during bring-up.
 
 ## Sensor data output
 
@@ -335,12 +564,13 @@ You own your driver code. There are two common paths:
 - **Open source** — publish your driver as a public repository on GitHub under the [Apache 2.0 license](https://www.apache.org/licenses/LICENSE-2.0). This is our recommended default and makes it easier for the community to contribute and reuse your work.
 - **Closed source** — keep your driver proprietary. In this case, we recommend obfuscating your code before distributing the image and including a clear license file that reflects your distribution terms. Interested in writing a closed-source driver? [Reach out to us](mailto:info@cyberwave.com).
 
-## Example drivers
+## Example driver repositories
 
-The following open-source drivers are good starting points and reference implementations:
+Fork or read these repositories when building your own compliant driver — each includes a `Dockerfile`, Edge Core env contract, and (where applicable) a `cw-driver.yml`:
 
-- **Camera driver** — [cyberwave-os/cyberwave-edge-camera-driver](https://github.com/cyberwave-os/cyberwave-edge-camera-driver): integrates a USB/RTSP camera as a Cyberwave twin.
-- **SO-101 arm driver** — [cyberwave-os/cyberwave-edge-so101](https://github.com/cyberwave-os/cyberwave-edge-so101): integrates the SO-101 robotic arm.
+- **Camera** — [cyberwave-edge-camera-driver](https://github.com/cyberwave-os/cyberwave-edge-camera-driver): USB/RTSP camera as a twin (child of a parent robot twin).
+- **SO-101 arm** — [cyberwave-edge-so101](https://github.com/cyberwave-os/cyberwave-edge-so101): joint bus + command topic pattern for a manipulator.
+- **ROS UGV** — [cyberwave-edge-ros-ugv](https://github.com/cyberwave-os/cyberwave-edge-nodes/tree/main/cyberwave-edge-ros-ugv): locomotion and onboard camera profiles under `cw-driver-profiles/`.
 
 ## Advanced topics
 

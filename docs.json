@@ -41,31 +41,22 @@
             "group": "Connecting to hardware",
             "pages": [
               "overview/connecting-hardware/index",
-              "overview/connecting-hardware/custom-hardware"
+              "overview/connecting-hardware/custom-hardware",
+              "hardware/so101",
+              "hardware/ur7",
+              "hardware/go2",
+              "hardware/spot",
+              "hardware/ugv-beast",
+              "hardware/dji-mini-3-pro",
+              "hardware/dji-mini-4-pro",
+              "hardware/openarm",
+              "hardware/standard-cam"
             ]
           },
           {
             "group": "SDKs and Tools",
             "pages": [
-              {
-                "group": "Python SDK",
-                "icon": "python",
-                "pages": [
-                  "overview/tools/python-sdk",
-                  "overview/tools/python-sdk/quickstart",
-                  "overview/tools/python-sdk/workspaces-projects-environments",
-                  "overview/tools/python-sdk/twin-control",
-                  "overview/tools/python-sdk/joints-and-poses",
-                  "overview/tools/python-sdk/frames-and-cameras",
-                  "overview/tools/python-sdk/streaming",
-                  "overview/tools/python-sdk/drones",
-                  "overview/tools/python-sdk/agents",
-                  "overview/tools/python-sdk/edge-workers-data",
-                  "overview/tools/python-sdk/ml-models",
-                  "overview/tools/python-sdk/datasets",
-                  "overview/tools/python-sdk/workflows-alerts"
-                ]
-              },
+              "overview/tools/python-sdk",
               "overview/tools/claude-skill",
               "overview/tools/mcp-server",
               "overview/tools/cpp-sdk"
@@ -130,10 +121,28 @@
                 "group": "Workflows",
                 "pages": [
                   "feature-reference/workflows",
+                  "feature-reference/workflows/edge-dependencies",
+                  "feature-reference/workflows/audio-in-workflows",
                   "feature-reference/workflows/audio-track/overview",
+                  "feature-reference/workflows/audio-assistant/overview",
+                  "feature-reference/workflows/call-model-stt-edge",
+                  {
+                    "group": "Wake Word Engine",
+                    "pages": [
+                      "feature-reference/workflows/wake-word-engine/overview",
+                      "feature-reference/workflows/wake-word-engine/models-and-compile",
+                      "feature-reference/workflows/wake-word-engine/testing"
+                    ]
+                  },
                   "feature-reference/workflows/anonymize-image",
+                  "feature-reference/workflows/barcode-reader",
                   "feature-reference/workflows/spatial-filter",
                   "feature-reference/workflows/timed-condition",
+                  "feature-reference/workflows/twin",
+                  "feature-reference/workflows/fuzzy-matcher",
+                  "feature-reference/workflows/virtual-controller",
+                  "feature-reference/workflows/send-controller-command",
+                  "feature-reference/workflows/recorder",
                   "feature-reference/workflows/reusing-chains",
                   {
                     "group": "Workers",
@@ -171,7 +180,11 @@
               "feature-reference/edge/drivers/overview",
               "feature-reference/edge/drivers/writing-compatible-drivers",
               "feature-reference/edge/drivers/native-microphone-driver",
+              "feature-reference/edge/drivers/native-speaker-driver",
               "feature-reference/edge/drivers/alerts",
+              "feature-reference/edge/workers/overview",
+              "feature-reference/edge/workers/filter-frame",
+              "feature-reference/edge/workers/model-cache",
               "overview/tools/cloud-node",
               "overview/tools/vla-cloud-node",
               "overview/tools/zenoh-mqtt-bridge",
@@ -546,12 +559,32 @@
       "destination": "/feature-reference/workflows/workers/bench"
     },
     {
+      "source": "/edge/bench",
+      "destination": "/feature-reference/workflows/workers/bench"
+    },
+    {
       "source": "/feature-reference/edge/workers/overview",
+      "destination": "/feature-reference/workflows/workers/overview"
+    },
+    {
+      "source": "/edge/workers/overview",
       "destination": "/feature-reference/workflows/workers/overview"
     },
     {
       "source": "/feature-reference/edge/workers/filter-frame",
       "destination": "/feature-reference/workflows/workers/filter-frame"
+    },
+    {
+      "source": "/edge/workers/filter-frame",
+      "destination": "/feature-reference/workflows/workers/filter-frame"
+    },
+    {
+      "source": "/feature-reference/edge/workers/model-cache",
+      "destination": "/feature-reference/workflows/workers/model-cache"
+    },
+    {
+      "source": "/edge/workers/model-cache",
+      "destination": "/feature-reference/workflows/workers/model-cache"
     },
     {
       "source": "/feature-reference/workflows/presence-dwell",
@@ -596,6 +629,10 @@
     {
       "source": "/hardware/microphone/native-driver",
       "destination": "/feature-reference/edge/drivers/native-microphone-driver"
+    },
+    {
+      "source": "/hardware/speaker/native-driver",
+      "destination": "/feature-reference/edge/drivers/native-speaker-driver"
     },
     {
       "source": "/overview/try-real-robot",
@@ -711,51 +748,71 @@
     },
     {
       "source": "/hardware/so101/get-started",
-      "destination": "https://cyberwave.com/the-robot-studio/so101"
-    },
-    {
-      "source": "/hardware/so101",
-      "destination": "https://cyberwave.com/the-robot-studio/so101"
+      "destination": "/hardware/so101"
     },
     {
       "source": "/hardware/universal-robot-7/get-started",
-      "destination": "https://cyberwave.com/universal_robots/UR7"
+      "destination": "/hardware/ur7"
+    },
+    {
+      "source": "/hardware/UR7/get-started",
+      "destination": "/hardware/ur7"
     },
     {
       "source": "/hardware/go2/get-started",
-      "destination": "https://cyberwave.com/unitree/go2"
-    },
-    {
-      "source": "/hardware/go2",
-      "destination": "https://cyberwave.com/unitree/go2"
+      "destination": "/hardware/go2"
     },
     {
       "source": "/hardware/boston-dynamics/get-started",
-      "destination": "https://cyberwave.com/boston-dynamics/spot"
+      "destination": "/hardware/spot"
     },
     {
       "source": "/hardware/dji-mini",
-      "destination": "https://cyberwave.com/dji/DJI-Mini-4-Pro"
+      "destination": "/hardware/dji-mini-4-pro"
+    },
+    {
+      "source": "/hardware/dji-mini-3-pro/get-started",
+      "destination": "/hardware/dji-mini-3-pro"
+    },
+    {
+      "source": "/hardware/dji-mini-4-pro/get-started",
+      "destination": "/hardware/dji-mini-4-pro"
     },
     {
       "source": "/hardware/camera/get-started",
-      "destination": "https://cyberwave.com/catalog/tag/camera"
+      "destination": "/hardware/standard-cam"
     },
     {
       "source": "/hardware/camera",
-      "destination": "https://cyberwave.com/catalog/tag/camera"
+      "destination": "/hardware/standard-cam"
+    },
+    {
+      "source": "/hardware/standard-cam/get-started",
+      "destination": "/hardware/standard-cam"
     },
     {
       "source": "/hardware/ugv/get-started",
-      "destination": "https://cyberwave.com/waveshare/ugv-beast"
+      "destination": "/hardware/ugv-beast"
     },
     {
       "source": "/hardware/ugv",
-      "destination": "https://cyberwave.com/waveshare/ugv-beast"
+      "destination": "/hardware/ugv-beast"
+    },
+    {
+      "source": "/hardware/openarm/get-started",
+      "destination": "/hardware/openarm"
     },
     {
       "source": "/hardware/microphone/get-started",
       "destination": "https://cyberwave.com/catalog/tag/microphone"
+    },
+    {
+      "source": "/hardware/speaker/get-started",
+      "destination": "https://cyberwave.com/catalog/tag/speaker"
+    },
+    {
+      "source": "/hardware/speaker",
+      "destination": "https://cyberwave.com/catalog/tag/speaker"
     },
     {
       "source": "/hardware/other-hardware/custom-hardware",

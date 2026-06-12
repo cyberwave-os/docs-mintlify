@@ -1,0 +1,99 @@
+---
+title: "Barcode Reader node"
+description: "Decode 1D and 2D codes (QR, Data Matrix, Aztec, EAN/UPC, Code 128, PDF417, ITF, …) using zxing-cpp. Runs on edge (per camera frame, Pi-class hardware) and in the cloud workflow runner (on a Data Source / Call Model image)."
+tag: stub
+---
+
+`barcode_reader` is a stateless perception node that decodes barcodes
+and 2D codes from a frame and emits a structured list of codes plus a
+`call_model`-shaped `detections` projection — so the existing
+perception chain (`annotate`, `spatial_filter`,
+`conditional/detection_event_gate`, `send_alert`) consumes barcodes
+with no special-casing.
+
+The same node compiles into the edge worker (`@cw.on_frame` handler on
+the device) when the workflow has `Run on edge` enabled and a Camera
+Frame trigger upstream, **and** runs in the cloud workflow runner
+otherwise (against an `image_url` or `image_bytes` from `data_source` /
+`call_model`). The decode helpers live in `src/lib/workflow_utils.py`
+and are inlined into the generated worker via `inspect.getsource()` so
+the cloud and edge paths share one decoder implementation.
+
+It is backed by [zxing-cpp](https://github.com/zxing-cpp/zxing-cpp)
+(Apache-2.0), a fast native-C++ decoder with prebuilt Python wheels for
+`manylinux_x86_64`, `manylinux_aarch64` (Pi 4 / 5 64-bit), macOS, and
+Windows. No GPU and no system package install — `pip install zxing-cpp`
+inside the edge worker image is enough.
+
+Typical chain for a "scan and alert" warehouse workflow:
+
+```
+trigger (camera_frame) → barcode_reader → conditional → send_alert
+                                       ↘ annotate (overlay boxes for the live preview)
+```
+
+## Symbologies
+
+Default is "any symbology zxing-cpp supports". You can narrow it down
+to the formats you actually expect — this reduces false positives and
+shortens decode time per frame.
+
+| Group   | Formats |
+|---------|---------|
+| Retail  | EAN-13, EAN-8, UPC-A, UPC-E |
+| Logistics / industrial | Code 128, Code 39, Code 93, ITF, Codabar, GS1 DataBar, GS1 DataBar Expanded |
+| 2D      | QR Code, Micro QR, Rectangular Micro QR, Data Matrix, Aztec, PDF417, MaxiCode |
+
+## Inputs
+
+| Field | Type | Description |
+|---|---|---|
+| `frame` | image / bytes | Canonical input. On edge, implicitly wired from an upstream `camera_frame` trigger (decoded ndarray). On cloud, typically auto-wired from `Data Source.image_bytes` — Data Source eager-fetches the URL for every `data_type` so the bytes are always populated. |
+| `image_bytes` | bytes | Legacy alias for callers without input mappings. Cloud-only. Remote URL inputs are no longer accepted — wire a Data Source upstream so it can do the fetch. |
+| `symbologies` | array | Restrict decoding to these formats. Empty = any format. |
+| `max_codes` | number | Cap the number of codes returned per frame (default `8`). |
+| `try_rotate` | boolean | Search for codes rotated 90°/180°/270° as well as upright (default `true`). |
+| `try_invert` | boolean | Also attempt light-on-dark / inverted codes (default `true`). |
+| `try_downscale` | boolean | Also attempt scaled-down versions of the frame (default `true`). |
+| `binarizer` | string | Threshold strategy: `local_average` (default), `global_histogram`, `fixed_threshold`, `bool_cast`. |
+
+## Outputs
+
+| Field | Type | Description |
+|---|---|---|
+| `codes` | array | One entry per decoded code with `symbology`, `text`, `bytes_b64` (raw payload, for binary Data Matrix), `polygon` (4 pixel corners), `bbox` (`{x1, y1, x2, y2}` in pixels), `orientation`, `ec_level`, `content_type`. |
+| `count` | number | `len(codes)` after the `max_codes` cap. |
+| `detections` | array | `call_model`-shaped projection — `class` = symbology, `confidence` = `1.0`, pixel `bbox`. Drop-in for `annotate` / `spatial_filter` / `conditional/detection_event_gate`. |
+| `source_image_url` | string | Cloud-only. Echo of the resolved upstream `image_url` so `annotate` / `send_alert` can reference the exact frame that was decoded. |
+| `frame` | image | Edge-only. Pass-through of the input camera frame for a downstream `annotate` overlay. |
+
+## Edge implementation
+
+The node compiles into the same `@cw.on_frame` worker that the rest of
+the perception chain uses. Runtime helpers (`_decode_barcodes`,
+`_barcode_codes_to_detections`, plus the small `_barcode_position_to_polygon`
+/ `_barcode_polygon_bbox` geometry helpers) are inlined at module scope
+from `src/lib/workflow_utils.py` via `inspect.getsource()` and shared
+across multiple `barcode_reader` nodes in the same worker. The
+`zxing-cpp` wheel is lazy-imported on first decode so missing the
+optional `barcode` SDK extra surfaces in node logs rather than blocking
+worker startup.
+
+The `edge-ml-worker` Docker image ships with `zxing-cpp` baked in (the
+`barcode` extra is part of the default `CYBERWAVE_SDK_EXTRAS`). For a
+custom Pi-slim image, include `barcode` alongside `zenoh` and
+`schedule` and skip the heavier `ml-*` extras.
+
+See [Edge Workers](/feature-reference/workflows/workers/overview) for
+the full lifecycle.
+
+## Companion nodes
+
+- `annotate` — draw decoded barcode boxes on the live overlay
+  channel.
+- [`spatial_filter`](./spatial-filter) — only count codes that fall
+  inside an author-defined ROI (e.g. the conveyor belt zone).
+- [`conditional`](./timed-condition) — fire on first-seen, on a new
+  payload, or only after a code has been visible for N frames.
+- `send_alert` — escalate to an operator with the decoded payload
+  attached.

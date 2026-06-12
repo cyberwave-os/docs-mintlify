@@ -1,0 +1,29 @@
+---
+title: Twin
+description: Workflow node that exposes a digital twin and its assigned controller policy as structured outputs.
+---
+
+{/* stub — pending editorial review */}
+
+## Overview
+
+The **Twin 🤖** node reads a selected digital twin and the controller policy assigned to it, and exposes both identity and controller metadata as structured outputs for downstream workflow steps.
+
+## Configuration
+
+- **Digital Twin** — twin whose `controller_policy` (or `metadata.controller_policy_uuid`) is resolved.
+
+## Outputs
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | string | Twin display name |
+| `asset` | string | Asset slug from policy metadata (or first linked asset) |
+| `device` | string | Input device from policy metadata (e.g. `keyboard`) |
+| `control_actuations` | string[] | Locomotion actuation ids |
+| `control_labels` | string[] | Binding labels |
+| `controller_name` | string | `metadata.controller_name` on the policy |
+| `controller_type` | string | `metadata.controller_type` on the policy |
+| `control_mode` | string | `metadata.control_mode` on the policy |
+
+Cloud and edge workflows.

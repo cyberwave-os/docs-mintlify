@@ -99,7 +99,7 @@ Connection validation prevents invalid graphs: trigger nodes cannot accept incom
         Configure each node's parameters (twin UUID, model, confidence threshold, send-alert metadata, etc.).
       </Step>
       <Step title="Activate">
-        Click **Activate**. For edge workflows, sync to the device with the CLI or wait for the next automatic sync.
+        Click **Activate**. Edge workflows (`run_on_edge: true`) automatically publish a `sync_workflows` MQTT command to each referenced twin's edge-core, which immediately pulls and reloads the freshly compiled worker — no CLI step needed. The editor locks the graph while active, so the natural edit flow (Deactivate → edit → Activate) republishes through the same signal. {/* stub */}
       </Step>
     </Steps>
   </Tab>
@@ -184,6 +184,8 @@ sequenceDiagram
     end
 ```
 
+For open-vocabulary edge models (YOLOE-26 text/visual, YOLO-World), set the **Prompt** field on the `call_model` node to drive `set_classes` at inference time. The camera worker forwards the static prompt into `model.predict(..., prompt=...)`. See [Prompting Call Model](./workflows/call-model-prompt) for the full guide, including the comma-list vs. single-phrase semantics and the camera-only limitation that reference-wired prompts are not supported.
+
 ### Migrating from `emit_event`
 
 Older workflows configured implicit alerts via an `emit_event` block on the `call_model` node (`event_type`, `severity`, `emit_mode`, `cooldown_seconds`). That path was removed: `emit_event` is no longer a schema field, the next save of any `call_model` node strips leftover `emit_event` values from `parameters` and `metadata.input_mappings` so the saved graph converges to the post-migration shape, and `call_model` no longer publishes alerts on its own. Pre-migration rows that haven't been re-saved yet still load — codegen also drops `emit_event` during compilation, so they ship a worker that runs inference but publishes nothing.
@@ -210,7 +212,9 @@ Existing workflows continue to load and run inference, but **stop emitting alert
 
 ### Syncing to the edge
 
-After activating a workflow in the UI, push it to edge devices:
+Activating a `run_on_edge` workflow auto-publishes the `sync_workflows` MQTT command for each referenced twin, so the edge picks up the worker within seconds — no manual step. The editor locks the graph while active, so the natural edit flow (Deactivate → edit → Activate) republishes through the same signal. {/* stub */}
+
+Reach for a manual sync only when the activation cycle can't fix it — e.g. a broker outage or edge-core restart swallowed the original nudge.
 
 ```bash
 # Interactive: picks the workflow, discovers target twins, sends sync via MQTT
@@ -219,13 +223,16 @@ cyberwave workflow sync
 # Explicit
 cyberwave workflow sync <workflow-uuid>
 
-# Or sync a specific twin directly
+# Or sync every workflow on a specific twin's edge
 cyberwave edge sync-workflows --twin-uuid <twin-uuid>
 ```
 
-The CLI sends a `sync_workflows` command via MQTT. Edge core receives it and immediately pulls the latest worker files from the backend — no need to wait for the periodic cycle.
+For programmatic recovery, two HTTP endpoints publish the same MQTT command:
 
-> stub: You can also trigger the same `sync_workflows` MQTT command from the twin editor in the dashboard via the **Sync workflow** action (next to **Restart edge core**). The dashboard calls `POST /api/v1/twins/{uuid}/sync-workflows`, which publishes the same MQTT command as the CLI on `cyberwave/twin/{twin_uuid}/command`.
+- `POST /api/v1/workflows/{uuid}/sync-edge` — per-workflow fan-out across all referenced twins. Returns `{success, workflow_uuid, command, twin_uuids[], request_ids, skipped_reason}`. `200` covers both the success case and declarative no-ops (cloud-only workflows, workflows without a twin-bound node, references that have all gone stale or cross-workspace) — `skipped_reason` pins the case. Partial broker failures also stay on `200` with `skipped_reason: "MQTT publish failed for N of M twins"`. Total broker failure surfaces as `500` so retry/back-off logic can branch on status code rather than parsing the body.
+- `POST /api/v1/twins/{uuid}/sync-workflows` — twin-wide republish covering every active workflow on that twin's edge. Surfaced in the dashboard as the twin editor's **Force-sync all workflows** menu item.
+
+All five entry points (CLI workflow sync, CLI edge sync-workflows, `/workflows/{uuid}/sync-edge`, `/twins/{uuid}/sync-workflows`, twin editor menu) publish the identical MQTT command on `cyberwave/twin/{twin_uuid}/command`, which makes the edge-core run `reconcile_worker_sync` immediately instead of waiting for the next periodic cycle.
 
 > stub: The CLI derives the MQTT topic prefix (`dev`, `staging`, empty for production) from `CYBERWAVE_ENVIRONMENT`/credentials and cross-checks it against the broker host before publishing. A mismatch (e.g. dev broker with production prefix) aborts with a clear error instead of silently shipping the command into a topic edge-core never subscribed to. Override with `CYBERWAVE_MQTT_TOPIC_PREFIX` if you really need to.
 

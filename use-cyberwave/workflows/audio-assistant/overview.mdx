@@ -1,0 +1,81 @@
+---
+title: "Audio Assistant"
+description: "Voice Activity Detection (VA) and acoustic event detection (SSG) for edge audio workflows."
+icon: "volume-high"
+stub: true
+---
+
+The **Audio Assistant** node sits between an [Audio Track](/use-cyberwave/workflows/audio-track/overview) trigger and downstream nodes (STT, alerts, models). It normalizes all input to **PCM S16LE int16 @ 16 kHz mono** via the shared audio ingress layer—the same contract as the rest of the audio pipeline.
+
+## Pipeline position
+
+```
+Audio Track Trigger → Audio Assistant → Call Model / Send Alert / …
+```
+
+## Modalities
+
+| Modality | Purpose | Engine |
+|---|---|---|
+| **Voice Assistant (VA)** | Segment speech utterances | Silero VAD |
+| **Sound Security Guard (SSG)** | Detect security-related acoustic events | MIT AST (AudioSet) |
+
+Only one modality is active per node instance.
+
+## Shared audio contract
+
+| Direction | Key | Format |
+|---|---|---|
+| Input | `audio` | PCM S16LE numpy `int16`, float32, raw bytes, or WAV—adapted to int16 @ 16 kHz mono |
+| Output | `audio` | int16 mono @ 16 kHz (when a segment or alert window is emitted) |
+| Output | `sample_rate_hz` | Always `16000` |
+| Output | `channels` | Always `1` |
+
+Upstream **Audio Track** buffer presets control chunk size into the node:
+
+| Preset | Chunk size | Typical use |
+|---|---|---|
+| Voice Assistant (32 ms) | 512 samples | VA streaming (matches Silero frame size) |
+| Wake Word (80 ms) | 1280 samples | Wake Word Engine |
+| Speech-To-Text (4 s) | 64000 samples | Batch / long windows |
+
+For **SSG**, prefer accumulating at least **1–4 s** per analysis window (default analysis preset: Speech-To-Text 4 s).
+
+## Edge execution
+
+Audio Assistant nodes are **edge-only**. Workflows compile to a `wf_*.py` worker module and sync to the device:
+
+```bash
+cyberwave workflow compile <workflow-uuid>    # inspect emitted source + warnings
+cyberwave workflow sync --twin-uuid <twin>  # deploy to edge
+```
+
+Typical chain:
+
+```
+Audio Track (@cw.on_audio) → Audio Assistant → Send Alert / Call Model
+```
+
+Compile checks:
+
+- **VA** upstream Audio Track must use buffer preset **Voice Assistant (32 ms)**.
+- **SSG** upstream Audio Track should use **Speech-To-Text (4 s)** (or custom ≥1 s).
+
+The compiler emits a warning listing required Python extras when VA/SSG nodes are present.
+
+## Edge dependencies
+
+```bash
+pip install "cyberwave[ml-vad]"      # Voice Assistant (Silero)
+pip install "cyberwave[ml-aed]"      # Sound Security Guard (transformers + AST)
+```
+
+The **edge-ml-worker** container image pre-installs `zenoh`, `ml-vad`, `ml-aed`, and `ml-wakeword`, and pre-downloads AST and OpenWakeWord weights for air-gapped use.
+
+SSG on bare-metal edges downloads `MIT/ast-finetuned-audioset-10-10-0.4593` on first run (~340 MB) unless baked into the image.
+
+## Pages
+
+- [Voice Assistant (VAD)](/use-cyberwave/workflows/audio-assistant/voice-assistant)
+- [Sound Security Guard (AED)](/use-cyberwave/workflows/audio-assistant/sound-security-guard)
+- [Technical reference](/use-cyberwave/workflows/audio-assistant/technical-reference)

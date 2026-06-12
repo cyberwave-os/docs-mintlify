@@ -1,0 +1,119 @@
+---
+title: "Call Model — STT on edge"
+description: "Whisper.cpp and Faster Whisper catalog models, dependencies, and compile checks"
+icon: "microphone-lines"
+stub: true
+---
+
+**Call Model** (`call_model`) nodes that select an **edge** or **hybrid** speech-to-text catalog model run inference on-device via `cw.models.load(...).predict(...)`. Cloud-only STT uses `client.mlmodels.run(...)` and does not require edge STT packages.
+
+<Note>
+Prompting for STT models is optional biasing — see [Prompting Call Model](/feature-reference/workflows/call-model-prompt).
+</Note>
+
+---
+
+## Catalog models and dependencies
+
+Each STT seed sets **one** SDK extra in `metadata.edge_package`. Edge-sync surfaces it in `model_requirements`.
+
+| Model | Runtime | Edge extra | Install |
+|---|---|---|---|
+| Whisper Tiny EN Q5_1 | `whisper_cpp` | `ml-stt` | `pip install 'cyberwave[ml-stt]'` |
+| Whisper Base EN Q5_1 | `whisper_cpp` | `ml-stt` | same |
+| Whisper Small EN Q5_1 | `whisper_cpp` | `ml-stt` | same |
+| Whisper Tiny Multilingual Q5_1 | `whisper_cpp` | `ml-stt` | same (+ cloud fallback) |
+| Whisper Base Multilingual Q5_1 | `whisper_cpp` | `ml-stt` | same (+ cloud fallback) |
+| Faster Whisper Tiny EN | `faster_whisper` | `ml-stt-faster` | `pip install 'cyberwave[ml-stt-faster]'` |
+| Faster Whisper Base EN | `faster_whisper` | `ml-stt-faster` | same |
+| Faster Whisper Small EN | `faster_whisper` | `ml-stt-faster` | same |
+
+Do **not** point catalog metadata at `ml-all`. Pick the extra for the runtime you use.
+
+---
+
+## Weight paths (`edge_model_path`)
+
+| Model family | Cache / load path | Notes |
+|---|---|---|
+| **whisper.cpp** | File path to GGML binary, e.g. `models/whisper/ggml-tiny.en-q5_1.bin` | `download_url` in metadata; first run fetches into edge model cache |
+| **faster-whisper** | Cache key = `model_external_id` (e.g. `tiny.en`); `metadata.edge_model_path` is documentation only | Edge Core pre-downloads via catalog `model_external_id`; CTranslate2 cache under `/app/models/tiny.en/` |
+
+Generated workers emit:
+
+```python
+model = cw.models.load(
+    "tiny.en",
+    runtime="faster_whisper",
+    faster_whisper_model_id="tiny.en",
+    download_root="tiny.en",
+    ...
+)
+```
+
+---
+
+## Compile server
+
+When a workflow has `run_on_edge: true` and a Call Model node references an on-device STT model, compile verifies imports:
+
+| Runtime | Import checked | `base.txt` package |
+|---|---|---|
+| `whisper_cpp` | `pywhispercpp.model.Model` | `pywhispercpp==1.4.1` |
+| `faster_whisper` | `faster_whisper.WhisperModel` | `faster-whisper>=1.1.1` |
+
+Failure example:
+
+> This workflow uses Call Model with faster-whisper but faster-whisper is not installed on the compile server. Install faster-whisper (or cyberwave[ml-stt-faster]) on Django before compiling for edge.
+
+Rebuild Django after updating `requirements/base.txt` — see [Edge workflow dependencies](/feature-reference/workflows/edge-dependencies).
+
+---
+
+## Edge worker
+
+1. Install the catalog model's extra (`ml-stt` or `ml-stt-faster`).
+2. Sync workflow — `edge-sync` lists `model_requirements` with `edge_model_path`.
+3. First inference downloads weights (or uses pre-staged files under `~/.cyberwave/models/`).
+
+**Audio input:** int16 PCM @ 16 kHz mono (or WAV bytes). The worker passes `sample_rate_hz`, `channels`, and optional `language` / `task` / `vad_filter` (Faster Whisper built-in VAD when enabled).
+
+---
+
+## Choosing whisper.cpp vs Faster Whisper
+
+| | whisper.cpp (`ml-stt`) | Faster Whisper (`ml-stt-faster`) |
+|---|---|---|
+| **Hardware** | Raspberry Pi 4 class | Pi 4+; Jetson/GPU for Base/Small |
+| **Weights** | Quantized GGML (`.bin`) | CTranslate2 cache dir |
+| **Latency** | Good for Tiny on CPU | Tiny EN optimized for real-time |
+| **Built-in VAD** | No (use Audio Assistant upstream) | Yes (`builtin_vad_filter` on catalog) |
+
+---
+
+## Typical wiring
+
+```
+audio_track → audio_assistant → wake_word_engine (optional)
+  → call_model (STT catalog model)
+  → fuzzy_matcher ← twin
+  → virtual_controller
+```
+
+Wire Call Model **audio** input from upstream `audio` key. Wire **result** (text) into Fuzzy Matcher's **Uncertain String** (`query`).
+
+---
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Edge dependencies" icon="puzzle-piece" href="/feature-reference/workflows/edge-dependencies">
+    Full matrix (all nodes + compile server)
+  </Card>
+  <Card title="Audio in Workflows" icon="waveform-lines" href="/feature-reference/workflows/audio-in-workflows">
+    PCM format and pipelines
+  </Card>
+  <Card title="Fuzzy Matcher" icon="bullseye" href="/feature-reference/workflows/fuzzy-matcher">
+    Map STT text to commands
+  </Card>
+</CardGroup>
