@@ -1,213 +1,39 @@
 ---
-title: "Audio Track Trigger"
-description: "Stream audio from an edge microphone into your workflow — one chunk at a time."
+title: "Audio Track"
+description: "Edge microphone trigger — stream PCM chunks into workflows via Zenoh."
 icon: "microphone"
 stub: true
 ---
 
-The **Audio Track** trigger fires once for every audio chunk a twin's microphone publishes on the edge data bus. Each chunk is typically **20 ms** of PCM audio — the workflow receives an infinite stream of small frames, not a single large buffer.
+The **Audio Track** trigger fires for every buffered chunk from a twin's edge microphone. Audio is delivered over the Zenoh data bus and handled by `@cw.on_audio` in the compiled worker.
 
-<Info>
-Audio Track does **not** limit the total stream length. A conference call, book reading, or any other continuous audio source runs indefinitely — each 20 ms chunk triggers the workflow independently.
-</Info>
-
-## Pipeline Position
+## Edge pipeline
 
 ```
-Microphone (edge) → Zenoh data bus → Audio Track Trigger → [Audio Assistant / Call Model / ...]
+Microphone driver → Zenoh → @cw.on_audio → Audio Track FIFO → downstream nodes
 ```
 
-The Audio Track trigger is **edge-only**. It hooks into the Cyberwave SDK's `@cw.on_audio(twin_uuid)` decorator and receives decoded PCM samples from the local Zenoh data bus — no cloud round-trip.
+## Buffer presets (downstream pairing)
 
-## Quick Start
+| Preset | Duration | Pair with |
+|--------|----------|-----------|
+| Voice Assistant (32 ms) | 512 samples | Audio Assistant (VA) |
+| Wake Word (80 ms) | 1280 samples | Wake Word Engine (direct) |
+| Speech-To-Text (4 s) | 64000 samples | SSG, Whisper / STT |
 
-1. Add an **Audio Track** trigger node to your workflow
-2. Select the **Twin** whose microphone you want to stream
-3. (Optional) Set the **Audio Track / Sensor ID** if the twin has multiple microphones
-4. Connect to a downstream node — typically an [Audio Assistant](/use-cyberwave/workflows/audio-assistant/overview) for VAD, or a [Call Model](/use-cyberwave/ml-models) node for direct STT
-5. **Activate** the workflow and sync to the edge device
+The compiler rejects incompatible pairings (e.g. 4 s chunks into Wake Word without VAD).
 
-## Inputs (Configuration)
+## Deploy
 
-| Parameter | Label | Default | Required | Description |
-|---|---|---|---|---|
-| `twin_uuid` | Twin UUID | — | Yes | The twin whose audio stream triggers the workflow. |
-| `audio_track_id` | Audio Track / Sensor ID | `"default"` | No | Sensor identifier on the twin. Use `"default"` for the primary microphone. Only needed when a twin has multiple audio sensors. |
-| `sample_rate_hz` | Expected Sample Rate | `16000` | No | Expected sample rate in Hz. The actual rate from wire metadata overrides this at runtime, so you rarely need to change it. |
-| `channels` | Channels | `1` | No | Expected channel count (1 = mono, 2 = stereo). Wire metadata overrides at runtime. |
-| `buffer_preset` | Buffer Preset | `"voice-assistant"` | No | FIFO buffer mode: `voice-assistant` (32 ms), `wake-word` (80 ms), `speech-to-text` (4 s), or `custom`. See [Buffer Presets](#buffer-presets). |
-| `buffer_size_s` | Buffer Size (s) | `1.0` | No | Custom buffer duration. Only used when preset is `custom`. |
-| `min_samples` | Skip Empty Audio | `1` | No | Minimum samples a chunk must contain. Drops empty frames from device glitches. See [Safety Guards](#safety-guards). |
-| `max_chunk_seconds` | Max Single Chunk Length (s) | `10` | No | Maximum duration of a single chunk in seconds. Drops oversized buffers from device stalls. See [Safety Guards](#safety-guards). |
-
-<Tip>
-For most use cases — including long conference calls, book readings, and continuous monitoring — the defaults work out of the box. You do not need to change any advanced settings.
-</Tip>
-
-## Outputs
-
-Every time the trigger fires, it produces these outputs for downstream nodes:
-
-| Output | Type | Description |
-|---|---|---|
-| `audio` | AUDIO | PCM S16LE int16 numpy array, mono, 16 kHz. Standard format for zero-copy pass-by-reference between nodes. |
-| `audio_ts` | NUMBER | Timestamp of the audio sample from the data bus (epoch seconds). |
-| `sensor` | STRING | Name of the audio sensor that produced the sample. |
-| `sample_rate_hz` | NUMBER | Always 16000 Hz after resampling. |
-| `channels` | NUMBER | Always 1 (mono) after downmix. |
-| `sample_count` | NUMBER | Number of audio samples in this chunk. |
-| `duration_s` | NUMBER | Duration of this chunk in seconds (derived from `sample_count / sample_rate_hz`). |
-| `metadata` | OBJECT | Full transport metadata from the data bus (`sample_rate_hz`, `channels`, `encoding`, `content_type`, etc.). |
-
-See [Audio in Workflows](/use-cyberwave/workflows/audio-in-workflows) for the full audio format specification.
-
-## Buffer Presets
-
-The microphone sends audio in tiny 20 ms chunks. Most downstream nodes need a larger buffer to work correctly. The **Buffer Preset** parameter controls how many chunks are accumulated before emitting:
-
-| Preset | Duration | Samples (@ 16 kHz) | Use Case |
-|--------|----------|---------------------|----------|
-| `voice-assistant` | 32 ms | 512 | Audio Assistant / Silero VAD (default) |
-| `wake-word` | 80 ms | 1,280 | Wake Word Engine (OpenWakeWord internal frame size) |
-| `speech-to-text` | 4 s | 64,000 | Whisper / STT models |
-| `custom` | User-defined | `int(16000 × buffer_size_s)` | Any custom duration |
-
-<Tip>
-Choose **Wake Word Engine (80 ms)** when feeding directly into a Wake Word Engine node. This matches OpenWakeWord's internal processing frame of 1280 samples, giving optimal detection latency with no internal re-buffering.
-</Tip>
-
-## Supported Sample Rates
-
-The Audio Track trigger is fully **sample-rate-agnostic**. The microphone driver sends 20 ms chunks regardless of the sample rate — only the number of samples per chunk changes:
-
-| Sample Rate | Samples per 20 ms chunk | Common Devices |
-|---|---|---|
-| 48,000 Hz | 960 | USB microphones, most laptops |
-| 44,100 Hz | 882 | CD-quality audio interfaces |
-| 32,000 Hz | 640 | Some embedded boards, Bluetooth profiles |
-| 16,000 Hz | 320 | Telephony, low-bandwidth IoT devices |
-
-At runtime, the node reads the actual sample rate from wire metadata and uses it for all duration calculations. If the wire rate differs from the configured `sample_rate_hz`, a warning is logged and the wire value takes precedence.
-
-## Wire Metadata Validation
-
-When the actual microphone sample rate or channel count differs from what you configured, the Audio Track node:
-
-1. **Logs a warning** with both the configured and actual values
-2. **Publishes a twin alert** (`audio_track_mismatch`, severity `warning`) so you can see the mismatch in the Cyberwave UI
-3. **Uses the actual wire value** for all processing — the configured value is only a fallback when metadata is missing
-
-This means you can leave `sample_rate_hz` at the default `16000` and the node will still work correctly with a 48 kHz microphone — it just generates a one-time mismatch warning.
-
-## Safety Guards
-
-The Audio Track trigger includes two optional guards that filter out degenerate chunks before they reach downstream nodes. Both are under **Advanced** settings in the inspector.
-
-### Skip Empty Audio (`min_samples`)
-
-**Default: 1** — accept everything except completely empty (0-sample) frames.
-
-Empty frames are never intentional audio. They occur when:
-- A USB microphone briefly disconnects and reconnects
-- The audio driver has a buffer underrun (CPU spike, thermal throttling)
-- A Bluetooth mic drops a packet
-- The container starts before the hardware stream is fully open
-
-A value of `1` filters these out without rejecting any real audio. You almost never need to change this.
-
-### Max Single Chunk Length (`max_chunk_seconds`)
-
-**Default: 10 seconds** — reject any individual chunk longer than 10 s.
-
-Normal chunks are ~20 ms. An oversized chunk only appears when the device stalls and then flushes a large backlog at once. Sending such a chunk into downstream processing (VAD, STT) could cause memory spikes or crashes.
-
-<Warning>
-This does **not** limit total stream duration. The workflow receives chunks indefinitely — this guard only catches abnormally large individual buffers.
-</Warning>
-
-## Typical Pipelines
-
-### Voice Assistant (VAD + STT)
-
+```bash
+cyberwave workflow compile <uuid>
+cyberwave workflow sync --twin-uuid <twin>
 ```
-Audio Track → Audio Assistant (streaming) → Call Model (Whisper)
-```
-
-The Audio Assistant uses Silero VAD to detect speech boundaries in the continuous chunk stream and outputs clean utterances for STT. It handles sample rate conversion (resampling to 16 kHz) and stereo-to-mono downmixing automatically.
-
-### Direct STT (no VAD)
-
-```
-Audio Track → Call Model (Whisper)
-```
-
-Every chunk hits the STT model — including silence and noise. Only useful for short, command-style audio where you know speech is always present.
-
-### Wake Word + STT
-
-```
-Audio Track (wake-word preset) → Wake Word Engine → Call Model (Whisper)
-```
-
-The Audio Track emits 80 ms chunks (1280 samples) which match OpenWakeWord's internal frame size. The Wake Word Engine detects the trigger phrase and then streams buffered audio chunks to Whisper for transcription.
-
-### Acoustic Monitoring
-
-```
-Audio Track → Audio Assistant (Sound Security Guard) → Send Alert
-```
-
-Future pipeline for detecting glass breaks, alarms, or distress calls using acoustic event detection (AED). SSG mode is currently a skeleton — audio is forwarded unchanged.
-
-## Edge-Only Execution
-
-The Audio Track trigger generates a Python worker function that runs directly on the edge device:
-
-```python
-@cw.on_audio("twin-uuid", sensor="audio")
-def run(audio, ctx, client=None):
-    # audio: numpy array (PCM samples)
-    # ctx.metadata: wire transport metadata
-    # ctx.timestamp: sample timestamp
-    # ctx.sensor_name: sensor identifier
-    ...
-```
-
-The worker is compiled by the workflow code assembler and synced to the edge via `cyberwave workflow sync` or automatic periodic sync. No audio data leaves the device unless a downstream node explicitly sends it (e.g. to a cloud STT API).
 
 ## Dependencies
 
-| Layer | Requirement |
-|---|---|
-| **Compile server** | No ML import at compile (Zenoh hook only in generated code) |
-| **Edge worker** | `cyberwave[zenoh]` — `@cw.on_audio` subscription |
-| **Capture host** | `cyberwave[microphone]` on the twin driver that publishes PCM to Zenoh |
-| **edge-sync** | No `model_requirements` |
+```bash
+pip install "cyberwave[zenoh]"   # required for @cw.on_audio
+```
 
-Downstream nodes (Audio Assistant, Wake Word, STT) bring their own extras — see [Edge workflow dependencies](/feature-reference/workflows/edge-dependencies).
-
-## Next Steps
-
-<CardGroup cols={2}>
-  <Card
-    title="Edge dependencies"
-    icon="puzzle-piece"
-    href="/feature-reference/workflows/edge-dependencies"
-  >
-    Compile server and SDK extras for voice pipelines
-  </Card>
-  <Card
-    title="Audio Assistant"
-    icon="volume-high"
-    href="/feature-reference/workflows/audio-assistant/overview"
-  >
-    VAD-powered speech segmentation for the audio stream
-  </Card>
-  <Card
-    title="Audio Assistant Technical Reference"
-    icon="book"
-    href="/use-cyberwave/workflows/audio-assistant/technical-reference"
-  >
-    Output schema, resampling, and architecture details
-  </Card>
-</CardGroup>
+Downstream nodes add `ml-vad`, `ml-aed`, or `ml-wakeword` as needed. See [feature reference](/feature-reference/workflows/audio-track/overview).

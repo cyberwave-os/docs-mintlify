@@ -1,42 +1,85 @@
 ---
 title: "Sound Security Guard (SSG)"
-description: "Acoustic event detection for security and safety monitoring."
+description: "AST-based acoustic event detection for security and safety monitoring."
 icon: "siren-on"
 stub: true
 ---
 
-The **Sound Security Guard** (SSG) modality 🚨 provides acoustic event detection for security and safety monitoring scenarios.
+**Sound Security Guard** monitors audio for a **single active scenario** at a time using the pretrained [Audio Spectrogram Transformer](https://huggingface.co/MIT/ast-finetuned-audioset-10-10-0.4593) (`MIT/ast-finetuned-audioset-10-10-0.4593`). The model outputs 527 AudioSet class probabilities (multi-label sigmoid). No fine-tuning is required—scenarios map to existing AudioSet label strings.
 
-<Warning>
-SSG is a skeleton implementation. Runtime logic is not yet available. Audio will be forwarded unchanged when SSG mode is selected.
-</Warning>
+## Strict scenario isolation
 
-## Planned Architecture
+Only labels belonging to the selected scenario are evaluated. For example, with **Glass Break** active, a passing police siren is ignored even if the model detects it strongly.
 
-SSG will use **Large-Scale Pretrained Audio Neural Networks** (PANNs / AudioSet-trained models) for acoustic event classification. These models are trained on the AudioSet ontology covering 527 sound event classes.
+## Scenarios (sub-modalities)
 
-## Sub-Modalities
+| Scenario | Monitored AudioSet labels (substring match) |
+|---|---|
+| **Glass Break / Falling Objects** | Glass, Shatter, Smash crash, Thump, Crash, Bang |
+| **Constant Alarm (Siren)** | Alarm, Car alarm, Smoke detector, Siren, Ambulance (siren), Police car (siren) |
+| **Help! / Screaming** | Screaming, Yell, Shout, Children shouting |
+| **Custom** | User-defined comma-separated label substrings |
 
-| Sub-Modality | Icon | Target Events |
+## Parameters
+
+| Parameter | Default | Description |
 |---|---|---|
-| **Glass Break / Falling Objects** | 💥 | Glass shattering, heavy impacts, falling object sounds |
-| **Constant Alarm (Siren)** | 🚨 | Sustained alarm tones, sirens, emergency signals |
-| **"Help!" / Screaming** | 🆘 | Human distress calls, screams, cries for help |
-| **Custom** | ⚙️ | User-configured acoustic event classes |
+| `confidence_threshold` | `0.40` | Alert when any scenario label exceeds this probability |
+| `output_buffer_preset` | `speech-to-text` | Analysis window size (4 s recommended) |
+| `output_buffer_size_s` | `4.0` | Custom window length (seconds, min 1 s) |
+| `event_cooldown_s` | `5.0` | Minimum seconds between alerts |
 
-## Outputs (Skeleton)
+## Input / output
 
-| Output | Type | Description |
-|---|---|---|
-| `event_type` | STRING | Detected event class (e.g. `glass_break`, `siren`, `scream`) |
-| `event_confidence` | NUMBER | Classification confidence [0.0, 1.0] |
-| `event_audio_segment` | AUDIO | Audio segment that triggered the detection |
-| `event_timestamp_sec` | NUMBER | When the event was detected |
+**Input:** Same as VA—`audio` adapted to PCM S16LE int16 @ 16 kHz mono.
 
-## Future Implementation
+**Interim output (window filling / no alert):**
 
-The SSG runtime will:
-1. Load a pretrained PANN model for the selected event class
-2. Process audio chunks in sliding windows
-3. Classify audio events against the target class
-4. Fire downstream nodes when confidence exceeds the configured threshold
+```json
+{
+  "event_detected": false,
+  "event_confidence": 0.12,
+  "event_label": "",
+  "event_type": "glass_break",
+  "active_scenario": "glass_break",
+  "sample_rate_hz": 16000,
+  "channels": 1
+}
+```
+
+**Alert output:**
+
+```json
+{
+  "audio": "<numpy int16 — analysis window>",
+  "event_detected": true,
+  "event_confidence": 0.67,
+  "event_label": "Glass",
+  "event_type": "glass_break",
+  "active_scenario": "glass_break",
+  "start_timestamp_sec": 8.0,
+  "end_timestamp_sec": 12.0,
+  "sample_rate_hz": 16000,
+  "channels": 1
+}
+```
+
+Wire `event_detected` to a `send_alert` node or conditional gate (see [Alerts](/feature-reference/edge/drivers/alerts)).
+
+## Analysis window
+
+Audio accumulates until the analysis window is full (default **4 s**), then AST runs inference. The buffer advances by **50% hop** (half-window overlap) so events near window boundaries are not missed. After an alert, a **cooldown** suppresses duplicate notifications.
+
+## Example workflow
+
+```
+Audio Track → Audio Assistant (SSG, glass_break) → Send Alert
+```
+
+## Edge install
+
+```bash
+pip install "cyberwave[ml-aed]"
+```
+
+First inference downloads the AST weights from Hugging Face.
