@@ -49,6 +49,8 @@ The well-known runtimes mirror the loaders in the Cyberwave Python SDK's `cyberw
 | `torch` | `.pt` / `.pth` | TorchScript / raw PyTorch |
 | `tensorrt` | `.engine` / `.trt` | TensorRT engines (GPU image only) |
 | `whisper_cpp` | `.gguf` / `.bin` | Whisper.cpp speech-to-text on CPU edge devices |
+| `faster_whisper` | CTranslate2 weights (HF cache) | faster-whisper STT on edge CPU/GPU |
+| `hailo` | `.hef` | Hailo accelerator (`hailo_platform`) on Pi 5 + AI HAT+ / Pi AI Kit |
 
 Custom values are accepted via the editor's "Other" entry — used today for framework-specific identifiers like `sam2`, `sam3`, and `depth_anything_v2` that don't have an SDK loader yet but still need to round-trip through the catalog.
 
@@ -71,9 +73,28 @@ Pick `Edge Runtime: ONNX Runtime` in the model editor (or `metadata.edge_runtime
 
 Segmentation, OBB, and classification ONNX exports are not yet supported by the SDK runtime — use the `.pt` (`ultralytics`) variants for those tasks.
 
+### YOLO Hailo catalog — *stub*
+
+For Hailo-accelerated edge nodes (Raspberry Pi 5 + AI HAT+ and the older Pi AI Kit) the catalog also ships pre-compiled YOLO HEFs straight from the Hailo Model Zoo. Each upstream YOLO checkpoint gets two sibling rows — one per Hailo architecture — because HEFs are hardware-locked:
+
+| Slug | Family | Arch | Edge target |
+|---|---|---|---|
+| `yolov6n_h8` / `yolov6n_h8l` | YOLOv6 Nano | Hailo-8 / Hailo-8L | 26 / 13 TOPS |
+| `yolov8n_h8` / `yolov8n_h8l` | YOLOv8 Nano | Hailo-8 / Hailo-8L | 26 / 13 TOPS |
+| `yolov8s_h8` / `yolov8s_h8l` | YOLOv8 Small | Hailo-8 / Hailo-8L | 26 / 13 TOPS |
+| `yolov8m_h8` / `yolov8m_h8l` | YOLOv8 Medium | Hailo-8 / Hailo-8L | 26 / 13 TOPS |
+
+Slugs use the `_h8` / `_h8l` suffix on purpose: `cw.models.load("yolov8s_h8")` is enough to route through the SDK's `hailo` runtime — no extra arguments needed. Pick the row that matches your edge target; a Hailo-8 HEF will refuse to run on a Hailo-8L (and vice versa).
+
+If you pick the wrong sibling, Edge Core catches it before the download starts: a Gate-3 preflight probes the connected accelerator with `hailortcli fw-control identify` and refuses to fetch a HEF whose `metadata.hw_arch` disagrees with the device, naming the correct sibling in the error message. The preflight is silent when `hailortcli` is not installed on the host — install it via `apt install hailo-all` (or the matching HailoRT package) to enable the check.
+
 ### Edge speech-to-text — *stub*
 
 Seeded Whisper.cpp STT models can run from `Audio Track -> Call Model` workflows on Raspberry Pi 4-class devices. The generated worker passes the audio chunk and seeded `download_url` into the local `whisper_cpp` runtime, so the first run downloads missing weights into the Cyberwave model cache. Downstream nodes can use `text`, `transcribed_text`, and `segments`.
+
+English GGML checkpoints: **Tiny EN**, **Base EN**, and **Small EN** (Q5_1). Multilingual checkpoints: **Tiny Multilingual** and **Base Multilingual** — hybrid deployment with `edge_runtime: whisper_cpp` on edge missions and whisper cloud-node fallback (`openai/whisper-tiny` / `openai/whisper-base`) on cloud missions. Use multilingual models when the spoken language is unknown or mixed.
+
+Hybrid **Faster Whisper** catalog entries (`faster_whisper` runtime) run on-device when the workflow mission executes on the edge; cloud missions use the whisper cloud node with the same OpenAI model aliases (`openai/whisper-tiny` → `tiny.en`, etc.). Prefer **Faster Whisper Tiny EN** for real-time English streams; use **Whisper Tiny Multilingual Q5_1** for multilingual edge STT without CTranslate2.
 
 ### Model weights resolution — *stub*
 
@@ -148,13 +169,22 @@ Edge Core detects the NVIDIA container runtime and passes `--gpus all` to the wo
 
 ### Image variants — *stub*
 
-The worker image is published in two variants on Docker Hub:
+The worker image is published in three variants on Docker Hub:
 
-| Tag | Base | ONNX Runtime | Use when |
-|---|---|---|---|
-| `cyberwaveos/edge-ml-worker:<tag>` | `ubuntu:24.04` | `onnxruntime` (CPU) | No GPU available, or inference is light enough for CPU. |
-| `cyberwaveos/edge-ml-worker:<tag>-gpu` | `nvidia/cuda:12.6.3-runtime-ubuntu24.04` | `onnxruntime-gpu` (CUDA EP) | Edge device has an NVIDIA GPU and `nvidia-container-toolkit` installed. |
+| Tag | Base | Accelerator | Architectures | Use when |
+|---|---|---|---|---|
+| `cyberwaveos/edge-ml-worker:<tag>` | `ubuntu:24.04` | CPU (`onnxruntime`) | `linux/amd64`, `linux/arm64` | No GPU available, or inference is light enough for CPU. |
+| `cyberwaveos/edge-ml-worker:<tag>-gpu` | `nvidia/cuda:12.6.3-runtime-ubuntu24.04` | NVIDIA (`onnxruntime-gpu`) | `linux/amd64` | Edge device has an NVIDIA GPU and `nvidia-container-toolkit` installed. |
+| `cyberwaveos/edge-ml-worker:<tag>-hailo` | `cyberwaveos/edge-ml-worker:<tag>` | Hailo-8 / Hailo-8L (`hailo_platform`) | `linux/arm64` | Edge device has a Hailo accelerator exposed at `/dev/hailo0` (e.g. Raspberry Pi 5 + AI HAT+). |
 
-Both variants ship the same Python API. PyTorch/Ultralytics models pick the device automatically; ONNX models gain `CUDAExecutionProvider` only on the `-gpu` variant.
+The `-hailo` variant compiles HailoRT (`libhailort` + `hailortcli` + `pyhailort`) from the MIT-licensed upstream source at [`hailo-ai/hailort`](https://github.com/hailo-ai/hailort) at a pinned tag. The LGPL-2.1 GStreamer plugin (`hailonet`) is left out of the build. The companion kernel driver ([`hailo-ai/hailort-drivers`](https://github.com/hailo-ai/hailort-drivers)) is installed on the host (e.g. via `apt install hailo-all` on Raspberry Pi OS), not in the container — its minor version must match the userspace lib baked into the image.
 
-Edge Core selects the variant automatically: when the NVIDIA container runtime is detected on the host, it appends `-gpu` to the configured worker image tag and falls back to the CPU tag if the GPU image cannot be pulled. No manual configuration is required in normal deployments.
+All three variants ship the same Python API. PyTorch/Ultralytics models pick the device automatically; ONNX models gain `CUDAExecutionProvider` only on the `-gpu` variant; `.hef` files load through the `hailo` runtime only on the `-hailo` variant.
+
+Edge Core selects the variant automatically based on host capabilities:
+
+* **NVIDIA container runtime detected** → appends `-gpu` to the configured worker image tag.
+* **`/dev/hailo0` present and no GPU runtime** → appends `-hailo`, adds `--device /dev/hailo0:/dev/hailo0:rwm` and `--group-add hailo` (on HailoRT \< 4.20 hosts), and sets `CYBERWAVE_REQUIRED_DEVICES=/dev/hailo0` so the image's Gate-4 entrypoint fails fast if the passthrough is missing.
+* **Neither** → uses the CPU base image.
+
+GPU takes precedence over Hailo when both are available on the same host; mixing them in a single deployment is not supported. If a variant cannot be pulled (e.g. the Hailo image isn't published for your channel yet), Edge Core falls back to the CPU image and logs the demotion.

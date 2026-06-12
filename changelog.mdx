@@ -4,6 +4,78 @@ description: "Product updates and announcements"
 rss: true
 ---
 
+<Update label="May 25, 2026">
+
+## Platform
+
+- **Audio recording is now decoupled from the live audio stream**: The microphone driver's `start_audio` / `stop_audio` commands on `cyberwave/twin/{uuid}/command` now drive **only** the WebRTC audio producer — no file is written as a side effect. The driver replies on `…/start_audio/status` (and `…/stop_audio/status`) with `{ "type": "audio_started" | "audio_stopped", "status": "ok" | "error", "source_type": "edge", "timestamp": … }`. This is symmetric with the camera driver's `start_video` / `stop_video` contract.
+- **Recording rides on `webrtc-command`**: Persisted audio recording is now controlled by `start_recording` / `stop_recording` published on `cyberwave/twin/{uuid}/webrtc-command` — the same topic and payload shape the Recorder workflow node already uses for video. The media-service SFU replies on `…/webrtc-command/status` with the authoritative `recording_id`. The frontend audio widget's REC button publishes there directly (no detour through the driver). The microphone driver also accepts `start_recording` / `stop_recording` on the command topic as a **fallback relay** for callers that don't speak `webrtc-command`; on that path the driver forwards verbatim to `webrtc-command` and lets media-service own the ACK.
+- **Audio widget has two independent controls**: The right-panel audio widget now exposes a **mic on/off** toggle (drives the live stream) next to the **REC** button (drives recording). Both flip to their "on" state only after the matching ACK arrives, so the indicators never lie about the underlying state.
+- **`auto_recording_audio` and `enable_recording` semantics preserved and tightened**: `CYBERWAVE_METADATA_AUTO_RECORDING_AUDIO=true` still sets `recording: true` on the **initial** WebRTC offer so recording auto-starts at startup; after that, recording is driven entirely by `start_recording` / `stop_recording`. `CYBERWAVE_METADATA_ENABLE_RECORDING=false` now silently drops only the driver's fallback relay — `start_audio` is unaffected, and frontend/Recorder publishes straight to `webrtc-command` (no longer gated by the driver flag).
+
+## Docs
+
+- [Native Microphone Driver](/feature-reference/edge/drivers/native-microphone-driver) and the [generic-microphone driver README](https://github.com/cyberwave-os/cyberwave/tree/main/cyberwave-edge-runtime/runtime-services/drivers/native/cyberwave/generic-microphone) document the two contracts and the fallback relay with concrete payloads.
+- [Recorder node](/feature-reference/workflows/recorder) cross-references the audio widget so it's clear all three callers (FE REC, Recorder node, driver fallback) converge on the same media-service handler and the same `webrtc-command/status` ACK.
+
+</Update>
+
+<Update label="May 20, 2026">
+
+## Platform
+
+- **Real-time alerts when the DJI driver refuses a command**: The Cyberwave Edge for DJI Android driver now raises a Cyberwave alert (`POST /api/v1/alerts`) every time it rejects a command before reaching the aircraft — missing `metadata.drivers.default.virtual_stick` opt-in, location permissions not granted, parked on a landing/RTH confirmation prompt. Each alert carries the `command`, an `error_code` (`VIRTUAL_STICK_OPT_IN_MISSING`, `PENDING_LANDING_CONFIRMATION`, …) and a remediation hint in the description, so the operator sees *why* a key press did nothing in the alerts panel instead of having to pull `adb logcat`. The existing `driver_action_failed` critical-alert path for SDK-level failures (takeoff / land / gimbal) is unchanged.
+- **No-motion watchdog for silently-capped commands**: The Virtual Stick send loop now compares the commanded body-frame linear velocity magnitude against `KeyAircraftVelocity` (NED) every tick, and fires a `driver_aircraft_not_moving` warning alert when the aircraft is reporting `isFlying = true` but observed velocity stays below 0.15 m/s for ≥ 2 s while the operator is commanding ≥ 0.4 m/s. The alert metadata carries the current `flight_mode`, GPS sat count + signal level, commanded vs observed velocity magnitudes, and the raw body-frame target — covering the cases where the MSDK's fire-and-forget `sendVirtualStickAdvancedParam` silently swallows commands (almost always indoor → no GPS lock, restricted-zone proximity, IMU heating, or low-battery saver). Rate-limited to one alert per stuck episode.
+- **Primary suspect surfaced in the alert name**: The `driver_aircraft_not_moving` alert ranks the most likely cause from telemetry and folds it into the alert *name*, so the operator sees the root cause in the alerts list without expanding the description. `Aircraft not moving (GPS-denied: 0 satellites)` is the indoor-flight case (the Mini 4 Pro requires GPS lock for sustained translational motion under Position mode; vertical still works because the barometer gives the FC an absolute altitude reference). `Aircraft not moving (FC in ATTI mode)` is the compass-interference / forced-ATTI case. `Aircraft not moving (cause unknown)` falls back to restricted-zone / IMU heating / battery saver / wind. The full description lead-paragraph repeats the suspect in human-friendly language with the matching remediation hint.
+- **No more spurious "RC reclaimed" log on every Virtual Stick arm**: MSDK pushes a `currentFlightControlAuthorityOwner = null` (mapped to `UNKNOWN` at our boundary) in the very first state update right after `enableVirtualStick.onSuccess`, before the FC has acknowledged authority transfer. The driver used to treat any non-MSDK authority — including `UNKNOWN` — as an RC reclaim and stopped the send loop, only for the next operator axis update to re-arm milliseconds later. The fix: only explicit `RC` / `OSDK` owners are genuine reclaims; `UNKNOWN` is "no signal yet".
+- **MQTT subscriber survives driver-side throws**: The driver's MQTT command dispatch is now wrapped in a top-level catch that fires a `driver_dispatch_exception` critical alert (with a truncated stack trace in the alert metadata) instead of letting an unchecked throw kill the subscription. A malformed payload or a transient SDK throw produces an alert and a logcat entry, and the next command on the same topic is dispatched normally.
+
+## Docs
+
+- The [drones overview](/overview/drones) and the [Cyberwave Edge for DJI driver README](https://github.com/cyberwave-os/cyberwave/tree/main/cyberwave-edge-nodes/cyberwave-edge-dji-mini-android) carry the full alert taxonomy (`driver_action_failed` / `driver_command_rejected` / `driver_aircraft_not_moving` / `driver_dispatch_exception` / `landing_confirmation_required`) and the operator's pre-flight reminder to keep the alerts panel open.
+
+</Update>
+
+<Update label="May 19, 2026">
+
+## New Features
+
+- **Off-RC teleoperation for DJI Mini (Virtual Stick)**: The Cyberwave Edge for DJI Android driver now routes continuous-stick commands (`move_forward` / `move_backward` / `strafe_*` / `turn_*` / `ascend` / `descend`) through DJI MSDK v5's Virtual Stick API, so the same SDK / keyboard surface used to drive the Go2 and the playground simulator drives the real aircraft too. Discrete actions (takeoff, land, RTH, gimbal, set home, compass calibration, reboot, emergency stop) were already wired and continue to work unchanged.
+
+### Opt-in gate
+
+Off-RC teleop is opt-in per twin. Set the following on the twin metadata to enable it:
+
+```json
+{ "drivers": { "default": { "virtual_stick": true } } }
+```
+
+Twins without the flag have continuous-stick commands rejected with a `failed` MQTT status — by design, so a phone that paired against a workspace-managed twin without the explicit opt-in cannot drive the aircraft. Discrete actions ship even without the gate.
+
+The `controller:dji-keyboard:v1` policy carries the requirement under `metadata.requires_twin_metadata`, so the UI can warn before the first keystroke when the gate is missing.
+
+### Safety semantics and contention with the physical RC
+
+- **Stale-command decay.** Continuous targets decay to zero after **500 ms** without a fresh command (lost MQTT link or stuck key → aircraft hovers, not crashes).
+- **Auto-disable.** After **5 s** of continuous zero-velocity the driver hands stick authority back to the physical RC.
+- **The physical RC always wins.** Operator's hardware kill combo (CSC) and any RC stick input immediately reclaim authority — Virtual Stick yields silently.
+- **Automated motion isolates from VS.** Issuing `land` / `return_to_home` / `emergency_stop` shuts Virtual Stick down *before* the automated motion starts, so a stale continuous setpoint can never fight an automated descent.
+- **Active badge.** The frontend renders an **Off-RC teleop ACTIVE** badge whenever Virtual Stick owns the sticks, driven by the `cyberwave/twin/<uuid>/virtual_stick/status` MQTT topic.
+
+## SDK
+
+### Python SDK
+
+- **`FlyingTwin` continuous-stick verbs**: `FlyingTwin.move_forward` / `move_backward` / `turn_left` / `turn_right` / `strafe_*` / `ascend` / `descend` are now documented as driving the real DJI aircraft (given the opt-in) — the previous "DJI Mini driver currently drops them" caveat is gone. The `examples/drone_dji_mini.py` walkthrough was updated to demonstrate the live behaviour and the safety story.
+- **`FlyingTwin.pan_camera(angle_deg=…)`**: new high-level helper that pans the camera view by yawing the airframe. The Mini 4 Pro (and the rest of the Mini / Mavic Mini line) ships with a pitch-only mechanical gimbal, so the `yaw` axis on `gimbal_rotate` is silently ignored by the hardware — `pan_camera` is the supported way to change the camera heading on those aircraft. It re-sends `turn_left` / `turn_right` at 5 Hz inside the 500 ms command-stale watchdog and explicitly zeros the yaw axis when the target angle is reached.
+
+## Docs
+
+- The [drones overview](/overview/drones) now documents the off-RC teleoperation opt-in flag, the safety story, and the RC-always-wins contention model alongside the existing PX4 / simulator continuous-stick path.
+- The [Cyberwave Edge for DJI driver README](https://github.com/cyberwave-os/cyberwave/tree/main/cyberwave-edge-nodes/cyberwave-edge-dji-mini-android) carries the full Virtual Stick safety story, the W/S/A/D/Q/E/R/F keyboard layout, and the pre-flight checklist.
+
+</Update>
+
 <Update label="May 6, 2026">
 
 ## New Features

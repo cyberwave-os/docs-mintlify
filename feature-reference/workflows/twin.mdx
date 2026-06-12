@@ -1,0 +1,56 @@
+---
+title: "Twin node"
+description: "Read a digital twin and its assigned controller policy as structured outputs."
+tag: stub
+---
+
+The **Twin** (`twin`) node reads a digital twin and its **assigned controller policy** and exposes them as structured outputs. Use it upstream of **Fuzzy Matcher** so voice pipelines know which command strings are valid for that robot, and to surface controller identity/mode to downstream nodes.
+
+<Note>
+**Palette category:** Data Sources. Runs on **cloud** and **edge** (edge workers resolve the policy via the Cyberwave API).
+</Note>
+
+## Inspector
+
+- **Digital Twin** — combobox selector.
+- `twin_uuid` is stored in node parameters, not the generic input-mapping row.
+
+## Policy resolution
+
+The node resolves the active policy from:
+
+1. Twin `controller_policy` FK, or
+2. `twin.metadata.controller_policy_uuid`
+
+If neither is set, execution fails with a clear error.
+
+## Outputs
+
+| Field | Type | Description |
+|---|---|---|
+| `name` | string | Twin display name |
+| `asset` | string | Asset slug from policy metadata (or first linked asset) |
+| `device` | string | Input device from policy metadata (e.g. `keyboard`) |
+| `control_actuations` | array | **Locomotion** actuation slugs from `metadata.keyboard_bindings` (`move_forward`, `turn_left`, …) |
+| `control_labels` | array | Human-readable labels from **all** keyboard bindings |
+| `controller_name` | string | `metadata.controller_name` on the assigned controller policy |
+| `controller_type` | string | `metadata.controller_type` on the assigned controller policy |
+| `control_mode` | string | `metadata.control_mode` on the assigned controller policy |
+
+<Warning>
+`control_actuations` only includes locomotion slugs (WASD-style). Non-locomotion bindings (lights, camera, `take_photo`) appear in `control_labels` but not in `control_actuations`.
+</Warning>
+
+## Fuzzy Matcher wiring
+
+| Twin output | Fuzzy Matcher input | Notes |
+|---|---|---|
+| `control_actuations` | `candidates` | Match STT against actuation slugs (`move_forward`) |
+| `control_labels` | `candidates` | Match STT against spoken labels (`Move Forward`) |
+
+## Execution targets
+
+| Target | Notes |
+|---|---|
+| **Cloud** | `WorkflowUtils._execute_twin_node` — reads twin + policy from Postgres |
+| **Edge** | Code emitter calls `client.twins.get` + controller-policies API |

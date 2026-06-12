@@ -105,5 +105,7 @@ Workflow activations and deactivations are picked up automatically:
 
 - **At startup:** after the workflow sync step, the worker container is started if files exist; otherwise startup logs `No active workflows for connected twins; worker container not started` and proceeds.
 - **At runtime:** every ~5 minutes the workers directory is re-synced; the worker container is started when files appear and stopped when files disappear. Both transitions are idempotent.
+- **Immediately on activate:** when a `run_on_edge` workflow is activated, the backend publishes a `sync_workflows` MQTT command on each referenced twin's command topic; edge core runs an immediate sync and lifecycle reconcile so the new `wf_*.py` lands within seconds.
+- **Immediately on remove (deactivate / soft-delete / `run_on_edge` flip off):** the backend publishes a surgical `remove_workflow_worker` MQTT command naming the specific worker filename(s); edge core unlinks the file from `{config_dir}/workers/` and immediately reconciles the container lifecycle. The same nudge also fires when a workflow is removed as part of a workspace or environment teardown. Removal propagates within seconds instead of waiting up to ~5 minutes for the periodic sync plus the bulk-sync two-strikes cleanup. The periodic reconcile remains the correctness backstop.
 
 `cyberwave workflow sync <twin_uuid>` from the CLI continues to trigger an immediate sync via MQTT, which reuses the same lifecycle path on the next reconcile.

@@ -98,13 +98,20 @@ When multiple anonymize nodes are chained on the same frame, the **most-restrict
 
 ### Annotate parameters
 
-| Parameter        | Type       | Default | Notes                                                                                                                                                                          |
-| ---------------- | ---------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `target_classes` | `string[]` | `[]`    | Class labels to annotate. **Empty means "draw every detection"** (matches the SDK helper's `labels=None` default).                                                             |
-| `line_width`     | `int`      | `2`     | Bounding box stroke width in pixels.                                                                                                                                           |
-| `font_size`      | `int`      | `14`    | Caption font size in pixels (cloud convention). On the edge the codegen translates it into OpenCV's `font_scale` automatically (14 px → ~0.5 scale at `FONT_HERSHEY_SIMPLEX`). |
+| Parameter        | Type       | Default     | Notes                                                                                                                                                                                                             |
+| ---------------- | ---------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `target_classes` | `string[]` | `[]`        | Class labels to annotate. **Empty means "draw every detection"** (matches the SDK helper's `labels=None` default).                                                                                                |
+| `line_width`     | `int`      | `2`         | Bounding box stroke width in pixels.                                                                                                                                                                              |
+| `font_size`      | `int`      | `14`        | Caption font size in pixels (cloud convention). On the edge the codegen translates it into OpenCV's `font_scale` automatically (14 px → ~0.5 scale at `FONT_HERSHEY_SIMPLEX`).                                    |
+| `mask_alpha`     | `float`    | `0.35`      | Translucency of the segmentation mask fill (`0` disables fill, `1` is opaque). Used only when the upstream model emits per-detection masks (e.g. YOLO-seg).                                                       |
+| `mask_outline`   | `bool`     | `true`      | Trace the segmentation contour on top of the fill. Independent of `line_width`, which still controls the axis-aligned bbox.                                                                                       |
+| `mask_format`    | `string`   | `"polygon"` | Wire format for masks. `polygon` (default) is compact and renders natively on the edge driver; `png` matches the cloud structured-action contract; `polygon+png` emits both for downstream cloud post-processing. |
 
-On the edge this maps onto `cyberwave.vision.build_overlay_payload(results.detections, labels=target_classes_or_None, line_width=..., font_size=...)`, which the worker publishes on `FRAME_OVERLAY_CHANNEL`. The driver reads the same `font_size` / `line_width` from the payload's `style` block and draws the boxes at WebRTC encode time. (The legacy `cyberwave.vision.annotate_detections` numpy helper is still exported for hand-written workers that draw on a frame buffer directly — the workflow node no longer uses it.)
+On the edge this maps onto `cyberwave.vision.build_overlay_payload(results.detections, labels=target_classes_or_None, line_width=..., font_size=..., mask_alpha=..., mask_outline=..., mask_format=...)`, which the worker publishes on `FRAME_OVERLAY_CHANNEL`. The driver reads the same `font_size` / `line_width` from the payload's `style` block and draws the boxes at WebRTC encode time. (The legacy `cyberwave.vision.annotate_detections` numpy helper is still exported for hand-written workers that draw on a frame buffer directly — the workflow node no longer uses it.)
+
+<Info>
+Stub — segmentation overlay rendering is v1. The polygon path emits each detection's largest external contour (up to ~64 points) and silently drops holes / secondary blobs. Models that need pixel-accurate masks (e.g. dense semantic segmentation, panoptic) should use `mask_format="png"` and post-process cloud-side.
+</Info>
 
 ## Wiring rules
 

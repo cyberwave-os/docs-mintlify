@@ -23,16 +23,59 @@ It also subscribes to:
 cyberwave/twin/{twin_uuid}/command
 ```
 
-Use `{"command": "start_audio", "source_type": "tele"}` and `{"command": "stop_audio", "source_type": "tele"}` to start and stop recording for the active WebRTC stream. The driver also accepts `start_recording` and `stop_recording` as direct aliases on the same topic.
+The driver handles **two independent contracts** on this topic — symmetric with the camera driver's `start_video` / `stop_video` flow:
 
-When WebRTC is already connected, these commands publish minimal media-service commands on `cyberwave/twin/{twin_uuid}/webrtc-command` and keep the WebRTC connection alive. `CYBERWAVE_METADATA_AUTO_RECORDING_AUDIO=false` only disables startup recording; manual commands can still start recording when `CYBERWAVE_METADATA_ENABLE_RECORDING=true`.
+### 1. Live audio stream (`start_audio` / `stop_audio`)
+
+Pure WebRTC lifecycle. **No file is written.**
+
+```json
+{ "command": "start_audio", "source_type": "tele", "timestamp": 1716643200.123 }
+{ "command": "stop_audio",  "source_type": "tele", "timestamp": 1716643200.123 }
+```
+
+The driver replies on `cyberwave/twin/{twin_uuid}/start_audio/status` (or `stop_audio/status`):
+
+```json
+{ "type": "audio_started", "status": "ok", "source_type": "edge", "timestamp": 1716643200.123 }
+{ "type": "audio_stopped", "status": "ok", "source_type": "edge", "timestamp": 1716643200.123 }
+```
+
+These commands only open or close the WebRTC audio producer — they never trigger recording.
+
+### 2. Recording (`start_recording` / `stop_recording`)
+
+The frontend and the **Recorder** workflow node publish directly to:
+
+```text
+cyberwave/twin/{twin_uuid}/webrtc-command
+```
+
+```json
+{ "command": "start_recording", "source_type": "tele", "sensor": "audio", "frontend_type": "audio", "session_id": "sdk_9314159f" }
+{ "command": "stop_recording",  "source_type": "tele", "sensor": "audio", "frontend_type": "audio", "session_id": "sdk_9314159f" }
+```
+
+`source_type` is `"tele"` when the frontend REC button publishes the message and `"edge"` when the microphone driver relays it (fallback path). `session_id` is a free-form correlation hint; the media-service derives the actual recording session from the live SFU producer state and only echoes the field back in its logs. The `sensor` value must match a sensor `id` from `twin.capabilities.sensors` (computed from `twin.universal_schema.sensors[]`); the audio widget resolves it via `getAudioSensorConfig(twin).sensorId`.
+
+The REC button is **recording-only**: it never republishes `start_audio` / `stop_audio`. The audio widget auto-publishes `start_audio` on mount and `stop_audio` on unmount, so by the time the user can click REC the WebRTC producer is already running. Re-sending `start_audio` from the REC click would just log `start_audio command received - stream already active` on the driver and add a 3 s ACK wait before the actual recording publish.
+
+The media-service SFU starts (or stops) persisting the running audio track and replies on `cyberwave/twin/{twin_uuid}/webrtc-command/status`:
+
+```json
+{ "command": "start_recording", "status": "ok", "message": "recording started", "recording_id": "...", "source_type": "backend", "timestamp": 1716643200.123 }
+```
+
+As a **fallback path** for callers that only know the twin command topic, the microphone driver also accepts `start_recording` / `stop_recording` on `cyberwave/twin/{twin_uuid}/command` and forwards them verbatim to `webrtc-command`. On the fallback path the driver does **not** publish its own status ACK — callers consume the authoritative status from `webrtc-command/status`.
+
+`CYBERWAVE_METADATA_AUTO_RECORDING_AUDIO=true` makes the **initial** WebRTC offer carry `recording: true` so the media-service starts recording in the same negotiation. After startup, recording is controlled entirely by `start_recording` / `stop_recording`. When `CYBERWAVE_METADATA_ENABLE_RECORDING=false`, the driver drops fallback relays silently (the frontend publishes to `webrtc-command` itself and is not affected).
 
 ## Setup
 
 1. Create or select a microphone twin in your Cyberwave environment.
 2. Pair the edge device through Cyberwave Edge so the driver receives `CYBERWAVE_API_KEY` and `CYBERWAVE_TWIN_UUID`.
 3. Attach a USB or built-in microphone to the edge device.
-4. Start the driver with Docker or Edge Core. On Linux Docker hosts, pass the audio device into the container:
+4. Start the driver with Edge Core (recommended) or Docker. On **macOS**, run `cyberwave edge install` so the CLI starts a host ffmpeg PCM bridge (like the MJPEG camera bridge) and edge-core injects `CYBERWAVE_METADATA_AUDIO_DEVICE=http://host.docker.internal:8101` into the container. On **Linux Docker** hosts, pass the audio device into the container:
 
 ```yaml
 devices:
@@ -43,42 +86,64 @@ group_add:
 
 Some systems require `--privileged` for ALSA device access. Use the narrower `/dev/snd` mapping first.
 
+## Standard catalog sensor configuration
+
+<Warning>
+**STUB DOCUMENT:** Canonical catalog asset shape; a human will expand before publishing.
+</Warning>
+
+The standard Cyberwave catalog microphone asset declares one sensor block. Both `id` and `name` are `"audio"`; `type` is `"audio"` (active producer). This is the same routing key the [native speaker driver](/feature-reference/edge/drivers/native-speaker-driver) uses for its `id`/`name` — the modalities are distinguished by `type` / WebRTC `sensor_type`, not by `id`.
+
+```json
+{
+  "id": "audio",
+  "name": "audio",
+  "type": "audio",
+  "parameters": {
+    "enable_audio": "true",
+    "audio_channels": "1",
+    "enable_recording": "true",
+    "audio_sample_rate": "48000",
+    "auto_recording_audio": "false"
+  }
+}
+```
+
+Edge-core maps `parameters` → `CYBERWAVE_METADATA_*` env vars when the driver container starts. The driver publishes WebRTC offers with:
+
+| Offer field | Catalog value | Role |
+| --- | --- | --- |
+| `sensor` | `"audio"` | Routing key (`sensors[].id`) |
+| `sensor_type` | `"audio"` | Matches `sensors[].type`; media-service classifies as **producer** |
+| `role` | `"producer"` | Active edge twin — publishes audio into the SFU |
+| `sender` | `"edge"` | Only edge may produce microphone traffic (TR-1.24) |
+
+Recording commands (`start_recording` / `stop_recording`) use `"sensor": "audio"` so they target the same stream identity as the live offer.
+
 ## Configuration
 
 | Variable | Default | Purpose |
 |---|---:|---|
 | `CYBERWAVE_METADATA_AUDIO_DEVICE` | `default` | Select an input by index, name fragment, or `default`. |
 | `CYBERWAVE_METADATA_ENABLE_AUDIO` | `true` | Enables WebRTC startup and reconnect. If `false`, no WebRTC audio or recording starts. Maps from `enable_audio` in the twin JSON. |
-| `CYBERWAVE_METADATA_ENABLE_RECORDING` | `true` | Enables recording commands. If `false`, `start_audio` / `stop_audio` recording commands are rejected, while WebRTC audio can still run. Maps from `enable_recording` in the twin JSON. |
-| `CYBERWAVE_METADATA_AUTO_RECORDING_AUDIO` | `false` | Starts recording with the initial WebRTC offer only when audio and recording are enabled. `start_audio` can still start recording later when this is `false`. Maps from `auto_recording_audio` in the twin JSON. |
+| `CYBERWAVE_METADATA_ENABLE_RECORDING` | `true` | Gates the driver's fallback relay of `start_recording` / `stop_recording` (on the command topic) to the media-service. Does not affect `start_audio` / `stop_audio` (live stream is always allowed when `enable_audio=true`), and does not affect direct `webrtc-command` publishes from the frontend or Recorder node. Maps from `enable_recording` in the twin JSON. |
+| `CYBERWAVE_METADATA_AUTO_RECORDING_AUDIO` | `false` | When `true`, sets `recording: true` on the **initial** WebRTC offer so the media-service auto-starts recording at startup. After startup, recording is driven by explicit `start_recording` / `stop_recording`. Maps from `auto_recording_audio` in the twin JSON. |
 | `CYBERWAVE_METADATA_AUDIO_CHANNEL` | `audio/default` | Zenoh channel for raw audio chunks. |
-| `CYBERWAVE_METADATA_AUDIO_MIC_NAME` | `audio` | WebRTC sensor identifier. |
-| `CYBERWAVE_METADATA_AUDIO_SAMPLE_RATE` | OS default | Capture sample rate. |
+| `CYBERWAVE_METADATA_AUDIO_MIC_NAME` | `audio` | WebRTC `sensor` routing key (catalog `sensors[].id`). |
+| `CYBERWAVE_METADATA_AUDIO_SAMPLE_RATE` | `48000` | Capture sample rate (catalog standard). WebRTC output is always resampled to 48 kHz Opus. |
 | `CYBERWAVE_METADATA_AUDIO_CHANNELS` | `1` | Capture channels; auto-detection can upgrade to stereo. |
 
-Twin JSON sensor parameters use the same controls:
+When relaying a fallback recording command, the driver publishes the smallest payload the media-service needs (note `source_type: "edge"` here vs. `"tele"` for the frontend's REC button):
 
 ```json
-{
-  "parameters": {
-    "enable_audio": "true",
-    "enable_recording": "true",
-    "auto_recording_audio": "false"
-  }
-}
-```
-
-The driver sends recording commands with the smallest payload the media service needs:
-
-```json
-{ "command": "start_recording", "source_type": "edge", "sensor": "audio" }
+{ "command": "start_recording", "source_type": "edge", "sensor": "audio", "frontend_type": "audio" }
 ```
 
 ```json
-{ "command": "stop_recording", "source_type": "edge", "sensor": "audio" }
+{ "command": "stop_recording", "source_type": "edge", "sensor": "audio", "frontend_type": "audio" }
 ```
 
-The media service resolves the twin UUID from the MQTT topic and defaults the stream identity to `audio/live/default`.
+The media-service resolves the twin UUID from the MQTT topic and defaults the stream identity to `audio/live/default`. The same payload shape is used by the frontend audio widget's REC button and by the Recorder workflow node, so the three paths converge on the same media-service handler and the same ACK on `webrtc-command/status`.
 
 To run multiple microphones on one device, run multiple driver instances. Give each instance a different `CYBERWAVE_TWIN_UUID` and set `CYBERWAVE_METADATA_AUDIO_DEVICE` to the desired input.
 
@@ -90,9 +155,18 @@ The driver logs all input devices at startup and publishes selected-device metad
 
 ## macOS Notes
 
-Bare-metal macOS capture uses CoreAudio through `sounddevice`. The terminal or process launcher must have microphone permission in System Settings before the driver can capture audio.
+Docker Desktop cannot pass CoreAudio into Linux containers. Cyberwave mirrors the camera MJPEG workaround: host ffmpeg captures AVFoundation audio and serves raw PCM over HTTP; the driver inside Docker reads that URL via `AudioBridgeCapture`.
 
-`run-local.sh` support is planned; until it exists, run the Python driver from the package environment with the same `CYBERWAVE_*` variables used by Docker.
+| Step | Command / artifact |
+|------|-------------------|
+| Install bridge | `cyberwave edge install` or `--reconfigure-microphone` |
+| Per-twin map | `~/.cyberwave/audio_streams.json` |
+| Container env | `CYBERWAVE_METADATA_AUDIO_DEVICE=http://host.docker.internal:8101` |
+| Recovery | `cyberwave edge restart` (kickstarts silent ffmpeg LaunchAgents) |
+
+Grant microphone permission when macOS prompts the terminal running ffmpeg.
+
+For local debugging without Docker, use `./run-local.sh` (direct `sounddevice` / PortAudio).
 
 ## Edge Cases
 
@@ -138,6 +212,14 @@ Raw PCM chunks are published at the hardware's native capture rate with **no res
 
 The PortAudio callback places raw audio into a zero-copy swap buffer for Zenoh (O(1)) and queues resampled audio for WebRTC. Three threads run in true parallel: PortAudio capture, Zenoh publisher, and WebRTC streamer.
 
+### Edge health (`edge_health`)
+
+<Warning>
+**STUB DOCUMENT:** CYB-2005 contract summary; a human will expand before publishing.
+</Warning>
+
+The driver delegates `edge_health` to the SDK's `MicrophoneAudioStreamer`. Once WebRTC is connected, each heartbeat includes `streams.stream.stream_config` with `kind: "audio"`, `sample_rate_hz`, `channels`, and `codec: "opus"`. The block intentionally omits `source` (no host device path on the wire). Liveness uses `mark_alive`, so `fps` and `frames_sent` stay at zero for audio rows. The dashboard renders sample rate and channel layout from this block; workflow triggers still read Zenoh PCM, not MQTT health.
+
 ### Twin metadata
 
 The driver publishes both rates to the twin metadata under `audio_device`:
@@ -153,9 +235,36 @@ The driver publishes both rates to the twin metadata under `audio_device`:
 ## Success Checks
 
 - `docker compose up` with a USB microphone streams audio to the microphone twin.
-- Frontend MQTT `start_audio` / `stop_audio` toggles recording while preserving an already-active WebRTC connection.
+- Frontend MQTT `start_audio` / `stop_audio` toggles the live WebRTC audio producer (no recording side effect); the driver replies with `audio_started` / `audio_stopped` on the matching status topic.
+- Frontend MQTT `start_recording` / `stop_recording` on `webrtc-command` toggles persisted recording without disturbing the live stream; the media-service replies on `webrtc-command/status`.
 - Zenoh `audio/default` chunks are consumable by an `on_audio` worker hook at the hardware's native sample rate.
 - Startup logs list available devices; `CYBERWAVE_METADATA_AUDIO_DEVICE` selects a specific one.
 - USB disconnect and reconnect transitions through alert, reconnect, and alert resolution.
 
 For source-level details, see the [Generic Microphone Driver README](https://github.com/cyberwave-os/generic-microphone-driver).
+
+## Related
+
+<CardGroup cols={2}>
+  <Card
+    title="Native speaker driver"
+    icon="volume-high"
+    href="/feature-reference/edge/drivers/native-speaker-driver"
+  >
+    Downstream playback counterpart — same `sensor: "audio"` routing key, `sensor_type: "speaker"`, `role: "consumer"`.
+  </Card>
+  <Card
+    title="Recorder workflow node"
+    icon="circle-dot"
+    href="/feature-reference/workflows/recorder"
+  >
+    Publishes the same `start_recording` / `stop_recording` payload on `webrtc-command` from a workflow — converges on the same media-service handler as the audio widget's REC button and the driver's fallback relay.
+  </Card>
+  <Card
+    title="Audio in Workflows"
+    icon="waveform-lines"
+    href="/feature-reference/workflows/audio-in-workflows"
+  >
+    Workflow-side audio pipeline (Audio Track, VAD, Wake Word, STT). Consumes Zenoh PCM from this driver — orthogonal to the WebRTC + recording path documented here.
+  </Card>
+</CardGroup>

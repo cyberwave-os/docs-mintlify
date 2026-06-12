@@ -1,0 +1,54 @@
+---
+title: 'Event Storage Metrics'
+description: 'Daily-bucketed row counts of stored events for a workspace.'
+tag: stub
+---
+
+`GET /api/v1/metrics/events/{workspace}` reports row counts of stored
+events, bucketed by UTC day, for a single workspace.
+
+## Path parameters
+
+| Name | Required | Description |
+| --- | --- | --- |
+| `workspace` | yes | Workspace UUID or slug. The caller must have read access (active membership, ACL role, or workspace visibility). The path segment is parsed as a UUID first; if that fails, it is looked up as a slug. |
+
+## Query parameters
+
+| Name | Required | Description |
+| --- | --- | --- |
+| `start_timestamp` | no | ISO-8601 lower bound (inclusive). |
+| `end_timestamp` | no | ISO-8601 upper bound (exclusive). |
+
+If both bounds are provided, `start_timestamp` must be earlier than
+`end_timestamp` (otherwise the endpoint returns `400`).
+
+## Response
+
+```json
+{
+  "workspace_uuid": "…",
+  "window": { "start": "…|null", "end": "…|null" },
+  "telemetry": {
+    "total": 12345,
+    "by_event_type": { "twin_metrics_update": 9000 },
+    "by_day": [{ "day": "2026-05-17", "event_type": "twin_metrics_update", "count": 4000 }]
+  },
+  "workflow_executions": {
+    "total": 42,
+    "by_workflow": { "<wf-uuid>": { "name": "pick-and-place", "count": 42 } },
+    "by_day": [{ "day": "…", "workflow_uuid": "…", "workflow_name": "…", "count": 42 }]
+  },
+  "workflow_node_executions": { "total": "…", "by_workflow": {}, "by_day": [] },
+  "alerts": {
+    "total": 3,
+    "by_alert_type": { "calibration_needed": 2 },
+    "by_day": [{ "day": "…", "alert_type": "calibration_needed", "count": 2 }]
+  }
+}
+```
+
+Counts are computed from raw rows in `app_twintelemetry`,
+`app_workflowexecution`, `app_workflownodeexecution`, and `app_alert`.
+The endpoint runs aggregation in the database; only summaries cross the
+process boundary.

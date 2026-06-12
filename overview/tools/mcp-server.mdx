@@ -119,12 +119,18 @@ stub: Discover procedural primitive templates with `cw_search_catalog`. Results 
 | Tool | Description |
 |---|---|
 | `cw_list_workflows` | List workflows for the current or provided environment |
-| `cw_create_workflow_from_prompt` | Preview or draft a template-backed workflow from a prompt via the Workflow Agent |
+| `cw_create_workflow_from_prompt` | Preview or draft a workflow from a prompt via the Workflow Agent; accepts optional `node_hints` |
+| `cw_list_node_schemas` | List registered node schemas. Optional `query` is a ranked keyword search (space-separated terms, OR-matched, best-first), not a literal phrase |
+| `cw_get_node_schema` | Get the typed parameter contract for one `(node_type, node_subtype)` |
 | `cw_get_workflow` | Get a workflow by UUID (nodes, connections, config) |
 | `cw_trigger_workflow` | Trigger a workflow run with optional input parameters |
 | `cw_list_workflow_runs` | List workflow runs, optionally filtered by workflow or status |
 | `cw_get_workflow_run` | Get a specific workflow run by UUID |
 | `cw_cancel_workflow_run` | Cancel an active workflow run |
+
+<Note>
+stub: `cw_list_node_schemas` is an **optional** discovery aid — the Workflow Agent already knows the full node catalog. Use it to confirm exact `(node_type, node_subtype)` identifiers, then pass them to `cw_create_workflow_from_prompt` via `node_hints` to bias the composed graph. Hints support a single fork to multiple alert/notify effects; they are advisory and unresolved hints come back as `dropped_node_hints`.
+</Note>
 
 ### ML Models
 
@@ -453,6 +459,8 @@ Area images can be attached via a direct `image_url` (recommended for large imag
 | Tool | Parameters |
 |---|---|
 | `cw_list_workflows` | *(none)* |
+| `cw_list_node_schemas` | `query?` (ranked keyword search), `limit=100` |
+| `cw_get_node_schema` | `node_type` (required), `node_subtype?` |
 | `cw_get_workflow` | `workflow_uuid` (required) |
 | `cw_trigger_workflow` | `workflow_uuid` (required), `inputs?` (dict), `execute=false` |
 | `cw_list_workflow_runs` | `workflow_uuid?`, `status?` |

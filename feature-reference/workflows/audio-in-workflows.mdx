@@ -71,9 +71,9 @@ Microphone → Audio Track → Audio Assistant (VAD) → Wake Word Engine → Ca
 ### What each node does:
 
 1. **Audio Track** — Receives raw 20 ms chunks from the edge microphone via Zenoh. Accumulates them in a FIFO buffer and emits when the buffer is full. Normalizes to int16 @ 16 kHz mono. Buffer presets:
-   - `vad`: 512 samples (32 ms) — for Audio Assistant / Silero VAD
+   - `voice-assistant`: 512 samples (32 ms) — for Audio Assistant / Silero VAD
    - `wake-word`: 1,280 samples (80 ms) — matches OpenWakeWord's internal frame size
-   - `stt`: 64,000 samples (4 s) — for direct STT input
+   - `speech-to-text`: 64,000 samples (4 s) — for direct STT input
    - `custom`: user-defined duration in seconds
 
    Outputs the buffered audio via the `audio` key plus metadata (`sample_rate_hz`, `channels`, `duration_s`, `sample_count`).
@@ -84,14 +84,44 @@ Microphone → Audio Track → Audio Assistant (VAD) → Wake Word Engine → Ca
 
    This dual-output design means downstream nodes can react to the VAD trigger immediately, without waiting for the full segment extraction.
 
-3. **Wake Word Engine** — Listens for a configurable trigger phrase using [OpenWakeWord](https://github.com/dscripka/openWakeWord). Users can select from pre-trained models (alexa, hey_mycroft, hey_jarvis, etc.) or provide a custom `.onnx` model. After detection, streams **fixed-size audio chunks** to downstream nodes until silence is detected. Output chunk size is configurable:
-   - `vad` preset: 512 samples (32 ms) — for feeding another VAD stage
-   - `stt` preset: 64,000 samples (4 s) — optimized for Whisper/STT (default)
+   Optionally, the **Output Buffer Preset** re-chunks the extracted speech into fixed-size frames for downstream consumption:
+   - `wake-word`: 1,280 samples (80 ms) — for feeding a Wake Word Engine
+   - `speech-to-text`: 64,000 samples (4 s) — for Whisper/STT models
+   - `custom`: user-defined buffer size in seconds
+   - `none` (default): pass the full speech segment as-is
+
+3. **Wake Word Engine** — Listens for a configurable trigger phrase using [OpenWakeWord](https://github.com/dscripka/openWakeWord). Users select one or more pre-trained models (`alexa`, `hey_mycroft`, `hey_jarvis`, `hey_rhasspy`, `weather`, `timer`) from a searchable multi-select — the engine activates on any of them when that model’s score ≥ a single **Detection Threshold** (default **0.5** for all models). Custom `.onnx` model support is coming soon. Pre-trained models are downloaded automatically on the edge device via `openwakeword.utils.download_models()`. Accepts PCM arrays, raw bytes, WAV bytes, or WAV file paths as input. Internally buffers input into exact 80 ms (1280-sample) frames for optimal openWakeWord prediction accuracy. After detection, streams **fixed-size audio chunks** to downstream nodes until silence is detected. Output chunk size is configurable:
+   - `voice-assistant` preset: 512 samples (32 ms) — for feeding another VAD stage
+   - `wake-word` preset: 1,280 samples (80 ms) — openWakeWord native frame
+   - `speech-to-text` preset: 64,000 samples (4 s) — optimized for Whisper/STT
+   - Default output preset is `wake-word` (80 ms); use `speech-to-text` when Whisper follows
    - `custom` preset: user-defined buffer size in seconds
 
-   Each chunk is emitted as int16 @ 16 kHz mono via the `audio` key. The final chunk before silence timeout is marked with `is_final_chunk: true` so downstream STT can finalize transcription.
+   One command-only `audio` buffer is emitted per wake session (wake phrase trimmed via **Wake Word Trim**). Wire Call Model STT to the `audio` output.
+
+   **Input validation**: The Wake Word Engine validates that its audio input meets openWakeWord requirements (16 kHz, int16/float32, mono, raw PCM). If the upstream audio cannot be adapted to meet these specs, the node raises an error with a detailed explanation.
 
 4. **Call Model (Whisper)** — Receives int16 audio, passes it (with `sample_rate_hz` and `channels` metadata) to the model's `predict()` function. Outputs the transcription as a string.
+
+### Voice → robot command (optional tail)
+
+After STT, add controller-aware matching and MQTT dispatch:
+
+```
+call_model.result
+  → fuzzy_matcher.query           (Uncertain String)
+twin.control_actuations (or control_labels)
+  → fuzzy_matcher.candidates      (Source of Truth: string or array)
+fuzzy_matcher.match_string → virtual_controller.command
+```
+
+| Node | Role |
+|------|------|
+| **Twin** | Same twin as Virtual Controller; exposes valid commands from assigned policy |
+| **Fuzzy Matcher** | Maps the uncertain string to the best source-of-truth entry (`match`, `match_string`, `score`) |
+| **Virtual Controller** | Resolves label/actuation and publishes `cyberwave/twin/{uuid}/command` |
+
+Branch on `fuzzy_matcher.match` with **Conditional** before Virtual Controller so unrelated speech does not dispatch commands. See [Fuzzy Matcher](/feature-reference/workflows/fuzzy-matcher) and [Virtual Controller](/feature-reference/workflows/virtual-controller).
 
 ### ML model environment
 
@@ -115,11 +145,21 @@ The nodes handle format adaptation internally. You never need to insert format c
 
 ## Compile-Time Validation
 
-When you compile a workflow, the assembler validates that:
-- Audio-consuming nodes (Audio Assistant, Wake Word Engine) have an audio-producing upstream
-- The chain is topologically valid
+When you compile a workflow for edge (`run_on_edge: true`), the Django **compile server** imports the libraries each node needs and fails with an actionable message if a package is missing (same pattern as Wake Word Engine).
 
-If an audio node is connected to a non-audio source (e.g. an HTTP request node), compilation fails with a clear error message.
+| Node / model | Compile-server packages |
+|---|---|
+| Wake Word Engine | `openwakeword`, `onnxruntime` |
+| Fuzzy Matcher | `rapidfuzz` |
+| Audio Assistant | `silero-vad` (+ torch transitive) |
+| Call Model — whisper.cpp | `pywhispercpp` |
+| Call Model — faster-whisper | `faster-whisper` |
+| Twin / Virtual Controller | `httpx`, `paho-mqtt` (base deps) |
+| Audio Track | no ML import at compile |
+
+Packages live in `cyberwave-backend/requirements/base.txt`. Rebuild the Django image after changes. Full tables, SDK extras, and slim worker builds: **[Edge workflow dependencies](/feature-reference/workflows/edge-dependencies)**.
+
+The assembler also validates that audio-consuming nodes have an audio-producing upstream and that the chain is topologically valid.
 
 ## Supported Input Formats (per node)
 
@@ -149,28 +189,78 @@ No crashes. No silent failures.
 - **NumPy slicing is zero-copy too**: `audio[start:end]` creates a view, not a copy. The Wake Word Engine uses this for its lookback buffer.
 - **Buffered streaming**: The Wake Word Engine outputs fixed-size chunks (not one giant array). This keeps memory bounded and allows downstream STT to start processing immediately as chunks arrive.
 
+## Edge dependencies
+
+Install SDK extras on the edge host (or `cyberwave-edge-core[...]` passthroughs). `edge-sync` returns `model_requirements` from node emitters and Call Model catalog metadata.
+
+| Node / model | `edge-sync` extra | Install |
+|---|---|---|
+| Audio Track | — | `cyberwave[zenoh]` on worker; `cyberwave[microphone]` on capture host |
+| Audio Assistant | `ml-audio` | `cyberwave[ml-audio]` |
+| Wake Word Engine | `ml-wakeword` | `cyberwave[ml-wakeword]` |
+| Fuzzy Matcher | `fuzzy-match` | `cyberwave[fuzzy-match]` |
+| Call Model STT | `ml-stt` or `ml-stt-faster` | Per [catalog model](/feature-reference/workflows/call-model-stt-edge) |
+| Twin / Virtual Controller | — | Base `cyberwave` (API + MQTT) |
+
+On Raspberry Pi, install **only** the extras your workflow uses — not `ml-all`. See **[Edge workflow dependencies](/feature-reference/workflows/edge-dependencies)**.
+
 ## Related Pages
 
 <CardGroup cols={3}>
   <Card
+    title="Edge dependencies"
+    icon="puzzle-piece"
+    href="/feature-reference/workflows/edge-dependencies"
+  >
+    Compile server, SDK extras, STT catalog
+  </Card>
+  <Card
+    title="Call Model STT"
+    icon="microphone-lines"
+    href="/feature-reference/workflows/call-model-stt-edge"
+  >
+    Whisper.cpp and Faster Whisper on edge
+  </Card>
+  <Card
     title="Audio Track"
     icon="microphone"
-    href="/use-cyberwave/workflows/audio-track/overview"
+    href="/feature-reference/workflows/audio-track/overview"
   >
     Edge microphone trigger node
   </Card>
   <Card
     title="Audio Assistant"
     icon="volume-high"
-    href="/use-cyberwave/workflows/audio-assistant/overview"
+    href="/feature-reference/workflows/audio-assistant/overview"
   >
     VAD-powered speech segmentation
   </Card>
   <Card
     title="Wake Word Engine"
     icon="microphone"
-    href="/use-cyberwave/workflows/wake-word-engine/overview"
+    href="/feature-reference/workflows/wake-word-engine/overview"
   >
     Voice-activated trigger gate
+  </Card>
+  <Card
+    title="Twin"
+    icon="robot"
+    href="/feature-reference/workflows/twin"
+  >
+    Read twin + controller policy for command candidates
+  </Card>
+  <Card
+    title="Fuzzy Matcher"
+    icon="bullseye"
+    href="/feature-reference/workflows/fuzzy-matcher"
+  >
+    Map noisy STT text to command labels
+  </Card>
+  <Card
+    title="Virtual Controller"
+    icon="gamepad"
+    href="/feature-reference/workflows/virtual-controller"
+  >
+    Dispatch matched commands to the twin over MQTT
   </Card>
 </CardGroup>

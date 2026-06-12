@@ -1,0 +1,131 @@
+---
+title: "Fuzzy Matcher node"
+description: "Match a noisy/uncertain string against a source of truth (single string or array). Outputs match, score, and match_string."
+tag: stub
+---
+
+The **Fuzzy Matcher** (`fuzzy_matcher`) takes two inputs — an
+**uncertain string** (typically STT output) and a **source of truth**
+(a single string or an array of strings) — and returns the source-of-truth
+entry that best matches the uncertain input. It uses
+[RapidFuzz](https://github.com/rapidfuzz/RapidFuzz) composite scoring so
+imperfect transcriptions still map to the right label.
+
+This mirrors the two-input shape of the **Conditional** node, but instead
+of an exact comparison it returns a similarity score plus the matched
+string.
+
+<Note>
+**Palette category:** Transform & Routing. Runs on **cloud** workflows and
+**edge** workers (same matching logic in both paths).
+</Note>
+
+## Typical chain
+
+```
+audio_track → wake_word_engine → audio_assistant → call_model (STT)
+  → fuzzy_matcher ← twin (control_actuations / control_labels)
+  → virtual_controller / conditional / downstream logic
+```
+
+Wire **query** (uncertain string) from Call Model `result`. Wire
+**candidates** (source of truth) from Twin node **control_actuations** —
+either an array, or a single string from any upstream node. Branch on
+**match** and pass **match_string** into actuation.
+
+## Inputs
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `query` | string | Yes* | **Uncertain string** to match (for example STT output). *Use a static value in the inspector when unwired. |
+| `candidates` | string \| array | Yes* | **Source of truth**: either a single string or an array of strings. A lone string is treated as a one-entry source of truth. *One label per line in the inspector when unwired. |
+| `score_threshold` | number | No | Minimum RapidFuzz score (0–100) to set `match` to `true`. Default **80**. Set in the inspector or wire from upstream. |
+
+**Inspector (node parameters):**
+
+- **Score Threshold** — minimum similarity (0–100) to count as a match. Higher = stricter. Default `80`.
+- **Uncertain String (optional)** — static fallback when `query` is not wired from upstream.
+- **Source of Truth (optional)** — one option per line, or a single string. Used when `candidates` is not wired from upstream.
+
+Precedence: wired input mapping → node parameter → default (`80` for threshold).
+
+## Outputs
+
+| Field | Type | Description |
+|---|---|---|
+| `match` | boolean | `true` when the best source-of-truth entry score ≥ `score_threshold`; `false` otherwise. |
+| `score` | number | Best RapidFuzz similarity (0–100) for the winning entry, even when `match` is `false`. |
+| `match_string` | string | The source-of-truth string that best matched the uncertain input (original casing). Empty when `match` is `false`. |
+
+**Deprecated aliases** (kept for older workflows):
+
+| Field | Alias of |
+|---|---|
+| `matched` | `match` |
+| `predicted` | `match_string` |
+| `matched_command` | `match_string` |
+
+Advanced echo (debugging): `query`, `candidates`, `score_threshold`.
+
+## How matching works
+
+1. **Normalize** query and each candidate: lowercase, collapse whitespace,
+   treat `_` and `-` as spaces, strip punctuation (`move_forward` → `move forward`).
+2. **Score** each candidate with the **max** of:
+   - `token_set_ratio` — extra words, shuffled order
+   - `token_sort_ratio` — similar order with typos
+   - `partial_ratio` (both directions) — label inside a long phrase, or short utterance inside a label
+   - `WRatio` — general typo tolerance
+3. Pick the **highest-scoring** source-of-truth entry as `match_string`.
+4. Set `match` to `true` only if that score ≥ `score_threshold`.
+
+RapidFuzz scores are always on a **0–100** scale (`100` = perfect after normalization).
+
+### Examples (threshold 80)
+
+| Query (STT) | Dictionary label | Typical result |
+|---|---|---|
+| `I want that you move forward` | `Move Forward` | `match: true`, `match_string: "Move Forward"` |
+| `more forward` / `mole forward` | `Move Forward` | `match: true` (typos) |
+| `move forwarde` | `move_forward` | `match: true` |
+| `forward` / `forwarde` | `Move Forward` | `match: true` (substring + typo) |
+| `what is the time tomorrow` | `turn on the kitchen light` | `match: false`, `match_string: ""`, low `score` |
+
+## Tuning `score_threshold`
+
+| Value | Effect |
+|---|---|
+| **80** (default) | Balanced for voice commands |
+| **Lower** (e.g. 70) | More tolerant of noisy STT; more false positives |
+| **Higher** (e.g. 85) | Stricter; short or typo-heavy utterances may need a higher raw `score` to pass |
+
+Use the **score** output to calibrate: if good phrases often score 75–79, lower the threshold slightly; if unrelated text still passes, raise it.
+
+## Execution targets
+
+| Target | Notes |
+|---|---|
+| **Cloud** | `WorkflowUtils._execute_fuzzy_matcher_node` — requires `rapidfuzz` in backend deps. |
+| **Edge** | `fuzzy_matcher` code emitter — worker needs `cyberwave[fuzzy-match]` / `cyberwave-edge-core[fuzzy-match]`. |
+
+## Dependencies
+
+| Layer | Requirement |
+|---|---|
+| **Compile server** | `rapidfuzz` in `cyberwave-backend/requirements/base.txt`. `provision_fuzzy_match_for_compile()` fails compile if missing. |
+| **Edge worker** | `cyberwave[fuzzy-match]` or `cyberwave-edge-core[fuzzy-match]` |
+| **edge-sync** | `model_requirements`: `edge_package: fuzzy-match`, `edge_runtime: rapidfuzz` |
+
+Error if compile server lacks the package:
+
+> This workflow uses Fuzzy Matcher but rapidfuzz is not installed on the compile server. Install rapidfuzz (or cyberwave[fuzzy-match]) on Django before compiling for edge.
+
+See [Edge workflow dependencies](/feature-reference/workflows/edge-dependencies).
+
+## Related nodes
+
+- [Twin](/feature-reference/workflows/twin) — `control_actuations` or `control_labels` → `candidates`
+- [Call Model STT on edge](/feature-reference/workflows/call-model-stt-edge) — STT `result` → `query`
+- **Conditional** — branch on `match`
+- [Virtual Controller](/feature-reference/workflows/virtual-controller) — `match_string` → `command` → MQTT actuation
+- [Edge workflow dependencies](/feature-reference/workflows/edge-dependencies) — full package matrix

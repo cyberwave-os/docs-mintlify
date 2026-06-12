@@ -1,0 +1,62 @@
+---
+title: "Voice Assistant (VA)"
+description: "Silero VAD profiles for real-time and batch speech segmentation."
+icon: "microphone"
+stub: true
+---
+
+**Voice Assistant** uses [Silero VAD](https://github.com/snakers4/silero-vad) to detect speech start/end, extract utterances, and optionally re-chunk output for downstream nodes.
+
+## Sub-modality profiles
+
+| Profile | Use case |
+|---|---|
+| **Real-Time Voice Assistant** | Low-latency conversational / command endpoints |
+| **High-Noise / Industrial** | Factory floors, vehicles, call centres |
+| **Batch Transcription / STT** | Offline Whisper-style segmentation (~28 s max chunk) |
+| **Quiet Studio / Whisperer** | Distant mic, soft speech, long pauses |
+| **Custom** | Manual Silero parameters |
+
+## Input / output
+
+**Input:** `audio` from Audio Track (any supported encoding; adapted to int16 @ 16 kHz mono).
+
+**Outputs (every chunk while listening):**
+
+```json
+{
+  "speech_probability": 0.87,
+  "is_speaking": true,
+  "sample_rate_hz": 16000,
+  "channels": 1
+}
+```
+
+**Outputs (when speech ends):**
+
+```json
+{
+  "audio": "<numpy int16>",
+  "speech_probability": 0.92,
+  "is_speaking": false,
+  "start_timestamp_sec": 1.2,
+  "end_timestamp_sec": 3.8,
+  "sample_rate_hz": 16000,
+  "channels": 1
+}
+```
+
+## Output buffer preset (optional)
+
+After a full utterance is detected, audio can be re-chunked for downstream consumers:
+
+| Preset | Duration | Samples @ 16 kHz |
+|---|---|---|
+| None | Full segment | — |
+| Wake Word Engine | 80 ms | 1280 |
+| Speech-To-Text | 4 s | 64000 |
+| Custom | User-defined | — |
+
+## Recommended Audio Track preset
+
+Set the upstream Audio Track **buffer preset** to **Voice Assistant (32 ms)** so chunks are 512 samples—the native Silero frame size. Larger chunks still work (the node reframes internally) but add latency.

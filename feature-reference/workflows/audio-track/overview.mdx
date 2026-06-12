@@ -35,7 +35,7 @@ The Audio Track trigger is **edge-only**. It hooks into the Cyberwave SDK's `@cw
 | `audio_track_id` | Audio Track / Sensor ID | `"default"` | No | Sensor identifier on the twin. Use `"default"` for the primary microphone. Only needed when a twin has multiple audio sensors. |
 | `sample_rate_hz` | Expected Sample Rate | `16000` | No | Expected sample rate in Hz. The actual rate from wire metadata overrides this at runtime, so you rarely need to change it. |
 | `channels` | Channels | `1` | No | Expected channel count (1 = mono, 2 = stereo). Wire metadata overrides at runtime. |
-| `buffer_preset` | Buffer Preset | `"vad"` | No | FIFO buffer mode: `vad` (32 ms), `wake-word` (80 ms), `stt` (4 s), or `custom`. See [Buffer Presets](#buffer-presets). |
+| `buffer_preset` | Buffer Preset | `"voice-assistant"` | No | FIFO buffer mode: `voice-assistant` (32 ms), `wake-word` (80 ms), `speech-to-text` (4 s), or `custom`. See [Buffer Presets](#buffer-presets). |
 | `buffer_size_s` | Buffer Size (s) | `1.0` | No | Custom buffer duration. Only used when preset is `custom`. |
 | `min_samples` | Skip Empty Audio | `1` | No | Minimum samples a chunk must contain. Drops empty frames from device glitches. See [Safety Guards](#safety-guards). |
 | `max_chunk_seconds` | Max Single Chunk Length (s) | `10` | No | Maximum duration of a single chunk in seconds. Drops oversized buffers from device stalls. See [Safety Guards](#safety-guards). |
@@ -67,9 +67,9 @@ The microphone sends audio in tiny 20 ms chunks. Most downstream nodes need a la
 
 | Preset | Duration | Samples (@ 16 kHz) | Use Case |
 |--------|----------|---------------------|----------|
-| `vad` | 32 ms | 512 | Audio Assistant / Silero VAD (default) |
+| `voice-assistant` | 32 ms | 512 | Audio Assistant / Silero VAD (default) |
 | `wake-word` | 80 ms | 1,280 | Wake Word Engine (OpenWakeWord internal frame size) |
-| `stt` | 4 s | 64,000 | Whisper / STT models |
+| `speech-to-text` | 4 s | 64,000 | Whisper / STT models |
 | `custom` | User-defined | `int(16000 × buffer_size_s)` | Any custom duration |
 
 <Tip>
@@ -175,13 +175,31 @@ def run(audio, ctx, client=None):
 
 The worker is compiled by the workflow code assembler and synced to the edge via `cyberwave workflow sync` or automatic periodic sync. No audio data leaves the device unless a downstream node explicitly sends it (e.g. to a cloud STT API).
 
+## Dependencies
+
+| Layer | Requirement |
+|---|---|
+| **Compile server** | No ML import at compile (Zenoh hook only in generated code) |
+| **Edge worker** | `cyberwave[zenoh]` — `@cw.on_audio` subscription |
+| **Capture host** | `cyberwave[microphone]` on the twin driver that publishes PCM to Zenoh |
+| **edge-sync** | No `model_requirements` |
+
+Downstream nodes (Audio Assistant, Wake Word, STT) bring their own extras — see [Edge workflow dependencies](/feature-reference/workflows/edge-dependencies).
+
 ## Next Steps
 
 <CardGroup cols={2}>
   <Card
+    title="Edge dependencies"
+    icon="puzzle-piece"
+    href="/feature-reference/workflows/edge-dependencies"
+  >
+    Compile server and SDK extras for voice pipelines
+  </Card>
+  <Card
     title="Audio Assistant"
     icon="volume-high"
-    href="/use-cyberwave/workflows/audio-assistant/overview"
+    href="/feature-reference/workflows/audio-assistant/overview"
   >
     VAD-powered speech segmentation for the audio stream
   </Card>

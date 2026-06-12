@@ -1,0 +1,65 @@
+---
+title: "Recorder node"
+description: "Start or stop audio/video recording on a twin via the media service from a workflow."
+tag: stub
+---
+
+The **Recorder** (`recorder`) node publishes `start_recording` / `stop_recording` to a twin's `webrtc-command` MQTT topic so the media service persists the **already-running** WebRTC stream to its configured bucket. The node never carries the media itself — the camera or microphone must already be streaming.
+
+<Note>
+**Palette category:** Actuation. **Edge-only.** Toggles persistence on the media service; it does not create the stream.
+</Note>
+
+<Tip>
+The Recorder node, the audio widget's **REC** button in the environment view, and the [microphone driver's fallback relay](/feature-reference/edge/drivers/native-microphone-driver) all publish the exact same payload on `cyberwave/twin/{uuid}/webrtc-command`. The three paths converge on the same media-service handler and the same `webrtc-command/status` ACK, so you can mix and match without changing the consumer.
+</Tip>
+
+## Inputs
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `twin_uuid` | string | Yes | Twin whose stream should be recorded. Defaults to the workflow's bound twin. |
+| `command` | string | Yes | `start_recording` or `stop_recording`. Wire from an upstream Conditional / Fuzzy Matcher to toggle dynamically, or pin a literal in the inspector. |
+| `frontend_type` | string | Yes | `video` or `audio`. The media service treats this as `audio` when unset. |
+| `sensor` | string | Yes | Sensor identifier (e.g. `camera`, `mic`). Required by the media-service `start_recording` handler — commands without it are refused. |
+| `stream_source` | string | No | Optional producer hint (e.g. `camera`). |
+| `stream_instance_id` | string | No | Optional disambiguator when a twin publishes multiple streams under the same sensor. |
+
+## MQTT payload
+
+Published to `{prefix}cyberwave/twin/{twin_uuid}/webrtc-command` with QoS 1:
+
+```json
+{
+  "command": "start_recording",
+  "source_type": "edge",
+  "sensor": "camera",
+  "frontend_type": "video",
+  "stream_source": "camera",
+  "stream_instance_id": "primary"
+}
+```
+
+To stop, send the same payload with `"command": "stop_recording"`. Status is published back by the media service on `{prefix}cyberwave/twin/{twin_uuid}/webrtc-command/status`.
+
+## Outputs
+
+| Field | Type | Description |
+|---|---|---|
+| `command` | string | Recording command that was published. |
+| `topic` | string | Full MQTT topic the command was published to. |
+| `payload` | object | Payload sent to the media service. |
+| `sent` | boolean | Whether the broker accepted the publish. |
+
+## Execution targets
+
+| Target | Behavior |
+|---|---|
+| **Edge** | Emitter renders a `client.mqtt.publish` against the twin-scoped `webrtc-command` topic in the generated worker. |
+| **Cloud** | Not supported — the node raises at compile time for cloud workflows. |
+
+## Related
+
+- [Audio in workflows](/feature-reference/workflows/audio-in-workflows)
+- [Virtual Controller](/feature-reference/workflows/virtual-controller) — generic controller actuation publisher
+- [Send MQTT](/feature-reference/workflows/edge-dependencies) — generic edge-side MQTT publish

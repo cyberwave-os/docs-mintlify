@@ -188,11 +188,11 @@ for d in pred:
     print(d.label, d.confidence, d.bbox)
 ```
 
-`predict()` returns a **`PredictionResult`** with a unified **`pred.output`** (`ModelOutput` — detection, classification, pose, instance segmentation, OBB, embeddings, …). Convenience properties include `pred.classification`, `pred.pose`, `pred.instance_segmentation`, `pred.obb_result`, and `pred.embedding`.
+`predict()` returns a concrete **`PredictionResult` subclass** — e.g. **`DetectionResult`**, **`ClassificationResult`**, **`TextResult`**, **`PoseResult`**, **`InstanceSegmentationResult`**, **`OBBResult`**, **`EmbeddingResult`**. Use type-specific fields (`.detections`, `.top`, `.text`, …) rather than a wrapper.
 
 | Field         | Role                                                                                  |
 | ------------- | ------------------------------------------------------------------------------------- |
-| `pred.output` | Typed primary result (`DetectionResult`, `ClassificationPrediction`, `PoseResult`, …) |
+| `pred` | Concrete result subclass (`DetectionResult`, `ClassificationResult`, `TextResult`, …) |
 | `pred.raw`    | Unprocessed runtime payload when you need internals                                   |
 
 ---

@@ -1,0 +1,98 @@
+---
+title: "Wake Word — models & compile"
+description: "How selected openWakeWord models are downloaded before edge deploy"
+icon: "cloud-arrow-down"
+stub: true
+---
+
+Wake Word workflows only download the models the author selected — not every file in the openWakeWord catalog.
+
+## Compile-time provision (cloud)
+
+When you **compile** or **edge-sync** a workflow that contains a Wake Word Engine node, `WorkflowCodeAssembler` calls:
+
+```python
+openwakeword.utils.download_models(model_names=["alexa", ...])
+```
+
+Then verifies load with `Model(wakeword_models=[...])` and records `prediction_keys` from `oww_model.models.keys()`.
+
+| Outcome | Meaning |
+|---------|---------|
+| Compile succeeds + warning | `openWakeWord models downloaded for edge: alexa, ...` |
+| Compile fails | `openwakeword` not installed on Django (`ml-wakeword` extra), or download/network error |
+| `GET /compile` field | `openwakeword_models: ["alexa"]` lists normalized model ids |
+
+<Warning>
+The Django compile host must have `openwakeword` and `onnxruntime` in `cyberwave-backend/requirements/base.txt`. Rebuild the Django Docker image after adding them. See [Edge workflow dependencies](/feature-reference/workflows/edge-dependencies).
+</Warning>
+
+### Compile-server packages
+
+| Package | Purpose |
+|---|---|
+| `openwakeword>=0.6.0` | Model download + load probe at compile |
+| `onnxruntime>=1.16.0` | openWakeWord runtime |
+
+## Generated worker (edge)
+
+The compiled `wf_<uuid>.py` module begins with:
+
+```python
+_CW_WW_WORKFLOW_WAKE_WORDS = ['alexa']
+# download_models(model_names=_CW_WW_WORKFLOW_WAKE_WORDS)
+_cw_ww_ensure_models_downloaded(_CW_WW_WORKFLOW_WAKE_WORDS)
+```
+
+Models are fetched again at worker import (before hooks run) and once more when the engine singleton is created.
+
+## Edge-sync metadata
+
+Each Wake Word node contributes to `model_requirements`:
+
+```json
+{
+  "edge_runtime": "openwakeword",
+  "edge_package": "ml-wakeword",
+  "edge_model_path": "openwakeword/pretrained",
+  "wake_word_models": ["alexa"]
+}
+```
+
+Edge operators use this to confirm the worker image and cache contain the required weights.
+
+## Edge worker image
+
+`cyberwaveos/edge-ml-worker` Dockerfile runs:
+
+```bash
+python3 -c "import openwakeword; openwakeword.utils.download_models()"
+```
+
+at build time (~20 MB all six built-in models). Workflow-specific `download_models(model_names=[...])` still runs for clarity and custom images.
+
+## Custom images (air-gapped)
+
+```dockerfile
+RUN pip install openwakeword onnxruntime
+RUN python3 -c "import openwakeword; openwakeword.utils.download_models()"
+```
+
+Or download only what you need:
+
+```python
+import openwakeword
+openwakeword.utils.download_models(model_names=["alexa", "hey_jarvis"])
+```
+
+## Threshold vs compile
+
+**Detection threshold** is a runtime node parameter (default **0.5**, one value for all selected wake words). It is embedded in compiled `wf_*.py` as `threshold=...` on the engine singleton. Changing threshold only requires **save → compile → sync** — no extra model download.
+
+## After changing wake words or threshold
+
+1. Save the Wake Word node in the editor (wake words and/or **Detection Threshold**).
+2. **Compile** the workflow (validates models download).
+3. **Sync** to the edge environment.
+4. Restart the workflow worker container.
+5. Confirm logs: `prediction_keys=['alexa']` (not `alexa_v0.1`) and `threshold=0.50` in init / detection lines.

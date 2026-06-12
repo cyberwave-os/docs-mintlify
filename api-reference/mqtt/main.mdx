@@ -326,18 +326,6 @@ Robot-specific command strings used by bundled controllers:
 | `data`        | object | no       | Command parameters (driver-specific) |
 | `timestamp`   | number | yes      | Unix timestamp (seconds)             |
 
-#### Outbound rate limits
-
-The Python SDK's MQTT client throttles **outbound** telemetry it publishes (this does **not** apply
-to inbound `listen` subscriptions):
-
-| Channel | Limit |
-| --- | --- |
-| Position, rotation, scale, joints | ~40 Hz per twin/channel (`time.monotonic()` window) |
-| GPS (`update_twin_gps`) | 2 Hz per twin; `fix_type="none"` is dropped without consuming the slot |
-
-Duplicate position/rotation payloads are deduplicated before publish.
-
 #### Video control commands
 
 Sent by the backend to start or stop video streaming on the edge device.

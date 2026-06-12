@@ -53,7 +53,7 @@ Discoverability per anchor:
 
 ## Chaining with `update_attachment`
 
-`create_attachment.attachment_uuid` is designed to feed straight into `update_attachment.attachment_uuid`. The `analysis` blocks merge — `create_attachment` seeds the initial values (status, prompt, model_*) and `update_attachment` overlays additional results (`result`, `detections`, `annotated_image_url`) without disturbing top-level keys like `capture_type` or `environment_uuid`. Typical chain:
+`create_attachment.attachment_uuid` is designed to feed straight into `update_attachment.attachment_uuid`. The `analysis` blocks merge — `create_attachment` seeds the initial values (status, prompt, model_*) and `update_attachment` overlays additional results (`result`, `detections`, `annotated_image_bytes`) without disturbing top-level keys like `capture_type` or `environment_uuid`. Typical chain:
 
 ```
 trigger → create_attachment → call_model → update_attachment

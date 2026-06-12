@@ -1,166 +1,209 @@
 ---
 title: "Wake Word Engine"
-description: "OpenWakeWord-based on/off switch for voice-activated workflows"
+description: "OpenWakeWord on/off switch for voice-activated edge workflows"
 icon: "microphone"
 stub: true
 ---
 
-The **Wake Word Engine** node is an on/off switch for voice AI pipelines. It uses [OpenWakeWord](https://github.com/dscripka/openWakeWord) to listen for a trigger phrase while sleeping, then streams fixed-size audio chunks to downstream STT nodes until the user finishes speaking.
+The **Wake Word Engine** is an edge-only voice trigger. It sleeps until it hears the wake word, then streams **PCM int16 @ 16 kHz mono** downstream (typically to [Call Model / Whisper](/use-cyberwave/ml-models/speech-to-text)) until you stop speaking. Internally uses [OpenWakeWord](https://github.com/dscripka/openWakeWord).
 
-This is the same architecture used by Amazon Echo and Google Home: a lightweight always-on detector gates a heavier speech pipeline.
-
-## How It Works
-
-The node implements a two-state machine:
-
-### State 1: SLEEPING
-
-- Audio flows **only** to OpenWakeWord. Downstream nodes are completely idle (zero CPU).
-- A lookback buffer retains the last 500 ms of audio so the start of the command is never clipped.
-- When the wake word score crosses the threshold, the engine switches to AWAKE.
-
-### State 2: AWAKE (Buffered Streaming)
-
-- Audio bypasses OpenWakeWord and is accumulated into an **output buffer**.
-- The lookback buffer is flushed into the output buffer so no syllables are lost.
-- The engine emits audio in **fixed-size chunks** determined by the Output Buffer Preset.
-- When silence exceeds the configured timeout (default 1.5 s), the remaining buffer is flushed as a final chunk (marked with `is_final_chunk: true`) and the engine returns to SLEEPING.
-
-### Output Buffer Presets
-
-| Preset | Chunk Size | Samples | Use Case |
-|--------|-----------|---------|----------|
-| `vad` | 32 ms | 512 | Feed another Audio Assistant or VAD pipeline |
-| `stt` | 4 s | 64,000 | Feed Whisper or other STT models (default) |
-| `custom` | User-defined | `int(16000 * buffer_size_s)` | Any custom duration |
-
-The STT preset (default) is optimized for Whisper which works best with 4-second audio segments. The VAD preset allows re-feeding into fine-grained VAD processing downstream.
-
-## Typical Pipeline
+## Typical pipeline
 
 ```
-Audio Track → Audio Assistant (VAD) → Wake Word Engine → Call Model (Whisper)
+Audio Track (80 ms buffer) → Wake Word Engine → Call Model (Whisper) → Send Alert
 ```
 
-Or without VAD:
+<Warning>
+Set **Audio Track** buffer preset to **Wake Word (80 ms)** — not Speech-To-Text (4 s). A 4 s upstream buffer only invokes scoring about once every 4 seconds and makes short phrases like "alexa" easy to miss. Compile rejects Audio Track `speech-to-text` → Wake Word Engine.
+</Warning>
 
-```
-Audio Track → Wake Word Engine → Call Model (Whisper)
-```
+| Stage | Recommended buffer |
+|-------|-------------------|
+| Audio Track → Wake Word (input) | **Wake Word** — 80 ms / 1,280 samples |
+| Wake Word → Whisper (output while AWAKE) | **Speech-To-Text** — 4 s / 64,000 samples |
+
+## Built-in wake words (only these six)
+
+Legacy ids such as `hey_siri` are **not** in openWakeWord v0.5.x and are stripped at compile and runtime.
+
+| Model ID | Phrase to speak |
+|----------|-----------------|
+| `alexa` | "alexa" |
+| `hey_mycroft` | "hey mycroft" |
+| `hey_jarvis` | "hey jarvis" |
+| `hey_rhasspy` | "hey rhasspy" |
+| `weather` | "what's the weather" |
+| `timer` | "set a 10 minute timer" |
+
+Select multiple words in the UI — the engine activates on **any** of them.
+
+## Detection threshold
+
+One **Detection Threshold** in the workflow editor applies to **every** selected wake-word model (default **0.5**, range 0–1). A frame triggers AWAKE when **any** loaded model’s score is ≥ that value.
+
+| Setting | Where | Default |
+|---------|--------|---------|
+| Detection Threshold | Wake Word node → Detection Parameters | `0.5` |
+
+There is no per-model threshold override in the engine — tune this single knob if a phrase is too sensitive or too hard to trigger.
+
+<Note>
+Pretrained models do not peak at the same level on identical audio. For example, committed test clips often score **~1.0** for `alexa`, **~0.68** for `hey_mycroft`, and **~0.41** for `hey_jarvis`. If `hey_jarvis` (or `hey_rhasspy`) rarely fires at **0.5**, lower the threshold (e.g. **0.35–0.40**) or switch models — do not expect the engine to auto-adjust per model.
+</Note>
+
+## Two-state machine
+
+### SLEEPING
+
+- Audio is scored in **80 ms** frames (1,280 samples @ 16 kHz).
+- Downstream nodes receive no speech audio (only state metadata).
+- A **lookback deque** (default 500 ms) is used internally for detection only — it is **not** forwarded to STT.
+- When any selected model score ≥ **threshold** (default 0.5), the engine switches to **AWAKE**.
+
+### AWAKE
+
+- After detection, the engine **skips** the wake phrase (default **500 ms**, **Wake Word Trim**) then buffers command-only audio.
+- One **audio** output is emitted per session (after silence timeout or listening limit), without the wake word in the PCM.
+- Listening ends per **listening policy** (see below), then state returns to SLEEPING.
+
+## Prediction keys (important)
+
+openWakeWord stores files like `alexa_v0.1.onnx`, but `predict()` returns scores under short keys such as `alexa`.
+
+Compiled workers use `prediction_keys = list(oww_model.models.keys())` so scores are read correctly. If logs show `words=['alexa_v0.1']` without `prediction_keys=['alexa']`, the edge worker is **stale** — recompile and sync the workflow.
+
+## Model download (three layers)
+
+Only the wake words selected in the workflow are provisioned — not the full catalog.
+
+| When | What runs |
+|------|-----------|
+| **Workflow compile** (cloud) | `openwakeword.utils.download_models(model_names=[...])` + load probe. Fails compile if `openwakeword` is missing on Django or download fails. `/compile` returns `openwakeword_models`. |
+| **Worker import** (edge) | Top of `wf_*.py`: `download_models(model_names=_CW_WW_WORKFLOW_WAKE_WORDS)` then `_cw_ww_ensure_models_downloaded(...)`. |
+| **Engine init** (edge) | First audio frame: same download (idempotent) before `Model(wakeword_models=...)`. |
+
+Edge-sync `model_requirements` includes `wake_word_models: ["alexa", ...]` and `edge_package: ml-wakeword`.
+
+The official `cyberwaveos/edge-ml-worker` image also pre-bakes all built-in models at image build time for air-gapped use.
 
 ## Configuration
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| Wake Word Source | `pretrained` | How the wake word model is provided: `Pre-trained` or `Custom .onnx model`. |
-| Wake Word | `hey_mycroft` | Select from the list of pre-trained wake words (when source is `pretrained`). |
-| Custom .onnx Model Path | — | Path to a custom-trained `.onnx` file on the edge device (coming soon via UI upload). |
-| Detection Threshold | `0.5` | Minimum prediction score [0.0, 1.0] to trigger wake-up. |
-| Silence Timeout (s) | `1.5` | Seconds of silence after wake-up before returning to sleep. |
-| Lookback Buffer (ms) | `500` | Audio retained before the wake word to prevent clipping. |
-| Output Buffer Preset | `stt` | Size of audio chunks emitted while AWAKE: `vad`, `stt`, or `custom`. |
-| Output Buffer Size (s) | `4.0` | Custom buffer duration (only used when preset is `custom`). |
+| Wake Words | `hey_mycroft` | Multi-select built-in models (see table above). |
+| Detection Threshold | `0.5` | Min score [0, 1] for **all** selected models to enter AWAKE (workflow editor → Detection Parameters). |
+| Limit listening time | Off | When on, forward audio only for N seconds (default **2 s**), then SLEEPING. When off, forward until **silence timeout** (default 1.5 s). |
+| Silence Timeout (s) | `1.5` | Used when limit listening is **off**. |
+| Wake Word Trim (ms) | `500` | Audio discarded after detection before STT (excludes wake phrase). |
+| Output Buffer Preset | `wake-word` | Chunks emitted while AWAKE (see presets). |
+| Digital twin (signaling) | — | Twin that receives MQTT/Zenoh assistant commands (see below). |
+| Play start/stop assistant sounds | On | Publish signaling when forwarding starts/stops. |
+| Feedback target | `Desktop` | Where the assistant feedback plays: `Desktop` (MQTT → browser), `Edge` (Zenoh → on-device speaker), or `Both`. |
 
-## Choosing a Wake Word
+### Output buffer presets (while AWAKE)
 
-### Option 1: Pre-trained (built-in)
+| Preset | Size | Use case |
+|--------|------|----------|
+| `voice-assistant` | 32 ms (512) | Another VAD / Audio Assistant |
+| `wake-word` | 80 ms (1,280) | Low-latency chaining |
+| `speech-to-text` | 4 s (64,000) | **Whisper / Call Model STT** (recommended after wake word) |
+| `custom` | User seconds | Arbitrary chunk size |
 
-Select from OpenWakeWord's built-in models. Each has been trained on thousands of synthetic voice samples to work across different speakers, accents, and environments:
+## Assistant sound signaling
 
-| Wake Word | Description |
-|-----------|-------------|
-| `alexa` | Amazon-style assistant trigger |
-| `hey_mycroft` | Open-source assistant trigger |
-| `hey_jarvis` | Jarvis-style trigger |
-| `timer` | Timer control command |
-| `weather` | Weather query trigger |
-| `play_music` | Music playback command |
-| `stop` | Stop command |
+When **Play start/stop assistant sounds** is enabled and a **digital twin** is selected (same twin as the Audio Track microphone), the engine emits two events per AWAKE session:
 
-You can select multiple wake words — the engine will activate on any of them.
+| Event | Command |
+|-------|---------|
+| Wake word detected, forwarding starts | `start_assistant` |
+| Forwarding ends (timeout or limit) | `stop_assistant` |
 
-### Option 2: Custom .onnx model (coming soon)
-
-<Info>
-**An `.onnx` file is NOT an audio recording** — it is a compiled AI model (neural network). You cannot just record yourself saying a word and convert it into a working wake word detector.
-
-**How custom wake words are made:**
-
-1. Use the [openWakeWord training notebook](https://github.com/dscripka/openWakeWord) (Google Colab) or local training script.
-2. Type your desired phrase (e.g. "Hey Robot"). The script generates thousands of synthetic voice samples using Text-to-Speech (TTS) with different voices, pitches, and speeds.
-3. The script trains a neural network on these samples plus thousands of hours of background noise (30-60 min of automated processing).
-4. You get a small `.onnx` file (~50-200 KB) that can recognize your phrase spoken by anyone, in any environment.
-
-Once generated, place the `.onnx` file on your edge device and provide the absolute path. The prediction key is derived from the filename (e.g. `my_custom_word.onnx` → `my_custom_word`).
-</Info>
-
-<Warning>
-Custom .onnx upload via the UI is **coming soon**. Currently, you can place the file manually on the edge device and specify the path in advanced settings.
-</Warning>
-
-## Input
-
-| Input | Type | Description |
-|-------|------|-------------|
-| Audio | AUDIO | PCM S16LE int16 numpy array, mono, 16 kHz. Automatically adapted from other formats (float32, WAV bytes, different rates). |
-
-The node accepts input from both **Audio Track** (raw microphone stream) and **Audio Assistant** (VAD-filtered speech segments).
-
-## Output
-
-| Output | Type | Description |
-|--------|------|-------------|
-| Audio | AUDIO | Fixed-size chunk as PCM S16LE int16 numpy array. Mono, 16 kHz. Zero-copy compatible with downstream nodes. |
-| Sample Rate | NUMBER | Always 16000 Hz. |
-| Channels | NUMBER | Always 1 (mono). |
-| Detected Wake Word | STRING | Which wake word triggered the activation. |
-| Wake Word Score | NUMBER | Detection confidence [0.0, 1.0]. |
-| Engine State | STRING | `SLEEPING` or `AWAKE`. |
-| Is Speaking | BOOLEAN | True while the engine is AWAKE and streaming audio. |
-| Is Final Chunk | BOOLEAN | True on the last audio chunk before returning to SLEEPING. Signals downstream STT to finalize. |
-
-### Output Behavior
-
-While AWAKE, the node emits **multiple outputs per invocation** — one for each complete fixed-size chunk in the buffer. Downstream nodes (like Call Model with Whisper) receive a steady stream of consistently-sized audio segments.
+Both events carry the same JSON payload:
 
 ```json
 {
-  "audio": "<numpy int16 array, exactly 64000 samples for STT preset>",
-  "sample_rate_hz": 16000,
-  "channels": 1,
-  "wake_word": "hey_mycroft",
-  "wake_word_score": 0.87,
-  "state": "AWAKE",
-  "is_speaking": true,
-  "is_final_chunk": false
+  "source_type": "edge",
+  "source_subtype": "wake_word_engine",
+  "command": "start_assistant"
 }
 ```
 
-The final chunk before silence timeout may be smaller than the preset size:
+`source_type` is `edge` when the workflow runs on the edge (default for Wake Word Engine) and `tele` when the workflow runs on the cloud. `source_subtype` is the wake word node name (defaults to `wake_word_engine`), following the [`CwProcessor`](https://github.com/cyberwave-os) source subtype convention.
 
-```json
-{
-  "audio": "<numpy int16 array, <= preset size>",
-  "is_final_chunk": true,
-  "state": "SLEEPING",
-  "is_speaking": false
-}
-```
+### Feedback target
 
-## How openWakeWord Works Internally
+A **Feedback target** sidebar toggle controls where the audio plays:
 
-openWakeWord is a **classifier**, not an audio filter. It receives 1280-sample frames (80 ms at 16 kHz) and returns a prediction dictionary:
+| Option | Transport | Subscriber |
+|--------|-----------|------------|
+| **Desktop** (default) | MQTT — `{prefix}cyberwave/twin/{TWIN_UUID}/commands/assistant_signaling` | Environment viewer in the browser (`/sounds/assistant/start-assistant.mp3`, `end-assistant.mp3`) |
+| **Edge** | Zenoh — `{prefix}/{TWIN_UUID}/data/commands/assistant_signaling` (built via [`build_key`](https://github.com/cyberwave-os/cyberwave-sdks)) | On-edge speaker driver subscribed to the Zenoh channel |
+| **Both** | MQTT + Zenoh | Browser and edge speaker react simultaneously |
 
-```python
-{"hey_mycroft": 0.92, "alexa": 0.01}  # probability scores, not audio
-```
+<Note>
+Edge and Both require a speaker physically connected to the edge device, plus an edge speaker driver subscribing to the Zenoh `commands/assistant_signaling` channel for the twin.
+</Note>
 
-Because of this, the Wake Word Engine node owns all audio routing. It passes the same audio bytes through openWakeWord for classification AND buffers them for downstream output. The prediction dictionary keys are derived from model names (for pre-trained) or filenames without extension (for custom `.onnx` paths).
+The frontend handler is `cyberwave-frontend/lib/workflows/assistant-signaling-sounds.ts` (`handleAssistantSignalingCommand`), wired into `useMQTTTwin` for environment viewers.
 
-## Audio Format
+## Input formats
 
-See [Audio in Workflows](/use-cyberwave/workflows/audio-in-workflows) for the full audio format specification used across all audio nodes.
+Adapted automatically to int16 @ 16 kHz mono:
 
-## Edge-Only
+| Format | Source |
+|--------|--------|
+| NumPy int16 / float32 | Audio Track `audio`, Audio Assistant `audio` |
+| Raw PCM bytes | `audio` or `audio_bytes` on upstream dict |
+| WAV bytes (RIFF) | Audio Track `audio_bytes` |
+| WAV file path (`*.wav`) | Batch / offline tests |
 
-This node runs exclusively on edge workers. It requires `openwakeword` installed on the edge device.
+## Output (only after score ≥ threshold)
+
+| Field | Description |
+|-------|-------------|
+| `audio` | Command-only int16 PCM @ 16 kHz mono (wake phrase trimmed) |
+| `wake_word` | Trigger id (e.g. `alexa`) — metadata only, not in `audio` |
+| `wake_word_score` | Confidence at detection |
+| `wake_word_scores` | e.g. `{"alexa": 0.512}` |
+
+While SLEEPING, outputs contain state only (`state`, `is_speaking`) — no speech `audio`.
+
+## Logging on edge
+
+At **INFO** (worker log level):
+
+- `Wake Word Engine initialized: wake_words=[...] prediction_keys=[...]`
+- Periodic `Wake word listening scores=...` (~every 2 s while listening)
+- `Wake word detected: 'alexa' scores={'alexa': 0.512} threshold=0.50, switching to AWAKE`
+
+Set `CYBERWAVE_WORKER_LOG_LEVEL=DEBUG` for per-frame scores above 0.15.
+
+## Dependencies
+
+| Layer | Requirement |
+|---|---|
+| **Compile server** | `openwakeword`, `onnxruntime` — see [models & compile](/feature-reference/workflows/wake-word-engine/models-and-compile) |
+| **Edge worker** | `cyberwave[ml-wakeword]` |
+| **edge-sync** | `edge_package: ml-wakeword`, `wake_word_models: [...]` |
+
+[Edge workflow dependencies](/feature-reference/workflows/edge-dependencies) lists all voice nodes and STT catalog extras.
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Edge dependencies" icon="puzzle-piece" href="/feature-reference/workflows/edge-dependencies">
+    Full compile + edge matrix
+  </Card>
+  <Card title="Models & compile" icon="cloud-arrow-down" href="/feature-reference/workflows/wake-word-engine/models-and-compile">
+    Compile-time download and edge-sync requirements
+  </Card>
+  <Card title="Testing" icon="vial" href="/feature-reference/workflows/wake-word-engine/testing">
+    WAV fixtures and offline detection tests
+  </Card>
+  <Card title="Audio Track" icon="microphone" href="/feature-reference/workflows/audio-track/overview">
+    Upstream buffer presets
+  </Card>
+  <Card title="Audio in Workflows" icon="waveform-lines" href="/feature-reference/workflows/audio-in-workflows">
+    Shared PCM format
+  </Card>
+</CardGroup>

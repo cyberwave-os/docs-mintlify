@@ -1,0 +1,39 @@
+---
+title: "Audio Track"
+description: "Edge microphone trigger — stream PCM chunks into workflows via Zenoh."
+icon: "microphone"
+stub: true
+---
+
+The **Audio Track** trigger fires for every buffered chunk from a twin's edge microphone. Audio is delivered over the Zenoh data bus and handled by `@cw.on_audio` in the compiled worker.
+
+## Edge pipeline
+
+```
+Microphone driver → Zenoh → @cw.on_audio → Audio Track FIFO → downstream nodes
+```
+
+## Buffer presets (downstream pairing)
+
+| Preset | Duration | Pair with |
+|--------|----------|-----------|
+| Voice Assistant (32 ms) | 512 samples | Audio Assistant (VA) |
+| Wake Word (80 ms) | 1280 samples | Wake Word Engine (direct) |
+| Speech-To-Text (4 s) | 64000 samples | SSG, Whisper / STT |
+
+The compiler rejects incompatible pairings (e.g. 4 s chunks into Wake Word without VAD).
+
+## Deploy
+
+```bash
+cyberwave workflow compile <uuid>
+cyberwave workflow sync --twin-uuid <twin>
+```
+
+## Dependencies
+
+```bash
+pip install "cyberwave[zenoh]"   # required for @cw.on_audio
+```
+
+Downstream nodes add `ml-vad`, `ml-aed`, or `ml-wakeword` as needed. See [feature reference](/feature-reference/workflows/audio-track/overview).

@@ -76,10 +76,51 @@ drone.land()
 Switching to a different drone is a **one-line change** — change `cw.twin(...)` to the new catalog slug and the rest of your automation stays exactly the same. A complete walkthrough — takeoff, locomotion, gimbal control, and the safety commands — lives in [`examples/drone_dji_mini.py`](https://github.com/cyberwave-os/cyberwave/tree/main/cyberwave-sdks/cyberwave-python/examples/drone_dji_mini.py).
 
 <Info>
-  On DJI aircraft the **physical RC stays in charge of the sticks** — the
-  Cyberwave driver handles **discrete actions** (`takeoff`, `land`,
-  `return_to_home`, `gimbal_rotate`, …). Continuous-stick locomotion is fully
-  wired on PX4-class builds and in the simulator.
+  On DJI aircraft, **discrete actions** (`takeoff`, `land`, `return_to_home`,
+  `gimbal_rotate`, set home, compass calibration, reboot, emergency stop)
+  ship out of the box. **Continuous-stick locomotion** (`move_forward`,
+  `strafe_*`, `turn_*`, `ascend`, `descend`) is **opt-in per twin** — set
+  `metadata.drivers.default.virtual_stick = true` to engage DJI MSDK v5's
+  Virtual Stick API. The physical RC always wins: stick inputs reclaim
+  authority immediately, targets decay to zero after 500 ms of silence, and
+  the driver hands authority back to the RC after 5 s of zero-velocity. The
+  same continuous verbs are fully wired on PX4-class builds and in the
+  simulator without the opt-in. See the [Cyberwave Edge for DJI
+  README](https://github.com/cyberwave-os/cyberwave/tree/main/cyberwave-edge-nodes/cyberwave-edge-dji-mini-android#off-rc-teleoperation-virtual-stick)
+  for the full safety story and pre-flight checklist.
+</Info>
+
+<Info>
+  The Mini 4 Pro (and the rest of the Mini / Mavic Mini line) ships with a
+  **pitch-only mechanical gimbal**, so `gimbal_rotate(yaw=…)` is silently
+  ignored by the hardware. To rotate the camera view on those aircraft, call
+  [`FlyingTwin.pan_camera(angle_deg=…)`](https://github.com/cyberwave-os/cyberwave/tree/main/cyberwave-sdks/cyberwave-python/cyberwave/twin.py) —
+  it yaws the airframe via the same Virtual Stick path used by `turn_left` /
+  `turn_right` and explicitly zeros the axis when the target angle is
+  reached. Same opt-in flag applies.
+</Info>
+
+<Info>
+  **Every refused command — and every silently-ignored one — shows up
+  in the alerts panel.** The DJI driver raises a [Cyberwave alert](/feature-reference/edge/drivers/alerts)
+  the instant it refuses a command (missing `virtual_stick` opt-in,
+  location permissions not granted, parked on a landing/RTH
+  confirmation, or an SDK-level failure on takeoff / land / gimbal),
+  *and* watches commanded-vs-actual aircraft velocity to fire a
+  `driver_aircraft_not_moving` warning when the FC silently caps a
+  movement command. The alert *name* carries the primary suspect
+  computed from telemetry — `Aircraft not moving (GPS-denied: 0
+  satellites)` for indoor flight, `Aircraft not moving (FC in ATTI
+  mode)` for compass-interference, `Aircraft not moving (cause
+  unknown)` for restricted-zone / IMU heating / battery saver / wind
+  — so the root cause is obvious in the alerts list without
+  expanding the description. The metadata carries a stable
+  `error_code` (e.g. `VIRTUAL_STICK_OPT_IN_MISSING`, `LOW_VOLTAGE`)
+  plus a remediation hint and — for the no-motion case — the
+  current flight mode, GPS sat count, and the commanded vs observed
+  velocity magnitudes. SDK-level failures additionally embed a
+  deep-link to the troubleshooting docs for that aircraft. Keep the
+  alerts panel open during your first off-RC flights.
 </Info>
 
 ---

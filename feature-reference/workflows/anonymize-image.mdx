@@ -41,7 +41,8 @@ this ordering automatically regardless of graph order.
 
 | Field | Type | Description |
 |---|---|---|
-| `image_url` | image | URL or data URL of the image to anonymise. Required on cloud chains; supplied automatically from the camera frame on edge chains. |
+| `image_bytes` | object | Raw image bytes to anonymise. Wire from `data_source.image_bytes` or any upstream node that emits bytes. Required on cloud chains; on edge camera-frame chains the worker passes the upstream frame straight in. |
+| `image_url` | image | Optional echo only — used as the value of `source_image_url` in the output. Bytes always come from `image_bytes`. |
 | `detections` | array | Detection array from an upstream `call_model`. Same formats as `annotate` (Gemini 0-1000, normalized 0-1, pixel `xywh`, pixel `xyxy`). Required. |
 | `mode` | string | `pixelate` (default), `blur`, `redact`, or `bbox`. |
 | `target_classes` | array | Detection labels to obscure (default `["person"]`). Other labels pass through untouched. Empty array obscures every detection. Authored via the dedicated chip editor in the Anonymize inspector — writes `parameters.target_classes`. |
@@ -57,8 +58,8 @@ these fields as `cloud_only` to make that explicit.
 
 | Field | Type | Description |
 |---|---|---|
-| `result_image` | image | Data URL of the anonymised image. Preserves the source MIME type (JPEG / PNG / WebP), falling back to PNG when the source format can't be detected — echoing a 100 KB JPEG back as a megabyte PNG data-URL would balloon downstream storage. |
-| `anonymized_image` | image | Alias of `result_image` kept for backward compatibility. |
+| `anonymized_image_bytes` | object | Raw bytes of the anonymised image, re-encoded in the source format (JPEG / PNG). Canonical handoff — wire a downstream node's `image_bytes` to this field via the InputMappingEditor. |
+| `anonymized_image_base64` | image | Data URL (`data:image/...;base64,...`) of the anonymised image. UI preview channel — consumed by the workflow run-history thumbnail. Preserves the source MIME type, falling back to PNG when the source format can't be detected — echoing a 100 KB JPEG back as a megabyte PNG data-URL would balloon downstream storage. |
 | `source_image_url` | image | Original input URL. |
 | `detection_count` | number | Number of detection regions obscured. |
 

@@ -22,5 +22,7 @@ Name | Type | Description | Notes
 **created_at** | **datetime** |  | 
 **updated_at** | **datetime** |  | 
 **resolved_at** | **datetime** |  | [optional] 
-**metadata** | **Dict[str, object]** |  | [optional] 
+**last_seen_at** | **datetime** | Timestamp of the most recent edge publish that deduped against this alert. Acts as a pure-observability heartbeat — does not auto-resolve. `null` for legacy rows. | [optional] 
+**dedupe_count** | **int** | Number of times this alert has been re-asserted by an edge publish while still active (deduped against this row). Drives the workbench's "Re-asserted N×" badge. | 
+**metadata** | **Dict[str, object]** | Free-form per-`alert_type` state. For `driver_starting` this carries `phase` plus `progress_percent` / `downloaded_bytes` / `total_bytes` / `downloaded_human` / `total_human` while a driver image is being pulled — see [Edge driver alerts](/feature-reference/edge/drivers/alerts#driver_starting-progress-metadata). | [optional] 
 

@@ -103,3 +103,11 @@ Two consequences worth knowing:
 
 - The per-twin `frame_filter_enabled` flag does **not** apply. Annotation overlays appear in the WebRTC stream regardless. (Pixel substitution still requires the flag — annotation just doesn't ride that path.)
 - A failure in the annotate worker results in **missing boxes**, not a black frame. Substitution is fail-closed for privacy reasons; overlay is fail-open because losing boxes is not a privacy regression.
+
+### Segmentation overlays
+
+<Info>
+Stub — a human will curate before publishing.
+</Info>
+
+When the upstream `call_model` node runs an instance-segmentation model (e.g. YOLO-seg), each detection in the overlay payload carries an optional `polygon` field (list of `[x, y]` vertices in original-frame coordinates). The driver composites a translucent fill (`style.mask_alpha`, default `0.35`) and an outline (`style.mask_outline`, default `true`) onto the WebRTC frame at encode time — additive to the standard box + caption. The v1 polygon encoding uses each instance's largest external contour and silently drops holes; downstream pipelines that need the raw mask should set the annotate node's `mask_format` to `"polygon+png"` and consume `mask_b64` cloud-side.
