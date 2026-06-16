@@ -1,21 +1,30 @@
 ---
 title: "Standard Camera"
-description: "Redirect stub to the Standard Camera asset page."
-canonical: "https://cyberwave.com/cyberwave/standard-cam"
+sidebarTitle: "Standard Camera"
+description: "Connect a standard camera to Cyberwave — what the Standard Camera twin is, where to find its hardware docs, and the tutorials for building video-understanding and security workflows."
+icon: "camera"
 ---
 
-import { useEffect } from "react";
+## What is the Standard Camera?
 
-export default function StandardCamRedirectPage() {
-  useEffect(() => {
-    window.location.replace("https://cyberwave.com/cyberwave/standard-cam");
-  }, []);
+The **Standard Camera** is Cyberwave's generic camera twin — a single digital twin that represents any off-the-shelf camera, whether it's a USB webcam, an IP/RTSP camera, a depth sensor, infrared, or an industrial GigE Vision sensor. It lets you build vision workflows once and run them against whatever camera you have on hand, without per-model configuration.
 
-  return (
-    <>
-      # Redirecting to Standard Camera
+On Cyberwave, you add a Standard Camera from the catalog, pair the device, and the CLI auto-detects the camera (USB, V4L2, RTSP, GigE Vision, RealSense, …) and installs the right driver. The live RGB feed — plus depth, IR, or stereo where available — streams into the dashboard, ready for [recording](/use-cyberwave/environment-editor/replay), [teleoperation](/use-cyberwave/environment-editor/teleoperation), and [workflows](/use-cyberwave/workflows). See the [cameras overview](/get-started/cameras) for the full vision pipeline.
 
-      If you are not redirected automatically, [open the Standard Camera asset page](https://cyberwave.com/cyberwave/standard-cam).
-    </>
-  );
-}
+## Hardware documentation
+
+<Card title="Standard Camera on the Cyberwave Catalog" icon="camera" href="https://cyberwave.com/cyberwave/standard-cam">
+  Full hardware reference for the Standard Camera twin — supported drivers, connection
+  options (USB, RTSP, GigE, RealSense), and troubleshooting. Start here when you're adding a camera.
+</Card>
+
+## Relevant tutorials
+
+<CardGroup cols={2}>
+  <Card title="Intrusion Detection" icon="user-shield" href="/tutorials/intrusion-detection">
+    Build a privacy-preserving, edge-only intrusion alert workflow with YOLO, anonymize, and alerts.
+  </Card>
+  <Card title="Edge-to-Cloud VLM Pipeline" icon="code" href="/tutorials/edge-to-cloud-vlm">
+    Develop an edge-to-cloud VLM pipeline for real-time visual inspection and safety monitoring.
+  </Card>
+</CardGroup>

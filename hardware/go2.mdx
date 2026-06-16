@@ -1,21 +1,30 @@
 ---
-title: "Go2"
-description: "Redirect stub to the Go2 asset page."
-canonical: "https://cyberwave.com/unitree/go2"
+title: "Unitree Go2 Robot Dog"
+sidebarTitle: "Go2"
+description: "Connect the Unitree Go2 quadruped robot to Cyberwave — what the Go2 is, where to find its hardware docs, and the tutorial for taking it from digital twin to physical deployment."
+icon: "dog"
 ---
 
-import { useEffect } from "react";
+## What is the Go2?
 
-export default function Go2RedirectPage() {
-  useEffect(() => {
-    window.location.replace("https://cyberwave.com/unitree/go2");
-  }, []);
+The **Unitree Go2** is a quadruped ("robot dog") from [Unitree Robotics](https://www.unitree.com/go2/) with 12 actuated joints (three per leg), weighing roughly 15 kg. It carries Unitree's in-house 4D LiDAR for 360° sensing, onboard cameras, and an onboard computer, and reaches speeds of up to ~5 m/s. As a low-cost autonomous mobility platform with an SDK on its higher-end models, it has become one of the most widely adopted legged robots for inspection, education, research, and commercial deployments.
 
-  return (
-    <>
-      # Redirecting to Go2
+On Cyberwave, the Go2 streams pose, joint states, video, and LiDAR into its digital twin in real time, and the dashboard can drive it back through the edge — including **autonomous waypoint navigation** out of the box. Add it from the catalog, pair the hardware, and control it from the dashboard or the [Python SDK](/tools/python-sdk). See the [robotic dogs overview](/get-started/robotic-dogs) for waypoint missions and inspection workflows.
 
-      If you are not redirected automatically, [open the Go2 asset page](https://cyberwave.com/unitree/go2).
-    </>
-  );
-}
+## Hardware documentation
+
+<Card title="Go2 on the Cyberwave Catalog" icon="dog" href="https://cyberwave.com/unitree/go2">
+  Full hardware reference for the Unitree Go2 — bill of materials, supported drivers,
+  connection options, and troubleshooting. Start here when you're unboxing the dog.
+</Card>
+
+## Relevant tutorials
+
+<CardGroup cols={2}>
+  <Card title="Go2 Digital to Physical" icon="dog" href="/tutorials/go2-digital-to-physical">
+    End-to-end walkthrough of configuring a Unitree Go2 for autonomy — from digital twin to physical deployment.
+  </Card>
+  <Card title="Robotic Dogs Overview" icon="paw" href="/get-started/robotic-dogs">
+    The end-to-end workflow for any quadruped — pairing, waypoints, and inspection workflows.
+  </Card>
+</CardGroup>

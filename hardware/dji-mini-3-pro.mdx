@@ -1,21 +1,30 @@
 ---
-title: "DJI Mini 3 Pro"
-description: "Redirect stub to the DJI Mini 3 Pro asset page."
-canonical: "https://cyberwave.com/dji/DJI-Mini-3-Pro"
+title: "DJI Mini 3 Pro Drone"
+sidebarTitle: "DJI Mini 3 Pro"
+description: "Connect the DJI Mini 3 Pro drone to Cyberwave — what the Mini 3 Pro is, where to find its hardware docs, and how to build aerial inspection workflows with it."
+icon: "drone"
 ---
 
-import { useEffect } from "react";
+## What is the DJI Mini 3 Pro?
 
-export default function DjiMini3ProRedirectPage() {
-  useEffect(() => {
-    window.location.replace("https://cyberwave.com/dji/DJI-Mini-3-Pro");
-  }, []);
+The **DJI Mini 3 Pro** is a sub-249 g camera drone from [DJI](https://www.dji.com/mini-3-pro). It pairs a 1/1.3-inch 48 MP sensor and up to 4K/60fps video on a 3-axis mechanical gimbal with tri-directional (forward, backward, downward) obstacle sensing, and flies up to 34 minutes on the standard battery. Its sub-249 g weight keeps it under the registration thresholds of many regions, making it an accessible aircraft for inspection, mapping, and aerial automation.
 
-  return (
-    <>
-      # Redirecting to DJI Mini 3 Pro
+On Cyberwave, the Mini 3 Pro connects through the **Cyberwave Edge for DJI** Android app on the phone tethered to your DJI RC — scan the pairing QR from the twin's **Live** tab and the dashboard lights up with the live video feed, gimbal attitude, and GPS/pose. From there you can fly discrete actions and waypoint missions from the dashboard or the [Python SDK](/tools/python-sdk). See the [drones overview](/get-started/drones) for the full pairing flow and safety model.
 
-      If you are not redirected automatically, [open the DJI Mini 3 Pro asset page](https://cyberwave.com/dji/DJI-Mini-3-Pro).
-    </>
-  );
-}
+## Hardware documentation
+
+<Card title="DJI Mini 3 Pro on the Cyberwave Catalog" icon="drone" href="https://cyberwave.com/dji/DJI-Mini-3-Pro">
+  Full hardware reference for the DJI Mini 3 Pro — supported drivers, the DJI Edge app pairing
+  flow, and troubleshooting. Start here when you're setting up the drone.
+</Card>
+
+## Relevant tutorials
+
+<CardGroup cols={2}>
+  <Card title="Drones Overview" icon="drone" href="/get-started/drones">
+    The end-to-end workflow for any drone — pairing, gimbal control, waypoints, and safety.
+  </Card>
+  <Card title="Edge-to-Cloud VLM Pipeline" icon="code" href="/tutorials/edge-to-cloud-vlm">
+    Build a real-time visual inspection pipeline you can trigger from a drone mission.
+  </Card>
+</CardGroup>

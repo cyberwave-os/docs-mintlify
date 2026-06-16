@@ -1,21 +1,30 @@
 ---
-title: "DJI Mini 4 Pro"
-description: "Redirect stub to the DJI Mini 4 Pro asset page."
-canonical: "https://cyberwave.com/dji/dji-mini-4-pro"
+title: "DJI Mini 4 Pro Drone"
+sidebarTitle: "DJI Mini 4 Pro"
+description: "Connect the DJI Mini 4 Pro drone to Cyberwave — what the Mini 4 Pro is, where to find its hardware docs, and how to build aerial inspection workflows with it."
+icon: "drone"
 ---
 
-import { useEffect } from "react";
+## What is the DJI Mini 4 Pro?
 
-export default function DjiMini4ProRedirectPage() {
-  useEffect(() => {
-    window.location.replace("https://cyberwave.com/dji/dji-mini-4-pro");
-  }, []);
+The **DJI Mini 4 Pro** is DJI's sub-249 g flagship Mini drone, succeeding the Mini 3 Pro with omnidirectional obstacle sensing and ActiveTrack 360° subject tracking. It records 4K HDR and 4K/100fps slow-motion from a 1/1.3-inch 48 MP sensor on a 3-axis mechanical gimbal, and flies up to 34 minutes on the standard battery — see the [official specs](https://www.dji.com/mini-4-pro/specs). Its gimbal's pan axis is mechanically limited to ±30°, so large heading changes are made by rotating the aircraft (see the [drones overview](/get-started/drones) for the control implications). Its light weight and obstacle avoidance make it a strong choice for autonomous inspection and mapping routes.
 
-  return (
-    <>
-      # Redirecting to DJI Mini 4 Pro
+On Cyberwave, the Mini 4 Pro connects through the **Cyberwave Edge for DJI** Android app on the phone tethered to your DJI RC — scan the pairing QR from the twin's **Live** tab to stream video, gimbal attitude, and GPS/pose into the dashboard. Discrete actions (takeoff, land, return-to-home, gimbal) ship out of the box; continuous-stick locomotion is opt-in per twin via DJI Virtual Stick. Control it from the dashboard or the [Python SDK](/tools/python-sdk). See the [drones overview](/get-started/drones) for the full pairing flow and safety model.
 
-      If you are not redirected automatically, [open the DJI Mini 4 Pro asset page](https://cyberwave.com/dji/dji-mini-4-pro).
-    </>
-  );
-}
+## Hardware documentation
+
+<Card title="DJI Mini 4 Pro on the Cyberwave Catalog" icon="drone" href="https://cyberwave.com/dji/dji-mini-4-pro">
+  Full hardware reference for the DJI Mini 4 Pro — supported drivers, the DJI Edge app pairing
+  flow, gimbal behavior, and troubleshooting. Start here when you're setting up the drone.
+</Card>
+
+## Relevant tutorials
+
+<CardGroup cols={2}>
+  <Card title="Drones Overview" icon="drone" href="/get-started/drones">
+    The end-to-end workflow for any drone — pairing, gimbal control, waypoints, and safety.
+  </Card>
+  <Card title="Edge-to-Cloud VLM Pipeline" icon="code" href="/tutorials/edge-to-cloud-vlm">
+    Build a real-time visual inspection pipeline you can trigger from a drone mission.
+  </Card>
+</CardGroup>

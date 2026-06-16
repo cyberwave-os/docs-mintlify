@@ -1,21 +1,30 @@
 ---
-title: "UR7"
-description: "Redirect stub to the UR7 asset page."
-canonical: "https://cyberwave.com/universal_robots/UR7"
+title: "Universal Robots UR7e Cobot"
+sidebarTitle: "UR7e"
+description: "Connect the Universal Robots UR7e collaborative robot arm to Cyberwave — what the UR7e is, where to find its hardware docs, and how to integrate it over ROS 2."
+icon: "industry"
 ---
 
-import { useEffect } from "react";
+## What is the UR7e?
 
-export default function UR7RedirectPage() {
-  useEffect(() => {
-    window.location.replace("https://cyberwave.com/universal_robots/UR7");
-  }, []);
+The **UR7e** is a 6-axis collaborative robot (cobot) from [Universal Robots](https://www.universal-robots.com/products/ur7e/), introduced in May 2025 as the upgraded successor to the UR5e — same 850 mm reach, with payload raised from 5 kg to 7.5 kg. As an e-Series cobot it has a built-in force/torque sensor, ±0.03 mm repeatability, an IP54 rating, and 20 configurable safety functions (rated PLd, Category 3 per EN ISO 13849-1), making it a workhorse for machine tending, palletizing, assembly, and inspection cells that operate safely alongside people.
 
-  return (
-    <>
-      # Redirecting to UR7
+On Cyberwave, the UR7e connects through the same digital-twin workflow as any other arm: add it from the catalog, pair the hardware, and control it from the dashboard or the [Python SDK](/tools/python-sdk). Because it speaks ROS 2, the UR7e is also a good reference for bridging an existing industrial stack into Cyberwave via the [MQTT bridge pattern](/hardware/other-hardware/custom-hardware). See the [robotic arms overview](/get-started/robotic-arms) for the full lifecycle from teleoperation to trained policies.
 
-      If you are not redirected automatically, [open the UR7 asset page](https://cyberwave.com/universal_robots/UR7).
-    </>
-  );
-}
+## Hardware documentation
+
+<Card title="UR7e on the Cyberwave Catalog" icon="industry" href="https://cyberwave.com/universal_robots/UR7">
+  Full hardware reference for the UR7e — specifications, supported drivers, ROS 2
+  integration, and troubleshooting. Start here when you're setting up the cobot.
+</Card>
+
+## Relevant tutorials
+
+<CardGroup cols={2}>
+  <Card title="Robotic Arms Overview" icon="hand" href="/get-started/robotic-arms">
+    The end-to-end workflow for any arm on Cyberwave — twin, pairing, control, data, and deployment.
+  </Card>
+  <Card title="Custom Integrations (ROS 2)" icon="plug" href="/hardware/other-hardware/custom-hardware">
+    Bridge the UR7e's ROS 2 stack into Cyberwave's digital twin layer over MQTT.
+  </Card>
+</CardGroup>

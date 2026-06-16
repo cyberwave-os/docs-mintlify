@@ -1,21 +1,39 @@
 ---
-title: "SO101"
-description: "Redirect stub to the SO101 asset page."
-canonical: "https://cyberwave.com/the-robot-studio/so101"
+title: "SO-101 Robotic Arm"
+sidebarTitle: "SO-101"
+description: "Connect the SO-101 robotic arm to Cyberwave — what the SO-101 is, where to find its hardware docs, and the tutorials that use it for teleoperation, data collection, and VLA training."
+icon: "robot"
 ---
 
-import { useEffect } from "react";
+## What is the SO-101?
 
-export default function SO101RedirectPage() {
-  useEffect(() => {
-    window.location.replace("https://cyberwave.com/the-robot-studio/so101");
-  }, []);
+The **SO-101** is a low-cost, fully open-source 6-DOF robotic arm designed by [The Robot Studio](https://github.com/TheRobotStudio/SO-ARM100) in collaboration with Hugging Face for the [LeRobot](https://huggingface.co/docs/lerobot/so101) project. It ships as a leader–follower pair driven by Feetech STS3215 bus servos: you hand-guide the leader arm to teleoperate the follower, and the recorded trajectories become training data for imitation learning. It is the successor to the SO-ARM100, released under the Apache-2.0 license, which has made it a popular platform for collecting datasets and training Vision-Language-Action (VLA) models like SmolVLA.
 
-  return (
-    <>
-      # Redirecting to SO101
+On Cyberwave, the SO-101 ships with a pre-built driver that installs automatically when you pair it with a digital twin. Once paired, you can teleoperate it, record LeRobot-format datasets, train policies, and deploy them back to hardware — all from the dashboard or the [Python SDK](/tools/python-sdk). See the [robotic arms overview](/get-started/robotic-arms) for how arms work end-to-end on Cyberwave.
 
-      If you are not redirected automatically, [open the SO101 asset page](https://cyberwave.com/the-robot-studio/so101).
-    </>
-  );
-}
+## Hardware documentation
+
+<Card title="SO-101 on the Cyberwave Catalog" icon="robot" href="https://cyberwave.com/the-robot-studio/so101">
+  Full hardware reference for the SO-101 — bill of materials, supported drivers,
+  wiring, calibration, and troubleshooting. Start here when you're unboxing the arm.
+</Card>
+
+## Relevant tutorials
+
+<CardGroup cols={2}>
+  <Card title="From zero to teleop (SO-101)" icon="microchip" href="/tutorials/so101-teleop-dataset">
+    Unbox an SO-101, pair it, teleoperate it, record a dataset, and train your first model.
+  </Card>
+  <Card title="SO-101 NL Voice + Vision Agent" icon="wand-magic-sparkles" href="/tutorials/so101-natural-language-agent">
+    Drive an SO-101 with plain English — voice and camera in, Claude plans the motion, the SDK runs it.
+  </Card>
+  <Card title="SO-101 Voice Pick-and-Place" icon="microphone-lines" href="/tutorials/so101-voice-pick-and-place">
+    End-to-end voice-driven pick-and-place: dataset, VLA, deployment, and a client-side voice layer.
+  </Card>
+  <Card title="Cloth Folding (SmolVLA)" icon="shirt" href="/tutorials/cloth-folding-so101">
+    A bimanual SO-101 setup that learns to fold cloth from human demonstrations using SmolVLA.
+  </Card>
+  <Card title="Sandwich Robot (SmolVLA)" icon="burger" href="/tutorials/sandwich-robot-smolvla">
+    Train a Vision-Language-Action model for real-world manipulation on the SO-101.
+  </Card>
+</CardGroup>

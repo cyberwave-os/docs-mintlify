@@ -1,21 +1,30 @@
 ---
-title: "OpenArm"
-description: "Redirect stub to the OpenArm asset page."
-canonical: "https://cyberwave.com/enactic/openarm"
+title: "Enactic OpenArm"
+sidebarTitle: "OpenArm"
+description: "Connect the Enactic OpenArm to Cyberwave — what the OpenArm is, where to find its hardware docs, and the workflow for teleoperation, data collection, and policy training."
+icon: "hand"
 ---
 
-import { useEffect } from "react";
+## What is the OpenArm?
 
-export default function OpenArmRedirectPage() {
-  useEffect(() => {
-    window.location.replace("https://cyberwave.com/enactic/openarm");
-  }, []);
+The **OpenArm** is a fully open-source 7-DOF robotic arm developed by [Enactic](https://github.com/enactic/openarm) for physical-AI research in contact-rich environments. It uses quasi-direct-drive, backdrivable actuators (over a CAN-FD bus) for torque control and safe human-robot interaction, supports a bimanual leader–follower configuration for teleoperation and imitation-learning data collection, and integrates with the Hugging Face LeRobot library. Its hardware is released under CERN-OHL-S and its software under Apache-2.0, making it a flexible platform for collecting demonstration data and training learned policies.
 
-  return (
-    <>
-      # Redirecting to OpenArm
+On Cyberwave, the OpenArm uses the same digital-twin workflow as every other arm: add it from the catalog, pair the hardware, then teleoperate it, record datasets, train policies, and deploy them back — all from the dashboard or the [Python SDK](/tools/python-sdk). See the [robotic arms overview](/get-started/robotic-arms) for the full lifecycle from teleoperation to trained VLA policies.
 
-      If you are not redirected automatically, [open the OpenArm asset page](https://cyberwave.com/enactic/openarm).
-    </>
-  );
-}
+## Hardware documentation
+
+<Card title="OpenArm on the Cyberwave Catalog" icon="hand" href="https://cyberwave.com/enactic/openarm">
+  Full hardware reference for the Enactic OpenArm — bill of materials, supported drivers,
+  calibration, and troubleshooting. Start here when you're setting up the arm.
+</Card>
+
+## Relevant tutorials
+
+<CardGroup cols={2}>
+  <Card title="Robotic Arms Overview" icon="hand" href="/get-started/robotic-arms">
+    The end-to-end workflow for any arm on Cyberwave — twin, pairing, control, data, and deployment.
+  </Card>
+  <Card title="From zero to teleop (SO-101)" icon="microchip" href="/tutorials/so101-teleop-dataset">
+    A friendly walkthrough of pairing an arm, teleoperating it, recording a dataset, and training a model — the same flow applies to the OpenArm.
+  </Card>
+</CardGroup>
