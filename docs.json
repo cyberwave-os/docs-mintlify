@@ -114,7 +114,8 @@
                   "feature-reference/environment-editor/index",
                   "feature-reference/environment-editor/environment-templates",
                   "feature-reference/environment-editor/teleoperation",
-                  "feature-reference/environment-editor/replay"
+                  "feature-reference/environment-editor/replay",
+                  "feature-reference/environment-editor/replay-timeline"
                 ]
               },
               {
