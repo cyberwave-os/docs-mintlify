@@ -826,10 +826,6 @@
     {
       "source": "/hardware",
       "destination": "/overview/supported-hardware"
-    },
-    {
-      "source": "/hardware/:slug*",
-      "destination": "/overview/supported-hardware"
     }
   ]
 }
