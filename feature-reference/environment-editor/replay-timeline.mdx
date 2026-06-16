@@ -1,0 +1,41 @@
+---
+title: Replay timeline & recordings
+description: stub — Reading the replay timeline, the color legend, and slicing recordings into episodes.
+---
+
+{/* stub: curated later */}
+
+The **Replay** timeline shows everything an [environment](/feature-reference/environment-editor/index) recorded over a time window, laid out left-to-right. Dots mark captured frames; filled bars show where each track has data.
+
+## Open replay over a recording
+
+1. Switch the environment to **Replay**.
+2. Click the **calendar** button.
+3. Pick the date (the day you recorded, or **May 8, 2026** if you're using the suggested demo environment).
+4. **Load sessions**, no filters needed and the timeline fills in.
+
+## Color legend
+
+Open the **Legend** popover in the toolbar at any time. Colors map to the kind of data, not severity:
+
+| Color | Track |
+| --- | --- |
+| 🔵 Blue | Robot / point cloud (joint states, depth/LiDAR frames) |
+| 🟣 Purple | Camera / video |
+| 🟢 Green (dots/bar) | Audio |
+| 🟢 Green (span) | An **episode** — a labeled segment you created |
+
+## What you can do here
+
+- **Scrub & play back** at 1× or 2×; click any frame to jump to it.
+- **Zoom** into a stretch of the timeline for frame-level detail.
+- **Filter markers** by twin with the **Markers** dropdown.
+- **Browse sessions** by date with the calendar picker.
+- **Create an episode** — select a window and label it as a [training/dataset](/feature-reference/datasets/import) segment.
+
+## Why it matters
+
+- **Research:** turn real runs into labeled [episodes and datasets](/overview/features/replay-and-historical-data) for training [VLAs](/feature-reference/ml-models/smolvla-training).
+- **Security & review:** re-watch exactly what a robot did, find the moment something went wrong, and inspect it frame-by-frame.
+
+See [Recording replay (signed URLs)](/feature-reference/environment-editor/replay) for how playback data loads, and [Replay & Historical Data](/overview/features/replay-and-historical-data) for the full pipeline.
