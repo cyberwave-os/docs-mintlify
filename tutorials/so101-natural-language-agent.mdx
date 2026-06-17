@@ -73,9 +73,9 @@ flowchart LR
 
 - **Hardware**: SO-101 follower on a Raspberry Pi, one USB webcam plugged into your laptop, microphone (built-in is fine).
 - **Credentials**: Cyberwave API key + twin/environment UUIDs, Anthropic API key, Mistral API key.
-- **Base setup**: [SO-101 Get Started](/hardware/so101/get-started) for the environment, edge install, and `so101-remoteoperate` running on the Pi.
+- **Base setup**: [SO-101 Get Started](https://cyberwave.com/the-robot-studio/so101) for the environment, edge install, and `so101-remoteoperate` running on the Pi.
 - **SDK baseline**: [Python SDK](/overview/tools/python-sdk).
-- **Conceptual grounding**: [Key Concepts](/feature-reference/architecture/key-concepts), [Voice as a Sensor](/hardware/microphone/get-started).
+- **Conceptual grounding**: [Key Concepts](/feature-reference/architecture/key-concepts), [Voice as a Sensor](https://cyberwave.com/catalog/tag/microphone).
 
 ---
 
@@ -103,7 +103,7 @@ Each module is independent; that's why each one has its own smoke test. If a pie
 
 ## Step 1: Set up the Cyberwave environment
 
-Before you build the agent, you need a working SO-101 twin and a Cyberwave environment with the edge driver running. The full reference is in [SO-101 Get Started](/hardware/so101/get-started). The short version:
+Before you build the agent, you need a working SO-101 twin and a Cyberwave environment with the edge driver running. The full reference is in [SO-101 Get Started](https://cyberwave.com/the-robot-studio/so101). The short version:
 
 1. Create a new environment in the [Cyberwave dashboard](https://cyberwave.com/dashboard) and add an **SO101** twin from the catalog. Position it to roughly match your physical setup.
 2. Install Cyberwave Edge on the Raspberry Pi paired to the follower:
@@ -112,7 +112,7 @@ Before you build the agent, you need a working SO-101 twin and a Cyberwave envir
    curl -fsSL https://cyberwave.com/install.sh | bash
    sudo cyberwave edge install
    ```
-3. Pair the SO101 twin and calibrate the follower (dashboard or CLI). See [Calibrate the arms](/hardware/so101/get-started#step-3-calibrate-the-arms).
+3. Pair the SO101 twin and calibrate the follower (dashboard or CLI). See [Calibrate the arms](https://cyberwave.com/the-robot-studio/so101#step-3-calibrate-the-arms).
 4. Note the **environment UUID** and **twin UUID** from the dashboard. You'll paste them into `.env` in [Step 3](#step-3-develop-your-agent).
 
 <Check>
@@ -138,7 +138,7 @@ The agent needs to send joint commands from your laptop to the follower without 
   driver. It rules out four moving parts in two minutes.
 </Tip>
 
-For background on how remote operation differs from leader/follower teleoperation, see [SO-101 Get Started: Set Up Remote Operation](/hardware/so101/get-started#set-up-remote-operation) and [Teleoperation](/feature-reference/environment-editor/teleoperation).
+For background on how remote operation differs from leader/follower teleoperation, see [SO-101 Get Started: Set Up Remote Operation](https://cyberwave.com/the-robot-studio/so101#set-up-remote-operation) and [Teleoperation](/feature-reference/environment-editor/teleoperation).
 
 <Check>
   You're done with Step 2 when keyboard input in the dashboard moves the
@@ -336,7 +336,7 @@ Each is a follow-up tutorial's worth of work. Pick one after you hit the success
 - **Pick-and-place with a VLA**: when you need learned manipulation, see [SO-101 Voice Pick-and-Place](/tutorials/so101-voice-pick-and-place).
 - **Camera-to-arm calibration**: replace approximate "point at" with metric pointing using a checkerboard or AprilTag.
 - **Multi-turn memory**: remember "do that again" by keeping plan history in a small in-process store.
-- **On-robot microphone (Pattern B)**: mic and STT on the edge, transcript recorded as telemetry. See [Voice as a Sensor](/hardware/microphone/get-started).
+- **On-robot microphone (Pattern B)**: mic and STT on the edge, transcript recorded as telemetry. See [Voice as a Sensor](https://cyberwave.com/catalog/tag/microphone).
 - **Swap the planner**: GPT-4o, Gemini 2.5, or a fine-tuned local model. The planner module is one HTTP call, easy to replace.
 - **Workflow integration**: trigger Cyberwave Workflows from natural language. See [Workflows](/feature-reference/workflows).
 
@@ -348,4 +348,4 @@ Each is a follow-up tutorial's worth of work. Pick one after you hit the success
 - **SDK calls used**: `Cyberwave()`, `cw.affect()`, `cw.twin()`, `robot.joints.set()`. See [Python SDK](/overview/tools/python-sdk).
 - **MQTT topics published by the SDK**: `cyberwave/twin/{uuid}/joint_states` (source_type `tele`). See [MQTT API](/api-reference/mqtt/main).
 - **External services**: [Anthropic Claude Sonnet 4.5](https://docs.anthropic.com), [Mistral Voxtral](https://docs.mistral.ai).
-- **Cross-links**: [SO-101 Get Started](/hardware/so101/get-started), [SO-101 Voice Pick-and-Place](/tutorials/so101-voice-pick-and-place), [Voice as a Sensor](/hardware/microphone/get-started), [Key Concepts](/feature-reference/architecture/key-concepts), [Teleoperation](/feature-reference/environment-editor/teleoperation).
+- **Cross-links**: [SO-101 Get Started](https://cyberwave.com/the-robot-studio/so101), [SO-101 Voice Pick-and-Place](/tutorials/so101-voice-pick-and-place), [Voice as a Sensor](https://cyberwave.com/catalog/tag/microphone), [Key Concepts](/feature-reference/architecture/key-concepts), [Teleoperation](/feature-reference/environment-editor/teleoperation).

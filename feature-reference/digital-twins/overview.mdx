@@ -161,7 +161,7 @@ Use this when the driver runs on a Linux host that is wired to your hardware.
 
 1. Provision the edge host. Follow the platform-specific guide for the box you have:
    - [Raspberry Pi setup](/edge/raspberry-pi) — flash the Cyberwave OS image, onboard via the captive Wi-Fi portal, SSH in.
-   - [Hardware overview](/hardware/index) — landing page with featured platforms (SO101, UGV Beast, Unitree Go2, UR7e, …).
+   - [Hardware overview](/overview/supported-hardware) — landing page with featured platforms (SO101, UGV Beast, Unitree Go2, UR7e, …).
    - [Other hardware (Linux + custom drivers)](/hardware) — generic flow for any Linux edge host.
 2. SSH into the edge host and run `cyberwave edge install`. The CLI prompts for the twin you want to pair (or pass `--twin-uuid <uuid>` non-interactively), pulls the right driver from the catalog, and writes a local `.env` so subsequent restarts come up automatically.
 3. Start streaming with `cyberwave edge start`. The driver registers with the cloud over MQTT and the twin's edge-device card on the twin page flips to **Connected**.
@@ -172,19 +172,19 @@ For platform-specific quick starts, jump straight to the relevant guide:
   <Card title="Raspberry Pi" icon="microchip" href="/edge/raspberry-pi">
     Pre-built SD card image with SSH, Docker, and Wi-Fi onboarding ready to go.
   </Card>
-  <Card title="SO101 arms" icon="hand" href="/hardware/so101/get-started">
+  <Card title="SO101 arms" icon="hand" href="https://cyberwave.com/the-robot-studio/so101">
     USB-tethered 6-DOF manipulators for teleop and imitation learning.
   </Card>
-  <Card title="UGV Beast" icon="truck-monster" href="/hardware/ugv/get-started">
+  <Card title="UGV Beast" icon="truck-monster" href="https://cyberwave.com/waveshare/ugv-beast">
     Tracked rover, Pi + ESP32 dual-controller, ROS 2 stack.
   </Card>
-  <Card title="Unitree Go2" icon="dog" href="/hardware/go2/get-started">
+  <Card title="Unitree Go2" icon="dog" href="https://cyberwave.com/unitree/go2">
     4D LiDAR quadruped with autonomous navigation.
   </Card>
   <Card title="Other hardware" icon="puzzle-piece" href="/hardware">
     Generic flow for any device with an API, serial, or network interface.
   </Card>
-  <Card title="All hardware guides" icon="book-open" href="/hardware/index">
+  <Card title="All hardware guides" icon="book-open" href="/overview/supported-hardware">
     Browse the full catalog of supported devices and platform-specific guides.
   </Card>
 </CardGroup>
