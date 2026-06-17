@@ -445,7 +445,7 @@ asyncio.run(main())
 
 ### Intel RealSense (RGB + Depth)
 
-For depth cameras, change the twin name — the SDK handles the rest:
+For depth cameras, change the twin name and the SDK handles the rest:
 
 ```python
 import asyncio
@@ -794,7 +794,7 @@ ds = cw.datasets.wait_until_ready(ds, on_poll=None)
 
 ### Export / download a converted format
 
-Both calls are idempotent — if a conversion artifact already exists it is returned immediately; otherwise conversion is kicked off automatically.
+Both calls are idempotent: if a conversion artifact already exists it is returned immediately; otherwise conversion is kicked off automatically.
 
 ```python
 # Block until backend conversion is done; returns the signed download URL.
@@ -814,7 +814,7 @@ path = cw.datasets.download(ds, "rlds", dest="./data", on_poll=None)
 | `format`    | Description                                             |
 | ----------- | ------------------------------------------------------- |
 | `parquet`   | Cyberwave joined-parquet zip (native)                   |
-| `lerobot3`  | LeRobot v3 — recommended for LeRobot training pipelines |
+| `lerobot3`  | LeRobot v3 (recommended for LeRobot training pipelines)  |
 | `lerobot21` | LeRobot v2.1                                            |
 | `rlds`      | RLDS / TF-Record (Open-X-Embodiment)                    |
 | `openvla`   | Cyberwave OpenVLA TFDS bundle                           |
@@ -874,7 +874,7 @@ for d in pred:
 cw.models.delete("model-uuid-here")
 ```
 
-For the full reference — catalog methods, runtime API, and the catalog-to-runtime workflow — see [ML Models SDK](/tools/models/overview).
+For the full reference (catalog methods, runtime API, and the catalog-to-runtime workflow), see [ML Models SDK](/tools/models/overview).
 
 ---
 

@@ -1,6 +1,6 @@
 ---
-title: "Build a natural-language voice + vision agent on the UGV Beast"
-sidebarTitle: "UGV NL Voice + Vision Agent"
+title: "Control a UGV rover with your voice"
+sidebarTitle: "UGV Rover: Voice Control"
 description: "Drive a Waveshare UGV Beast rover with plain English: voice in, camera frame in, Claude plans a JSON action plan, the SDK runs it. No training data required."
 icon: "car-side"
 iconType: "solid"
@@ -76,9 +76,9 @@ This tutorial starts from a UGV Beast that you can already drive with the **UGV 
 
 - **Hardware**: Waveshare UGV Beast (Jetson Orin or Pi variant), microphone on the laptop (built-in is fine), and the UGV's stock pan-tilt USB camera.
 - **Credentials**: Cyberwave API key, twin and environment UUIDs, Anthropic API key, Mistral API key.
-- **Base setup**: [UGV Beast hardware get-started](/hardware/ugv/get-started) (pair the twin, install Cyberwave Edge, verify control with the **UGV Beast Controller**).
+- **Base setup**: [UGV Beast hardware get-started](https://cyberwave.com/waveshare/ugv-beast) (pair the twin, install Cyberwave Edge, verify control with the **UGV Beast Controller**).
 - **SDK baseline**: [Python SDK](/overview/tools/python-sdk).
-- **Conceptual grounding**: [Key Concepts](/feature-reference/architecture/key-concepts), [Voice as a Sensor](/hardware/microphone/get-started). The arm-side sibling tutorial [SO-101 NL Voice + Vision Agent](/tutorials/so101-natural-language-agent) covers the same five-module pattern on a manipulator if you want a working reference to read alongside this one.
+- **Conceptual grounding**: [Key Concepts](/feature-reference/architecture/key-concepts), [Voice as a Sensor](https://cyberwave.com/catalog/tag/microphone). The arm-side sibling tutorial [SO-101 NL Voice + Vision Agent](/tutorials/so101-natural-language-agent) covers the same five-module pattern on a manipulator if you want a working reference to read alongside this one.
 
 <Check>
   You're ready for this tutorial when the **UGV Beast Controller** drives your
@@ -111,7 +111,7 @@ Each module is independent. That's why each one gets its own smoke test: if a pi
 
 ## Step 1: Set up the Cyberwave environment
 
-Before you build the agent, you need a working UGV Beast twin and a Cyberwave environment with the edge driver running. The full reference is in the [UGV Beast hardware get-started](/hardware/ugv/get-started). The short version:
+Before you build the agent, you need a working UGV Beast twin and a Cyberwave environment with the edge driver running. The full reference is in the [UGV Beast hardware get-started](https://cyberwave.com/waveshare/ugv-beast). The short version:
 
 1. Create a new environment in the [Cyberwave dashboard](https://cyberwave.com/dashboard) and **Add from Catalog → UGV Beast** to create the twin with the right capabilities pre-configured.
 2. SSH into the rover's compute board, disable Waveshare's stock orchestration, install Cyberwave Edge, and pair the twin.
@@ -322,7 +322,7 @@ Each of these is a follow-up tutorial's worth of work. Pick one after you hit th
 
 - **Train a VLA on UGV teleop demos.** When you need learned, continuous-control behaviour instead of discrete verbs (smoother trajectories, better grounded navigation), record teleoperated episodes with Cyberwave's data-recording infrastructure and finetune a Vision-Language-Action model on them. The arm side of this lives at [SO-101 Voice Pick-and-Place](/tutorials/so101-voice-pick-and-place); the UGV equivalent will land as its own page.
 - **Autonomous navigation primitives.** Replace per-action `distance` and `angle` with goal-oriented verbs like `navigate_to(waypoint)` once you have a map. Pairs naturally with [Rover AI Inspection](/tutorials/rover-ai-mission).
-- **On-rover microphone (Pattern B).** Mic on the rover, STT on the edge, transcripts recorded as telemetry. See [Voice as a Sensor](/hardware/microphone/get-started).
+- **On-rover microphone (Pattern B).** Mic on the rover, STT on the edge, transcripts recorded as telemetry. See [Voice as a Sensor](https://cyberwave.com/catalog/tag/microphone).
 - **Local STT and local VLM.** Swap Voxtral for the SDK's bundled Whisper runtimes and Claude for a local VLM via Ollama for a fully on-device agent.
 - **Wake-word gating** with a sub-200 ms `"stop"` channel published directly on MQTT, bypassing the main planner.
 - **Workflow integration.** Trigger Cyberwave Workflows from natural language. See [Workflows](/feature-reference/workflows).
@@ -337,4 +337,4 @@ Each of these is a follow-up tutorial's worth of work. Pick one after you hit th
 - **MQTT topics published by the SDK**: `cyberwave/twin/{uuid}/command` with `source_type` set to `tele` (real-world) or `sim_tele` (simulation). See [MQTT API](/api-reference/mqtt/main).
 - **External services**: [Anthropic Claude Sonnet 4.5](https://docs.anthropic.com), [Mistral Voxtral](https://docs.mistral.ai).
 - **Sibling tutorial**: [SO-101 NL Voice + Vision Agent](/tutorials/so101-natural-language-agent): same five-module pattern on a manipulator. The first place to look while you wait for the reference code under this tutorial to land.
-- **Cross-links**: [UGV Beast hardware get-started](/hardware/ugv/get-started), [Voice as a Sensor](/hardware/microphone/get-started), [Key Concepts](/feature-reference/architecture/key-concepts), [Teleoperation](/feature-reference/environment-editor/teleoperation), [Simulation](/overview/features/simulation).
+- **Cross-links**: [UGV Beast hardware get-started](https://cyberwave.com/waveshare/ugv-beast), [Voice as a Sensor](https://cyberwave.com/catalog/tag/microphone), [Key Concepts](/feature-reference/architecture/key-concepts), [Teleoperation](/feature-reference/environment-editor/teleoperation), [Simulation](/overview/features/simulation).

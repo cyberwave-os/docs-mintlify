@@ -1,10 +1,10 @@
 ---
 title: "Digital Twins"
-description: "A single, live model of any physical thing — robot, sensor, or fixture — that you can read, control, and simulate from anywhere"
+description: "A single, live model of any physical thing (robot, sensor, or fixture) that you can read, control, and simulate from anywhere"
 icon: "clone"
 ---
 
-A **digital twin** is Cyberwave's unit of "physical thing made programmable." It carries everything the platform needs to know about a robot, a sensor, a drone — or even a passive object like a table or a shelf — and keeps it in lockstep with the real world.
+A **digital twin** is Cyberwave's unit of "physical thing made programmable." It carries everything the platform needs to know about a robot, a sensor, a drone (or even a passive object like a table or a shelf) and keeps it in lockstep with the real world.
 
 One twin gives you a 3D model, [physical properties and capabilities](/feature-reference/digital-twins#capabilities-map), sensor streams, a [live link to hardware](/feature-reference/digital-twins/overview#pairing-a-twin-with-physical-hardware), and a stable identity you can reference from code, MQTT, or the dashboard.
 
@@ -15,7 +15,7 @@ cw = Cyberwave()
 robot = cw.twin("unitree/go2")
 ```
 
-That's it — the twin is alive in your environment, ready to be simulated, controlled, or paired with the real robot.
+That's it: the twin is alive in your environment, ready to be simulated, controlled, or paired with the real robot.
 
 ---
 
@@ -23,7 +23,7 @@ That's it — the twin is alive in your environment, ready to be simulated, cont
 
 <CardGroup cols={2}>
   <Card title="One object, one source of truth" icon="cube">
-    Geometry, kinematics, sensors, telemetry, and access control — all attached
+    Geometry, kinematics, sensors, telemetry, and access control, all attached
     to a single entity.
   </Card>
   <Card title="Sim-to-real, real-to-sim" icon="arrows-left-right">
@@ -33,7 +33,7 @@ That's it — the twin is alive in your environment, ready to be simulated, cont
   </Card>
   <Card title="Hardware in minutes, not weeks" icon="bolt">
     Pair any device with [`cyberwave
-    pair`](/overview/index#connect-to-a-real-robot) — Cyberwave installs the
+    pair`](/overview/index#connect-to-a-real-robot); Cyberwave installs the
     matching driver and starts streaming.
   </Card>
   <Card title="Capability-driven UX" icon="wand-magic-sparkles">
@@ -53,7 +53,7 @@ A twin's [capabilities](/feature-reference/digital-twins#capabilities-map) are c
 | **Physical properties** | Size, mass, payload, power source and capacity, geometry, 3D mesh                                         | [Capabilities map](/feature-reference/digital-twins#capabilities-map)               |
 | **Locomotion**          | Wheeled, tracked, legged, aerial, surface; max linear / angular velocity                                  | [Locomotion config](/feature-reference/digital-twins#core-capabilities)             |
 | **Manipulation**        | Joints, end-effectors, grippers, payload capacity                                                         | [Actuation features](/feature-reference/digital-twins#feature-to-capability-matrix) |
-| **Sensors**             | RGB, depth, LiDAR (2D / 3D / 4D), microphones, maps — with offsets and FOV                                | [Sensor capabilities](/feature-reference/digital-twins#sensor-capabilities)         |
+| **Sensors**             | RGB, depth, LiDAR (2D / 3D / 4D), microphones, maps, with offsets and FOV                                | [Sensor capabilities](/feature-reference/digital-twins#sensor-capabilities)         |
 | **Navigation**          | Autonomy level, obstacle avoidance, [waypoints and missions](/feature-reference/environment-editor/index) | [Navigation capabilities](/feature-reference/digital-twins#core-capabilities)       |
 | **Identity**            | A unique [slug](/feature-reference/concepts/slug-system) like `acme/twins/arm-station-1`                  | [Slug system](/feature-reference/concepts/slug-system)                              |
 | **Recording**           | Per-twin [cloud recording](/feature-reference/digital-twins#cloud-recording) for video, audio, telemetry  | [Cloud recording](/feature-reference/digital-twins#cloud-recording)                 |
@@ -63,7 +63,7 @@ A twin's [capabilities](/feature-reference/digital-twins#capabilities-map) are c
 
 ## Use a twin from the SDK
 
-Every twin is reachable from the [Python SDK](/tools/python-sdk) with a one-liner. The SDK returns the most specific twin class based on its capabilities — `FlyingTwin` for drones, `GripperTwin` for arms, `CameraTwin` for cameras, and so on.
+Every twin is reachable from the [Python SDK](/tools/python-sdk) with a one-liner. The SDK returns the most specific twin class based on its capabilities: `FlyingTwin` for drones, `GripperTwin` for arms, `CameraTwin` for cameras, and so on.
 
 ```python
 from cyberwave import Cyberwave
@@ -92,7 +92,7 @@ Twins also speak [MQTT](/api-reference/mqtt/main) and [REST](/api-reference/rest
 
 ## A growing catalog of hundreds of twins
 
-The [Cyberwave catalog](https://cyberwave.com/catalog) ships with **hundreds of pre-built twins** — robot arms, quadrupeds, drones, AMRs, cameras, microphones, LiDARs — and grows every week. Each catalog entry comes with a URDF, a 3D mesh, sensor definitions, and the right driver, so you go from "I have hardware" to "it's streaming" without writing integration code.
+The [Cyberwave catalog](https://cyberwave.com/catalog) ships with **hundreds of pre-built twins** (robot arms, quadrupeds, drones, AMRs, cameras, microphones, LiDARs) and grows every week. Each catalog entry comes with a URDF, a 3D mesh, sensor definitions, and the right driver, so you go from "I have hardware" to "it's streaming" without writing integration code.
 
 <CardGroup cols={2}>
   <Card
@@ -117,7 +117,7 @@ Bring a new robot or sensor in minutes. The easiest path is to let an agent do t
 
 <CardGroup cols={2}>
   <Card title="Claude Skill" icon="sparkles" href="/tools/claude-skill">
-    Run `/cyberwave` in Claude Code and describe your hardware — the skill
+    Run `/cyberwave` in Claude Code and describe your hardware; the skill
     scaffolds the URDF, asset metadata, and driver for you.
   </Card>
   <Card title="MCP Server" icon="plug" href="/tools/mcp-server">
@@ -126,7 +126,7 @@ Bring a new robot or sensor in minutes. The easiest path is to let an agent do t
   </Card>
 </CardGroup>
 
-You can also upload a URDF ZIP manually — see the [catalog upload guide](/feature-reference/catalog#upload-a-new-asset).
+You can also upload a URDF ZIP manually; see the [catalog upload guide](/feature-reference/catalog#upload-a-new-asset).
 
 ---
 
@@ -136,7 +136,7 @@ You can also upload a URDF ZIP manually — see the [catalog upload guide](/feat
   <Card title="Hello Robot" icon="hand-wave" href="/overview/hello-robot">
     Spin up your first twin in the browser in 5 minutes.
   </Card>
-  <Card title="Connect real hardware" icon="microchip" href="/hardware/index">
+  <Card title="Connect real hardware" icon="microchip" href="/overview/supported-hardware">
     Pair a physical robot or sensor with its twin via the edge stack.
   </Card>
   <Card

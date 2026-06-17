@@ -6,7 +6,7 @@ icon: "camera"
 
 import { EdgeSetup } from "/snippets/edge-setup.mdx";
 
-Cyberwave treats every camera the same — **USB webcams, IP cameras, depth cameras, infrared, industrial GigE** — drop a digital twin into an [environment](/use-cyberwave/architecture/key-concepts#environments), pair the hardware, and start consuming the stream from the dashboard, the [Python SDK](/tools/python-sdk), or a [Workflow](/use-cyberwave/workflows).
+Cyberwave treats every camera the same (**USB webcams, IP cameras, depth cameras, infrared, industrial GigE**): drop a digital twin into an [environment](/use-cyberwave/architecture/key-concepts#environments), pair the hardware, and start consuming the stream from the dashboard, the [Python SDK](/tools/python-sdk), or a [Workflow](/use-cyberwave/workflows).
 
 <iframe
   width="100%"
@@ -23,9 +23,9 @@ Cyberwave treats every camera the same — **USB webcams, IP cameras, depth came
 
 ## Pick your camera
 
-Cyberwave supports **every major camera** out of the box, from the classic [Logitech C270](https://cyberwave.com/logitech/c275) and the [Intel RealSense D455](https://cyberwave.com/intel/realsensed455) depth camera to industrial-grade machine-vision sensors like the [Basler ace GigE](https://cyberwave.com/basler/basler_ag_ace_gige) — browse the full lineup at [cyberwave.com/catalog/tag/camera](https://cyberwave.com/catalog/tag/camera).
+Cyberwave supports **every major camera** out of the box, from the classic [Logitech C270](https://cyberwave.com/logitech/c275) and the [Intel RealSense D455](https://cyberwave.com/intel/realsensed455) depth camera to industrial-grade machine-vision sensors like the [Basler ace GigE](https://cyberwave.com/basler/basler_ag_ace_gige). Browse the full lineup at [cyberwave.com/catalog/tag/camera](https://cyberwave.com/catalog/tag/camera).
 
-Every catalog page bundles the **bill of materials**, supported drivers, and **troubleshooting** specific to that camera — start there whenever you're unboxing new hardware.
+Every catalog page bundles the **bill of materials**, supported drivers, and **troubleshooting** specific to that camera, so start there whenever you're unboxing new hardware.
 
 ---
 
@@ -37,16 +37,16 @@ Every catalog page bundles the **bill of materials**, supported drivers, and **t
   </Step>
 
   <Step title="Pair the hardware">
-    On any device the camera is plugged into — your laptop, a Raspberry Pi or Jetson on a robot, an NVR — or on the same network as an IP camera, install the CLI and pair:
+    On any device the camera is plugged into (your laptop, a Raspberry Pi or Jetson on a robot, an NVR) or on the same network as an IP camera, install the CLI and pair:
 
     <EdgeSetup />
 
-    The CLI auto-detects the camera (USB, V4L2, RTSP, GigE Vision, RealSense, …), installs the right driver, and links it to the digital twin. If you are unsure how the camera you picked may connect, check out its dedicated page on the catalog — it details everything you need, plus troubleshooting and FAQs. Example: [Logitech C270](https://cyberwave.com/logitech/c275).
+    The CLI auto-detects the camera (USB, V4L2, RTSP, GigE Vision, RealSense, …), installs the right driver, and links it to the digital twin. If you are unsure how the camera you picked may connect, check out its dedicated page on the catalog: it details everything you need, plus troubleshooting and FAQs. Example: [Logitech C270](https://cyberwave.com/logitech/c275).
 
   </Step>
 
   <Step title="Stream sensors automatically">
-    Cyberwave already knows what's on your camera. As soon as `sudo cyberwave pair` completes, the dashboard lights up with the **live RGB feed**, plus **depth**, **infrared**, **stereo**, or any other modality the sensor exposes — no per-sensor configuration required.
+    Cyberwave already knows what's on your camera. As soon as `sudo cyberwave pair` completes, the dashboard lights up with the **live RGB feed**, plus **depth**, **infrared**, **stereo**, or any other modality the sensor exposes, with no per-sensor configuration required.
   </Step>
 </Steps>
 
@@ -61,7 +61,7 @@ Every catalog page bundles the **bill of materials**, supported drivers, and **t
 
 ## Capture frames from Python
 
-Once the twin is paired, the [Python SDK](/tools/python-sdk) gives you the same API for any camera in the catalog. Run this from your laptop or any cloud machine — Cyberwave handles the networking and orchestration end-to-end:
+Once the twin is paired, the [Python SDK](/tools/python-sdk) gives you the same API for any camera in the catalog. Run this from your laptop or any cloud machine; Cyberwave handles the networking and orchestration end-to-end:
 
 ```python
 from cyberwave import Cyberwave
@@ -74,13 +74,13 @@ with cw.affect("live"):
     depth = camera.capture_frame("depth")      # depth map (RealSense, ZED, …)
 ```
 
-Switching to a different camera is a **one-line change** — the rest of your automation stays exactly the same.
+Switching to a different camera is a **one-line change**; the rest of your automation stays exactly the same.
 
 ---
 
 ## Build video workflows
 
-[Workflows](/use-cyberwave/workflows) turn a camera stream into a video-understanding pipeline. You compose them **low-code** in the dashboard or directly in **Python**, and Cyberwave decides whether each step runs on the **edge** next to the camera, in a [cloud node](/tools/cloud-node), or as a **mix of both** — your automation and your hardware don't change.
+[Workflows](/use-cyberwave/workflows) turn a camera stream into a video-understanding pipeline. You compose them **low-code** in the dashboard or directly in **Python**, and Cyberwave decides whether each step runs on the **edge** next to the camera, in a [cloud node](/tools/cloud-node), or as a **mix of both**; your automation and your hardware don't change.
 
 A typical privacy-preserving security pipeline:
 
@@ -103,7 +103,7 @@ Full walkthroughs live in the [zone-based intrusion detection](/tutorials/intrus
 <Info>
   Because Cyberwave also speaks to [robotic dogs](/get-started/robotic-dogs),
   [drones](/get-started/drones), and [arms](/get-started/robotic-arms), you can
-  mix and match hardware in the same workflow — for example, a fixed ceiling
+  mix and match hardware in the same workflow, for example a fixed ceiling
   camera that **triggers** a dog patrol, or a wrist camera that hands off to a
   cloud VLA model when it sees an unfamiliar object.
 </Info>
@@ -112,7 +112,7 @@ Full walkthroughs live in the [zone-based intrusion detection](/tutorials/intrus
 
 ## Record, replay, review
 
-Cyberwave automatically handles the **recording, storage, and indexing** of every paired camera. Open any environment in **[Replay](/use-cyberwave/environment-editor/replay)** to scrub through the video timeline alongside the twin's pose, joint states, and point clouds — straight from the web app or pulled down via the SDK / [REST API](/api-reference/overview) for offline analysis, dataset curation, or model training.
+Cyberwave automatically handles the **recording, storage, and indexing** of every paired camera. Open any environment in **[Replay](/use-cyberwave/environment-editor/replay)** to scrub through the video timeline alongside the twin's pose, joint states, and point clouds, straight from the web app or pulled down via the SDK / [REST API](/api-reference/overview) for offline analysis, dataset curation, or model training.
 
 ---
 

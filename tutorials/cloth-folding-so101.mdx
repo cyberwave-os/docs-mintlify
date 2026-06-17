@@ -1,6 +1,6 @@
 ---
-title: "Autonomous Cloth Folding on Dual SO-101"
-sidebarTitle: "Cloth Folding (SmolVLA)"
+title: "Fold cloth with two SO-101 arms"
+sidebarTitle: "Cloth Folding (Dual SO-101)"
 description: "A bimanual SO-101 setup that learns to fold cloth from human demonstrations using SmolVLA, the Cyberwave platform, and an Intel RealSense camera."
 icon: "shirt"
 iconType: "solid"
@@ -65,7 +65,7 @@ flowchart LR
   - A flat workspace and a piece of cloth (the authors started with a napkin)
   - Edge device for inference: NVIDIA Jetson Orin Nano Super or comparable
 - **Credentials**: Cyberwave API key (see [API Reference → Authentication](/api-reference/overview#authentication)).
-- **Base setup**: complete [SO-101 Get Started](/hardware/so101/get-started) for one arm pair before scaling to two. The teleop and calibration steps generalize directly.
+- **Base setup**: complete [SO-101 Get Started](https://cyberwave.com/the-robot-studio/so101) for one arm pair before scaling to two. The teleop and calibration steps generalize directly.
 
 ## Step 1: Set up Cyberwave
 
@@ -85,7 +85,7 @@ Follow the prompts to log in and select your environment. The CLI will install a
 
 ### Set up the Cyberwave environment
 
-You need one Cyberwave environment that contains **both** SO-101 arm pairs and the RealSense camera, all paired to the hardware on your edge device. The full reference is in [SO-101 Get Started: Set Up the Cyberwave Environment](/hardware/so101/get-started#step-1-set-up-the-cyberwave-environment).
+You need one Cyberwave environment that contains **both** SO-101 arm pairs and the RealSense camera, all paired to the hardware on your edge device. The full reference is in [SO-101 Get Started: Set Up the Cyberwave Environment](https://cyberwave.com/the-robot-studio/so101#step-1-set-up-the-cyberwave-environment).
 
 1. In the Cyberwave dashboard, click **New Environment** and give it a name (e.g. _"Cloth Folding"_).
 2. Click **Add from Catalog**, search for **SO101**, and add the **left** arm pair to the environment.
@@ -101,7 +101,7 @@ You need one Cyberwave environment that contains **both** SO-101 arm pairs and t
 
 ### Calibrate the arms in the product UI
 
-Calibration teaches the software where each joint's zero position is, what its valid movement range is, and how each physical arm maps to its software model. Without it, joint commands won't translate correctly to hardware. For the full reference, see [SO-101 Get Started](/hardware/so101/get-started#step-3-calibrate-the-arms).
+Calibration teaches the software where each joint's zero position is, what its valid movement range is, and how each physical arm maps to its software model. Without it, joint commands won't translate correctly to hardware. For the full reference, see [SO-101 Get Started](https://cyberwave.com/the-robot-studio/so101#step-3-calibrate-the-arms).
 
 <Warning>
   You must calibrate **all four arms individually**: left leader, left follower,

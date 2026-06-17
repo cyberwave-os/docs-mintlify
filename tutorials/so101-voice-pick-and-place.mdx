@@ -1,6 +1,6 @@
 ---
-title: "Build a voice-controlled pick-and-place agent on SO-101"
-sidebarTitle: "SO-101 Voice Pick-and-Place"
+title: "Voice-controlled pick and place"
+sidebarTitle: "SO-101: Voice Pick & Place"
 description: "End-to-end tutorial for a voice-driven pick-and-place agent on an SO-101: dataset, VLA, deployment, and a client-side voice layer."
 icon: "microphone-lines"
 iconType: "solid"
@@ -64,9 +64,9 @@ This tutorial starts from a working SO-101 teleoperation setup. Do not skip the 
 
 - **Hardware**: SO-101 leader + follower, wrist camera, top-down camera, workspace rectangle marked on the table.
 - **Credentials**: Cyberwave API key, workspace with VLA training enabled.
-- **Base setup**: [SO-101 Get Started](/hardware/so101/get-started) (environment, edge install, calibration, teleop).
+- **Base setup**: [SO-101 Get Started](https://cyberwave.com/the-robot-studio/so101) (environment, edge install, calibration, teleop).
 - **SDK baseline**: [Python SDK](/overview/tools/python-sdk).
-- **Conceptual grounding**: [Key Concepts](/feature-reference/architecture/key-concepts), [Voice as a Sensor](/hardware/microphone/get-started).
+- **Conceptual grounding**: [Key Concepts](/feature-reference/architecture/key-concepts), [Voice as a Sensor](https://cyberwave.com/catalog/tag/microphone).
 
 <Check>
   You're ready for this tutorial when you can teleoperate the SO-101 follower
@@ -150,7 +150,7 @@ _Expansion point: voice narration during teleop will later auto-label episodes w
 
 The dashboard prompt from [Train and deploy the VLA](#train-and-deploy-the-vla) already proved the policy works. Now we replace the dashboard prompt with a transcript from a microphone. Everything downstream (policy, twin, MQTT, hardware) is unchanged.
 
-Read the framing in [Voice as a Sensor](/hardware/microphone/get-started) for the generic pattern. This tutorial uses **Pattern A (client-side microphone)** because it is the fastest way to get a working operator flow with no changes on the edge device or new sensor twins.
+Read the framing in [Voice as a Sensor](https://cyberwave.com/catalog/tag/microphone) for the generic pattern. This tutorial uses **Pattern A (client-side microphone)** because it is the fastest way to get a working operator flow with no changes on the edge device or new sensor twins.
 
 **Operator experience.** Operator speaks → 1-2 second pause → arm executes. No push-to-talk required if you put a VAD in front of the STT. No cloud round-trip if your STT runs locally.
 
@@ -160,11 +160,11 @@ Read the framing in [Voice as a Sensor](/hardware/microphone/get-started) for th
 
 You are assembling four components on your laptop:
 
-1. **Mic capture** — any audio input library that gives you a 16 kHz mono float array.
-2. **VAD** (optional but recommended) — gate the STT so it only transcribes when speech is detected. Avoids hallucinated transcripts on silence.
-3. **STT engine** — local recommended. `base.en` Whisper is fine for a headset in a quiet room; move to `small.en` for a noisy lab.
-4. **Normaliser** — a tiny function that maps arbitrary heard text to the closest phrasing from your locked vocabulary. Start with keyword matching; graduate to a one-shot LLM classify if phrasings diverge.
-5. **Dispatcher** — POSTs the normalised text as an `instruction` to `/api/v1/controller-policies/{uuid}/execute` with your `twin_uuid`. See [`ControllerPolicyExecuteSchema`](/api-reference/rest/ControllerPolicyExecuteSchema) for the payload shape.
+1. **Mic capture**: any audio input library that gives you a 16 kHz mono float array.
+2. **VAD** (optional but recommended): gate the STT so it only transcribes when speech is detected. Avoids hallucinated transcripts on silence.
+3. **STT engine**: local recommended. `base.en` Whisper is fine for a headset in a quiet room; move to `small.en` for a noisy lab.
+4. **Normaliser**: a tiny function that maps arbitrary heard text to the closest phrasing from your locked vocabulary. Start with keyword matching; graduate to a one-shot LLM classify if phrasings diverge.
+5. **Dispatcher**: POSTs the normalised text as an `instruction` to `/api/v1/controller-policies/{uuid}/execute` with your `twin_uuid`. See [`ControllerPolicyExecuteSchema`](/api-reference/rest/ControllerPolicyExecuteSchema) for the payload shape.
 
 **Happy path**
 
@@ -292,4 +292,4 @@ Each of these is a follow-up tutorial's worth of work. Pick one after you hit th
 - **Endpoints**: [`ControllerPolicyExecuteSchema`](/api-reference/rest/ControllerPolicyExecuteSchema), [`TwinSchema`](/api-reference/rest/TwinSchema), [`WorkflowExecuteSchema`](/api-reference/rest/WorkflowExecuteSchema).
 - **MQTT topics**: `cyberwave/twin/{uuid}/telemetry`, `cyberwave/twin/{uuid}/command`. See [MQTT API](/api-reference/mqtt/main).
 - **SDK**: `cw.twin`, `robot.capture_frame`, `robot.joints`, `twin.alerts`. See [Python SDK](/overview/tools/python-sdk).
-- **Cross-links**: [SO-101 Get Started](/hardware/so101/get-started), [Voice as a Sensor](/hardware/microphone/get-started), [Teleoperation](/feature-reference/environment-editor/teleoperation), [Simulation](/overview/features/simulation), [Key Concepts](/feature-reference/architecture/key-concepts).
+- **Cross-links**: [SO-101 Get Started](https://cyberwave.com/the-robot-studio/so101), [Voice as a Sensor](https://cyberwave.com/catalog/tag/microphone), [Teleoperation](/feature-reference/environment-editor/teleoperation), [Simulation](/overview/features/simulation), [Key Concepts](/feature-reference/architecture/key-concepts).

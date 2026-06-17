@@ -1,12 +1,12 @@
 ---
 title: "Replay & Historical Data"
-description: "Scrub through everything your robots and sensors have ever recorded — video, joints, point clouds, GPS — straight from your browser"
+description: "Scrub through everything your robots and sensors have ever recorded (video, joints, point clouds, GPS) straight from your browser"
 icon: "clock-rotate-left"
 ---
 
 Being able to **re-watch what your robots did**, from any browser, days or weeks later, is one of Cyberwave's quiet superpowers. In the lab it's how you turn yesterday's runs into [training episodes and datasets](/feature-reference/datasets/playground) for your custom [VLAs](/feature-reference/ml-models/smolvla-training). In production it's how you actually learn from real-world data and make your [workflows](/overview/features/workflows) and [automations](/overview/features/teleoperation-and-remote-control) better over time.
 
-Cyberwave ships the whole pipeline — capture, upload, indexing, signed-URL playback — out of the box. Zero configuration.
+Cyberwave ships the whole pipeline (capture, upload, indexing, signed-URL playback) out of the box. Zero configuration.
 
 ---
 
@@ -16,12 +16,12 @@ Every [twin](/overview/features/digital-twin) in an [environment](/overview/feat
 
 - **Live video** from every paired camera (MP4, range-requested on playback)
 - **Joint states, positions, velocities, gripper status** (Parquet, time-windowed reads)
-- **Mobile-base telemetry** — GPS, odometry, IMU
+- **Mobile-base telemetry**: GPS, odometry, IMU
 - **Point clouds** from depth and LiDAR sensors (FlatBuffer chunks)
 - **Audio** from on-device microphones
-- **Workflow runs** — every node execution, input, and output, bound to the same timeline
+- **Workflow runs**: every node execution, input, and output, bound to the same timeline
 
-You don't manage disk space. The [edge core](/feature-reference/edge/overview) buffers locally and uploads to Cyberwave Cloud the moment connectivity returns — so an intermittent network or a 4G hiccup never costs you a recording. See [`record` / `replay` in the SDK data layer](/feature-reference/edge/drivers/data-record-replay) for the underlying mechanics.
+You don't manage disk space. The [edge core](/feature-reference/edge/overview) buffers locally and uploads to Cyberwave Cloud the moment connectivity returns, so an intermittent network or a 4G hiccup never costs you a recording. See [`record` / `replay` in the SDK data layer](/feature-reference/edge/drivers/data-record-replay) for the underlying mechanics.
 
 ---
 
@@ -29,13 +29,13 @@ You don't manage disk space. The [edge core](/feature-reference/edge/overview) b
 
 Hit **Replay** in any [environment](/feature-reference/environment-editor/index), pick a time window, and the whole scene rewinds together:
 
-- **3D twins** snap to their historical poses — robot joints, base position, attached objects.
+- **3D twins** snap to their historical poses: robot joints, base position, attached objects.
 - **Live video tiles** scrub frame-accurately alongside the 3D view.
 - **Point clouds** render at the right pose for every frame.
 - **Audio** plays back in sync with the timeline.
-- **Workflow runs** that fired during the window show up as markers — click one to see node-level inputs, outputs, and errors ([env editor reference](/feature-reference/environment-editor/index#workflow-executions-in-an-environment)).
+- **Workflow runs** that fired during the window show up as markers; click one to see node-level inputs, outputs, and errors ([env editor reference](/feature-reference/environment-editor/index#workflow-executions-in-an-environment)).
 
-Under the hood, playback uses [signed URLs and range requests](/feature-reference/environment-editor/replay) — nothing is inlined, nothing is fully loaded into the browser, and scrubbing stays fast even on multi-hour recordings.
+Under the hood, playback uses [signed URLs and range requests](/feature-reference/environment-editor/replay): nothing is inlined, nothing is fully loaded into the browser, and scrubbing stays fast even on multi-hour recordings.
 
 ---
 
@@ -43,11 +43,11 @@ Under the hood, playback uses [signed URLs and range requests](/feature-referenc
 
 A recording isn't just for watching. From the same timeline you can **slice a window into an episode** and group episodes into a [dataset](/feature-reference/datasets/import) you can train on.
 
-When you're ready to leave the cloud — or hand data to an external tool — export to the format you actually need:
+When you're ready to leave the cloud (or hand data to an external tool), export to the format you actually need:
 
 | Format                | Use case                                   |
 | --------------------- | ------------------------------------------ |
-| **Cyberwave Parquet** | Native, joined columns — open it in Pandas |
+| **Cyberwave Parquet** | Native, joined columns, open it in Pandas  |
 | **LeRobot v3**        | Drop straight into HuggingFace + LeRobot   |
 | **RLDS**              | Open-X-Embodiment style TFRecord           |
 | **OpenVLA TFDS**      | Cyberwave's OpenVLA bundle for training    |
@@ -60,7 +60,7 @@ from cyberwave import Cyberwave
 cw = Cyberwave()
 
 dataset = cw.datasets.get("acme/datasets/pick-and-place-runs")
-url = dataset.download(format="lerobot3")     # signed URL — fetch and go
+url = dataset.download(format="lerobot3")     # signed URL: fetch and go
 ```
 
 ---

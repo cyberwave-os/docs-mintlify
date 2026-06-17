@@ -1,10 +1,10 @@
 ---
 title: "Workflows"
-description: "The fastest way to build automations on top of your twins — visual, Python, or agent-built, and runnable in the cloud, on the edge, or both"
+description: "The fastest way to build automations on top of your twins: visual, Python, or agent-built, and runnable in the cloud, on the edge, or both"
 icon: "diagram-project"
 ---
 
-**Workflows** are Cyberwave's automation primitive. They turn a graph of nodes — triggers, models, twins, conditions, integrations — into a runnable artifact that can fire on a schedule, an MQTT message, a webhook, or every camera frame on a Raspberry Pi.
+**Workflows** are Cyberwave's automation primitive. They turn a graph of nodes (triggers, models, twins, conditions, integrations) into a runnable artifact that can fire on a schedule, an MQTT message, a webhook, or every camera frame on a Raspberry Pi.
 
 ```python
 from cyberwave import Cyberwave
@@ -19,7 +19,7 @@ run.wait(timeout=60)
 print(run.status)
 ```
 
-That same workflow can be opened, edited, and visualised in the [Workflow Editor](/feature-reference/workflows) — the graph and the Python are two views of one object.
+That same workflow can be opened, edited, and visualised in the [Workflow Editor](/feature-reference/workflows): the graph and the Python are two views of one object.
 
 ---
 
@@ -39,16 +39,16 @@ You never have to pick between a low-code graph and "real" code. Cyberwave keeps
   </Card>
   <Card title="With an agent" icon="sparkles" href="/tools/mcp-server">
     Describe the automation in plain English to Claude, Cursor, or any MCP
-    client — Cyberwave's [MCP server](/tools/mcp-server) and
+    client; Cyberwave's [MCP server](/tools/mcp-server) and
     [Claude skill](/tools/claude-skill) wire up the graph for you.
   </Card>
 </CardGroup>
 
-Every workflow round-trips between graph and Python — no lock-in to either format. You get the power of pure code where you need it, and the simplicity of a visual graph everywhere else.
+Every workflow round-trips between graph and Python, with no lock-in to either format. You get the power of pure code where you need it, and the simplicity of a visual graph everywhere else.
 
 ---
 
-## Cloud, edge, or both — in one graph
+## Cloud, edge, or both, in one graph
 
 A workflow can span both sides of your stack. Trigger and ML nodes that run [on the cloud](/tools/cloud-node) coordinate with the same workflow's edge half via the [edge worker runtime](/feature-reference/edge/workers/overview).
 
@@ -61,9 +61,9 @@ flowchart LR
     C --> D[Send Email<br/><i>cloud</i>]
 ```
 
-The video frame never leaves the device unanonymized, the VLM runs on a GPU in the cloud, and an email goes out — all from a single workflow definition. The [unified edge compiler](/feature-reference/workflows#environment-bound-workflows) decides what runs where based on the graph itself.
+The video frame never leaves the device unanonymized, the VLM runs on a GPU in the cloud, and an email goes out, all from a single workflow definition. The [unified edge compiler](/feature-reference/workflows#environment-bound-workflows) decides what runs where based on the graph itself.
 
-You don't manage model downloads, hardware compatibility, or reconnects. Cyberwave provisions the right model into the right runtime — edge YOLO for [`camera_frame`](/feature-reference/workflows#edge-workflows-camera-frame), cloud VLMs for [`call_model`](/feature-reference/workflows/overview#nodes) — and keeps it healthy when the network blinks.
+You don't manage model downloads, hardware compatibility, or reconnects. Cyberwave provisions the right model into the right runtime (edge YOLO for [`camera_frame`](/feature-reference/workflows#edge-workflows-camera-frame), cloud VLMs for [`call_model`](/feature-reference/workflows/overview#nodes)) and keeps it healthy when the network blinks.
 
 ---
 
@@ -79,7 +79,7 @@ cw.affect("live")
 cw.workflows.trigger("acme/workflows/pick-and-place")
 ```
 
-This is the practical version of "test before you deploy" — see the [environment editor](/feature-reference/environment-editor/index#workflow-executions-in-an-environment) for replaying past runs and inspecting per-node executions.
+This is the practical version of "test before you deploy"; see the [environment editor](/feature-reference/environment-editor/index#workflow-executions-in-an-environment) for replaying past runs and inspecting per-node executions.
 
 ---
 
@@ -87,12 +87,12 @@ This is the practical version of "test before you deploy" — see the [environme
 
 <CardGroup cols={2}>
   <Card title="Orchestrating multiple twins" icon="users-gear">
-    Synchronise robots and sensors — swarm formations, multi-arm cells, or a
+    Synchronise robots and sensors: swarm formations, multi-arm cells, or a
     fleet of cameras feeding a single inspection job. Wire any twin from the
     [catalog](https://cyberwave.com/catalog) into the same graph.
   </Card>
   <Card title="Switching between models and code" icon="shuffle">
-    Hand off mid-task — e.g. an [RL policy](/feature-reference/ml-models/index)
+    Hand off mid-task; e.g. an [RL policy](/feature-reference/ml-models/index)
     moves the arm to the box, then a deterministic Python
     [`code` node](/feature-reference/workflows#code-node-stub) takes over for
     the pre-canned drop sequence.
@@ -105,24 +105,24 @@ This is the practical version of "test before you deploy" — see the [environme
   </Card>
   <Card title="Calling out to anything" icon="plug">
     `http_request`, `send_email`, and `send_alert` nodes plug Cyberwave into
-    the rest of your stack — PagerDuty, Slack, your warehouse system, a Notion
+    the rest of your stack: PagerDuty, Slack, your warehouse system, a Notion
     page.
   </Card>
 </CardGroup>
 
-Workflows compose the whole [Cyberwave ecosystem](https://cyberwave.com) — hundreds of [twins](https://cyberwave.com/catalog) and the [models hub](https://cyberwave.com/models) are one node away.
+Workflows compose the whole [Cyberwave ecosystem](https://cyberwave.com): hundreds of [twins](https://cyberwave.com/catalog) and the [models hub](https://cyberwave.com/models) are one node away.
 
 ---
 
 ## Start from a template
 
-Don't start from a blank canvas. Cyberwave ships a library of workflow templates — motion detection, pick-and-place, intrusion alerts, voice control — and you can publish your own for your team or the world.
+Don't start from a blank canvas. Cyberwave ships a library of workflow templates (motion detection, pick-and-place, intrusion alerts, voice control) and you can publish your own for your team or the world.
 
 ```bash
 cyberwave workflow create --template motion-detection
 ```
 
-Templates are versioned, slugged like the rest of Cyberwave (`acme/workflows/my-template`), and editable after cloning — they're a starting point, not a black box.
+Templates are versioned, slugged like the rest of Cyberwave (`acme/workflows/my-template`), and editable after cloning: they're a starting point, not a black box.
 
 ---
 
