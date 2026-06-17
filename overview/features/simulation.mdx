@@ -1,10 +1,10 @@
 ---
 title: "Simulation"
-description: "Iterate at the speed of code — run any environment in the browser, in MuJoCo, or (soon) Isaac Sim with zero extra setup"
+description: "Iterate at the speed of code: run any environment in the browser, in MuJoCo, or (soon) Isaac Sim with zero extra setup"
 icon: "atom"
 ---
 
-Cyberwave turns every [environment](/overview/features/environment) into a runnable simulation. Hit **Simulate** in the editor, or flip the SDK into sim mode — same scene, same twins, same code:
+Cyberwave turns every [environment](/overview/features/environment) into a runnable simulation. Hit **Simulate** in the editor, or flip the SDK into sim mode: same scene, same twins, same code:
 
 ```python
 from cyberwave import Cyberwave
@@ -24,7 +24,7 @@ When you're done, `cw.affect("live")` points the same code at the real robot. No
 
 <CardGroup cols={2}>
   <Card title="Develop at code speed" icon="bolt">
-    Tweak a policy, re-run, see the result in the viewport — no robot, no lab, no waiting on hardware.
+    Tweak a policy, re-run, see the result in the viewport: no robot, no lab, no waiting on hardware.
   </Card>
   <Card title="CI for robotics" icon="circle-check">
     Run the same scene headlessly in CI. Catch regressions in motion planners, perception, and controllers before they ship.
@@ -55,13 +55,13 @@ Set up your environment **once**. Cyberwave handles the export to each backend s
   </Card>
 </CardGroup>
 
-Each twin advertises which backends it supports — see [Simulator compatibility](/feature-reference/catalog/simulation-support) to control which simulators an asset or twin can participate in.
+Each twin advertises which backends it supports; see [Simulator compatibility](/feature-reference/catalog/simulation-support) to control which simulators an asset or twin can participate in.
 
 ---
 
 ## Powered by the twin catalog
 
-There's no separate "simulation setup" step. Physics, kinematics, sensors, and collision geometry are read straight from the [digital twins](/overview/features/digital-twin) you dropped into the environment — every twin in the [catalog](/feature-reference/catalog) ships with a URDF and inertial data ready to simulate.
+There's no separate "simulation setup" step. Physics, kinematics, sensors, and collision geometry are read straight from the [digital twins](/overview/features/digital-twin) you dropped into the environment; every twin in the [catalog](/feature-reference/catalog) ships with a URDF and inertial data ready to simulate.
 
 Add a twin → it's instantly simulatable. Swap a SO-101 for a UR7e → the physics update on the next run.
 
@@ -71,13 +71,13 @@ Add a twin → it's instantly simulatable. Swap a SO-101 for a UR7e → the phys
 
 Open any environment in the editor and click **Simulate** in the top bar.
 
-### Playground — instant browser physics
+### Playground: instant browser physics
 
-[Playground](/feature-reference/environment-editor/index#simulate-tab-playground-physics) is a lightweight rigid-body simulator that runs entirely in your browser, using your machine's compute. There's nothing to install and nothing to wait for — it's running the moment the page loads.
+[Playground](/feature-reference/environment-editor/index#simulate-tab-playground-physics) is a lightweight rigid-body simulator that runs entirely in your browser, using your machine's compute. There's nothing to install and nothing to wait for; it's running the moment the page loads.
 
-- **Fastest feedback loop** — change a joint target in code, see the twin move in the viewport.
-- **Great for sanity checks** — verify motion plans, joint limits, and basic collisions before going live.
-- **Works offline from cloud compute** — every browser is its own simulator.
+- **Fastest feedback loop**: change a joint target in code, see the twin move in the viewport.
+- **Great for sanity checks**: verify motion plans, joint limits, and basic collisions before going live.
+- **Works offline from cloud compute**: every browser is its own simulator.
 
 ```python
 from cyberwave import Cyberwave
@@ -90,7 +90,7 @@ arm.joints.set("shoulder_pan", 30, degrees=True)
 arm.joints.set("elbow_flex",   -45, degrees=True)
 ```
 
-### MuJoCo — contact-rich physics, your way
+### MuJoCo: contact-rich physics, your way
 
 Need real grasps, friction, and reproducible RL sweeps? Cyberwave one-click-exports any environment to MuJoCo, two ways:
 
@@ -99,11 +99,11 @@ Need real grasps, friction, and reproducible RL sweeps? Cyberwave one-click-expo
     Download a self-contained MuJoCo scene (XML + meshes) and run it on your laptop, your cluster, or your CI runner. Backed by the [environment MuJoCo export API](/api-reference/rest/DefaultApi).
   </Card>
   <Card title="Run in the Cyberwave cloud" icon="cloud">
-    Kick off a MuJoCo simulation from the editor and stream results straight back into the browser viewport — no local install required.
+    Kick off a MuJoCo simulation from the editor and stream results straight back into the browser viewport, no local install required.
   </Card>
 </CardGroup>
 
-All twins in the environment must be marked MuJoCo-compatible before a remote run starts — [see how the compatibility gate works](/feature-reference/catalog/simulation-support).
+All twins in the environment must be marked MuJoCo-compatible before a remote run starts; [see how the compatibility gate works](/feature-reference/catalog/simulation-support).
 
 ---
 

@@ -1,12 +1,21 @@
 ---
-title: "Build a natural-language voice + vision agent on SO-101"
-sidebarTitle: "SO-101 NL Voice + Vision Agent"
+title: "Control an SO-101 arm with your voice"
+sidebarTitle: "SO-101: Voice Control"
 description: "Drive an SO-101 with plain English: voice in, camera frame in, Claude plans a JSON motion plan, the SDK runs it. No training data required."
 icon: "wand-magic-sparkles"
 iconType: "solid"
 ---
 
 By the end of this tutorial you will have an SO-101 that listens to a spoken English command, looks at its workspace through a USB webcam, and executes a short motion plan written on-the-fly by Claude. No dataset, no VLA, no training. The policy is a system prompt.
+
+<iframe
+  className="w-full aspect-video rounded-xl"
+  src="https://www.youtube.com/embed/kUxSxCMCQgc"
+  title="SO-101 voice + vision agent demo"
+  frameBorder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  allowFullScreen
+></iframe>
 
 <Info>
   **Reference implementation.** Full source for every module and smoke test

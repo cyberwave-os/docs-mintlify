@@ -1,6 +1,6 @@
 ---
-title: "Build a voice-controlled pick-and-place agent on SO-101"
-sidebarTitle: "SO-101 Voice Pick-and-Place"
+title: "Voice-controlled pick and place"
+sidebarTitle: "SO-101: Voice Pick & Place"
 description: "End-to-end tutorial for a voice-driven pick-and-place agent on an SO-101: dataset, VLA, deployment, and a client-side voice layer."
 icon: "microphone-lines"
 iconType: "solid"
@@ -160,11 +160,11 @@ Read the framing in [Voice as a Sensor](/hardware/microphone/get-started) for th
 
 You are assembling four components on your laptop:
 
-1. **Mic capture** — any audio input library that gives you a 16 kHz mono float array.
-2. **VAD** (optional but recommended) — gate the STT so it only transcribes when speech is detected. Avoids hallucinated transcripts on silence.
-3. **STT engine** — local recommended. `base.en` Whisper is fine for a headset in a quiet room; move to `small.en` for a noisy lab.
-4. **Normaliser** — a tiny function that maps arbitrary heard text to the closest phrasing from your locked vocabulary. Start with keyword matching; graduate to a one-shot LLM classify if phrasings diverge.
-5. **Dispatcher** — POSTs the normalised text as an `instruction` to `/api/v1/controller-policies/{uuid}/execute` with your `twin_uuid`. See [`ControllerPolicyExecuteSchema`](/api-reference/rest/ControllerPolicyExecuteSchema) for the payload shape.
+1. **Mic capture**: any audio input library that gives you a 16 kHz mono float array.
+2. **VAD** (optional but recommended): gate the STT so it only transcribes when speech is detected. Avoids hallucinated transcripts on silence.
+3. **STT engine**: local recommended. `base.en` Whisper is fine for a headset in a quiet room; move to `small.en` for a noisy lab.
+4. **Normaliser**: a tiny function that maps arbitrary heard text to the closest phrasing from your locked vocabulary. Start with keyword matching; graduate to a one-shot LLM classify if phrasings diverge.
+5. **Dispatcher**: POSTs the normalised text as an `instruction` to `/api/v1/controller-policies/{uuid}/execute` with your `twin_uuid`. See [`ControllerPolicyExecuteSchema`](/api-reference/rest/ControllerPolicyExecuteSchema) for the payload shape.
 
 **Happy path**
 

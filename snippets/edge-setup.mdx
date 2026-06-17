@@ -18,10 +18,10 @@ export const EdgeSetup = ({ exclude = [] }) => {
   if (showMac && showLinux) {
     return (
       <Tabs>
-        <Tab title="Mac">
+        <Tab title="Mac" icon="apple">
           <CodeBlock language="bash">{macCode}</CodeBlock>
         </Tab>
-        <Tab title="Linux">
+        <Tab title="Linux" icon="linux">
           {linuxTip}
           <CodeBlock language="bash">{linuxCode}</CodeBlock>
         </Tab>

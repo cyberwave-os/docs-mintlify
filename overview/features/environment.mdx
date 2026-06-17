@@ -4,7 +4,7 @@ description: "The 3D scene where your twins live, interact with each other, and 
 icon: "globe"
 ---
 
-An **environment** is the 3D scene where your [digital twins](/overview/features/digital-twin) come together. Drop in a [UR7e](https://cyberwave.com/universal_robots/UR7), a table, four walls, and a wrist camera — and you have a programmable replica of your lab. Most environments mirror a real place (a cell, a warehouse, a workshop), but they don't have to: a purely virtual scene works just as well for prototyping, training, and demos.
+An **environment** is the 3D scene where your [digital twins](/overview/features/digital-twin) come together. Drop in a [UR7e](https://cyberwave.com/universal_robots/UR7), a table, four walls, and a wrist camera, and you have a programmable replica of your lab. Most environments mirror a real place (a cell, a warehouse, a workshop), but they don't have to: a purely virtual scene works just as well for prototyping, training, and demos.
 
 ```python
 from cyberwave import Cyberwave
@@ -25,18 +25,18 @@ The same environment is what you see in the [Environment Editor](/feature-refere
 <CardGroup cols={2}>
   <Card title="Spatial context for every twin" icon="cube">
     Twins know where they are relative to each other, the floor, walls, and
-    props — so navigation, manipulation, and perception just work.
+    props, so navigation, manipulation, and perception just work.
   </Card>
   <Card title="One scene, two realities" icon="arrows-left-right">
     The same layout powers simulation **and** live hardware. No duplicate setup,
     no drift.
   </Card>
   <Card title="A unit of collaboration" icon="users">
-    Share, comment, and review an environment like a doc — without giving away
+    Share, comment, and review an environment like a doc, without giving away
     write access.
   </Card>
   <Card title="Identified by a slug" icon="link">
-    Every environment gets a unique slug like `acme/envs/production-floor` — see
+    Every environment gets a unique slug like `acme/envs/production-floor`; see
     the [slug system](/feature-reference/concepts/slug-system).
   </Card>
 </CardGroup>
@@ -51,8 +51,8 @@ The same environment is what you see in the [Environment Editor](/feature-refere
 | **Add primitives**              | One-click cameras, lidars, and common props by short alias (`camera`, `lidar`).                                                                             | [Adding primitives](/feature-reference/environment-editor/index#adding-primitives)                          |
 | **Start from a template**       | Clone a pre-built scene (assets, twins, controller policies, tags) with one click.                                                                          | [Environment templates](/feature-reference/environment-editor/environment-templates)                        |
 | **Save and copy**               | **File → Make a copy** duplicates the scene and all of its twins; lineage is stored in metadata.                                                            | [Clone an environment](/feature-reference/environment-editor/index#clone-an-environment)                    |
-| **Add waypoints**               | Author named points in 3D for [mission-style workflows](/feature-reference/workflows) — "go to charger", "inspect rack B".                                  | [Waypoint schema](/api-reference/rest/EnvironmentWaypointSchema)                                            |
-| **Add areas**                   | Draw polygon zones that gate locomotion and perception — keep-out zones, lanes, [spatial filters](/feature-reference/workflows/spatial-filter) for cameras. | [Spatial filter node](/feature-reference/workflows/spatial-filter)                                          |
+| **Add waypoints**               | Author named points in 3D for [mission-style workflows](/feature-reference/workflows): "go to charger", "inspect rack B".                                  | [Waypoint schema](/api-reference/rest/EnvironmentWaypointSchema)                                            |
+| **Add areas**                   | Draw polygon zones that gate locomotion and perception: keep-out zones, lanes, [spatial filters](/feature-reference/workflows/spatial-filter) for cameras. | [Spatial filter node](/feature-reference/workflows/spatial-filter)                                          |
 | **Add notes for teammates**     | Annotate the scene so the next operator knows why the camera is tilted 12°.                                                                                 | [Environment Editor](/feature-reference/environment-editor/index)                                           |
 | **Edit with an agent**          | Launch the **Editor Agent** from **Edit → Editor Agent** and let it call Cyberwave MCP tools on your behalf.                                                | [Start the agent from Edit](/feature-reference/environment-editor/index#start-the-agent-from-the-edit-menu) |
 
@@ -60,7 +60,7 @@ The same environment is what you see in the [Environment Editor](/feature-refere
 
 ## Simulate it or wire it to real hardware
 
-An environment is the same artifact in both worlds — you just switch modes.
+An environment is the same artifact in both worlds: you just switch modes.
 
 <CardGroup cols={2}>
   <Card
@@ -77,7 +77,7 @@ An environment is the same artifact in both worlds — you just switch modes.
     icon="bolt"
     href="/feature-reference/environment-editor/teleoperation"
   >
-    Flip to **Live** mode and the scene becomes a window into your real cell —
+    Flip to **Live** mode and the scene becomes a window into your real cell:
     camera streams, joint states, edge-device health, and teleoperation all in
     place.
   </Card>
@@ -94,7 +94,7 @@ cw.affect("live")         # same scene, real hardware
 
 ## Replay the whole environment
 
-Recordings aren't just per-twin clips — an environment **replays as a single timeline**. Scrub the playhead and every camera, every robot pose, every point cloud rewinds together. Imagine watching the 2D map of your warehouse next to the wrist-camera video, both perfectly aligned.
+Recordings aren't just per-twin clips: an environment **replays as a single timeline**. Scrub the playhead and every camera, every robot pose, every point cloud rewinds together. Imagine watching the 2D map of your warehouse next to the wrist-camera video, both perfectly aligned.
 
 <CardGroup cols={2}>
   <Card
@@ -103,7 +103,7 @@ Recordings aren't just per-twin clips — an environment **replays as a single t
     href="/feature-reference/environment-editor/replay"
   >
     Signed-URL playback for MP4 video, parquet telemetry, and FlatBuffer point
-    clouds — no inlining, range-requested on demand.
+    clouds (no inlining, range-requested on demand).
   </Card>
   <Card
     title="Workflow executions"
@@ -119,9 +119,9 @@ Recordings aren't just per-twin clips — an environment **replays as a single t
 
 ## Sharing and access control
 
-Environments are first-class shareable objects — same model as the rest of Cyberwave.
+Environments are first-class shareable objects, the same model as the rest of Cyberwave.
 
-- **Workspace roles** (Viewer, Editor, Admin) cascade automatically — most teams configure this once.
+- **Workspace roles** (Viewer, Editor, Admin) cascade automatically; most teams configure this once.
 - **Per-environment overrides** let you grant or restrict access for a single scene.
 - **Read-only** and **comment-only** link shares are perfect for stakeholder demos and async review without handing out edit rights.
 

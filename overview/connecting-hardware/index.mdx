@@ -1,85 +1,88 @@
 ---
 title: "Hardware Overview"
-description: "80+ devices supported out of the box, with full ROS compatibility and an extensible driver architecture"
+description: "How Cyberwave connects to hardware: 80+ catalog-supported devices with pre-built drivers, plus custom integrations for any device you bring. An overview of what it takes to connect and use hardware."
 icon: "microchip"
 ---
 
 import { EdgeSetup } from "/snippets/edge-setup.mdx";
 
-Cyberwave connects to **80+ robotic devices** out of the box through its [hardware catalog](https://cyberwave.com/catalog). Every device in the catalog ships with a pre-built driver that is installed automatically when you pair hardware with a digital twin. Beyond the catalog, **any device with an API, serial interface, or network protocol can be connected** — write a driver in Python or C++, or scaffold one in minutes with our AI tooling.
+Cyberwave turns any robot or sensor into a live **digital twin** you can monitor, control, record, and automate from one place. There are two ways to get your hardware connected, and both end up in the same place: a synced twin with the full platform behind it.
+
+## Connect Hardware
+
+<CardGroup cols={2}>
+  <Card title="Catalog-supported hardware" icon="grid-2" href="#catalog-supported-hardware">
+    **80+ devices supported out of the box.** Each ships with a pre-built driver
+    that installs automatically when you pair. Add the twin, run one command, done.
+  </Card>
+  <Card title="Custom integrations" icon="plug" href="/overview/connecting-hardware/custom-hardware">
+    **Bring any device that isn't in the catalog.** Create an asset from your URDF
+    and write a driver. Typically about 2 days, versus months for a bespoke integration.
+  </Card>
+</CardGroup>
+
+Whichever path you take, connecting and using hardware comes down to the same building blocks below.
+
+---
 
 ## Cyberwave Edge
 
-Cyberwave uses **[Cyberwave Edge](/edge/overview)** to bridge the gap between your physical hardware and the cloud. The Edge is the software layer that runs on any machine connected to your robot or sensor — a **Raspberry Pi** strapped to a robot, a **Jetson** on a drone, the **robot's own onboard computer** (if it has one), or even **your Mac** for quick local development.
+Both paths run on **[Cyberwave Edge](/feature-reference/edge/overview)**, the software layer that bridges your physical hardware to the cloud. The Edge runs on any machine connected to your robot or sensor: a **Raspberry Pi** strapped to a robot, a **Jetson** on a drone, the **robot's own onboard computer** (if it has one), or even **your Mac** for quick local development.
 
 You don't need to think about which device, OS, or protocol your hardware uses. Cyberwave abstracts all of that away, so connecting **any** supported device always comes down to one command:
 
 <EdgeSetup />
 
-That's it. The CLI auto-detects your hardware, installs the right driver, and links it to the digital twin you created in the dashboard.
+The CLI auto-detects your hardware, installs the right driver, and links it to the digital twin you created in the dashboard.
 
 ---
 
-## Browse by Category
+## Hardware Devices
 
-The same workflow scales across every form factor — pick a category to see how Cyberwave handles it, or browse the [full catalog](https://cyberwave.com/catalog) for specific models.
+These are some of the most popular devices connected with Cyberwave. Each links to its full hardware documentation, specs, and setup guide on the catalog. Don't see yours?
 
-<CardGroup cols={2}>
-  <Card title="Robotic arms" icon="hand" href="/get-started/robotic-arms">
-    Hobbyist desk arms to industrial cells — manipulation, teleoperation, and
-    imitation learning.
-  </Card>
-  <Card title="Robotic dogs" icon="dog" href="/get-started/robotic-dogs">
-    Quadrupeds for inspection, patrol, and autonomous missions.
-  </Card>
-  <Card title="Drones" icon="drone" href="/get-started/drones">
-    Inspection, mapping, and aerial automations across consumer and research
-    platforms.
-  </Card>
-  <Card title="Cameras" icon="camera" href="/get-started/cameras">
-    USB, IP, depth, infrared, and industrial cameras for vision workflows and
-    dataset recording.
-  </Card>
-</CardGroup>
+**Browse the [full catalog](https://cyberwave.com/catalog) of 80+ supported devices**.
+
+| Device | Category | Hardware documentation |
+| --- | --- | --- |
+| **SO-101** | Robotic arm | [Open the SO-101 docs](/hardware/so101) |
+| **Universal Robots UR7e** | Robotic arm | [Open the UR7e docs](/hardware/ur7) |
+| **Enactic OpenArm** | Robotic arm | [Open the OpenArm docs](/hardware/openarm) |
+| **Unitree Go2** | Robotic dog | [Open the Go2 docs](/hardware/go2) |
+| **Boston Dynamics Spot** | Robotic dog | [Open the Spot docs](/hardware/spot) |
+| **Waveshare UGV Beast** | Ground rover | [Open the UGV Beast docs](/hardware/ugv-beast) |
+| **DJI Mini 4 Pro** | Drone | [Open the DJI Mini 4 Pro docs](/hardware/dji-mini-4-pro) |
+| **DJI Mini 3 Pro** | Drone | [Open the DJI Mini 3 Pro docs](/hardware/dji-mini-3-pro) |
+| **Standard Camera** | Camera | [Open the Standard Camera docs](/hardware/standard-cam) |
 
 ---
 
-## Step-by-Step Setup
+## Catalog-supported hardware
 
-The same flow works for any hardware — catalog devices and custom rigs alike.
+If your device is in the catalog, there's nothing to build. Add a twin, pair the hardware, and Cyberwave installs the matching driver for you.
 
 ### Prerequisites
 
 - A Cyberwave account ([Request Early Access](https://cyberwave.com/request-early-access))
 - API token from your dashboard (**Profile → API Keys**)
-- An edge device connected to your hardware (Raspberry Pi, Jetson, industrial PC, your Mac — anything that can reach the internet)
+- An edge device connected to your hardware (Raspberry Pi, Jetson, industrial PC, your Mac, or anything that can reach the internet)
 
-### 1. Add a Digital Twin
+<Steps>
+  <Step title="Add a digital twin">
+    In the dashboard, create a new [environment](/use-cyberwave/architecture/key-concepts), click **Add from Catalog**, search for your hardware, and position the twin to match your physical setup.
+  </Step>
+  <Step title="Install and pair">
+    On the machine connected to your hardware, install the CLI and pair:
 
-An [environment](/use-cyberwave/architecture/key-concepts) is a 3D virtual space that mirrors your real-world setup.
+    <EdgeSetup />
 
-1. In the dashboard, click **New Environment** and give it a name.
-2. Click **Add from Catalog** and search for your hardware.
-3. Position the twin to match your physical setup.
+    The CLI prompts you to log in, select your environment, and choose the digital twin. If a compatible driver exists, it is **installed and configured automatically**. Check progress with `cyberwave edge logs`.
 
-<Tip>
-  If your hardware isn't in the catalog yet, [contact
-  us](mailto:info@cyberwave.com) for guidance on uploading a custom URDF or 3D
-  model, or use the REST API to create the asset programmatically.
-</Tip>
-
-### 2. Install and Pair
-
-On the machine connected to your hardware, install the CLI and pair:
-
-<EdgeSetup />
-
-The CLI prompts you to log in, select your environment, and choose the digital twin. If a compatible driver exists, it is **installed and configured automatically**. Check progress with `cyberwave edge logs`.
-
-<Warning>
-  The CLI and Edge Core require a **64-bit architecture** (arm64/aarch64) on
-  Raspberry Pi.
-</Warning>
+    <Warning>
+      The CLI and Edge Core require a **64-bit architecture** (arm64/aarch64) on Raspberry Pi.
+    </Warning>
+  </Step>
+</Steps>
 
 <Check>
   Your hardware is now paired with its digital twin and syncing in real time.
@@ -87,56 +90,66 @@ The CLI prompts you to log in, select your environment, and choose the digital t
 
 ---
 
-## No Driver Available? Write Your Own
+## Custom integrations
 
-A driver is a Docker container that translates between your device's native API and Cyberwave's MQTT layer. Three ways to scaffold one:
+If your hardware isn't in the catalog, you bring it online yourself in two steps. The driver layer is protocol-agnostic, so it works with ROS 1 and ROS 2, VDA5050, OPC UA, Modbus, gRPC/REST, and raw serial.
 
-<CardGroup cols={3}>
-  <Card
-    title="AI Skill"
-    icon="wand-magic-sparkles"
-    href="https://github.com/cyberwave-os/driver-skill"
-  >
-    Generate a complete driver project interactively with the Cyberwave Driver
-    skill
-  </Card>
-  <Card title="Python SDK" icon="python" href="/tools/python-sdk">
-    Build drivers and applications with the Cyberwave Python SDK
-  </Card>
-  <Card title="C++ SDK" icon="microchip" href="/tools/cpp-sdk">
-    High-performance SDK for embedded and latency-sensitive drivers
-  </Card>
-</CardGroup>
+<Steps>
+  <Step title="Create an asset">
+    Upload your URDF and meshes to create a custom asset, public or private.
 
-See [Writing Compatible Drivers](/edge/drivers/writing-compatible-drivers) for the full architecture, environment variables, and packaging guide. Open-source reference implementations:
+    <Card title="Create an Asset" icon="cube" href="/feature-reference/create-asset">
+      Prepare a URDF ZIP and create your asset from the dashboard.
+    </Card>
+  </Step>
+  <Step title="Write a driver">
+    Build a small Docker container that bridges your device's native interface to Cyberwave's MQTT layer. Scaffold it with the AI driver skill or the SDKs, then add the hardware-specific logic.
 
-| Driver     | Repository                                                                                                |
-| ---------- | --------------------------------------------------------------------------------------------------------- |
-| Camera     | [cyberwave-os/cyberwave-edge-camera-driver](https://github.com/cyberwave-os/cyberwave-edge-camera-driver) |
-| SO-101 arm | [cyberwave-os/cyberwave-edge-so101](https://github.com/cyberwave-os/cyberwave-edge-so101)                 |
+    <Card title="Writing Compatible Drivers" icon="code" href="/feature-reference/edge/drivers/writing-compatible-drivers">
+      Container contract, the `cw-driver.yml` interface manifest, MQTT catalog, and packaging.
+    </Card>
+  </Step>
+</Steps>
 
----
-
-## ROS and Industrial Protocols
-
-The driver architecture is protocol-agnostic. Cyberwave is fully compatible with **ROS 1** and **ROS 2**, and the same pattern bridges any other industrial protocol — VDA5050, OPC UA, Modbus, gRPC/REST, or raw serial — to MQTT.
-
-<Card
-  title="Custom Integrations"
-  icon="plug"
-  href="/hardware/other-hardware/custom-hardware"
->
-  ROS bridge patterns, VDA5050, OPC UA, Modbus, and reference repositories
+<Card title="Custom Integrations overview" icon="plug" href="/overview/connecting-hardware/custom-hardware">
+  The full walkthrough for bringing your own hardware, plus open-source reference drivers.
 </Card>
 
 ---
 
-## Browse the Catalog
+## What you can do once connected
+
+However you connect it, your hardware becomes a first-class digital twin with the full platform behind it.
+
+<CardGroup cols={2}>
+  <Card title="Workflows" icon="diagram-project" href="/overview/features/workflows">
+    Chain perception, models, and motion into repeatable automations, low-code or in Python.
+  </Card>
+  <Card title="Replay & recording" icon="clock-rotate-left" href="/overview/features/replay-and-historical-data">
+    Record episodes, scrub the timeline, and export datasets for training and review.
+  </Card>
+  <Card title="Teleoperation & remote takeover" icon="gamepad" href="/overview/features/teleoperation-and-remote-control">
+    Drive your hardware from anywhere and take over from an AI policy with one click.
+  </Card>
+  <Card title="Controllers & models" icon="brain" href="/overview/features/models-and-datasets">
+    Assign keyboard, teleop, or trained AI policies as the controller for your twin.
+  </Card>
+  <Card title="Simulation" icon="cubes" href="/overview/features/simulation">
+    Validate behavior against the digital twin before it ever touches real hardware.
+  </Card>
+  <Card title="Digital twin" icon="diagram-project" href="/overview/features/digital-twin">
+    A live, synced virtual mirror of your hardware that the whole platform builds on.
+  </Card>
+</CardGroup>
+
+---
+
+## Browse the catalog
 
 <Card
   title="Hardware Catalog"
   icon="grid-2"
   href="https://cyberwave.com/catalog"
 >
-  Browse all 80+ supported devices and add them to your environment
+  Browse all 80+ supported devices and add them to your environment.
 </Card>

@@ -18,23 +18,7 @@
             "pages": [
               "overview/index",
               "overview/hello-robot",
-              "overview/develop-remote-hardware",
-              "overview/robotic-arms",
-              "overview/robotic-dogs",
-              "overview/drones",
-              "overview/cameras"
-            ]
-          },
-          {
-            "group": "Features",
-            "pages": [
-              "overview/features/digital-twin",
-              "overview/features/environment",
-              "overview/features/simulation",
-              "overview/features/workflows",
-              "overview/features/teleoperation-and-remote-control",
-              "overview/features/replay-and-historical-data",
-              "overview/features/models-and-datasets"
+              "overview/develop-remote-hardware"
             ]
           },
           {
@@ -42,15 +26,26 @@
             "pages": [
               "overview/connecting-hardware/index",
               "overview/connecting-hardware/custom-hardware",
-              "hardware/so101",
-              "hardware/ur7",
-              "hardware/go2",
-              "hardware/spot",
-              "hardware/ugv-beast",
-              "hardware/dji-mini-3-pro",
-              "hardware/dji-mini-4-pro",
-              "hardware/openarm",
-              "hardware/standard-cam"
+              "overview/robotic-arms",
+              "overview/robotic-dogs",
+              "overview/drones",
+              "overview/cameras"
+            ]
+          },
+          {
+            "group": "Tutorials",
+            "pages": [
+              "tutorials/so101-teleop-dataset",
+              "tutorials/train-vla-cyberwave",
+              "tutorials/so101-natural-language-agent",
+              "tutorials/ugv-voice-controlled",
+              "tutorials/bring-your-own-hardware",
+              "tutorials/so101-voice-pick-and-place",
+              "tutorials/go2-digital-to-physical",
+              "tutorials/rover-ai-mission",
+              "tutorials/intrusion-detection",
+              "tutorials/edge-to-cloud-vlm",
+              "tutorials/dji-mini-3-site-sweep"
             ]
           },
           {
@@ -63,16 +58,15 @@
             ]
           },
           {
-            "group": "Tutorials",
+            "group": "Core Features",
             "pages": [
-              "tutorials/edge-to-cloud-vlm",
-              "tutorials/so101-natural-language-agent",
-              "tutorials/rover-ai-mission",
-              "tutorials/intrusion-detection",
-              "tutorials/go2-digital-to-physical",
-              "tutorials/so101-voice-pick-and-place",
-              "tutorials/ugv-voice-controlled",
-              "tutorials/so101-teleop-dataset"
+              "overview/features/digital-twin",
+              "overview/features/environment",
+              "overview/features/simulation",
+              "overview/features/workflows",
+              "overview/features/teleoperation-and-remote-control",
+              "overview/features/replay-and-historical-data",
+              "overview/features/models-and-datasets"
             ]
           },
           {
@@ -106,6 +100,7 @@
             "pages": [
               "feature-reference/setup-cyberwave",
               "feature-reference/catalog",
+              "feature-reference/create-asset",
               "feature-reference/digital-twins",
               {
                 "group": "Environment Editor",
@@ -748,60 +743,96 @@
       "destination": "/api-reference/autonomous-navigation-driver"
     },
     {
+      "source": "/hardware/so101",
+      "destination": "https://cyberwave.com/the-robot-studio/so101"
+    },
+    {
       "source": "/hardware/so101/get-started",
-      "destination": "/hardware/so101"
+      "destination": "https://cyberwave.com/the-robot-studio/so101"
+    },
+    {
+      "source": "/hardware/ur7",
+      "destination": "https://cyberwave.com/universal_robots/UR7"
     },
     {
       "source": "/hardware/universal-robot-7/get-started",
-      "destination": "/hardware/ur7"
+      "destination": "https://cyberwave.com/universal_robots/UR7"
     },
     {
       "source": "/hardware/UR7/get-started",
-      "destination": "/hardware/ur7"
+      "destination": "https://cyberwave.com/universal_robots/UR7"
     },
     {
-      "source": "/hardware/go2/get-started",
-      "destination": "/hardware/go2"
-    },
-    {
-      "source": "/hardware/boston-dynamics/get-started",
-      "destination": "/hardware/spot"
-    },
-    {
-      "source": "/hardware/dji-mini",
-      "destination": "/hardware/dji-mini-4-pro"
-    },
-    {
-      "source": "/hardware/dji-mini-3-pro/get-started",
-      "destination": "/hardware/dji-mini-3-pro"
-    },
-    {
-      "source": "/hardware/dji-mini-4-pro/get-started",
-      "destination": "/hardware/dji-mini-4-pro"
-    },
-    {
-      "source": "/hardware/camera/get-started",
-      "destination": "/hardware/standard-cam"
-    },
-    {
-      "source": "/hardware/camera",
-      "destination": "/hardware/standard-cam"
-    },
-    {
-      "source": "/hardware/standard-cam/get-started",
-      "destination": "/hardware/standard-cam"
-    },
-    {
-      "source": "/hardware/ugv/get-started",
-      "destination": "/hardware/ugv-beast"
-    },
-    {
-      "source": "/hardware/ugv",
-      "destination": "/hardware/ugv-beast"
+      "source": "/hardware/openarm",
+      "destination": "https://cyberwave.com/enactic/openarm"
     },
     {
       "source": "/hardware/openarm/get-started",
-      "destination": "/hardware/openarm"
+      "destination": "https://cyberwave.com/enactic/openarm"
+    },
+    {
+      "source": "/hardware/go2",
+      "destination": "https://cyberwave.com/unitree/go2"
+    },
+    {
+      "source": "/hardware/go2/get-started",
+      "destination": "https://cyberwave.com/unitree/go2"
+    },
+    {
+      "source": "/hardware/spot",
+      "destination": "https://cyberwave.com/boston-dynamics/spot"
+    },
+    {
+      "source": "/hardware/boston-dynamics/get-started",
+      "destination": "https://cyberwave.com/boston-dynamics/spot"
+    },
+    {
+      "source": "/hardware/ugv-beast",
+      "destination": "https://cyberwave.com/waveshare/ugv-beast"
+    },
+    {
+      "source": "/hardware/ugv",
+      "destination": "https://cyberwave.com/waveshare/ugv-beast"
+    },
+    {
+      "source": "/hardware/ugv/get-started",
+      "destination": "https://cyberwave.com/waveshare/ugv-beast"
+    },
+    {
+      "source": "/hardware/dji-mini-4-pro",
+      "destination": "https://cyberwave.com/dji/dji-mini-4-pro"
+    },
+    {
+      "source": "/hardware/dji-mini-4-pro/get-started",
+      "destination": "https://cyberwave.com/dji/dji-mini-4-pro"
+    },
+    {
+      "source": "/hardware/dji-mini",
+      "destination": "https://cyberwave.com/dji/dji-mini-4-pro"
+    },
+    {
+      "source": "/hardware/dji-mini-3-pro",
+      "destination": "https://cyberwave.com/dji/DJI-Mini-3-Pro"
+    },
+    {
+      "source": "/hardware/dji-mini-3-pro/get-started",
+      "destination": "https://cyberwave.com/dji/DJI-Mini-3-Pro"
+    },
+    {
+      "source": "/hardware/standard-cam",
+      "destination": "https://cyberwave.com/cyberwave/standard-cam"
+    },
+    {
+      "source": "/hardware/standard-cam/get-started",
+      "destination": "https://cyberwave.com/cyberwave/standard-cam"
+    },
+    {
+      "source": "/hardware/camera",
+      "destination": "https://cyberwave.com/cyberwave/standard-cam"
+    },
+    {
+      "source": "/hardware/camera/get-started",
+      "destination": "https://cyberwave.com/cyberwave/standard-cam"
     },
     {
       "source": "/hardware/microphone/get-started",

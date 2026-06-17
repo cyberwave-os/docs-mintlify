@@ -1,63 +1,115 @@
 ---
 title: "Custom Integrations"
 sidebarTitle: "Custom Integrations"
-description: "Integrate Cyberwave with ROS, VDA5050, and other robotics frameworks"
+description: "Bring your own hardware to Cyberwave. Create an asset, write a driver, and unlock every platform feature, typically in days instead of months."
 icon: "plug"
 ---
 
-{/* stub */}
+Cyberwave ships **80+ devices** in its [catalog](https://cyberwave.com/catalog), but it's built to connect **any** device with an API, serial interface, or network protocol. If your hardware isn't in the catalog (a custom robot, an in-house prototype, or a niche industrial machine), you can integrate it yourself in two steps.
 
-Cyberwave is designed to work alongside the tools and protocols your team already uses. Whether you run a ROS-based stack, operate AGVs over VDA5050, or use another industrial framework, you can integrate it with Cyberwave's digital twin infrastructure.
+<Info>
+  Teams typically bring a brand-new piece of hardware fully online with
+  Cyberwave in about **2 days**, versus the **months** a bespoke integration
+  usually takes, because the digital twin, transport, UI, workflows, and
+  data tooling already exist. You only supply the asset and the driver.
+</Info>
 
 ---
 
-## ROS Compatibility
+## Bring your own hardware
 
-Cyberwave is fully compatible with **ROS 1** and **ROS 2**. The open-source [cyberwave-os](https://github.com/cyberwave-os) GitHub organization provides dedicated SDKs and frameworks for bridging ROS topics with Cyberwave's MQTT-based digital twin layer.
+<Steps>
+  <Step title="Create an asset for your hardware">
+    Every twin starts from an **asset**, the 3D and kinematic definition of your
+    hardware (a URDF plus its meshes). Upload yours to create a custom asset,
+    which you can keep **private** to yourself, share with your **organization**,
+    or make **public** to everyone on the platform, depending on your needs.
 
-### Key Resources
+    <Card title="Create an Asset" icon="cube" href="/feature-reference/create-asset">
+      Step-by-step: prepare a URDF ZIP and create your asset from the dashboard.
+    </Card>
+
+    Need a reference to model yours on? Download a complete sample URDF (a DJI
+    Mini 4 Pro drone) showing link, joint, material, and mesh-reference structure:
+
+    <Card title="Sample URDF: dji-mini-4-pro.zip" icon="file-zipper" href="/assets/dji-mini-4-pro.zip">
+      One `base_link`, four propeller links, and four `continuous` joints in a single file.
+    </Card>
+  </Step>
+
+  <Step title="Write a driver for your hardware">
+    A **driver** is what makes your asset come alive. It's a small **Docker
+    container** that bridges your device's native interface (ROS, serial, REST,
+    gRPC, VDA5050, OPC UA, Modbus, or any other protocol) to Cyberwave's MQTT
+    layer. It publishes telemetry (joint states, odometry, camera frames, sensor
+    data) up to the twin and turns dashboard, SDK, and workflow commands into
+    actions on the device.
+
+    You don't have to start from scratch: scaffold a complete, production-ready
+    driver with the **AI driver skill** or one of the official **SDKs**, then
+    fill in the hardware-specific logic.
+
+    <Card title="Writing Compatible Drivers" icon="code" href="/feature-reference/edge/drivers/writing-compatible-drivers">
+      The full guide: container contract, the `cw-driver.yml` interface manifest,
+      MQTT catalog, environment variables, and packaging.
+    </Card>
+  </Step>
+
+  <Step title="Use every Cyberwave feature with it">
+    That's it. With an asset and a driver, your custom hardware behaves like any
+    catalog device, a first-class digital twin you can drive, record, automate,
+    and simulate. Everything below works out of the box, no extra integration
+    required.
+  </Step>
+</Steps>
+
+---
+
+## Everything you unlock
+
+Once your hardware is paired, it gets the full platform, the same capabilities every catalog device enjoys:
 
 <CardGroup cols={2}>
-  <Card title="Python Edge SDK" icon="python" href="https://github.com/cyberwave-os/cyberwave-edge-python">
-    Python SDK for connecting ROS nodes and edge devices to Cyberwave
+  <Card title="Workflows" icon="diagram-project" href="/overview/features/workflows">
+    Chain perception, models, and motion into repeatable automations, low-code or in Python.
   </Card>
-  <Card title="Edge Core" icon="server" href="https://github.com/cyberwave-os/cyberwave-edge-core">
-    The edge orchestrator that bridges ROS topics to Cyberwave MQTT
+  <Card title="Replay & recording" icon="clock-rotate-left" href="/overview/features/replay-and-historical-data">
+    Record episodes, scrub the timeline, and export datasets for training and review.
   </Card>
-  <Card title="Driver Skill" icon="wand-magic-sparkles" href="https://github.com/cyberwave-os/driver-skill">
-    AI-assisted scaffolding for new ROS-compatible Cyberwave drivers
+  <Card title="Teleoperation & remote takeover" icon="gamepad" href="/overview/features/teleoperation-and-remote-control">
+    Drive your hardware from anywhere and take over from an AI policy with one click.
   </Card>
-  <Card title="Python SDK" icon="code" href="https://github.com/cyberwave-os/cyberwave-python">
-    High-level Python SDK for the Cyberwave platform API
+  <Card title="Controllers & models" icon="brain" href="/overview/features/models-and-datasets">
+    Assign keyboard, teleop, or trained AI policies as the controller for your twin.
+  </Card>
+  <Card title="Simulation" icon="cubes" href="/overview/features/simulation">
+    Validate behavior against the digital twin before it ever touches real hardware.
+  </Card>
+  <Card title="Digital twin" icon="diagram-project" href="/overview/features/digital-twin">
+    A live, synced virtual mirror of your hardware that the whole platform builds on.
   </Card>
 </CardGroup>
 
-### How It Works
+---
 
-A typical ROS integration uses the **MQTT bridge** pattern: a lightweight node subscribes to ROS topics (joint states, odometry, camera feeds) and publishes them to Cyberwave's MQTT broker, where they are routed to the corresponding digital twin. Commands flow in the opposite direction — from the Cyberwave dashboard or API, through MQTT, and into ROS action servers or topic publishers.
+## Works with your existing stack
 
-See the [UR7e guide](/hardware/universal-robot-7/get-started) for a complete example of a ROS 2-based integration.
+Because integration happens at the **driver** layer, Cyberwave is protocol-agnostic and sits alongside the tools your team already uses. The same driver pattern bridges any of these to the digital twin:
+
+- **ROS 1 / ROS 2**: robot arms, mobile robots, and sensor stacks
+- **VDA5050**: AGV / AMR fleet communication
+- **OPC UA**: industrial automation and PLC connectivity
+- **Modbus TCP / RTU**: sensor and actuator networks
+- **gRPC / REST**: custom services and microservice architectures
+- **Serial / USB**: direct device control (servos, microcontrollers)
+
+Drivers run as Docker containers managed by [Edge Core](/feature-reference/edge/overview), on the edge device, on the robot, in the cloud, or on your laptop.
 
 ---
 
-## VDA5050 and Industrial Protocols
+## Open-source resources
 
-Cyberwave supports integration with **VDA5050**, the open standard for communication between AGVs/AMRs and fleet management systems. The same driver architecture used for ROS applies here: a Cyberwave driver container translates between the VDA5050 JSON protocol and Cyberwave's MQTT topics.
-
-This approach extends to other industrial protocols:
-
-- **VDA5050** — AGV/AMR fleet communication over MQTT
-- **OPC UA** — industrial automation and PLC connectivity
-- **Modbus TCP/RTU** — sensor and actuator networks
-- **gRPC / REST** — custom services and microservice architectures
-
-To connect hardware over any of these protocols, [write a compatible driver](/edge/drivers/writing-compatible-drivers) that bridges between the protocol and Cyberwave's MQTT interface. The driver runs as a Docker container managed by the [Edge Core](/edge/overview).
-
----
-
-## Open Source Resources
-
-All integration libraries and reference drivers are available under the [cyberwave-os](https://github.com/cyberwave-os) GitHub organization:
+All integration libraries and reference drivers live under the [cyberwave-os](https://github.com/cyberwave-os) GitHub organization:
 
 | Repository | Description |
 |---|---|
@@ -70,13 +122,13 @@ All integration libraries and reference drivers are available under the [cyberwa
 
 ---
 
-## Next Steps
+## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Writing Compatible Drivers" icon="code" href="/edge/drivers/writing-compatible-drivers">
-    Full guide on driver architecture, environment variables, and packaging
+  <Card title="Create an Asset" icon="cube" href="/feature-reference/create-asset">
+    Upload your URDF and create a custom asset, public or private.
   </Card>
-  <Card title="Hardware Overview" icon="puzzle-piece" href="/hardware">
-    Step-by-step guide for connecting any hardware to Cyberwave
+  <Card title="Writing Compatible Drivers" icon="code" href="/feature-reference/edge/drivers/writing-compatible-drivers">
+    Build the driver that connects your hardware to its twin.
   </Card>
 </CardGroup>

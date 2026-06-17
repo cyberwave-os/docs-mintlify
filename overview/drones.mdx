@@ -6,7 +6,7 @@ icon: "drone"
 
 import { EdgeSetup } from "/snippets/edge-setup.mdx";
 
-Cyberwave treats every drone the same: drop a digital twin into an [environment](/use-cyberwave/architecture/key-concepts#environments), pair the aircraft, and start sending commands from the dashboard, the [Python SDK](/tools/python-sdk), or an AI controller. The same workflow scales from the low-cost [DJI Mini 3 Pro](https://cyberwave.com/dji/DJI-Mini-3-Pro) and [DJI Mini 4 Pro](https://cyberwave.com/dji/DJI-Mini-4-Pro) up to research platforms like PX4 Vision — [browse the full lineup](https://cyberwave.com/catalog/tag/drone). Each catalog page bundles the **bill of materials**, supported drivers, and **troubleshooting** for that aircraft, so start there whenever you're unboxing new hardware.
+Cyberwave treats every drone the same: drop a digital twin into an [environment](/use-cyberwave/architecture/key-concepts#environments), pair the aircraft, and start sending commands from the dashboard, the [Python SDK](/tools/python-sdk), or an AI controller. The same workflow scales from the low-cost [DJI Mini 3 Pro](https://cyberwave.com/dji/DJI-Mini-3-Pro) and [DJI Mini 4 Pro](https://cyberwave.com/dji/DJI-Mini-4-Pro) up to research platforms like PX4 Vision; [browse the full lineup](https://cyberwave.com/catalog/tag/drone). Each catalog page bundles the **bill of materials**, supported drivers, and **troubleshooting** for that aircraft, so start there whenever you're unboxing new hardware.
 
 <iframe
   width="100%"
@@ -39,12 +39,12 @@ Cyberwave treats every drone the same: drop a digital twin into an [environment]
 
     - **DJI Mini family (Mini 3 / Mini 4 Pro).** Install the **Cyberwave Edge for DJI** Android app on the phone tethered to your **DJI RC**, then scan the **pairing QR** from the twin's **Live** tab. See the [DJI Mini 4 Pro catalog page](https://cyberwave.com/dji/DJI-Mini-4-Pro) for the full flow.
 
-    If you are unsure how the drone you picked may connect, check its dedicated page on the catalog — it details everything you need, plus troubleshooting and FAQs.
+    If you are unsure how the drone you picked may connect, check its dedicated page on the catalog: it details everything you need, plus troubleshooting and FAQs.
 
   </Step>
 
   <Step title="Stream sensors automatically">
-    Cyberwave already knows what's on your aircraft. As soon as pairing completes, the dashboard lights up with the **live video feed**, **gimbal attitude**, **GPS / pose**, and any other sensor the platform exposes — no per-sensor configuration required.
+    Cyberwave already knows what's on your aircraft. As soon as pairing completes, the dashboard lights up with the **live video feed**, **gimbal attitude**, **GPS / pose**, and any other sensor the platform exposes, with no per-sensor configuration required.
   </Step>
 </Steps>
 
@@ -57,7 +57,7 @@ Cyberwave treats every drone the same: drop a digital twin into an [environment]
 
 ## Control it from Python
 
-Once the twin is paired, the [Python SDK](/tools/python-sdk) gives you the same API for any drone in the catalog. Run this from your laptop or any cloud machine — Cyberwave handles the networking and orchestration end-to-end:
+Once the twin is paired, the [Python SDK](/tools/python-sdk) gives you the same API for any drone in the catalog. Run this from your laptop or any cloud machine; Cyberwave handles the networking and orchestration end-to-end:
 
 ```python
 from cyberwave import Cyberwave
@@ -73,13 +73,13 @@ frame = drone.capture_frame("numpy")             # latest frame from the gimbal 
 drone.land()
 ```
 
-Switching to a different drone is a **one-line change** — change `cw.twin(...)` to the new catalog slug and the rest of your automation stays exactly the same. A complete walkthrough — takeoff, locomotion, gimbal control, and the safety commands — lives in [`examples/drone_dji_mini.py`](https://github.com/cyberwave-os/cyberwave/tree/main/cyberwave-sdks/cyberwave-python/examples/drone_dji_mini.py).
+Switching to a different drone is a **one-line change**: change `cw.twin(...)` to the new catalog slug and the rest of your automation stays exactly the same. A complete walkthrough (takeoff, locomotion, gimbal control, and the safety commands) lives in [`examples/drone_dji_mini.py`](https://github.com/cyberwave-os/cyberwave/tree/main/cyberwave-sdks/cyberwave-python/examples/drone_dji_mini.py).
 
 <Info>
   On DJI aircraft, **discrete actions** (`takeoff`, `land`, `return_to_home`,
   `gimbal_rotate`, set home, compass calibration, reboot, emergency stop)
   ship out of the box. **Continuous-stick locomotion** (`move_forward`,
-  `strafe_*`, `turn_*`, `ascend`, `descend`) is **opt-in per twin** — set
+  `strafe_*`, `turn_*`, `ascend`, `descend`) is **opt-in per twin**: set
   `metadata.drivers.default.virtual_stick = true` to engage DJI MSDK v5's
   Virtual Stick API. The physical RC always wins: stick inputs reclaim
   authority immediately, targets decay to zero after 500 ms of silence, and
@@ -94,14 +94,14 @@ Switching to a different drone is a **one-line change** — change `cw.twin(...)
   The Mini 4 Pro (and the rest of the Mini / Mavic Mini line) ships with a
   **pitch-only mechanical gimbal**, so `gimbal_rotate(yaw=…)` is silently
   ignored by the hardware. To rotate the camera view on those aircraft, call
-  [`FlyingTwin.pan_camera(angle_deg=…)`](https://github.com/cyberwave-os/cyberwave/tree/main/cyberwave-sdks/cyberwave-python/cyberwave/twin.py) —
+  [`FlyingTwin.pan_camera(angle_deg=…)`](https://github.com/cyberwave-os/cyberwave/tree/main/cyberwave-sdks/cyberwave-python/cyberwave/twin.py):
   it yaws the airframe via the same Virtual Stick path used by `turn_left` /
   `turn_right` and explicitly zeros the axis when the target angle is
   reached. Same opt-in flag applies.
 </Info>
 
 <Info>
-  **Every refused command — and every silently-ignored one — shows up
+  **Every refused command (and every silently-ignored one) shows up
   in the alerts panel.** The DJI driver raises a [Cyberwave alert](/feature-reference/edge/drivers/alerts)
   the instant it refuses a command (missing `virtual_stick` opt-in,
   location permissions not granted, parked on a landing/RTH
@@ -109,14 +109,14 @@ Switching to a different drone is a **one-line change** — change `cw.twin(...)
   *and* watches commanded-vs-actual aircraft velocity to fire a
   `driver_aircraft_not_moving` warning when the FC silently caps a
   movement command. The alert *name* carries the primary suspect
-  computed from telemetry — `Aircraft not moving (GPS-denied: 0
+  computed from telemetry: `Aircraft not moving (GPS-denied: 0
   satellites)` for indoor flight, `Aircraft not moving (FC in ATTI
   mode)` for compass-interference, `Aircraft not moving (cause
-  unknown)` for restricted-zone / IMU heating / battery saver / wind
-  — so the root cause is obvious in the alerts list without
+  unknown)` for restricted-zone / IMU heating / battery saver / wind,
+  so the root cause is obvious in the alerts list without
   expanding the description. The metadata carries a stable
   `error_code` (e.g. `VIRTUAL_STICK_OPT_IN_MISSING`, `LOW_VOLTAGE`)
-  plus a remediation hint and — for the no-motion case — the
+  plus a remediation hint and (for the no-motion case) the
   current flight mode, GPS sat count, and the commanded vs observed
   velocity magnitudes. SDK-level failures additionally embed a
   deep-link to the troubleshooting docs for that aircraft. Keep the
@@ -127,7 +127,7 @@ Switching to a different drone is a **one-line change** — change `cw.twin(...)
 
 ## Add autonomy with waypoints
 
-Cyberwave ships with **autonomous navigation out of the box**. You don't have to write a planner — drop [waypoints](/use-cyberwave/environment-editor) on the environment map and trigger them from the dashboard, the SDK, or a workflow.
+Cyberwave ships with **autonomous navigation out of the box**. You don't have to write a planner; drop [waypoints](/use-cyberwave/environment-editor) on the environment map and trigger them from the dashboard, the SDK, or a workflow.
 
 <Steps>
   <Step title="Drop waypoints">
@@ -140,7 +140,7 @@ Cyberwave ships with **autonomous navigation out of the box**. You don't have to
     paired driver.
   </Step>
   <Step title="React on arrival">
-    Wire a [Workflow](/use-cyberwave/workflows) to fire on `waypoint reached` —
+    Wire a [Workflow](/use-cyberwave/workflows) to fire on `waypoint reached`:
     e.g. capture a frame, send it to a cloud VLM, and log the finding.
   </Step>
 </Steps>
@@ -153,14 +153,14 @@ Use [Workflows](/use-cyberwave/workflows) to turn waypoints into repeatable insp
 
 `waypoint reached → capture frame → send to a cloud VLM → log finding / raise alert`
 
-See the [edge-to-cloud VLM tutorial](/tutorials/edge-to-cloud-vlm) and the [rover AI mission tutorial](/tutorials/rover-ai-mission) for full walkthroughs of the same pattern on other platforms — the workflow contract is identical.
+See the [edge-to-cloud VLM tutorial](/tutorials/edge-to-cloud-vlm) and the [rover AI mission tutorial](/tutorials/rover-ai-mission) for full walkthroughs of the same pattern on other platforms; the workflow contract is identical.
 
-Because Cyberwave also speaks to [cameras](/get-started/cameras), [robotic dogs](/get-started/robotic-dogs), and [arms](/get-started/robotic-arms), you can mix and match hardware in the same workflow — for example, a fixed perimeter camera that **triggers** a drone patrol, or a drone that hands off to a quadruped once it lands at an inspection point.
+Because Cyberwave also speaks to [cameras](/get-started/cameras), [robotic dogs](/get-started/robotic-dogs), and [arms](/get-started/robotic-arms), you can mix and match hardware in the same workflow, for example a fixed perimeter camera that **triggers** a drone patrol, or a drone that hands off to a quadruped once it lands at an inspection point.
 
 <Info>
   Workflows can be authored **low-code** in the dashboard or directly in
   **Python**. Cyberwave decides whether each step runs on the edge device next
-  to the drone, in a [cloud node](/tools/cloud-node), or a mix of both — your
+  to the drone, in a [cloud node](/tools/cloud-node), or a mix of both; your
   automation and your hardware don't change.
 </Info>
 

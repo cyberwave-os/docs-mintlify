@@ -1,10 +1,9 @@
 ---
-title: "Zone-based intrusion detection"
+title: "Detect intruders in a zone"
 sidebarTitle: "Intrusion Detection"
 description: "Build a privacy-preserving, edge-only intrusion alert workflow: camera_frame → YOLO → anonymize → spatial_filter → timed_condition → send_alert."
 icon: "user-shield"
 iconType: "solid"
-tag: stub
 ---
 
 End-to-end recipe for a zone-based intrusion detection pipeline that
@@ -31,8 +30,8 @@ flowchart LR
 
 The `anonymize` node publishes the pixelated frame to the camera
 driver's [filtered frame channel](/edge/drivers/frame-filters) so the
-WebRTC stream the operator sees is privacy-preserving by construction
-— no raw video ever leaves the edge.
+WebRTC stream the operator sees is privacy-preserving by construction:
+no raw video ever leaves the edge.
 
 ## Prerequisites
 
@@ -119,11 +118,11 @@ alert payload) for legal de-identification.
 
 ## See also
 
-- [`spatial_filter`](/use-cyberwave/workflows/spatial-filter) — the
+- [`spatial_filter`](/use-cyberwave/workflows/spatial-filter): the
   polygon zone primitive.
-- [`timed_condition`](/use-cyberwave/workflows/timed-condition) — the
+- [`timed_condition`](/use-cyberwave/workflows/timed-condition): the
   dwell-then-cooldown gate.
-- [`anonymize`](/use-cyberwave/workflows/anonymize-image) — the
+- [`anonymize`](/use-cyberwave/workflows/anonymize-image): the
   pixelation node and its mode reference.
-- [Security Pipeline](/edge/drivers/security-pipeline) — multi-camera
+- [Security Pipeline](/edge/drivers/security-pipeline): multi-camera
   privacy-preserving WebRTC playbook.

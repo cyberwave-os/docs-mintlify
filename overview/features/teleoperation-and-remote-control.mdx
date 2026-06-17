@@ -1,10 +1,10 @@
 ---
 title: "Teleoperation & Remote Control"
-description: "Stay in the loop with your physical AI — watch every twin live, and take over any robot in one click"
+description: "Stay in the loop with your physical AI: watch every twin live, and take over any robot in one click"
 icon: "gamepad"
 ---
 
-Cyberwave is built for both research projects **and** the moment those projects ship to a real customer. Once a robot is doing real work in a real place, **human override is a requirement, not a feature** — and Cyberwave gives you that override out of the box for every twin in the [catalog](https://cyberwave.com/catalog), with no extra plumbing.
+Cyberwave is built for both research projects **and** the moment those projects ship to a real customer. Once a robot is doing real work in a real place, **human override is a requirement, not a feature**, and Cyberwave gives you that override out of the box for every twin in the [catalog](https://cyberwave.com/catalog), with no extra plumbing.
 
 ```python
 from cyberwave import Cyberwave
@@ -22,12 +22,12 @@ The robot was being driven by a model a second ago; now it's being driven by you
 
 ## See your fleet in real time
 
-Switch any [environment](/overview/features/environment) into **Live** mode and the dashboard becomes a window into the physical cell. You don't tab between half a dozen camera apps — Cyberwave composes the picture for you:
+Switch any [environment](/overview/features/environment) into **Live** mode and the dashboard becomes a window into the physical cell. You don't tab between half a dozen camera apps; Cyberwave composes the picture for you:
 
 - **Live video** from every paired camera, streamed via WebRTC into the same canvas as the 3D scene.
-- **3D twin context** — robot poses, joint states, and waypoints animate live alongside the video so you always know what's where.
-- **Spatial sensors** — [LiDAR and depth point clouds](/feature-reference/environment-editor/index#live-point-cloud-alignment) overlaid on the scene so you can see what the robot sees.
-- **Health at a glance** — per-twin [presence indicators](/feature-reference/environment-editor/index#twin-presence-indicator-live-mode) and edge-core status make it obvious which robot needs attention.
+- **3D twin context**: robot poses, joint states, and waypoints animate live alongside the video so you always know what's where.
+- **Spatial sensors**: [LiDAR and depth point clouds](/feature-reference/environment-editor/index#live-point-cloud-alignment) overlaid on the scene so you can see what the robot sees.
+- **Health at a glance**: per-twin [presence indicators](/feature-reference/environment-editor/index#twin-presence-indicator-live-mode) and edge-core status make it obvious which robot needs attention.
 
 See [Environment Editor → Live mode](/feature-reference/environment-editor/index#edge-core-connection-status-live-mode) for the full panel.
 
@@ -35,7 +35,7 @@ See [Environment Editor → Live mode](/feature-reference/environment-editor/ind
 
 ## Take over any robot in one click
 
-Every twin always has exactly one **controller** driving it. Swapping controllers is the entire takeover flow — there's no separate teleoperation app to launch.
+Every twin always has exactly one **controller** driving it. Swapping controllers is the entire takeover flow; there's no separate teleoperation app to launch.
 
 <CardGroup cols={2}>
   <Card title="Keyboard" icon="keyboard">
@@ -62,7 +62,7 @@ robot.use_controller("keyboard")          # human override
 robot.use_controller("my-vla-policy")     # hand it back to the AI
 ```
 
-Telemetry, recording, and the [environment replay](/feature-reference/environment-editor/replay) timeline keep running across the handoff — a single session can start with an AI policy, hand off to a human, and end with a code controller, all on the same twin.
+Telemetry, recording, and the [environment replay](/feature-reference/environment-editor/replay) timeline keep running across the handoff: a single session can start with an AI policy, hand off to a human, and end with a code controller, all on the same twin.
 
 Full reference: [Live Teleoperation](/feature-reference/environment-editor/teleoperation).
 
@@ -75,7 +75,7 @@ Real production deployments need more than "someone is watching the dashboard". 
 <CardGroup cols={2}>
   <Card title="Real-time alerts" icon="bell" href="/feature-reference/edge/drivers/alerts">
     Per-twin and per-environment alerts with `info`/`warning`/`error`/`critical`
-    severities, acknowledgement, and resolution lifecycle — surfaced in the UI
+    severities, acknowledgement, and resolution lifecycle, surfaced in the UI
     and over [MQTT](/api-reference/mqtt/main).
   </Card>
   <Card title="Workflow-driven escalation" icon="diagram-project" href="/overview/features/workflows">
@@ -94,7 +94,7 @@ Real production deployments need more than "someone is watching the dashboard". 
   </Card>
 </CardGroup>
 
-Together, this is how you take a physical AI automation from "cool demo" to "I can put it in front of a paying customer" — full real-time visibility, instant override, and a defined chain of who responds when something is off.
+Together, this is how you take a physical AI automation from "cool demo" to "I can put it in front of a paying customer": full real-time visibility, instant override, and a defined chain of who responds when something is off.
 
 ---
 
@@ -104,7 +104,7 @@ Together, this is how you take a physical AI automation from "cool demo" to "I c
   <Card title="Live Teleoperation reference" icon="gamepad" href="/feature-reference/environment-editor/teleoperation">
     Controller types, WebRTC streaming, latency, and the full setup flow.
   </Card>
-  <Card title="Go2 — digital to physical" icon="dog" href="/tutorials/go2-digital-to-physical">
+  <Card title="Go2: digital to physical" icon="dog" href="/tutorials/go2-digital-to-physical">
     End-to-end walkthrough of swapping a simulated policy for live override.
   </Card>
   <Card title="SO-101 teleop dataset" icon="record-vinyl" href="/tutorials/so101-teleop-dataset">

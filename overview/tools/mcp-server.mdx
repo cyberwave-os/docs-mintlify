@@ -72,7 +72,7 @@ The MCP server exposes environment, catalog, workflow, ML model, dataset, contro
 | `cw_get_twin` | Get a twin by UUID or session-resolved twin |
 | `cw_get_joint_states` | Get current joint states for a twin |
 | `cw_get_schema` | Get a twin's universal schema at a JSON Pointer path |
-| `cw_render_environment_preview` | Render a PNG snapshot of the environment — multimodal agents can visually inspect the 3D scene |
+| `cw_render_environment_preview` | Render a PNG snapshot of the environment (multimodal agents can visually inspect the 3D scene) |
 
 ### Vision
 
@@ -129,7 +129,7 @@ stub: Discover procedural primitive templates with `cw_search_catalog`. Results 
 | `cw_cancel_workflow_run` | Cancel an active workflow run |
 
 <Note>
-stub: `cw_list_node_schemas` is an **optional** discovery aid — the Workflow Agent already knows the full node catalog. Use it to confirm exact `(node_type, node_subtype)` identifiers, then pass them to `cw_create_workflow_from_prompt` via `node_hints` to bias the composed graph. Hints support a single fork to multiple alert/notify effects; they are advisory and unresolved hints come back as `dropped_node_hints`.
+stub: `cw_list_node_schemas` is an **optional** discovery aid; the Workflow Agent already knows the full node catalog. Use it to confirm exact `(node_type, node_subtype)` identifiers, then pass them to `cw_create_workflow_from_prompt` via `node_hints` to bias the composed graph. Hints support a single fork to multiple alert/notify effects; they are advisory and unresolved hints come back as `dropped_node_hints`.
 </Note>
 
 ### ML Models
@@ -138,7 +138,7 @@ stub: `cw_list_node_schemas` is an **optional** discovery aid — the Workflow A
 |---|---|
 | `cw_list_models` | List ML model catalog records visible to the user; optional `workspace_uuid` (client-side filter: that workspace plus `public` rows); optional `deployment` (`"cloud"`, `"edge"`, or `"hybrid"`) |
 | `cw_get_model` | Get full details for a single model record by UUID |
-| `cw_delete_model` | Delete a model catalog record — call with `execute=false` to preview, then `execute=true` to confirm |
+| `cw_delete_model` | Delete a model catalog record; call with `execute=false` to preview, then `execute=true` to confirm |
 
 ### Datasets
 
@@ -146,8 +146,8 @@ stub: `cw_list_node_schemas` is an **optional** discovery aid — the Workflow A
 |---|---|
 | `cw_list_datasets` | List datasets, optionally filtered by workspace |
 | `cw_get_dataset` | Get full dataset details including `processed_datasets` conversion status |
-| `cw_wait_until_ready` | Poll a dataset until ingestion reaches `completed` or `failed` — use after a HuggingFace import (async) |
-| `cw_download_dataset` | Request a download URL for a specific output format — triggers conversion if needed and returns `signed_url` when ready or `status: queued` when conversion is in flight |
+| `cw_wait_until_ready` | Poll a dataset until ingestion reaches `completed` or `failed`; use after a HuggingFace import (async) |
+| `cw_download_dataset` | Request a download URL for a specific output format; triggers conversion if needed and returns `signed_url` when ready or `status: queued` when conversion is in flight |
 | `cw_delete_dataset` | Soft-delete a dataset by UUID |
 
 ---
@@ -214,7 +214,7 @@ MCP resources provide read-only data URIs that agents can fetch directly without
 | `cyberwave://twin/{twin_uuid}/schema` | `application/json` | Twin universal schema (URDF-derived structure) |
 | `cyberwave://twin/{twin_uuid}/state` | `application/json` | Twin state plus current joint states |
 
-Resources are useful when agents need to read structured data without triggering tool calls — for example, fetching environment awareness before deciding which twins or workflows are relevant. Visual previews remain exposed through `cw_render_environment_preview` so clients opt into the larger Base64 PNG payload.
+Resources are useful when agents need to read structured data without triggering tool calls, for example, fetching environment awareness before deciding which twins or workflows are relevant. Visual previews remain exposed through `cw_render_environment_preview` so clients opt into the larger Base64 PNG payload.
 
 ---
 
@@ -474,7 +474,7 @@ Area images can be attached via a direct `image_url` (recommended for large imag
 | `cw_list_datasets` | `workspace_uuid?` |
 | `cw_get_dataset` | `dataset_uuid` (required) |
 | `cw_wait_until_ready` | `dataset_uuid` (required), `poll_interval?` (default 5 s), `timeout?` (default 1800 s) |
-| `cw_download_dataset` | `dataset_uuid` (required), `format` (required — e.g. `parquet`, `lerobot3`, `rlds`, `openvla`) |
+| `cw_download_dataset` | `dataset_uuid` (required), `format` (required, e.g. `parquet`, `lerobot3`, `rlds`, `openvla`) |
 | `cw_delete_dataset` | `dataset_uuid` (required) |
 
 `cw_download_dataset` mirrors the REST endpoint: returns `{ status: "ready", signed_url, expires_at }` on HTTP 200, or `{ status: "queued" | "processing", poll_url }` on HTTP 202 when conversion is running.

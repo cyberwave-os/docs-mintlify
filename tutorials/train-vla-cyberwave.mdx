@@ -1,11 +1,11 @@
 ---
-title: "Train a VLA Model with SO101"
-sidebarTitle: "Train VLA Model"
+title: "Train an AI model on the SO-101"
+sidebarTitle: "Train Your First AI Model"
 description: "Complete guide to setup robots, collect teleoperation data, train AI models, and deploy them on real hardware."
 icon: "robot"
 ---
 
-{/* stub — content pending human curation before publishing */}
+{/* stub: content pending human curation before publishing */}
 
 ## Overview
 
@@ -109,9 +109,9 @@ You can close calibration alerts without calibrating, but they will reappear whe
 
 **Calibration outcomes:**
 
-- **Success**: Calibration completes without alerts — proceed to teleoperation
-- **Poor quality**: Platform warns that calibration may be inaccurate — consider re-taking
-- **Failure**: Calibration fails with specific error messages — review errors and retry
+- **Success**: Calibration completes without alerts; proceed to teleoperation
+- **Poor quality**: Platform warns that calibration may be inaccurate; consider re-taking
+- **Failure**: Calibration fails with specific error messages; review errors and retry
 
 ![Calibration failure alert with retry button](/images/so101-calibration-failed.png)
 
@@ -248,7 +248,7 @@ You can scrub through the timeline to see:
 ![Replay mode detailed view](/images/so101-replay-mode-details.png)
 
 <Warning>
-**stub** — The platform doesn't currently highlight when specific controllers were active or which twin performed actions. Use hover tooltips and timeline markers to identify useful data segments.
+**stub**: The platform doesn't currently highlight when specific controllers were active or which twin performed actions. Use hover tooltips and timeline markers to identify useful data segments.
 </Warning>
 
 ### Create Episodes
@@ -265,7 +265,7 @@ You can scrub through the timeline to see:
 ![Creating episodes from recorded data](/images/so101-create-episodes.png)
 
 <Info>
-**stub** — Keyboard arrow navigation for timeline scrubbing is currently being improved to reduce mouse usage during episode creation.
+**stub**: Keyboard arrow navigation for timeline scrubbing is currently being improved to reduce mouse usage during episode creation.
 </Info>
 
 <Tip>
@@ -331,8 +331,8 @@ The wizard will ask you to match camera twins to specific roles:
 
 VLA models learn spatial understanding from camera viewpoints. Each camera role provides distinct information:
 
-- **Wrist cameras** see what the gripper sees — essential for fine manipulation (grasping, insertion, alignment)
-- **Overhead cameras** provide spatial context — object locations, workspace layout, navigation paths
+- **Wrist cameras** see what the gripper sees, essential for fine manipulation (grasping, insertion, alignment)
+- **Overhead cameras** provide spatial context: object locations, workspace layout, navigation paths
 
 **Why this matters:**
 
@@ -473,7 +473,7 @@ The model will:
 - Ensure the workspace is clear before executing
 - Keep emergency stop accessible
 - Monitor the first few executions closely
-- The robot will move autonomously — maintain safe distances
+- The robot will move autonomously, so maintain safe distances
 </Warning>
 
 <Info>
@@ -486,7 +486,7 @@ When controlled by VLA models or other controllers (anything except Local Teleop
 
 **Important limitations:**
 
-- Collision detection is not perfect — always supervise autonomous operations
+- Collision detection is not perfect, so always supervise autonomous operations
 - High-speed movements may not be stopped before minor contact occurs
 - The system protects against self-destruction and major damage, but cannot prevent all collisions
 - False positives may occur (robot stops unnecessarily during normal operation)
@@ -586,8 +586,8 @@ Share your results and get help from the Cyberwave community on [Discord](https:
 
 ## Related Resources
 
-- [SO101 Get Started Guide](/hardware/so101/get-started) — Initial setup and hardware configuration
-- [Deploy ML Models](/use-cyberwave/ml-models/deploy) — Advanced deployment options
-- [Controller Policies](/get-started/key-concepts#controller-policies) — Understanding controller types
-- [Dataset Management](/feature-reference/datasets/import) — Advanced dataset creation techniques
+- [SO101 Get Started Guide](/hardware/so101/get-started): Initial setup and hardware configuration
+- [Deploy ML Models](/use-cyberwave/ml-models/deploy): Advanced deployment options
+- [Controller Policies](/get-started/key-concepts#controller-policies): Understanding controller types
+- [Dataset Management](/feature-reference/datasets/import): Advanced dataset creation techniques
 

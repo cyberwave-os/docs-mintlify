@@ -1,11 +1,11 @@
 ---
-title: "From zero to teleop with the SO-101"
-sidebarTitle: "From zero to teleop (SO-101)"
+title: "Get started with the SO-101 arm"
+sidebarTitle: "SO-101 Quickstart"
 description: "A friendly walkthrough: unbox an SO-101, pair it, teleop it, record a dataset, and train your first model."
 icon: "microchip"
 ---
 
-So you've got a fresh pair of SO-101 arms on your desk and you want to actually do something with them. Good — that's exactly what this tutorial is for. By the end you'll have:
+So you've got a fresh pair of SO-101 arms on your desk and you want to actually do something with them. Good, that's exactly what this tutorial is for. By the end you'll have:
 
 - The SO-101 mirrored as a digital twin in Cyberwave, with a camera docked to its wrist
 - A live teleoperation session running between the leader and follower arms
@@ -20,8 +20,8 @@ It's the full loop. Let's go.
 
 <Tabs>
   <Tab title="Hardware">
-    - An SO-101 robot arm set (the leader **and** the follower) — *[ping us](mailto:info@cyberwave.com) if you don't have one yet*
-    - A USB or IP camera — anything with a halfway-decent feed will do
+    - An SO-101 robot arm set (the leader **and** the follower). *[ping us](mailto:info@cyberwave.com) if you don't have one yet*
+    - A USB or IP camera (anything with a halfway-decent feed will do)
     - A computer to run the edge on. A laptop works, a Raspberry Pi works, a Jetson works
     - The USB cables for both arms and the camera
 
@@ -34,13 +34,13 @@ It's the full loop. Let's go.
 
   <Tab title="Cyberwave account">
     - A Cyberwave account ([request access here](https://cyberwave.com/request-early-access) if you don't have one)
-    - You'll log in from the CLI in a moment — no need to grab an API key by hand
+    - You'll log in from the CLI in a moment, no need to grab an API key by hand
   </Tab>
 </Tabs>
 
 ---
 
-## Step 1 — Build the digital twin
+## Step 1: Build the digital twin
 
 Before we touch any hardware, let's mock up the setup inside Cyberwave. The idea is to recreate your real-world scene as a digital twin so the platform knows what's connected to what.
 
@@ -48,7 +48,7 @@ Head to the [Cyberwave dashboard](https://cyberwave.com/dashboard) and click **N
 
 An [environment](/feature-reference/architecture/key-concepts#environments) is just a 3D space that mirrors the physical setup. Twins, sensors, and controllers all live inside it.
 
-**Drop in the SO-101.** Inside the new environment, click **Add from Catalog** in the left panel, search for `SO-101`, and add it. Position it so it roughly matches where the real arm sits on your desk — it doesn't have to be pixel perfect, just close.
+**Drop in the SO-101.** Inside the new environment, click **Add from Catalog** in the left panel, search for `SO-101`, and add it. Position it so it roughly matches where the real arm sits on your desk; it doesn't have to be pixel perfect, just close.
 
 **Drop in the camera.** Click **Add from Catalog** again and search for `Standard Camera`. Add it to the environment.
 
@@ -64,14 +64,14 @@ The camera should now show up nested under the SO-101 in the hierarchy.
 
 <Info>
   Docking the camera to the wrist means it physically follows the gripper.
-  That's exactly what you want for manipulation tasks — the model gets to see
+  That's exactly what you want for manipulation tasks: the model gets to see
   what the gripper sees, and the same view stays consistent at training and
   inference time.
 </Info>
 
 ---
 
-## Step 2 — Pair the hardware
+## Step 2: Pair the hardware
 
 Now the fun part: connecting your real arms and camera so they show up as live twins inside the environment you just built.
 
@@ -101,7 +101,7 @@ That single command does a _lot_:
 - Asks which environment to pair to (pick the one you just created)
 - Detects the connected USB devices
 - Installs the right driver for the SO-101 and for the camera
-- Bridges everything that needs bridging — including USB and camera passthrough on macOS, automatically. You don't need to set anything up by hand
+- Bridges everything that needs bridging, including USB and camera passthrough on macOS, automatically. You don't need to set anything up by hand
 - Links the physical hardware to the matching digital twins
 
 Just follow the prompts. When it asks you to pick a twin, choose the SO-101 you added in Step 1. When it asks about the camera, pick the Standard Camera. That's it.
@@ -109,21 +109,21 @@ Just follow the prompts. When it asks you to pick a twin, choose the SO-101 you 
 <Check>
   When pairing finishes you should see your SO-101 and camera show up as
   **online** in the dashboard, with a green presence indicator. If they don't,
-  re-run `sudo cyberwave pair` — it's safe to run as many times as you need.
+  re-run `sudo cyberwave pair`. It's safe to run as many times as you need.
 </Check>
 
 ---
 
-## Step 3 — Calibrate (it's automatic)
+## Step 3: Calibrate (it's automatic)
 
 Calibration teaches the platform where each joint's zero position is and what its valid range looks like. Without it, commands won't translate cleanly to physical motion.
 
-The good news: **the Edge Core handles this for you.** The first time you connect, the dashboard will walk you through it on-screen — no terminal commands, no fiddling with serial ports.
+The good news: **the Edge Core handles this for you.** The first time you connect, the dashboard will walk you through it on-screen, no terminal commands, no fiddling with serial ports.
 
 Open your environment, click on the SO-101 twin, and you'll see a **Calibrate** prompt for both the leader and the follower. Hit it, follow the on-screen instructions, and physically move each joint through its range when prompted. Do the leader, then the follower. That's the whole thing.
 
 <Tip>
-  Take it slow on the first calibration — move each joint smoothly through its
+  Take it slow on the first calibration, moving each joint smoothly through its
   full range. Better calibration up front means smoother teleop and cleaner
   training data later.
 </Tip>
@@ -136,9 +136,9 @@ Open your environment, click on the SO-101 twin, and you'll see a **Calibrate** 
 
 ---
 
-## Step 4 — Start teleoperating
+## Step 4: Start teleoperating
 
-This is the moment where it stops being a setup tutorial and starts being a robot. With teleop, moving the leader arm makes the follower mirror you in real time — and the digital twin records every joint state as you go.
+This is the moment where it stops being a setup tutorial and starts being a robot. With teleop, moving the leader arm makes the follower mirror you in real time, and the digital twin records every joint state as you go.
 
 In the dashboard:
 
@@ -146,7 +146,7 @@ In the dashboard:
 2. Click **Assign Controller** on the SO-101 twin
 3. Pick **Local Teleop**
 
-That's it. Pick up the leader and gently move it — the follower should track it instantly.
+That's it. Pick up the leader and gently move it; the follower should track it instantly.
 
 <Check>
   Teleop is live. Wave the leader around, watch the follower copy you, and watch
@@ -157,20 +157,20 @@ That's it. Pick up the leader and gently move it — the follower should track i
   **Why Local Teleop and not Keyboard?** Local Teleop captures high-frequency
   joint data as you physically move the leader, which gives you smooth,
   consistent demonstrations. Keyboard works, but the data is lower-frequency and
-  jerkier — fine for poking around, not great for training.
+  jerkier, fine for poking around, not great for training.
 </Info>
 
 ### A few things you might notice
 
 - When you **detach** a controller, the follower drifts back into a safe **sit pose** before disconnecting. Always leave clearance around the arm.
 - If you assign a **non-teleop controller** (Keyboard, a VLA model, etc.), the follower first moves to a **zero pose** when the controller comes online, _then_ starts taking commands.
-- For non-teleop controllers, **collision detection is on by default**. You'll see alerts in the dashboard if something looks like it's about to clash — heed them before the arm moves.
+- For non-teleop controllers, **collision detection is on by default**. You'll see alerts in the dashboard if something looks like it's about to clash; heed them before the arm moves.
 
 ---
 
-## Step 5 — Record a dataset
+## Step 5: Record a dataset
 
-Now that teleop is solid, let's capture some demonstrations. A **dataset** is a bunch of **episodes** — individual recordings of the robot completing a task. Each episode captures joint trajectories _and_ the camera feed in lockstep.
+Now that teleop is solid, let's capture some demonstrations. A **dataset** is a bunch of **episodes**, individual recordings of the robot completing a task. Each episode captures joint trajectories _and_ the camera feed in lockstep.
 
 <Info>
   Always record datasets while running **Local Teleop** rather than a remote
@@ -191,7 +191,7 @@ Now do the task. For example, if you're teaching pick-and-place:
 2. Move the leader to bring the follower over the object
 3. Close the gripper, lift, move to the box, drop
 4. Return to a neutral start pose
-5. Repeat — aim for around 30 demos with slight variation
+5. Repeat, aiming for around 30 demos with slight variation
 
 <Tip>
   Vary things deliberately: slightly different speeds, slightly different start
@@ -205,7 +205,7 @@ When you've got enough takes, detach the **Local Teleop** controller. The sessio
 ### Trim the recording into episodes
 
 1. Open the recorded session in your environment
-2. Scrub through the timeline — you'll see the video, joint trace, and any other telemetry
+2. Scrub through the timeline; you'll see the video, joint trace, and any other telemetry
 3. Use the trim tool to mark the start and end of each clean demo
 4. Drop any failed attempts or pauses
 5. Optionally label episodes so you can find them later
@@ -228,26 +228,26 @@ You can find everything you've made under **Manage Datasets**, and you can expor
 
 ---
 
-## Step 6 — Train a model
+## Step 6: Train a model
 
 Cyberwave can train a model directly from the dashboard. Head to the training page and pick:
 
-- **Workspace** — your workspace
-- **ML model** — the architecture you want to train (e.g. SmolVLA)
-- **Dataset** — the one you just created
+- **Workspace**: your workspace
+- **ML model**: the architecture you want to train (e.g. SmolVLA)
+- **Dataset**: the one you just created
 
 Then crack open **Advanced Settings** if you want to tune:
 
-**Data augmentation** — slider from 0 to 2:
+**Data augmentation** (slider from 0 to 2):
 
-- `0` — none
-- `1` — low (a good default)
-- `2` — medium, for tougher generalization
+- `0`: none
+- `1`: low (a good default)
+- `2`: medium, for tougher generalization
 
 **Stop policy:**
 
-- _Save best model until iterations_ — keeps training up to N iterations and saves the best checkpoint. Good for first attempts.
-- _Stop when validation loss is under threshold_ — bails out early when things look good. Faster, but can stop short.
+- _Save best model until iterations_: keeps training up to N iterations and saves the best checkpoint. Good for first attempts.
+- _Stop when validation loss is under threshold_: bails out early when things look good. Faster, but can stop short.
 
 <Tip>
   If you're not sure, just leave the defaults: "Save best model until 5000
@@ -257,13 +257,13 @@ Then crack open **Advanced Settings** if you want to tune:
 Click **Start Training** and let it run.
 
 <Info>
-  Training is fully cloud-based — no edge involvement. You can close your laptop
+  Training is fully cloud-based, with no edge involvement. You can close your laptop
   and check on it later.
 </Info>
 
 ---
 
-## Step 7 — Deploy and run the model
+## Step 7: Deploy and run the model
 
 Once training finishes:
 
@@ -281,7 +281,7 @@ Now use it as a controller policy:
 4. Click **Save Configuration**
 5. Switch to **Live Mode**
 
-If you trained a VLA or natural-language model, you'll see a prompt input at the top. Type the task — _"pick up the cube and place it in the box"_ — and the model will drive the real SO-101.
+If you trained a VLA or natural-language model, you'll see a prompt input at the top. Type the task (_"pick up the cube and place it in the box"_) and the model will drive the real SO-101.
 
 <Warning>
   Clear the workspace and stand back before you hit run on autonomous policies.
@@ -296,23 +296,23 @@ If you trained a VLA or natural-language model, you'll see a prompt input at the
 
 ---
 
-## Bonus — remote operation without a leader arm
+## Bonus: remote operation without a leader arm
 
-You don't always need a leader arm. **Remote operation** means assigning any non-teleop controller — keyboard, gamepad, scripted sequence, VLA — to the follower and driving it from afar.
+You don't always need a leader arm. **Remote operation** means assigning any non-teleop controller (keyboard, gamepad, scripted sequence, VLA) to the follower and driving it from afar.
 
 1. Open your environment
 2. Click **Assign Controller** on the SO-101 twin
 3. Pick one of:
-   - **Keyboard** — drive individual joints from your keyboard
-   - **VLA model** — let a vision-language-action model take over
-   - **Custom controller** — anything you've registered in the platform
+   - **Keyboard**: drive individual joints from your keyboard
+   - **VLA model**: let a vision-language-action model take over
+   - **Custom controller**: anything you've registered in the platform
 
 Same pattern, no leader required.
 
 <Info>
   Heads-up: the moment you assign a non-teleop controller, the follower moves to
   a **zero pose** before it starts taking commands. And collision detection runs
-  by default — expect alerts if anything looks tight.
+  by default, so expect alerts if anything looks tight.
 </Info>
 
 ---
