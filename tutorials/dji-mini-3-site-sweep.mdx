@@ -172,7 +172,7 @@ From the **Node Library → Actions**, add a **Call Models** node.
 
 **Configuration:**
 - **Connection:** wire the **Data Source** node into this node.
-- **Select Model:** a VLM model.
+- **Select Model:** a vision-capable model such as **Claude Sonnet 4.5**. The task is open-ended scene understanding ("does anything look left out?"), so reach for a VLM rather than a fixed-class detector like YOLO.
 - **Image URL [Reference Node]:** map the `Image URL` output from the **Data Source** node.
 - **Prompt [Fixed Value]:** paste this strict, boolean-only prompt and edit the item list for your site:
 
