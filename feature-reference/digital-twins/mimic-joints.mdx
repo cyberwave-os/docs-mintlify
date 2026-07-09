@@ -1,0 +1,139 @@
+---
+title: "Mimic joints and keyboard teleop"
+description: "How coupled gripper joints are declared in URDF, grouped in keyboard controllers, and sent over MQTT in live mode"
+---
+
+<Warning>
+  **STUB:** Concise reference for developers and operators. Will be expanded with UI screenshots and per-robot examples.
+</Warning>
+
+Many grippers use a **driver** finger joint and one or more **mimic** (slave) joints coupled in URDF. Cyberwave uses that metadata to assign one keyboard key pair to the whole gripper instead of separate keys per finger.
+
+---
+
+## URDF and schema
+
+On the slave joint in URDF:
+
+```xml
+<mimic joint="joint7" multiplier="-1" offset="0"/>
+```
+
+| Attribute | Default if omitted |
+|-----------|-------------------|
+| `multiplier` | `1` |
+| `offset` | `0` |
+
+Kinematic law: `slave_position = multiplier × driver_position + offset`.
+
+The same object is stored on the asset `universal_schema` joint row:
+
+```json
+{
+  "name": "joint8",
+  "type": "prismatic",
+  "mimic": { "joint": "joint7", "multiplier": -1, "offset": 0 }
+}
+```
+
+Coupling defined only in simulation (for example MuJoCo equality constraints) without a URDF `<mimic>` tag is **not** enough for auto-generated keyboard layouts — add `<mimic>` to the URDF (or a `{name}-mimic-joint.urdf` patch) and rebuild the asset schema.
+
+### Is `multiplier: -1` always correct?
+
+**No.** Opposing parallel prismatic fingers (common on arms like PiPER) usually use **`-1`**. Other mechanisms may use **`+1`**. Prefer the vendor URDF; when tags are missing, Cyberwave can infer mimic pairs from kinematics (opposing axes, complementary limits) and only patch the URDF when confidence is high.
+
+---
+
+## Keyboard controller bindings
+
+Auto-generated joint controllers:
+
+- Assign **one key pair** to the driver joint only.
+- List mimic slaves in **`mimicJoints`** on each increase/decrease binding (names only — not multiplier/offset).
+
+```json
+{
+  "key": "E",
+  "direction": "increase",
+  "jointName": "joint7",
+  "mimicJoints": ["joint8"]
+}
+```
+
+Regenerate after schema changes:
+
+```bash
+cd cyberwave-backend
+
+# Regenerate all autogen rows in seed_controllers.py (local Postgres)
+docker compose -f local-with-services.yml exec django \
+  python manage.py seed_controllers --autogen-controllers
+
+# Push to local environment
+docker compose -f local-with-services.yml exec django \
+  python manage.py seed_controllers --env local --update --token "$CYBERWAVE_API_KEY"
+```
+
+Single asset (PiPER + mimic inference): add `--registry-id agile-x-robotics/piper` and
+`--infer-mimic-from-urdf` to the autogen command. Full details:
+`cyberwave-backend/docs/seed-controllers-autogen.md`.
+
+---
+
+## What teleop does (and does not do)
+
+When you press a driver key:
+
+- If URDF/schema mimic or **complementary joint limits** imply coupling (PiPER `joint7`/`joint8` → `-1`), the slave target is **`multiplier × driver + offset`** — the gripper opens and closes symmetrically.
+- Otherwise teleop applies the same position step to driver and slaves.
+- In **live mode**, only the **driver** needs edge feedback once; mimic slaves in `mimicJoints` are still commanded.
+- **Closed start (`joint7 = 0`):** **R** does nothing (already at lower limit); **E** opens, **R** closes.
+
+Mimic slaves are hidden from joint sliders and the binding editor when the twin joints API reports `mimic` on that joint.
+
+---
+
+## Live mode MQTT
+
+Topic: `cyberwave/joint/{twin_uuid}/update` with `source_type: "tele"`.
+
+Policies with `multiple_joints_update: true` (typical for multi-DOF arms) send **one aggregated message** per update:
+
+```json
+{
+  "source_type": "tele",
+  "positions": {
+    "joint7": 0.02,
+    "joint8": 0.0
+  },
+  "velocities": { "joint7": 0.0, "joint8": 0.0 },
+  "efforts": { "joint7": 0.0, "joint8": 0.0 },
+  "timestamp": 1718198400.0
+}
+```
+
+- **Mimic slaves must appear as explicit entries in `positions`** — there is no `mimicJoints` field on MQTT.
+- Edge drivers apply **each joint goal independently**; they do not infer mimic coupling from the driver alone.
+
+### Physical robots
+
+| What MQTT sends | What usually happens |
+|-----------------|----------------------|
+| Both joints with **consistent** coupled values | Dual-actuated grippers track both goals; symmetric close/open. |
+| Both joints but **inconsistent** with URDF mimic (e.g. same sign when `-1` expected) | May fight, skew, or ignore the slave goal depending on firmware / MoveIt setup. Keep correct `<mimic multiplier>` on the asset. |
+| **Driver only** | Slave moves only if hardware couples internally; Cyberwave teleop with `mimicJoints` is meant to send **both** names. |
+
+If your gripper has a **single actuator** and a passive mimic finger, the edge driver may map only the driver joint and safely ignore the slave MQTT entry — document that in the driver config.
+
+---
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Live teleoperation" icon="gamepad" href="/feature-reference/environment-editor/teleoperation">
+    Control physical robots through the environment editor
+  </Card>
+  <Card title="Digital twins overview" icon="clone" href="/feature-reference/digital-twins/overview">
+    Capabilities, pairing, and twin concepts
+  </Card>
+</CardGroup>

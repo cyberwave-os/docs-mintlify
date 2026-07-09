@@ -1,0 +1,82 @@
+---
+title: "Credits & Billing"
+description: "Purchase credits and manage your account balance"
+---
+
+## Purchasing Credits
+
+You can purchase credits directly from your organization's billing page to top up your account balance.
+
+### Credit Top-up
+
+1. Navigate to **Organization Settings** → **Billing**
+2. Scroll to the **"Top Up Credits"** section
+3. Enter the desired amount
+4. Enter your credit card details using the secure payment form
+5. Click **"Top Up Credits"** to complete the purchase
+
+Your credits will be added to your account balance immediately after payment confirmation.
+
+### Downloading Invoices
+
+<Note>stub</Note>
+
+Each credit top-up paid by card generates a Stripe invoice. In **Organization Settings** → **Billing** → **Recent Transactions**, top-up rows show a download icon — click it to open the PDF invoice in a new tab. Only organization admins can download invoices.
+
+### Payment Methods
+
+You can save multiple credit cards in your billing area:
+
+1. Go to **Organization Settings** → **Billing** → **Payment Methods**
+2. Your saved cards are listed with the last 4 digits
+3. Click the trash icon to remove a card
+
+## Redeeming Coupons
+
+To redeem a promotional coupon code for free credits:
+
+1. Navigate to **Organization Settings** → **Billing**
+2. Scroll to the **"Redeem Coupon"** section
+3. Enter your coupon code
+4. Click **"Redeem Coupon"**
+
+Each coupon code can only be redeemed once per organization. The credits will be instantly added to your balance.
+
+## Credit Balance
+
+Your current credit balance is displayed at the top of the Billing tab. You can also view your full credit ledger to see all transactions and usage history.
+
+### Low Balance Warning
+
+If credit enforcement is enabled and your balance drops below the warning threshold:
+- You'll see an amber warning at the top of the Usage page
+- A **"Top up credits"** link appears in the warning message
+- Clicking the link takes you directly to the top-up form
+
+### Credit Status
+
+Credit statuses indicate enforcement state:
+
+- **Active**: Billing operations proceed normally
+- **Warning**: Balance is low (below warning threshold)
+- **Blocked**: Balance is exhausted, billable actions are halted
+
+<Note>stub</Note>
+
+An organization can also be **force-blocked** by Cyberwave staff regardless of its balance or whether credit enforcement is enabled. A force-block stays in effect until staff lift it. Contact support if your organization is blocked unexpectedly.
+
+### Blocked Services Alert
+
+<Note>stub</Note>
+
+The first time you open the app in a session while your organization is blocked (or credits are running low), an alert lists which services are paused — AI agents, workflow execution, ML model inference, and asset operations — with a link to billing. The alert appears once per session.
+
+## Pricing
+
+Credit pricing varies by operation type:
+
+- **Platform Events**: Billed based on active rate card (events, workflow runs, node executions, alerts)
+- **AI Usage**: based on provider-reported cost
+- **Storage**: Billed per GB-month at active storage rate
+
+View the Usage page in your organization settings to see current rates and historical charges.

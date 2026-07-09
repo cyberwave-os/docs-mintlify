@@ -1,0 +1,21 @@
+---
+title: "OpenArm"
+description: "Redirect stub to the OpenArm catalog page."
+canonical: "https://cyberwave.com/enactic/catalog/openarm"
+---
+
+import { useEffect } from "react";
+
+export default function OpenArmRedirectPage() {
+  useEffect(() => {
+    window.location.replace("https://cyberwave.com/enactic/catalog/openarm");
+  }, []);
+
+  return (
+    <>
+      # Redirecting to OpenArm
+
+      If you are not redirected automatically, [open the OpenArm catalog page](https://cyberwave.com/enactic/catalog/openarm).
+    </>
+  );
+}

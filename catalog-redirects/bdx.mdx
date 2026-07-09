@@ -1,0 +1,21 @@
+---
+title: "Disney BDX"
+description: "Redirect stub to the Disney BDX catalog page."
+canonical: "https://cyberwave.com/disney/catalog/bdx"
+---
+
+import { useEffect } from "react";
+
+export default function DisneyBDXRedirectPage() {
+  useEffect(() => {
+    window.location.replace("https://cyberwave.com/disney/catalog/bdx");
+  }, []);
+
+  return (
+    <>
+      # Redirecting to Disney BDX
+
+      If you are not redirected automatically, [open the Disney BDX catalog page](https://cyberwave.com/disney/catalog/bdx).
+    </>
+  );
+}

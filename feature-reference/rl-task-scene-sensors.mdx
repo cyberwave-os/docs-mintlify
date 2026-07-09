@@ -1,0 +1,60 @@
+---
+title: "RL Task Scene Sensors"
+description: "Configure cameras, depth cameras, and contact sensors on RL task scene entities"
+icon: "camera"
+---
+
+> stub: The RL Composer's **Sensors** subsection lets you opt schema-defined cameras into the mjlab `SceneCfg.sensors` tuple and author MuJoCo contact sensors. Each entry lives on a single `RLTaskSceneEntity` row and is persisted as a JSON object on the entity's `sensors` field. The backend aggregates every entity's `sensors` list when it regenerates `scene_cfg.py`, so a contact sensor on the `robot` entity referencing the `cube` entity ends up as one `ContactSensorCfg` in the SceneCfg with both `ContactMatch` blocks pointed at the right entities.
+
+## Supported sensor types
+
+> stub:
+> - **Camera** (RGB / depth) — schema-derived. One UI card per *physical* device, even when the schema lists separate `color_camera` + `depth_camera` entries: Cyberwave groups them by the stripped parent-link key so a single Orbbec Gemini surfaces one logical entry with `RGB` and `Depth` toggles. The composer reads `Twin.universal_schema.sensors` for the host twin *and* every twin docked to it.
+> - **Contact** — user-authored. Each row maps directly to one `mjlab.sensor.ContactSensorCfg(primary=ContactMatch(...), secondary=ContactMatch(...) | None, ...)`. The primary side defaults to the host entity; the secondary side picks any sibling RL task scene entity by name (or stays empty for an "any-contact" detector).
+
+## Persisted JSON shape
+
+> stub: The `RLTaskSceneEntity.sensors` field stores one of two row shapes.
+>
+> Camera (one row per logical device):
+>
+> ```json
+> {
+>   "type": "camera",
+>   "name": "wrist_cam",
+>   "source_twin_uuid": "abc-…",
+>   "schema_sensor_names": ["color_camera", "depth_camera"],
+>   "data_types": ["rgb", "depth"],
+>   "bind_mjcf_camera": "depth_camera",
+>   "width": 640,
+>   "height": 480,
+>   "fovy": 65.0
+> }
+> ```
+>
+> Contact:
+>
+> ```json
+> {
+>   "type": "contact",
+>   "name": "left_finger_cube",
+>   "primary": { "mode": "subtree", "pattern": "openarm_left_finger1", "exclude": [] },
+>   "secondary": { "entity": "cube", "mode": "subtree", "pattern": "cube" },
+>   "fields": ["found", "force"],
+>   "reduce": "maxforce",
+>   "num_slots": 1,
+>   "history_length": 0
+> }
+> ```
+
+## Codegen mapping
+
+> stub: `scene_codegen.py` walks every entity's `sensors` list and emits one `ContactSensorCfg` per contact-sensor row into `SceneCfg.sensors=(...)`. Camera sensors are **not** emitted as `CameraSensorCfg` entries in `SceneCfg.sensors`; instead, the packager preserves camera metadata (MJCF camera name, width, height, data_types) in `scene_bindings.CAMERA_SENSORS`. At runtime, `env_cfg.py` wires each camera observation term via `standard_camera_resolver(camera_sensors=bindings.CAMERA_SENSORS, ...)` from `task_export.standard_resolvers`, which routes depth terms to `mdp.observations.DepthCameraObservationCfg` and RGB terms to `mdp.observations.ColorCameraObservationCfg`. The merged MJCF prefixes every camera body with `<entity>/<source_twin_hex>__<bind_mjcf_camera>`, so a camera bound to a docked twin stays addressable inside the host entity's subtree. When no entity carries any sensor the codegen falls back to the no-op default `sensors=()` and drops the `mjlab.sensor` import.
+
+## Docked-twin caveat (contact subtrees)
+
+> stub: When a host twin has docked twins (e.g. a wrist camera attached to a robot arm), the merged MJCF prefixes every docked body with `<source_twin_hex>__`. A contact sensor with `mode="subtree"` on the host entity therefore *also* matches bodies inside docked subtrees unless you exclude them explicitly. The composer surfaces an amber warning under each docked twin with a one-click "Add to exclude" button that injects the suggested regex (`^<hex_prefix>__.*$`) into the primary `exclude` list.
+
+## SDK
+
+> stub: The Python SDK exposes `make_camera_sensor(...)` and `make_contact_sensor(...)` convenience builders alongside a new `sensors=` keyword on `assign_articulation_entity` / `assign_rigid_entity`. See `cyberwave-sdks/cyberwave-python/cyberwave/rl_tasks.py` for the full signatures.

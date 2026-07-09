@@ -1,0 +1,21 @@
+---
+title: "UR5e"
+description: "Redirect stub to the UR5e catalog page."
+canonical: "https://cyberwave.com/universal_robots/catalog/ur5"
+---
+
+import { useEffect } from "react";
+
+export default function UR5eRedirectPage() {
+  useEffect(() => {
+    window.location.replace("https://cyberwave.com/universal_robots/catalog/ur5");
+  }, []);
+
+  return (
+    <>
+      # Redirecting to UR5e
+
+      If you are not redirected automatically, [open the UR5e catalog page](https://cyberwave.com/universal_robots/catalog/ur5).
+    </>
+  );
+}
