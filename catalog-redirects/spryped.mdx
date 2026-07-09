@@ -1,0 +1,21 @@
+---
+title: "Spryped"
+description: "Redirect stub to the Spryped catalog page."
+canonical: "https://cyberwave.com/ben-bokser/catalog/spryped"
+---
+
+import { useEffect } from "react";
+
+export default function SprypedRedirectPage() {
+  useEffect(() => {
+    window.location.replace("https://cyberwave.com/ben-bokser/catalog/spryped");
+  }, []);
+
+  return (
+    <>
+      # Redirecting to Spryped
+
+      If you are not redirected automatically, [open the Spryped catalog page](https://cyberwave.com/ben-bokser/catalog/spryped).
+    </>
+  );
+}

@@ -1,0 +1,60 @@
+---
+title: "Twin joint home positions"
+description: "Editing twin joint defaults from manual control and how they flow into RL tasks"
+tags:
+  - stub
+---
+
+## Source of truth
+
+Each twin keeps a snapshot of its asset's universal schema. The default
+pose of every controllable joint lives in
+`twin.universal_schema.joints[].home_position`.
+
+The "Manual Control" sliders, the 3D viewer, and the RL task scene
+entity composer all read from that same field, so editing a slider in
+edit mode and reading the value back in an RL task always agrees.
+
+## What edit mode persists
+
+Edit-mode writes are the **only** path that updates the durable home
+pose. They opt in by sending `as_home_position: true` on
+`PUT /api/v1/twins/{uuid}/joint_states` (or the per-joint endpoint).
+With the flag set, Cyberwave updates:
+
+- `Twin.joint_states[joint_name].position` — runtime state.
+- `Twin.universal_schema.joints[i].home_position` — durable default.
+
+The frontend posts the *entire* controllable pose (every joint position,
+including explicit `0.0`s) when the operator saves an edit-mode pose.
+Every controllable joint gets an explicit `home_position` after the
+save — no joint is left as `null` — so the RL task composer never
+labels a joint as `default (0.0)` while manual control shows the same
+`0.0`.
+
+Velocity and effort updates still only touch `Twin.joint_states`.
+
+## What live/teleop writes do *not* persist
+
+`PUT /api/v1/twins/{uuid}/joint_states` without `as_home_position`
+(the default) only writes `Twin.joint_states`. SDK callers, edge
+drivers streaming joint positions, MQTT-driven teleop, and the legacy
+joint-state syncs from physical hardware therefore never overwrite the
+schema home. The durable home stays whatever the operator last saved
+from edit mode.
+
+## Frontend reads twin schema first
+
+The 3D viewer and the manual control sliders read
+`twin.universal_schema.joints[].home_position` from the
+`GET /api/v1/twins/{uuid}` response *before* falling back to the
+asset-level `Asset.universal_schema`. That guarantees per-twin edit-mode
+homes win over workspace-shared defaults, and that two twins of the same
+asset can carry different durable poses.
+
+## Reads fall back to the schema home
+
+`GET /api/v1/twins/{uuid}/joint_states` returns `home_position` for any
+controllable joint without an explicit runtime entry. The same fallback
+is used by `Twin._derive_joint_states()` so MJCF composition, RL task
+hints, and the manual control bar all agree on the same default pose.

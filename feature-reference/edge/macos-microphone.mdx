@@ -1,0 +1,154 @@
+---
+title: "macOS Microphone Bridge"
+sidebarTitle: "macOS Microphone"
+description: "Run the generic microphone driver in Docker on a Mac by bridging host CoreAudio through ffmpeg and HTTP PCM."
+icon: "microphone-lines"
+---
+
+<Warning>
+**STUB DOCUMENT:** Operational guide for the macOS host PCM bridge. A human will expand it before publishing.
+</Warning>
+
+Docker Desktop on macOS runs **Linux** containers. Those containers cannot open CoreAudio or `/dev/snd` the way a Linux edge host can. Cyberwave mirrors the [camera MJPEG bridge](/feature-reference/edge/overview) pattern: **host `ffmpeg` captures AVFoundation audio** and serves **raw PCM over HTTP**; the **microphone driver container** reads that URL via `AudioBridgeCapture` instead of PortAudio.
+
+## Architecture
+
+```text
+Mac host (CoreAudio / AVFoundation)
+  └─ ffmpeg LaunchAgent  com.cyberwave.audio-stream*
+       └─ HTTP PCM  :8101+  (host.docker.internal from container)
+            └─ generic-microphone driver (Docker)
+                 └─ WebRTC + Zenoh  →  twin / media-service
+```
+
+| Layer | Artifact |
+| --- | --- |
+| Host capture | `ffmpeg` + AVFoundation, managed by `launchctl` |
+| Per-twin map | `~/.cyberwave/audio_streams.json` → `twin_to_stream_url` |
+| Container env | `CYBERWAVE_METADATA_AUDIO_DEVICE=http://host.docker.internal:8101` |
+| Edge-core | Probes ports `8101`–`8110` on Darwin; injects URL when starting the driver |
+
+On **Linux** Docker hosts, skip the bridge: edge-core bind-mounts `/dev/snd` and the driver uses PortAudio/ALSA directly. See [Native microphone driver — Linux](/feature-reference/edge/drivers/native-microphone-driver#linux-audio-notes).
+
+## Prerequisites
+
+- **Docker Desktop** installed and running (daemon up before `cyberwave edge install`).
+- **`ffmpeg`** on the Mac host (the CLI installer expects it on `PATH`).
+- A **microphone twin** linked to this edge (catalog `generic-microphone` asset).
+- **Microphone privacy** granted to the terminal or process running `ffmpeg` when macOS prompts.
+
+## First-time setup
+
+1. Install the CLI and edge core (pairing flow):
+
+```bash
+curl -fsSL https://cyberwave.com/install.sh | bash
+sudo cyberwave pair
+```
+
+2. During `cyberwave edge install` on macOS, the installer:
+   - Lists AVFoundation input devices and prompts for a microphone (by **index**; stored in `audio_streams.json`).
+   - Installs a LaunchAgent (`com.cyberwave.audio-stream`) on port **8101** (additional mic twins use `8102`, …).
+   - Writes `~/.cyberwave/audio_streams.json` with `twin_to_stream_url` entries.
+   - Restarts edge-core so driver containers receive `CYBERWAVE_METADATA_AUDIO_DEVICE`.
+
+3. Link your microphone twin to the edge in the Cyberwave UI, then restart if you added the twin after install:
+
+```bash
+sudo cyberwave edge restart
+```
+
+## Switch microphone or fix a broken bridge
+
+Re-run selection without a full reinstall:
+
+```bash
+sudo cyberwave edge install --reconfigure-microphone
+```
+
+Skip the interactive picker when you already know the AVFoundation index:
+
+```bash
+sudo cyberwave edge install --reconfigure-microphone --microphone-index 0
+```
+
+`cyberwave edge restart` also **self-heals** silent ffmpeg slots (`launchctl kickstart -k` on `com.cyberwave.audio-stream*`) and warns when `audio_streams.json` references a port with no running service — same pattern as the camera bridge.
+
+## Verify
+
+```bash
+# Host bridge listening
+lsof -i :8101
+
+# Persisted twin → URL map
+cat ~/.cyberwave/audio_streams.json
+
+# Driver should show HTTP bridge, not "0 input devices"
+cyberwave edge logs -f
+```
+
+**Healthy container logs** (MQTT/backend errors aside):
+
+```text
+Resolved macOS host audio bridge for microphone capture: http://host.docker.internal:8101
+Configuring microphone driver (..., selector='http://host.docker.internal:8101', ...)
+Using host HTTP audio bridge
+```
+
+**Failure signals:**
+
+| Symptom | Likely cause |
+| --- | --- |
+| `Discovered 0 input devices` | Bridge URL not injected — re-run `--reconfigure-microphone` and `edge restart` |
+| `PortAudio not initialized` | Driver probed ALSA inside Docker — fixed when bridge URL is set (recent driver) |
+| Connection refused to backend/MQTT | Cloud stack not running — start your Cyberwave backend; audio bridge can still be correct |
+
+## `audio_streams.json` shape
+
+```json
+{
+  "twin_to_stream_url": {
+    "c349694f-0947-421e-9fe0-820e24dc7e96": "http://host.docker.internal:8101"
+  },
+  "device_index": 0,
+  "sample_rate": 48000,
+  "channels": 1
+}
+```
+
+Edge-core reads this file (and TCP-probes the port) when launching each `generic-microphone` container. The driver does **not** enumerate PortAudio devices on macOS Docker when the bridge URL is present.
+
+## Local debugging without Docker
+
+Run the driver on the host with direct PortAudio (no HTTP bridge):
+
+```bash
+cd cyberwave-edge-runtime/runtime-services/drivers/native/cyberwave/generic-microphone
+./run-local.sh
+```
+
+## Related
+
+<CardGroup cols={2}>
+  <Card
+    title="Native microphone driver"
+    icon="microphone-lines"
+    href="/feature-reference/edge/drivers/native-microphone-driver"
+  >
+    WebRTC, recording, Zenoh, and env var reference.
+  </Card>
+  <Card
+    title="Edge overview"
+    icon="microchip"
+    href="/feature-reference/edge/overview"
+  >
+  macOS edge install, camera bridge, and CLI lifecycle.
+  </Card>
+  <Card
+    title="Native speaker driver"
+    icon="volume-high"
+    href="/feature-reference/edge/drivers/native-speaker-driver"
+  >
+    Playback counterpart — macOS uses a host PCM **sink** on port `8201` (same bridge pattern).
+  </Card>
+</CardGroup>

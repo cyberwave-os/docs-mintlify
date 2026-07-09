@@ -1,0 +1,21 @@
+---
+title: "Rhea"
+description: "Redirect stub to the Rhea catalog page."
+canonical: "https://cyberwave.com/g-levine/catalog/rhea"
+---
+
+import { useEffect } from "react";
+
+export default function RheaRedirectPage() {
+  useEffect(() => {
+    window.location.replace("https://cyberwave.com/g-levine/catalog/rhea");
+  }, []);
+
+  return (
+    <>
+      # Redirecting to Rhea
+
+      If you are not redirected automatically, [open the Rhea catalog page](https://cyberwave.com/g-levine/catalog/rhea).
+    </>
+  );
+}

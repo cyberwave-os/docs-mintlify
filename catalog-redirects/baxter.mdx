@@ -1,0 +1,21 @@
+---
+title: "Baxter"
+description: "Redirect stub to the Baxter catalog page."
+canonical: "https://cyberwave.com/rethink-robotics/catalog/baxter"
+---
+
+import { useEffect } from "react";
+
+export default function BaxterRedirectPage() {
+  useEffect(() => {
+    window.location.replace("https://cyberwave.com/rethink-robotics/catalog/baxter");
+  }, []);
+
+  return (
+    <>
+      # Redirecting to Baxter
+
+      If you are not redirected automatically, [open the Baxter catalog page](https://cyberwave.com/rethink-robotics/catalog/baxter).
+    </>
+  );
+}

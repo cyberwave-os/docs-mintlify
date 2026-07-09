@@ -1,0 +1,39 @@
+---
+title: "Asset schema variants"
+description: "Carry an alternate schema such as ``simplified_mesh`` alongside an asset's canonical universal schema"
+icon: "shapes"
+---
+
+> stub: An **asset schema variant** is an optional, per-asset alternate JSON schema that lives alongside the canonical `Asset.universal_schema`. The first supported kind is `simplified_mesh`, intended for vectorized GPU training where lighter-weight collision/visual geometry matters. V1 supports **manual JSON upload only** — automatic mesh simplification is intentionally out of scope.
+
+## Why variants instead of overwriting?
+
+> stub: The canonical universal schema is owned by the URDF/asset pipeline and is what every other Cyberwave subsystem (twins, environments, MQTT, the editor) snapshots from. Variants let downstream consumers — e.g. a vectorized training cluster — request a different representation for the same asset without breaking the canonical one. Variants are additive and never silently substitute the canonical schema.
+
+## Lifecycle
+
+> stub:
+> 1. From the asset detail page → **Files** tab → **Asset schema variants** section.
+> 2. Click **Upload JSON** on the *Simplified mesh* card and pick a JSON file. The body must be a JSON object; the file is parsed once on upload.
+> 3. The variant card now shows **Available** with computed metadata (link / joint counts, hash).
+> 4. Click **Download JSON** on either card at any time to get the schema as a file.
+> 5. **Replace JSON** overwrites the same variant; **Remove** deletes it entirely. The canonical universal schema is never touched.
+
+## API surface
+
+> stub:
+> - `GET /api/v1/assets/{uuid}/schemas` — list available schemas, including a virtual `base` entry when the asset has one.
+> - `GET /api/v1/assets/{uuid}/schemas/{kind}` — metadata for one variant.
+> - `PUT /api/v1/assets/{uuid}/schemas/{kind}` — create or replace a variant. V1 accepts `kind=simplified_mesh` only; `base` is reserved for the canonical schema and rejected.
+> - `DELETE /api/v1/assets/{uuid}/schemas/{kind}` — delete a DB-backed variant.
+> - `GET /api/v1/assets/{uuid}/schema.json?kind=base|simplified_mesh` (default `base`) — download the chosen schema as JSON.
+
+## .cbw export and import
+
+> stub: `.cbw` packages now include any schema variants under `schemas/{kind}.json` plus a `schema_variants` entry in the manifest. Importing a `.cbw` restores the variants without touching the imported asset's canonical universal schema.
+
+## Limits and roadmap
+
+> stub:
+> - V1 is upload-only. Automatic mesh simplification will land in a follow-up.
+> - Today only one variant kind is recognised (`simplified_mesh`). New kinds are added by extending `AssetSchemaVariantKind` in the backend; older clients will continue to ignore unknown kinds in `.cbw` packages.

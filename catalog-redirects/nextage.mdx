@@ -1,0 +1,21 @@
+---
+title: "Nextage"
+description: "Redirect stub to the Nextage catalog page."
+canonical: "https://cyberwave.com/kawada-industries/catalog/nextage"
+---
+
+import { useEffect } from "react";
+
+export default function NextageRedirectPage() {
+  useEffect(() => {
+    window.location.replace("https://cyberwave.com/kawada-industries/catalog/nextage");
+  }, []);
+
+  return (
+    <>
+      # Redirecting to Nextage
+
+      If you are not redirected automatically, [open the Nextage catalog page](https://cyberwave.com/kawada-industries/catalog/nextage).
+    </>
+  );
+}

@@ -1,0 +1,21 @@
+---
+title: "Gepetto Bolt"
+description: "Redirect stub to the Gepetto Bolt catalog page."
+canonical: "https://cyberwave.com/gepetto/catalog/bolt"
+---
+
+import { useEffect } from "react";
+
+export default function GepettoBoltRedirectPage() {
+  useEffect(() => {
+    window.location.replace("https://cyberwave.com/gepetto/catalog/bolt");
+  }, []);
+
+  return (
+    <>
+      # Redirecting to Gepetto Bolt
+
+      If you are not redirected automatically, [open the Gepetto Bolt catalog page](https://cyberwave.com/gepetto/catalog/bolt).
+    </>
+  );
+}

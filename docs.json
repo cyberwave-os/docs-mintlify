@@ -65,7 +65,7 @@
               "overview/features/environment",
               "overview/features/simulation",
               "overview/features/workflows",
-              "overview/features/workflows-nodes",
+              "overview/features/workflow-nodes",
               "overview/features/teleoperation-and-remote-control",
               "overview/features/replay-and-historical-data",
               "overview/features/models-and-datasets"
@@ -802,23 +802,23 @@
     },
     {
       "source": "/hardware/dji-mini-4-pro",
-      "destination": "https://cyberwave.com/dji/dji-mini-4-pro"
+      "destination": "https://cyberwave.com/dji/mini-4-pro"
     },
     {
       "source": "/hardware/dji-mini-4-pro/get-started",
-      "destination": "https://cyberwave.com/dji/dji-mini-4-pro"
+      "destination": "https://cyberwave.com/dji/mini-4-pro"
     },
     {
-      "source": "/hardware/dji-mini",
-      "destination": "https://cyberwave.com/dji/dji-mini-4-pro"
+      "source": "/hardware/dji-mini-3",
+      "destination": "https://cyberwave.com/dji/mini-4-pro"
     },
     {
       "source": "/hardware/dji-mini-3-pro",
-      "destination": "https://cyberwave.com/dji/DJI-Mini-3-Pro"
+      "destination": "https://cyberwave.com/dji/mini-3"
     },
     {
       "source": "/hardware/dji-mini-3-pro/get-started",
-      "destination": "https://cyberwave.com/dji/DJI-Mini-3-Pro"
+      "destination": "https://cyberwave.com/dji/mini-3"
     },
     {
       "source": "/hardware/standard-cam",

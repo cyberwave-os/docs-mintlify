@@ -1,0 +1,21 @@
+---
+title: "Node"
+description: "Redirect stub to the Node catalog page."
+canonical: "https://cyberwave.com/cyberwave/catalog/node"
+---
+
+import { useEffect } from "react";
+
+export default function NodeRedirectPage() {
+  useEffect(() => {
+    window.location.replace("https://cyberwave.com/cyberwave/catalog/node");
+  }, []);
+
+  return (
+    <>
+      # Redirecting to Node
+
+      If you are not redirected automatically, [open the Node catalog page](https://cyberwave.com/cyberwave/catalog/node).
+    </>
+  );
+}
