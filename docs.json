@@ -65,6 +65,7 @@
               "overview/features/environment",
               "overview/features/simulation",
               "overview/features/workflows",
+              "overview/features/workflows-nodes",
               "overview/features/teleoperation-and-remote-control",
               "overview/features/replay-and-historical-data",
               "overview/features/models-and-datasets"
