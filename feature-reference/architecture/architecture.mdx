@@ -116,7 +116,7 @@ The physical layer consists of the robot's hardware components:
 
 ### Applications ↔ Cyberwave Cloud: REST API / WebSocket
 
-Your application code communicates with the Cyberwave cloud over **HTTPS REST APIs** for all CRUD operations (twins, environments, workflows, assets, alerts) and **WebSocket** connections for real-time features (video streaming, live state updates). The Python SDK and MCP server both use these protocols under the hood.
+Your application code communicates with the Cyberwave cloud over **HTTPS REST APIs** for all CRUD operations (twins, environments, workflows, assets, alerts) and **WebSocket** connections for real-time state updates. The Python SDK and MCP server both use these protocols under the hood. Live camera feeds use **WebRTC** instead, described in [Video Streaming](#video-streaming-webrtc) below.
 
 ### Cyberwave Cloud ↔ Edge: MQTT / REST
 
@@ -125,6 +125,45 @@ The edge runtime maintains a persistent connection to the Cyberwave cloud via **
 ### Edge ↔ Robot Hardware: Serial / USB / ROS Topics
 
 The edge runtime communicates with the physical robot over local interfaces: **Serial** (UART), **USB**, or **ROS Topics**, depending on the robot's hardware architecture. The **Cyberwave hardware driver** abstracts these transport differences, exposing a unified interface to the rest of the edge stack.
+
+## Video Streaming (WebRTC)
+
+Live camera feeds (teleoperation, monitoring, cameras panel) stream from the edge to the browser over **WebRTC**, while control commands and telemetry continue to travel over MQTT. WebRTC negotiates the most direct path available between the edge and your browser, and falls back to a relay through Cyberwave's **TURN service** (`turn.cyberwave.com`) whenever a direct peer-to-peer connection isn't possible, for example when the edge device sits behind a restrictive NAT or corporate firewall.
+
+<Info>
+Signaling (exchanging connection offers/answers) happens over the same MQTT connection the edge already uses, so it doesn't require any additional inbound ports.
+</Info>
+
+#### Connectivity requirements
+
+Because WebRTC and TURN negotiate connections outbound, you typically don't need to open any **inbound** ports on the edge network. What you do need is **outbound** access from the edge network (and from the operator's browser/network) to the following:
+
+| Purpose | Protocol / Ports | Destination |
+|---------|-------------------|-------------|
+| STUN/TURN negotiation | UDP + TCP `3478` | `turn.cyberwave.com` |
+| Media relay (when direct P2P isn't possible) | UDP `49152–65535` | `turn.cyberwave.com` |
+| Direct peer-to-peer media (when reachable) | UDP, ephemeral, negotiated via ICE | Directly between edge and browser |
+
+<Warning>
+Some corporate and industrial networks block outbound UDP on high port ranges. If your edge device or operator network enforces this, allow-list the ports above for `turn.cyberwave.com`, or video streaming will be unable to establish a media path even though MQTT control still works.
+</Warning>
+
+## Local Data Bus (Zenoh)
+
+Alongside MQTT (used for edge ↔ cloud communication), the edge runtime uses **Zenoh** as a local, low-latency publish/subscribe data bus. Zenoh carries high-frequency traffic between the Edge Core and hardware drivers/workers running on the same edge node (sensor readings, joint states, inference outputs) without adding load to the cloud link. Only the data you explicitly forward is bridged out to Cyberwave Cloud over the existing MQTT connection.
+
+<Info>
+Zenoh traffic stays on your local network. It's not used for edge ↔ cloud communication, and it doesn't require any internet access.
+</Info>
+
+#### Connectivity requirements
+
+| Mode | Protocol / Port | When it applies |
+|------|------------------|------------------|
+| Peer-to-peer discovery (default) | UDP multicast, local subnet only | Single edge node, or multiple drivers/workers on the same host — no firewall changes needed |
+| Zenoh router (optional) | TCP `7447` | Only if you run drivers across **multiple hosts** on the same site and enable router mode to bridge them |
+
+For a single-node deployment (the common case), Zenoh requires no firewall configuration at all. If you spread drivers across several machines on the same local network, allow TCP `7447` between those hosts.
 
 ---
 
