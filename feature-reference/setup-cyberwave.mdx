@@ -171,6 +171,25 @@ Both `Bearer` and `Token` prefixes are accepted.
 
 ---
 
+## Connectivity Requirements for Running an Edge
+
+If you're running the Cyberwave Edge runtime (Edge Core plus drivers) on your own hardware, here's every connection it needs. All of these are **outbound-initiated from the edge** — you generally don't need to open any inbound ports on your network.
+
+| Purpose | Protocol / Port | Destination | Required when |
+|---------|------------------|-------------|---------------|
+| REST API | TCP `443` (HTTPS) | `api.cyberwave.com` | Always |
+| MQTT (telemetry, commands, WebRTC signaling) | TCP `8883` (MQTT over TLS) | `mqtt.cyberwave.com` | Always |
+| STUN/TURN negotiation | UDP + TCP `3478` | `turn.cyberwave.com` | Streaming video |
+| TURN media relay | UDP `49152–65535` | `turn.cyberwave.com` | Streaming video, when a direct peer-to-peer path isn't possible |
+| Zenoh peer discovery | UDP multicast, local subnet only | Local network | Running more than one driver/worker process on the edge |
+| Zenoh router (multi-host) | TCP `7447` | Between edge hosts on your site | Only if drivers are split across multiple hosts on the same site |
+
+<Info>
+For the full picture of why each protocol is used, see [Architecture → Video Streaming (WebRTC)](/feature-reference/architecture/architecture#video-streaming-webrtc) and [Architecture → Local Data Bus (Zenoh)](/feature-reference/architecture/architecture#local-data-bus-zenoh).
+</Info>
+
+---
+
 ## Next Steps
 
 <CardGroup cols={2}>
