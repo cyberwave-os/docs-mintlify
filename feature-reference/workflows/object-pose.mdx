@@ -1,0 +1,90 @@
+---
+title: "Object Pose node"
+description: "Lift a 2D detection into a camera-frame 3D pose using a registered depth map."
+tag: stub
+---
+
+`object_pose` is an edge perception node that takes a bounding-box detection from any upstream
+detector — `call_model`, `barcode_reader`, or any node that emits a `detections` array — plus a
+color-registered depth map, and returns a metric 3D position in the camera's optical frame.
+
+A companion ROS 2 node (`cyberwave_object_pose_transform`) can tf2-lift that pose into `base_link`
+or any other frame configured in your robot's URDF; the workflow node itself stays out of TF
+resolution so it runs unchanged across robots.
+
+Alternatively, set `target_frame` on the node itself (see Inputs below) to re-express `position`
+directly in the output, with no ROS 2 hop — this requires the twin's driver to publish a live
+transform snapshot the node can read.
+
+Typical chain for a "detect and locate" perception workflow:
+
+```
+trigger (camera_frame)
+  → data_source (twin_depth)
+  → call_model  (YOLO / VLM)
+  → object_pose
+  → send_controller_command / conditional / send_alert
+```
+
+## Inputs
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `sensor_id` | string | ✓ | ID of the camera sensor in the twin's sensor list. The sensor must declare `width`, `height`, and a field of view (`fov_degrees` or `fovy`). |
+| `detections` | array | ✓ | Detection list from an upstream node. Auto-wired when placed downstream of `call_model` or `barcode_reader`. |
+| `depth_mm` | object | ✓ | Color-registered depth map in millimetres. Auto-wired when placed downstream of a `data_source` node with `data_type = twin_depth`. |
+| `orientation` | object | | Optional upstream quaternion `{x, y, z, w}`. Falls back to identity when not connected. |
+| `target_class` | string | | Only accept detections matching this class label. Empty (default) = highest-confidence detection regardless of class. |
+| `min_detection_confidence` | number | | Minimum detector confidence (0–1) to accept a detection. Default `0.3`. Advanced. |
+| `min_depth_fill` | number | | Minimum fraction (0–1) of pixels in the patch around the bbox centre that must carry valid depth. Default `0.3`. Advanced. |
+| `patch_radius` | number | | Half-side of the depth-sample patch in pixels. Larger values tolerate more holes but may bias toward background. Default `3`. Advanced. |
+| `detection_frame_width` | number | | Width of the frame the detector ran on, when different from the sensor resolution. `0` = same as sensor. Advanced. |
+| `detection_frame_height` | number | | Height equivalent of `detection_frame_width`. Advanced. |
+| `target_frame` | string | | Optional frame to re-express `position` in (e.g. `base_link`). Requires the twin's driver to publish a live transform snapshot for the same `sensor_id`. Empty (default) keeps `position` in the camera's optical frame. Advanced. |
+| `target_frame_max_age_ms` | number | | Maximum age of the cached transform before it's treated as unavailable. Only applies when `target_frame` is set. Default `250`. Advanced. |
+
+## Outputs
+
+| Field | Type | Description |
+|---|---|---|
+| `position` | object | `{x, y, z}` in metres, in the frame named by `frame`. `null` when `depth_valid` is false, or when `target_frame` is set but no transform snapshot was available. |
+| `frame` | string | Frame `position` is expressed in: `camera` (default) or `target_frame`'s value once a snapshot was available. |
+| `orientation` | object | Quaternion `{x, y, z, w}` — pass-through from the orientation input, or identity. |
+| `score` | number | Confidence of the source detection. |
+| `depth_fill` | number | Fraction of patch pixels that had valid depth (0–1). |
+| `depth_valid` | boolean | `true` when depth filled the patch above the threshold. `position` is only populated when this is `true`. |
+| `bearing` | object | Depth-independent unit direction `{x, y, z}` in the camera frame. Always populated — useful for lateral steering when depth is missing. |
+| `pixel` | object | Bbox centre `{u, v}` in depth-image pixels (after resolution rescaling). |
+
+## Camera calibration
+
+Intrinsics (`fx`, `fy`) are derived at workflow compile time from the sensor's declared field of
+view. The principal point (`cx`, `cy`) defaults to the image centre when no calibration data is
+present.
+
+For cameras with a factory-calibrated principal point — such as the Intel RealSense D455, whose
+`cx`/`cy` can be ~10 px off-centre at 640×480 — add the calibrated values to the sensor's
+`parameters` in the asset schema. Without them, lateral pose error can reach several centimetres.
+
+```yaml
+sensors:
+  - id: color_camera
+    type: rgb
+    parameters:
+      width: 640
+      height: 480
+      fovy: 55.0
+      cx: 310.5      # from factory data sheet or ros2 run camera_calibration
+      cy: 235.8
+```
+
+`cx` and `cy` are optional. Omitting them falls back to image centre, which is fine for cameras
+with low distortion or when sub-centimetre accuracy is not required.
+
+## Companion nodes
+
+- `data_source` (with `data_type = twin_depth`) — supplies the registered depth map.
+- `call_model` — upstream YOLO / VLM detector that produces the `detections` array.
+- [`barcode_reader`](./barcode-reader) — alternative upstream detector for code-scan use cases.
+- `spatial_filter` — filter the resulting pose by a 3D region of interest.
+- `send_controller_command` — send a robot command based on the located object.

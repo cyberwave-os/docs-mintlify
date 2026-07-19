@@ -1,0 +1,237 @@
+---
+title: "Online Controllers"
+description: "Run custom code, random policies, and trained RL checkpoints in their own controller-host cloud node that drives a simulated or live robot plant over MQTT and WebRTC."
+icon: "microchip"
+---
+
+{/* stub — pending human review */}
+
+## What is an online controller?
+
+An **online controller** is a controller policy that runs in its **own controller-host cloud node** — separate from the simulation. The controller host communicates with a **plant** (the `cyberwave-sim` physics worker *or* a live robot) over MQTT and WebRTC. The plant only steps physics and publishes state; it never runs the controller logic in its own loop.
+
+This split is the defining property of online controllers: the control loop and the physics loop live in different processes, connected by a wire. Because that wire is the same whether the plant is a simulator or a real robot, an online controller can target either with no code changes.
+
+| | Plant (`cyberwave-sim` or live robot) | Controller host (cloud node) |
+|---|---|---|
+| **Role** | Steps physics / hardware, publishes state | Runs the controller policy |
+| **Communicates via** | MQTT joint state, WebRTC frames | MQTT joint commands, WebRTC frames |
+| **Runs the control loop?** | No | Yes |
+
+<Note>
+Cyberwave supports **basic mjlab** today — online controllers run against both basic MuJoCo and vectorized mjlab backends over the same wire. We're planning to release a richer Cyberwave mjlab extension with useful helpers in the future.
+</Note>
+
+## Online controller types
+
+Three policy types run on the online-controller host path:
+
+<CardGroup cols={3}>
+  <Card title="Code" icon="code">
+    A custom Python controller you write — a `control()` function or a stateful controller class — optionally carrying named model weights.
+  </Card>
+  <Card title="Random" icon="dice">
+    A random policy, optionally shaped by weights. Useful for smoke-testing a plant or establishing a baseline.
+  </Card>
+  <Card title="RL Task" icon="brain">
+    A trained RL checkpoint exported from an RL Task, evaluated closed-loop against the plant.
+  </Card>
+</CardGroup>
+
+Other controller policies — `teleop`, `navigation`, `motion`, and `mlmodel`/`vla` — do **not** use the online-controller host path. They run on their own command-triggered or cloud inference paths.
+
+## How controllers are routed
+
+Routing is decided by the **explicit policy type plus a structured controller family** — never by keyword or name matching. When you start a run, the backend resolves the assigned policy and dispatches it to the matching controller host.
+
+| Online controller | Resolves by | Runtime view |
+|---|---|---|
+| `code` (and code + weights) | `code` policy type | MuJoCo-shaped sim view |
+| `random` | structured `random` family | MuJoCo-shaped sim view |
+| `rltask` | structured RL-task family | `SimulationLike` interface |
+
+## Runtime interfaces
+
+Each online controller interacts with its plant through a sim-shaped interface, so your controller code reads state and writes commands without knowing whether the plant is simulated or live.
+
+- **`code` and code + weights controllers** see a **MuJoCo-shaped sim view** — a familiar `sim.data` / `sim.model` surface for reading joint state and writing controls.
+- **`rltask` (RL) policies** use a **`SimulationLike`** interface — the same observation/action contract an RL policy expects during training.
+
+Keep these as conceptual contracts: your controller reads observations and writes actions each step; the host handles transport to and from the plant.
+
+## Authoring code controllers
+
+Code controllers support two authoring modes.
+
+### Function mode (default)
+
+Define a `control` function. The host calls it each control step.
+
+```python
+def control(sim, sim_time, artifacts=None):
+    # Read state from the sim view, compute, and write controls.
+    sim.data.ctrl[:] = 0.0
+```
+
+- `sim` — the MuJoCo-shaped sim view (read state, write `ctrl`).
+- `sim_time` — current simulation time in seconds.
+- `artifacts` — a dict of named weights/files (present only for code + weights controllers).
+
+### Class mode (`entrypoint_type="class"`)
+
+For stateful controllers that load weights once and keep state across steps, use class mode. The host instantiates the class once, then calls it each step.
+
+```python
+class Controller:
+    def __init__(self, sim, artifacts=None):
+        # Load weights, allocate buffers, set up state once.
+        self.sim = sim
+
+    def __call__(self, sim_time):
+        # Called each control step.
+        self.sim.data.ctrl[:] = 0.0
+```
+
+Set `entrypoint_type="class"` on the policy to opt into class mode. Use it whenever your controller needs to load model weights or maintain internal state between steps.
+
+## Named artifacts and weights
+
+A code + weights controller attaches one or more **named binary files** — typically `.pt`, `.onnx`, or `.safetensors`. Each artifact carries:
+
+| Field | Meaning |
+|---|---|
+| **Filename** | The runtime key your code uses to look the artifact up. |
+| **Role** | Optional label describing what the artifact is. |
+| **Primary** | A flag marking the main artifact for the controller. |
+
+The artifacts reach your code differently per authoring mode:
+
+- **Function mode** — delivered as the third positional argument, the `artifacts` dict.
+- **Class mode** — delivered to `__init__` as the `artifacts` argument, so you can load them once.
+
+<Tip>
+Class mode plus named artifacts is the canonical pattern for a trained policy: load the primary checkpoint in `__init__`, then run inference each step in `__call__`.
+</Tip>
+
+## CPU vs GPU compute
+
+Controller policies that **carry a model** — `mlmodel`/`vla`, `random`, or code-with-weights — accept an inference `device`. This choice selects where the controller host runs inference and is **independent of the simulation's physics device**.
+
+| `device` | Where it runs | When to use |
+|---|---|---|
+| `cpu` *(default)* | A cheap CPU host | Lightweight inference; the default for any model-carrying policy. |
+| `gpu` | A GPU host | Heavier policy inference that benefits from a GPU. |
+
+Key rules:
+
+- **`cpu` is the default.** It runs on an inexpensive CPU host.
+- **The saved `device` is just the default.** You can override it per-run at deploy time without changing the saved policy.
+- **`device` is rejected for policies that carry no model** — for example a plain `code` controller or a `teleop` policy. Those have nothing to run inference on.
+
+<Note>
+The `device` choice is purely about controller inference. It does not affect which device the plant uses to step physics.
+</Note>
+
+## Live mode
+
+Because the controller host talks to its plant purely over MQTT and WebRTC, the **same** `code`, `random`, or `rltask` controller can target a **live robot** plant instead of `cyberwave-sim` — with no controller code changes. The controller reads state and writes commands exactly as it does in simulation; only the plant on the other end of the wire changes.
+
+## Simulation backends
+
+Online controllers run against two simulation backends over the same wire:
+
+- **Basic MuJoCo** — a single `MjModel` / `MjData` plant.
+- **Vectorized mjlab** — a manager-based, GPU-capable plant.
+
+Your controller does not need to know which backend the plant uses; the runtime interface is the same.
+
+## Quick example
+
+Create a code controller policy, then run it against a twin.
+
+<Steps>
+  <Step title="Create the controller policy">
+    Create a `code` policy with your control function (or class).
+
+    ```http
+    POST /api/v1/controller-policies
+    ```
+  </Step>
+  <Step title="Run it on a twin">
+    Execute the policy against a robot twin. The backend dispatches the controller to its host, which drives the plant.
+
+    ```http
+    POST /api/v1/controller-policies/{uuid}/execute
+    ```
+  </Step>
+  <Step title="Stop the run">
+    Stop a single policy run, or stop every online controller in an environment at once.
+
+    ```http
+    POST /api/v1/controller-policies/{uuid}/stop
+    POST /api/v1/controller-policies/stop-environment-controllers
+    ```
+  </Step>
+</Steps>
+
+A minimal code controller body:
+
+```python
+def control(sim, sim_time, artifacts=None):
+    # Hold all joints at zero command.
+    sim.data.ctrl[:] = 0.0
+```
+
+### Deploy a trained RL policy
+
+An `rltask` controller is created by publishing a trained checkpoint, then assigned to a twin like any other controller. Using the OpenArm pick-up policy from the [RL task walkthrough](/feature-reference/rl-task-walkthrough):
+
+```python
+import requests
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+
+# 1. Publish a trained checkpoint as an rltask controller policy.
+publish = requests.post(
+    f"{cw.config.base_url}/api/v1/rl-tasks/<rl-task-uuid>/checkpoints/<checkpoint-uuid>/publish-controller",
+    headers={"Authorization": f"Bearer {cw.config.api_key}"},
+    json={"controller_name": "openarm-pickup-policy"},
+)
+publish.raise_for_status()
+controller_uuid = publish.json()["controller_policy_uuid"]
+
+# 2. Assign it to the arm twin (first argument is the twin UUID).
+cw.twins.update("<openarm-twin-uuid>", controller_policy_uuid=controller_uuid)
+```
+
+Then **start a simulation** from the environment's **Simulate** tab in the dashboard — the backend resolves the assigned policy and dispatches it to its controller host automatically. See [Uploading Policies](/feature-reference/uploading-policies) for how the checkpoint and controller are produced.
+
+## API reference
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/api/v1/controller-policies` | List controller policies. |
+| `POST` | `/api/v1/controller-policies` | Create a controller policy. |
+| `GET` | `/api/v1/controller-policies/{uuid}` | Get a controller policy. |
+| `PUT` | `/api/v1/controller-policies/{uuid}` | Update a policy, including the saved `device`. |
+| `DELETE` | `/api/v1/controller-policies/{uuid}` | Delete a controller policy. |
+| `POST` | `/api/v1/controller-policies/{uuid}/execute` | Run the policy on a twin. |
+| `POST` | `/api/v1/controller-policies/{uuid}/stop` | Stop a policy/twin run. |
+| `POST` | `/api/v1/controller-policies/stop-environment-controllers` | Stop all online controllers in an environment. |
+| `POST` | `/api/v1/controller-policies/{uuid}/clone` | Duplicate a controller policy. |
+| `GET` | `/api/v1/controller-policies/{uuid}/rl-task-provenance` | Get RL-task provenance for a policy. |
+
+## Where to go next
+
+<CardGroup cols={3}>
+  <Card title="RL Tasks" icon="brain" href="/feature-reference/rl-tasks">
+    Train and export RL policies to run as `rltask` online controllers.
+  </Card>
+  <Card title="Uploading Policies" icon="upload" href="/feature-reference/uploading-policies">
+    Bring your own code and weights as a controller policy.
+  </Card>
+  <Card title="Simulation" icon="atom" href="/overview/features/simulation">
+    How the simulation plant steps physics and publishes state.
+  </Card>
+</CardGroup>

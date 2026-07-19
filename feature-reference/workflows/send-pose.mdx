@@ -1,0 +1,79 @@
+---
+title: "Send Pose node"
+description: "Move a twin into a saved or custom joint pose by publishing a joint command."
+tag: stub
+---
+
+The **Send Pose** (`send_joint_commands`) node commands a robot into a **joint pose** — a set of per-joint target angles. When the node runs it publishes a multi-joint message to the twin's joint topic; the driver moves the robot to those positions.
+
+<Note>
+**Palette category:** Actuation. Runs on **both** cloud and edge — in the cloud workflow runner, and compiled into the edge worker when the workflow is edge-targeted (so it still works with no cloud connection). It works in **both live and simulation**: when the workflow runs in simulation the pose moves the twin in the simulator; in live mode it drives the physical robot.
+
+</Note>
+
+## Requirements
+
+When you pick a target twin that has no **controller policy** associated, Cyberwave tries to attach a sensible default automatically at setup time. If no suitable controller policy is available to attach, the inspector shows an error (and raises an alert on the twin) so you can create or share one. A controller policy is not required for the pose to reach the simulator.
+
+## Configuration flow
+
+1. **Target Twin** — pick the twin to control. Only **joint-controllable** twins (robots with movable joints) appear in the list.
+2. **Twin Poses** — pick a **saved pose** for that twin, or **Custom Pose** to author a new one.
+3. **Advanced** (optional) — under **Control Settings**, choose which channels to send with the **Positions / Velocities / Efforts** checkboxes (and set per-joint velocity/effort values); under **Explicit Joint Update**, restrict the message to specific joints.
+
+A live **Message Preview** shows the exact topic and payload that will be sent.
+
+## Poses
+
+Poses are named joint snapshots stored on the twin/asset. The dropdown lists each pose with its joint values, plus a **Custom Pose** option:
+
+- The custom editor shows only the twin's **movable joints** with a numeric field each (keyboard-editable).
+- Values are validated against each joint's real limits — out-of-range values turn red and block saving.
+- Give the pose a name and save; it's stored on the twin and can be reused (and edited later) from the dropdown.
+
+## Velocities & efforts
+
+By default a Send Pose message carries just the pose's **positions**. Velocities and efforts are included automatically **only when the pose/inputs already provide those values**; otherwise you enable them explicitly under **Advanced → Control Settings** (**Velocities** / **Efforts**). When a channel is enabled, set per-joint values (validated against the joint's limits); any joint you leave unset is **omitted** from the channel ("not commanded"), **not** sent as `0`. This keeps "no velocity/effort command" distinct from an explicit command of zero. Turning a channel off (or leaving it off) omits it from the message entirely.
+
+## Explicit (partial) joint update
+
+By default the node sends a **full joint update** — every joint of the pose is included. Under **Advanced → Explicit Joint Update**, flip the switch to send only specific joints: a checklist of the twin's movable joints appears, and only the ones you check are included in the message (across every enabled channel). Use this to command a subset of joints while leaving the rest untouched.
+
+## Inputs
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `twin_uuid` | string | Yes | Target twin (inspector picker, joint-controllable only). |
+| `pose_name` | string | No | Saved pose to send. Set by the Twin Poses picker. |
+| `positions` | object | No | Per-joint target positions (radians/metres). Set by the pose/custom editor or wired from upstream. |
+| `velocities` | object | No | Per-joint target velocities. Sent only when **Send velocities** is enabled; unset joints are omitted, not `0`. |
+| `efforts` | object | No | Per-joint target efforts. Sent only when **Send efforts** is enabled; unset joints are omitted, not `0`. |
+| `include_positions` | boolean | No | Send the positions channel. Defaults on. |
+| `include_velocities` | boolean | No | Send the velocities channel. Unset = auto (on only when velocity values are present); set to override. |
+| `include_efforts` | boolean | No | Send the efforts channel. Unset = auto (on only when effort values are present); set to override. |
+| `explicit_joints_enabled` | boolean | No | Send only the joints in `explicit_joints` (partial update). Default `false` = full joint update. |
+| `explicit_joints` | array | No | Joint names to include when explicit update is on; all others are omitted. |
+
+## Outputs
+
+| Field | Type | Description |
+|---|---|---|
+| `twin_uuid` | string | Twin that received the command. |
+| `positions` / `velocities` / `efforts` | object | The commanded values. |
+| `pose_name` | string | The pose that was sent, if any. |
+| `sent` | boolean | Whether the publish was attempted. |
+| `topic` | string | The joint topic published to. |
+
+## Example
+
+```
+[Trigger: Manual] → [Send Pose: "home"] → [Wait] → [Send Pose: "pick"]
+```
+
+Chain multiple Send Pose nodes to move a robot through a sequence of poses. On edge the whole sequence runs locally with no cloud round-trips.
+
+## Related nodes
+
+- **Send Controller Command** — issue a controller-policy command (e.g. a drive burst).
+- **Virtual Controller** — resolve a command dynamically from upstream input.
+- **Get Pose** — read a twin's current pose.

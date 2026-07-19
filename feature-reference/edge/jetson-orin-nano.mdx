@@ -9,155 +9,130 @@ description: "Boot your Jetson Orin Nano from an NVMe SSD, configure headless op
   with deeper technical details in a future update.
 </Warning>
 
-This guide covers flashing JetPack to an SD card, migrating to an NVMe SSD for reliable storage, and configuring the Jetson for headless operation with WiFi and optional 5G modem failover.
+This guide covers installing JetPack on your Jetson Orin Nano, using an NVMe SSD for reliable storage, and configuring the Jetson for headless operation with WiFi and optional 5G modem failover.
+
+<Info>
+  Cyberwave supports **JetPack 6.x and JetPack 7.x**, but we **strongly
+  recommend JetPack 7.2 or later** (L4T r38+, Ubuntu 24.04): some features —
+  including the GPU-accelerated ML worker image — are only available on
+  JetPack 7.x. This guide targets the recommended JetPack 7.2+ path.
+</Info>
+
+<Warning>
+  **Starting with JetPack 7.2, SD card images are no longer supported.** Do
+  **not** flash the Jetson ISO to a microSD card. Write the ISO to a **USB
+  flash drive** instead, then use the installer to write Jetson Linux onto your
+  microSD card or NVMe SSD.
+</Warning>
 
 **Requirements:**
 
 - Jetson Orin Nano Developer Kit
-- microSD card (64GB UHS-1 or larger)
-- A computer with an SD card reader and [Balena Etcher](https://etcher.balena.io/) installed
-- PCIe NVMe SSD (PCIe 3.0 recommended — PCIe 4.0 may cause issues)
+- **JetPack 7.2 or later recommended** (L4T r38+, Ubuntu 24.04); JetPack 6.x also works, but some features require JetPack 7.x
+- **USB flash drive (16GB or larger)** for the JetPack 7.2+ installer ISO
+- Target storage — a **PCIe NVMe SSD** (recommended for sustained workloads) and/or a microSD card (64GB UHS-1 or larger)
+- A computer with [Balena Etcher](https://etcher.balena.io/) installed to write the ISO
+- A DisplayPort monitor, USB keyboard, and mouse for the install
 
 <Warning>
   SATA SSDs do not work on the Jetson Orin Nano — the M.2 slot only supports
-  PCIe NVMe drives.
+  PCIe NVMe drives (PCIe 3.0 recommended — PCIe 4.0 may cause issues).
 </Warning>
 
 ---
 
-## Step 1: Flash JetPack to the SD card
+## Step 1: Verify board firmware
 
-Follow the [official NVIDIA Getting Started guide](https://developer.nvidia.com/embedded/learn/get-started-jetson-orin-nano-devkit) for full details. The key steps are:
+JetPack 7.2 requires JetPack 6.x-generation UEFI/QSPI firmware (version **36.x or newer**). Check your firmware version from the UEFI setup screen. If the Jetson shipped on older factory firmware, complete the JetPack 6.x firmware update path first — see the [official NVIDIA quick start guide](https://docs.nvidia.com/jetson/orin-nano-devkit/user-guide/latest/quick_start.html).
 
-1. **Check firmware.** Your Jetson may ship with old firmware incompatible with JetPack 6.x. If needed, [update the firmware via SD card](https://developer.nvidia.com/embedded/learn/get-started-jetson-orin-nano-devkit#firmware) before proceeding.
-2. **Download the SD card image.** Get the Jetson Orin Nano Developer Kit image from the [JetPack SDK page](https://developer.nvidia.com/embedded/jetpack). The file is a `.zip` containing a `.img`.
-3. **Write the image.** Download and install [Balena Etcher](https://etcher.balena.io/), select the `.zip` file (no need to extract), select your SD card, and click **Flash**. This takes about 10–15 minutes.
-4. **First boot.** Insert the SD card into the Jetson, connect a display, keyboard, and mouse, then power on. Complete the initial setup (language, timezone, user account, WiFi).
-
-Once JetPack is running on the SD card, you can proceed to migrate to NVMe.
-
-<Note>
-  SD cards work for initial setup but degrade over time with frequent writes.
-  Migrating to an NVMe SSD is strongly recommended for any sustained workload.
-</Note>
+The installer will also prompt for a QSPI firmware update during Step 4; make sure to accept it.
 
 ---
 
-## Step 2: Install the SSD
+## Step 2: Write the Jetson ISO to a USB flash drive
 
-Power off the Jetson. Install the NVMe SSD into the M.2 Key M slot on the underside of the carrier board and secure it with the screw. Boot from your SD card as normal.
-
-Verify the Jetson sees the SSD:
-
-```bash
-lsblk
-```
-
-You should see `nvme0n1` in the list. If not, the drive isn't seated properly or is incompatible.
-
----
-
-## Step 3: Flash JetPack to the NVMe
-
-Download the JetPack SD card image (`.zip`) from [developer.nvidia.com/embedded/jetpack](https://developer.nvidia.com/embedded/jetpack) onto the Jetson. Make sure it's the SD card image (`.zip` containing a `.img`), **not** an installer ISO.
+1. **Download the Jetson ISO.** Get the JetPack 7.2+ Jetson ISO (e.g. `r39.2`) from the [JetPack download page](https://developer.nvidia.com/embedded/jetpack).
+2. **Write it to a USB flash drive.** Open [Balena Etcher](https://etcher.balena.io/), select the ISO, select your USB flash drive (16GB+), and click **Flash**.
 
 <Warning>
-  If you accidentally flash an installer ISO instead of the SD card image, the
-  NVMe will not be bootable. Verify with `file your-image.img` — it should say
-  `DOS/MBR boot sector` or similar, **not** `ISO 9660`.
+  Simply copying the ISO file onto the USB drive will **not** make it bootable —
+  you must write it with imaging software such as Balena Etcher. And per the
+  note above, the ISO goes on the **USB drive**, never on the microSD card.
 </Warning>
 
-Stream the image directly from the zip to the NVMe (avoids needing disk space for the extracted `.img`):
+---
 
-```bash
-unzip -p jetson-orin-nano-devkit-super-SD-image_JP6.2.1.zip | \
-    sudo dd of=/dev/nvme0n1 bs=4M status=progress conv=fsync
-```
+## Step 3: Install your target storage
 
-This takes 5–15 minutes. Don't interrupt it.
+Power off the Jetson and install the storage you want Jetson Linux written to:
 
-Verify the partitions were created:
+- **NVMe SSD (recommended):** install it into the M.2 Key M slot on the underside of the carrier board and secure it with the screw.
+- **microSD card:** insert it into the slot on the module underside.
 
-```bash
-ls -l /dev/disk/by-partuuid/
-```
-
-You should see entries pointing to `nvme0n1p1` through `nvme0n1p15`, mirroring the SD card partition layout.
+An NVMe SSD is strongly recommended for any sustained workload — microSD cards degrade over time with frequent writes.
 
 ---
 
-## Step 4: Update the boot configuration
+## Step 4: Boot the installer and install Jetson Linux
 
-The flashed image points to the SD card as root. You need to update it to point to the NVMe partition.
+1. Connect a DisplayPort monitor, USB keyboard/mouse, and the installer **USB flash drive**, then power on.
+2. Press **Esc** to enter UEFI, open the **Boot Manager**, and select the USB drive.
+3. When prompted to update the **QSPI firmware**, press **Y** within 30 seconds to confirm. Allow any UEFI capsule updates to finish — the board may reboot, which is normal.
+4. Select your **target storage** (NVMe SSD or microSD card) and confirm. The installer writes Jetson Linux and **handles partitioning and boot configuration automatically** — no manual `dd`, `extlinux`, or partition-resize steps are needed.
+5. When it finishes, reboot from the target storage and complete initial setup (accept the EULA, choose language/keyboard/timezone, connect to the network, create your user account).
 
-Note the PARTUUID for `nvme0n1p1`:
+<Tip>
+  After first boot, select **MAXN SUPER** power mode from the Ubuntu desktop top
+  bar for maximum performance.
+</Tip>
 
-```bash
-ls -l /dev/disk/by-partuuid/ | grep nvme0n1p1
-```
-
-Mount the NVMe root partition and edit the bootloader config:
-
-```bash
-sudo mkdir -p /mnt/nvme
-sudo mount /dev/nvme0n1p1 /mnt/nvme
-sudo nano /mnt/nvme/boot/extlinux/extlinux.conf
-```
-
-Find the `APPEND` line and change `root=/dev/mmcblk0p1` to:
-
-```
-root=PARTUUID=<your-nvme0n1p1-uuid>
-```
-
-Leave everything else on that line untouched. Save and exit, then unmount:
-
-```bash
-sudo umount /mnt/nvme
-```
-
----
-
-## Step 5: Boot from NVMe
-
-Power off completely:
-
-```bash
-sudo poweroff
-```
-
-Remove the SD card, then power on. The Jetson should boot from the NVMe. First boot may take a minute or two.
-
-If it drops to the UEFI shell instead of booting, type `exit` to reach the UEFI setup menu, go to **Boot Manager → Boot Maintenance Manager → Boot Options**, set the NVMe as the first boot device, and reboot.
-
-Verify root is on NVMe:
+Verify Jetson Linux is running from your chosen storage:
 
 ```bash
 df -h /
 ```
 
-You should see `/dev/nvme0n1p1` as the root filesystem.
+You should see `/dev/nvme0n1p1` (NVMe) or `/dev/mmcblk0p1` (microSD) as the root filesystem.
+
+<Accordion title="Legacy: JetPack 6.x SD-card image + NVMe migration">
+  These steps apply **only to JetPack 6.x**, which still ships an SD-card
+  `.img`. JetPack 7.2+ removed SD-card images — use the installer flow above
+  instead.
+
+  1. **Flash the SD card.** Download the JetPack 6.x Jetson Orin Nano Developer
+     Kit SD-card image (`.zip` containing a `.img`) from the
+     [JetPack SDK page](https://developer.nvidia.com/embedded/jetpack), write it
+     to a microSD card with [Balena Etcher](https://etcher.balena.io/), and boot
+     the Jetson from it to complete initial setup.
+  2. **Install the NVMe SSD** into the M.2 Key M slot and confirm the Jetson
+     sees it with `lsblk` (look for `nvme0n1`).
+  3. **Flash JetPack to the NVMe** by streaming the SD-card image straight to the
+     drive:
+
+     ```bash
+     unzip -p jetson-orin-nano-devkit-super-SD-image_JP6.2.1.zip | \
+         sudo dd of=/dev/nvme0n1 bs=4M status=progress conv=fsync
+     ```
+
+  4. **Update the boot configuration** so it points at the NVMe root. Note the
+     PARTUUID (`ls -l /dev/disk/by-partuuid/ | grep nvme0n1p1`), then mount
+     `/dev/nvme0n1p1` and change `root=/dev/mmcblk0p1` to
+     `root=PARTUUID=<your-nvme0n1p1-uuid>` in
+     `/boot/extlinux/extlinux.conf`.
+  5. **Boot from NVMe.** Power off, remove the SD card, and power on. If it drops
+     to the UEFI shell, set the NVMe as the first boot device under
+     **Boot Manager → Boot Maintenance Manager → Boot Options**.
+  6. **Expand the partition** to fill the disk:
+
+     ```bash
+     sudo parted /dev/nvme0n1 resizepart 1 100%
+     sudo resize2fs /dev/nvme0n1p1
+     ```
+</Accordion>
 
 ---
 
-## Step 6: Expand the partition
-
-The flashed image only uses ~14GB of your SSD. Expand it to use the full disk:
-
-```bash
-sudo parted /dev/nvme0n1 resizepart 1 100%
-sudo resize2fs /dev/nvme0n1p1
-```
-
-Verify:
-
-```bash
-df -h /
-```
-
----
-
-## Step 7: Configure headless operation
+## Step 5: Configure headless operation
 
 Switch the boot target from graphical desktop to console-only and enable SSH:
 
@@ -168,7 +143,7 @@ sudo systemctl enable ssh
 
 ---
 
-## Step 8: Configure WiFi for headless boot
+## Step 6: Configure WiFi for headless boot
 
 Make your saved WiFi connection available without a user session:
 
@@ -182,7 +157,7 @@ The `connection.permissions ""` setting is critical — it removes the "only for
 
 ---
 
-## Step 9: Configure 5G modem failover (optional)
+## Step 7: Configure 5G modem failover (optional)
 
 If you have a USB 5G modem attached, it may appear as a standard USB ethernet interface. Check with:
 
@@ -221,7 +196,7 @@ Wait 30–60 seconds, then SSH in from another machine. If you connect successfu
   connecting to the network on boot without manual intervention.
 </Check>
 
-## Step 10: Configure Ethernet for robot connections (if applicable)
+## Step 8: Configure Ethernet for robot connections (if applicable)
 
 If you are connecting the Jetson to a robot via Ethernet (e.g., a Unitree Go2), the robot's internal network uses a fixed subnet. Your Jetson's Ethernet interface needs a static IP on that subnet before the robot is reachable.
 
@@ -252,3 +227,83 @@ ping 192.168.123.161
   `none of [192.168.123.161, 192.168.12.1] responded on TCP port 9991` because
   the Ethernet interface has no IP in the robot's subnet.
 </Note>
+
+## Step 9: ML worker image (JetPack 7.2+)
+
+<Warning>
+  **STUB:** to be expanded and re-reviewed before publish.
+</Warning>
+
+Cyberwave ships a Jetson-native ML worker image (`cyberwaveos/edge-ml-worker:<channel>-jetson`). On any host where the Cyberwave edge stack detects Jetson hardware, it pulls the `-jetson` tag automatically — no configuration required.
+
+The `-jetson` image runs on the entire Jetson Orin family (all `sm_87`), with GPU-accelerated YOLOE, YOLO-World, and ONNX Runtime out of the box. Ultralytics fused-attention ops execute on native sm_87 kernels — no CPU fallback.
+
+### Supported hardware
+
+| Device | Memory | YOLOE variants that fit |
+|---|---|---|
+| Orin Nano 4 GB | 4 GB | `yoloe-11n` |
+| Orin Nano 8 GB | 8 GB | `yoloe-11n`, `yoloe-11s` |
+| Orin NX 8 GB | 8 GB | `yoloe-11n`, `yoloe-11s` |
+| Orin NX 16 GB | 16 GB | `yoloe-11n/s/m`, likely `yoloe-11l` |
+| AGX Orin 32 GB / 64 GB | 32 / 64 GB | any YOLOE variant |
+
+Larger models generally need more headroom for KV cache and CLIP text encoder activations; treat the table as a starting point.
+
+### Requirements
+
+- **JetPack 7.2 or later** (L4T r38+, Ubuntu 24.04) on any Jetson Orin SKU. The GPU-accelerated `-jetson` ML worker image requires JetPack 7.x — on JetPack 6.x hosts the edge stack still runs, but this worker falls back to CPU. The `-jetson` image ships CUDA 12.9 runtime libraries; the JetPack 7 CUDA 13.x driver (injected at container start) is backward-compatible with them.
+- `nvidia-container-toolkit` installed and enabled (shipped by default with JetPack via `apt install nvidia-jetpack`).
+- Roughly **~9 GB** of free space for the first pull. The image bundles PyTorch, ONNX Runtime GPU, CUDA 12.9 runtime libraries, and cuDNN so the container works on any JetPack 7.2+ Orin host without needing CUDA installed system-wide.
+
+<Note>
+  Validated on **JetPack 7.2** (L4T r38, CUDA 13.2). The base edge stack runs on
+  JetPack 6.x and 7.x, but the GPU-accelerated ML worker requires JetPack 7.x —
+  so we strongly recommend flashing JetPack 7.2 or later.
+</Note>
+
+### What gets selected
+
+On a Jetson host, the Cyberwave edge stack:
+
+- Pulls the `-jetson` image variant automatically (instead of the base or GPU variant).
+- Passes `--runtime nvidia -e NVIDIA_VISIBLE_DEVICES=all -e NVIDIA_DRIVER_CAPABILITIES=all` so the nvidia-container-runtime injects the Tegra iGPU device files and the CUDA driver into the container.
+- Skips Hailo and discrete-GPU device passthrough.
+
+If the `-jetson` tag can't be pulled (e.g. an ad-hoc branch build), the edge stack falls back to the base CPU tag and logs the demotion. Everything keeps running, just on CPU.
+
+### Verifying it's using the Jetson image
+
+After the edge service has been up for a minute or two:
+
+```bash
+docker ps --format '{{.Image}}\t{{.Names}}' | grep edge-ml-worker
+```
+
+The image tag should end in `-jetson`. To confirm iGPU access from inside the container:
+
+```bash
+docker exec "$(docker ps -q -f name=cyberwave-worker)" \
+  python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
+```
+
+You should see `True` and a Tegra device name (for example `Orin`).
+
+### Overriding the auto-selection
+
+If you need to pin a specific tag (custom build, hot-fix loop), set `CYBERWAVE_WORKER_IMAGE` in `~/.cyberwave/credentials.json` and restart the edge service:
+
+```json
+{
+  "CYBERWAVE_WORKER_IMAGE": "cyberwaveos/edge-ml-worker:local"
+}
+```
+
+Point at the un-suffixed tag — the edge stack still appends `-jetson` on Jetson hosts. If you're pointing at a private registry outside `cyberwaveos/edge-ml-worker:*`, include the `-jetson` suffix yourself.
+
+### Troubleshooting
+
+- **Worker starts on CPU instead of `-jetson`** — check that `/etc/nv_tegra_release` exists on the host and that `docker info` lists the `nvidia` runtime. If both are present but the edge stack still picks CPU, look for a `falling back to` warning in the edge service logs — the `-jetson` image probably failed to pull.
+- **`torch.cuda.is_available()` returns False inside the worker** — the container is running on CPU. Confirm `NVIDIA_VISIBLE_DEVICES=all` is set in the container env (`docker inspect <container> | grep NVIDIA`), that the container was started with `--runtime nvidia`, and that `nvidia-smi` works from the host.
+- **Out of memory when loading a YOLOE model** — the model is too large for this Jetson SKU. Consult the sizing table above; either downshift to a smaller variant (`yoloe-11n` / `yoloe-11s`) or move the workload to Orin NX / AGX.
+- **Very slow first start** — the image is ~3–4 GB and Jetson NVMe throughput on first pull can be modest. Subsequent restarts reuse the local layer cache.

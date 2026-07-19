@@ -8,6 +8,7 @@ description: stub — How environment recording playback uses signed URLs and cl
 Recording playback loads **signed URLs** from the API instead of inlined samples:
 
 - **Camera**: MP4 (and legacy MKV chunk lists) via signed URL; the browser uses HTTP range requests as needed.
+- **Audio**: MP3 via signed URL; plays back in sync with the timeline.
 - **Robot / actuation**: Parquet via signed URL; the web app reads a **time window** of rows around the playhead (bounded memory).
 - **Point clouds**: FlatBuffer chunk URLs plus coarse timestamp indexes from metadata.
 

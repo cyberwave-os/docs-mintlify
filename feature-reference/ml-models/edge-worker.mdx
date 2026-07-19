@@ -58,7 +58,9 @@ Custom values are accepted via the editor's "Other" entry — used today for fra
 
 > stub: ONNX YOLO postprocessing applies per-class non-max suppression with a default IoU threshold of `0.7` so swapping `yolov8s.pt` for `yolov8s.onnx` produces the same number of boxes per object instead of a cluster of overlapping anchors. Override per-call via `model.predict(frame, iou=0.5)` (stricter) or `iou=1.0` (raw output, no suppression).
 
-> stub: NMS-free detectors (YOLO26's default one-to-one head, YOLOv10) emit `[max_det, 6] = [x1, y1, x2, y2, conf, class_id]`; the SDK's ONNX runtime detects this layout automatically and parses it without the anchor-decoding step. The `iou` knob is ignored on that path — suppression is folded into the model graph. End-to-end pose / segmentation exports are not decoded yet; re-export those tasks with `end2end=False` until the e2e pose branch lands.
+> stub: NMS-free detectors (YOLO26's default one-to-one head, YOLOv10) emit `[max_det, 6] = [x1, y1, x2, y2, conf, class_id]`; the SDK's ONNX runtime detects this layout automatically and parses it without the anchor-decoding step. The model's one-to-one head is supposed to already be deduplicated, but some exports (open-vocabulary heads especially) can still emit many near-duplicate boxes for one object, so the same `iou` NMS also runs here as a safety net. End-to-end pose / segmentation exports are not decoded yet; re-export those tasks with `end2end=False` until the e2e pose branch lands.
+
+> stub: Every detection result is additionally capped at `max_detections_per_class` (default `30`) highest-confidence boxes per label, applied after NMS — a backstop for models whose suppression doesn't fully collapse duplicates (open-vocabulary heads like YOLOE are the common case). Pass `model.predict(frame, max_detections_per_class=None)` to disable it. The Ultralytics runtime also defaults every call to `end2end=False` so real NMS runs on the one-to-many head instead of trusting a checkpoint's self-reported "already deduplicated" flag; checkpoints with only a one-to-one head (fused `.pt`, TensorRT, some ONNX exports) fall back to `end2end=True` automatically.
 
 ### YOLO ONNX catalog — *stub*
 
@@ -169,22 +171,26 @@ Edge Core detects the NVIDIA container runtime and passes `--gpus all` to the wo
 
 ### Image variants — *stub*
 
-The worker image is published in three variants on Docker Hub:
+The worker image is published in four variants on Docker Hub:
 
 | Tag | Base | Accelerator | Architectures | Use when |
 |---|---|---|---|---|
 | `cyberwaveos/edge-ml-worker:<tag>` | `ubuntu:24.04` | CPU (`onnxruntime`) | `linux/amd64`, `linux/arm64` | No GPU available, or inference is light enough for CPU. |
-| `cyberwaveos/edge-ml-worker:<tag>-gpu` | `nvidia/cuda:12.6.3-runtime-ubuntu24.04` | NVIDIA (`onnxruntime-gpu`) | `linux/amd64` | Edge device has an NVIDIA GPU and `nvidia-container-toolkit` installed. |
+| `cyberwaveos/edge-ml-worker:<tag>-gpu` | `nvidia/cuda:12.6.3-runtime-ubuntu24.04` | NVIDIA discrete (`onnxruntime-gpu`) | `linux/amd64` | Edge device has an NVIDIA GPU and `nvidia-container-toolkit` installed. |
+| `cyberwaveos/edge-ml-worker:<tag>-jetson` | `ubuntu:24.04` (arm64) | NVIDIA Tegra iGPU (PyTorch + ONNX Runtime GPU, Jetson AI Lab cu129 wheels; CUDA injected by host at runtime) | `linux/arm64` | Jetson Orin on JetPack 7 (Ubuntu 24.04 / L4T r38). JetPack 6 hosts are not supported. |
 | `cyberwaveos/edge-ml-worker:<tag>-hailo` | `cyberwaveos/edge-ml-worker:<tag>` | Hailo-8 / Hailo-8L (`hailo_platform`) | `linux/arm64` | Edge device has a Hailo accelerator exposed at `/dev/hailo0` (e.g. Raspberry Pi 5 + AI HAT+). |
+
+The `-jetson` variant uses PyTorch/torchvision/torchaudio and `onnxruntime-gpu` wheels from the [Jetson AI Lab devpi index](https://pypi.jetson-ai-lab.io/jp6/cu129/) (Orin `sm_87` builds), not the amd64 `-gpu` variant's index. The image base is `ubuntu:24.04`; NVIDIA has not yet published an `l4t-jetpack` image for JP7. nvidia-container-runtime injects the host's CUDA driver at container start; the image itself bundles the matching CUDA 12.9 userspace runtime libraries (`libcudart`, `libcublas`, cuDNN) since the Jetson wheels link against system CUDA rather than bundling it. ONNX Runtime exposes `CUDAExecutionProvider` on Jetson, same as the `-gpu` variant. **JetPack 6 hosts are not supported** — JetPack 6's CUDA driver predates what's needed to run a CUDA 12.9 runtime, so only JetPack 7 hosts should pull this tag.
 
 The `-hailo` variant compiles HailoRT (`libhailort` + `hailortcli` + `pyhailort`) from the MIT-licensed upstream source at [`hailo-ai/hailort`](https://github.com/hailo-ai/hailort) at a pinned tag. The LGPL-2.1 GStreamer plugin (`hailonet`) is left out of the build. The companion kernel driver ([`hailo-ai/hailort-drivers`](https://github.com/hailo-ai/hailort-drivers)) is installed on the host (e.g. via `apt install hailo-all` on Raspberry Pi OS), not in the container — its minor version must match the userspace lib baked into the image.
 
-All three variants ship the same Python API. PyTorch/Ultralytics models pick the device automatically; ONNX models gain `CUDAExecutionProvider` only on the `-gpu` variant; `.hef` files load through the `hailo` runtime only on the `-hailo` variant.
+All four variants ship the same Python API. PyTorch/Ultralytics models pick the device automatically; ONNX models gain `CUDAExecutionProvider` only on the `-gpu` variant; `.hef` files load through the `hailo` runtime only on the `-hailo` variant.
 
 Edge Core selects the variant automatically based on host capabilities:
 
-* **NVIDIA container runtime detected** → appends `-gpu` to the configured worker image tag.
+* **Jetson host detected** (`/etc/nv_tegra_release` present) → appends `-jetson` and adds `--gpus all`. Wins over the `-gpu` branch: on Jetson the nvidia-container-runtime is present too, but the amd64 `-gpu` blob has the wrong `libcuda.so` ABI (desktop/server CUDA vs Tegra CUDA).
+* **NVIDIA container runtime detected (not Jetson)** → appends `-gpu` to the configured worker image tag and adds `--gpus all`.
 * **`/dev/hailo0` present and no GPU runtime** → appends `-hailo`, adds `--device /dev/hailo0:/dev/hailo0:rwm` and `--group-add hailo` (on HailoRT \< 4.20 hosts), and sets `CYBERWAVE_REQUIRED_DEVICES=/dev/hailo0` so the image's Gate-4 entrypoint fails fast if the passthrough is missing.
-* **Neither** → uses the CPU base image.
+* **None** → uses the CPU base image.
 
-GPU takes precedence over Hailo when both are available on the same host; mixing them in a single deployment is not supported. If a variant cannot be pulled (e.g. the Hailo image isn't published for your channel yet), Edge Core falls back to the CPU image and logs the demotion.
+Jetson takes precedence over the amd64 GPU variant, and GPU takes precedence over Hailo when both are available on the same host; mixing them in a single deployment is not supported. If a variant cannot be pulled (e.g. the `-jetson` image isn't published for your channel yet), Edge Core falls back to the CPU image and logs the demotion.

@@ -20,6 +20,17 @@ Datasets whose source format is not a robot format (image directories, COCO, Fif
 
 Formats marked **Coming soon** are planned but not yet validated end-to-end. Clicking Convert on them records your interest so we can prioritise accordingly.
 
+## Including audio
+
+If your recordings include microphone audio, tick **Include audio** when creating the dataset (or set `include_audio: true` on the create request). It is **off by default**, so existing exports are unchanged.
+
+When enabled, the export bundle gains an `audio/` folder:
+
+- one trimmed MP3 per episode and microphone, covering that episode's time window
+- an `audio/manifest.json` that maps each clip to the dataset rows (by episode) so you can line audio up with the state/action timeline
+
+The audio travels **alongside** the data as companion files — it is never mixed into the parquet. This is a Cyberwave companion format for portability across export formats; it is not a native audio feature of the LeRobot dataset spec, so LeRobot tooling will not auto-load it as audio.
+
 ## Download endpoint
 
 ```http

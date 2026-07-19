@@ -1,0 +1,35 @@
+---
+title: "Get Pose node"
+description: "Read a scene object's or twin's live world pose and emit it for downstream nodes."
+tag: stub
+---
+
+The **Get Pose** (`get_pose`) node reads the current world pose (position + rotation) of a scene object or a twin, fresh each run, and emits it as node outputs.
+
+<Note>
+**Palette category:** Data Sources. Generic reader — it emits a raw pose; downstream nodes decide what to do with it.
+</Note>
+
+For a **scene object** (procedural primitive), the node returns the **live simulator pose** while a MuJoCo simulation is streaming (so moving the object in sim changes what the node reads), and falls back to the object's authored position when no sim is running. For a **twin** source it returns the twin's stored pose.
+
+## Pose → policy pattern
+
+Wire a Get Pose node between a trigger and an [Online Controller Lifecycle](/feature-reference/workflows/online-controller-lifecycle) node: connect Get Pose's **`position`** output to the lifecycle node's **`object_position`** input. On each run the pose is read live and injected as the RL policy's startup goal — move the object and re-run to steer the policy toward its new pose.
+
+## Inputs
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `source` | string | No | `procedural_primitive` (default) or `twin`. |
+| `target_object_external_id` | string | No | External id of the scene object to read (when source is `procedural_primitive`). |
+| `target_twin_uuid` | string | No | UUID of the twin to read (when source is `twin`). |
+
+## Outputs
+
+| Field | Type | Description |
+|---|---|---|
+| `position` | array | World position `[x, y, z]`. |
+| `rotation` | array | World rotation quaternion `[w, x, y, z]`. |
+| `pose` | object | Combined `{ position, rotation }`. |
+| `source_external_id` | string | Resolved scene object id (empty for a twin source). |
+| `source_twin_uuid` | string | Resolved twin uuid (empty for a primitive source). |

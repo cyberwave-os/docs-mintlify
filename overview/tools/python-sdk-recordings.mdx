@@ -1,0 +1,108 @@
+---
+title: "Recordings"
+description: "List and fetch recorded telemetry (camera, robot, point cloud) from the Python SDK."
+icon: "film"
+tag: "stub"
+---
+
+List and fetch recordings for a twin or an environment, then inspect the fetched
+artifacts locally.
+
+## Twin-scoped
+
+```python
+items = twin.recordings.list()                       # all recordings for the twin
+cams = twin.recordings.list(filter=[twin.recordings.types.CAMERA])
+pcs = twin.recordings.list().filter(twin.recordings.types.POINTCLOUD)
+
+rec = twin.recordings.get(items[0])                  # downloads artifacts locally
+rec.info()                                           # identity, types, available accessors
+rec.read_robot()                                     # robot actuation table (if present)
+rec.close()                                          # remove downloaded temp files
+```
+
+## Environment-scoped
+
+An environment id is always required.
+
+```python
+items = cw.environments.recordings.list(environment_id="acme/envs/floor")
+rec = cw.environments.recordings.get(items[0])
+```
+
+## Date filtering
+
+`start`/`end` accept a `date`, a `datetime`, or an ISO 8601 string (both
+date-only and full datetime forms, with or without a `Z`/offset suffix). Provide
+**both** bounds together — a one-sided window is rejected:
+
+```python
+items = twin.recordings.list(start="2026-07-01", end="2026-07-05")
+items = twin.recordings.list(start="2026-07-01T00:00:00Z", end="2026-07-05")
+```
+
+## Types & viewers
+
+Recording types: `camera`, `robot`, `pointcloud` (colored/lidar points), `depth`
+(raw depth maps), `audio`. A depth camera typically matches `camera` + `depth`, and
+also `pointcloud` when colored points are produced.
+
+`get()` downloads every artifact to a temp directory. The readers require the data
+extra:
+
+```bash
+pip install 'cyberwave[data]'
+```
+
+The `data` extra installs headless OpenCV (decoding only). For GUI video playback
+with `show_video()`, also install a non-headless build: `pip install opencv-python`.
+
+## Contextual accessors
+
+A fetched recording exposes only the accessors that apply to its streams — `dir(rec)`
+and autocomplete list just the relevant ones. `info()` is always available.
+
+| Method | Present when | Returns |
+|---|---|---|
+| `info()` | always | summary dict: uuid, twin, env, types, available accessors |
+| `read_robot()` | recording has a robot stream | actuation table (`pyarrow.Table`) |
+| `read_depth()` | recording has a depth stream | list of `{timestamp_us, frame}` (uint16 `H×W`) |
+| `read_pointcloud()` | recording has a colored/lidar stream | list of `{timestamp_us, frame}` (float32 `N×cols`) |
+| `show_video()` | recording has video | plays the video in a `cv2` window |
+
+```python
+rec = twin.recordings.get(items[0])
+
+rec.info()
+if hasattr(rec, "read_robot"):
+    table = rec.read_robot()           # pyarrow.Table
+if hasattr(rec, "show_video"):
+    rec.show_video()
+if hasattr(rec, "read_depth"):
+    frames = rec.read_depth()          # [{"timestamp_us": ..., "frame": np.ndarray}, ...]
+if hasattr(rec, "read_pointcloud"):
+    points = rec.read_pointcloud()
+```
+
+Point-cloud frames come from the on-demand Parquet (see below); if it is still being
+prepared, `read_*` raises with a "retry in a few minutes" hint.
+
+## Point clouds as Parquet
+
+When you `get()` a recording, point-cloud data is downloaded as a single **Parquet**
+file (one row per frame: `timestamp_us`, `rows`, `cols`, `dtype`, and the raw frame
+`data`). `read_depth()` / `read_pointcloud()` reconstruct the frames; to read the file
+directly with pyarrow:
+
+```python
+import numpy as np
+import pyarrow.parquet as pq
+
+table = pq.read_table("<downloaded>.parquet")
+row = table.slice(0, 1).to_pylist()[0]
+frame = np.frombuffer(row["data"], dtype=row["dtype"]).reshape(row["rows"], row["cols"])
+```
+
+The Parquet is materialized on demand: the first time a recording is opened the server
+may still be preparing it. If so, `get()` logs a notice ("being generated / updated,
+retry in a few minutes") — call `get()` again shortly to receive the complete file.

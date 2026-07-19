@@ -101,7 +101,7 @@ Connection validation prevents invalid graphs: self-connections, cycles, and inv
 
 > stub: Workflows created from the dedicated **Workflows** page are `general` workflows. From an environment, Cyberwave can also create `mission` workflows that stay bound to that environment and reuse the same workflow editor/runtime with a mission-specific profile layered on top.
 
-> stub: Mission workflows now expose a **Move Twin** node that targets an environment waypoint. The node waits for navigation completion before continuing and can optionally dwell at the waypoint for a configured number of seconds.
+> stub: Mission workflows now expose a **Move Twin** node that moves a twin through one or more environment waypoints. Add waypoints to the node and reorder them — the twin follows them in order as a single path. Each waypoint can carry an optional **duration (seconds)**: the time the controller should take to reach it from the prior pose; leave it empty to use the default speed. Note that per-waypoint duration is a hint — not every robot's trajectory controller honors it, so check your robot's documentation for whether and how it applies. The node waits for navigation completion before continuing, can optionally dwell at the destination for a configured number of seconds, and can capture an image on arrival at the final waypoint.
 
 ### Using the CLI
 
