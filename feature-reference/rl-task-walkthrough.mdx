@@ -1,0 +1,312 @@
+---
+title: "RL Task Walkthrough"
+description: "Build a complete RL task end-to-end in Python — scaffold a workspace, compose an OpenArm pick-up scene, author actions, observations, and a network, export, train, upload the policy, and deploy it as an online controller."
+icon: "list-check"
+---
+
+{/* stub — pending human review */}
+
+This walkthrough builds one concrete task from an empty workspace to a deployed policy: an **OpenArm learning to pick up a cube off a table**, with a wrist depth camera. It uses the Python SDK throughout so you can run it as a reproducible setup script.
+
+It ties together the four RL surfaces:
+
+<CardGroup cols={2}>
+  <Card title="RL Tasks" icon="graduation-cap" href="/feature-reference/rl-tasks">
+    The entity and editor tabs this script automates.
+  </Card>
+  <Card title="Scene Sensors" icon="camera" href="/feature-reference/rl-task-scene-sensors">
+    Wiring the wrist depth camera and contact sensors.
+  </Card>
+  <Card title="Uploading Policies" icon="upload" href="/feature-reference/uploading-policies">
+    Upload the trained checkpoint and run it.
+  </Card>
+  <Card title="Online Controllers" icon="microchip" href="/feature-reference/online-controllers">
+    Deploy the policy against a simulated or live robot.
+  </Card>
+</CardGroup>
+
+## The scene
+
+Four twins make up the task. Each maps to one mjlab scene entity:
+
+| Twin | Catalog asset | Role | Base |
+| --- | --- | --- | --- |
+| `openarm` | `enactic/openarm` | The arm — the `robot` articulation | Fixed |
+| `support_box` | `cyberwave/generic_cube` (scaled) | The table | Fixed |
+| `red_cube` | `cyberwave/generic_cube` (scaled) | The object to pick up | Free |
+| `wrist_cam` | `intel/realsensed455` | Wrist depth camera, docked to the arm | Docked |
+
+<Note>
+The catalog assets (`enactic/openarm`, `cyberwave/generic_cube`, `intel/realsensed455`) must already exist in your workspace's catalog. On a local stack they are added by `make seed`.
+</Note>
+
+## Prerequisites
+
+```bash
+pip install cyberwave
+export CYBERWAVE_BASE_URL=http://localhost:8000
+export CYBERWAVE_API_KEY=<your-api-key>   # or run `cyberwave login`
+```
+
+```python
+from cyberwave import Cyberwave
+from cyberwave.placement import GENERIC_CUBE_BOUNDS
+from cyberwave.rl_tasks import (
+    RLTaskClient,
+    make_action_spec,
+    make_position_delta_action,
+    make_observation_spec,
+    make_joint_observation,
+    make_previous_action_observation,
+    make_camera_observation,
+    make_camera_sensor,
+    make_default_ppo_rlmodule_config,
+)
+
+cw = Cyberwave()         # reads CYBERWAVE_BASE_URL + CYBERWAVE_API_KEY
+rl = RLTaskClient(cw)
+```
+
+## Step 1 — Scaffold workspace, project, and environment
+
+```python
+# Use your first workspace (or look one up by name).
+workspace = cw.workspaces.list()[0]
+project = cw.projects.create(name="RL Tasks Demo", workspace_id=str(workspace.uuid))
+
+env = cw.environments.create(
+    name="openarm_pickup",
+    project_id=str(project.uuid),
+    description="OpenArm pick-up RL task",
+)
+print("environment:", env.uuid)
+```
+
+## Step 2 — Compose the scene
+
+Add the four twins to the environment. The arm is fixed-base, the cube is free, and the camera is docked to the arm's wrist link.
+
+```python
+scene = cw.get_scene(str(env.uuid))
+
+# The arm: a fixed-base articulation placed by its link origin.
+arm = scene.add_twin(
+    asset_key="enactic/openarm", name="openarm",
+    position=[0.0, 0.0, 0.48], orientation=[0.0, 0.0, 0.0, 1.0],
+    fixed_base=True,
+)
+
+# Table + cube: generic cubes scaled to real sizes. add_twin_centered
+# authors by visual centre + dimensions (metres), so you don't convert
+# to the asset's link origin by hand.
+table = scene.add_twin_centered(
+    asset_key="cyberwave/generic_cube", name="support_box",
+    center=(0.525, 0.0, 0.67), dimensions=(0.70, 0.80, 0.10),
+    asset_bounds=GENERIC_CUBE_BOUNDS, fixed_base=True,
+)
+cube = scene.add_twin_centered(
+    asset_key="cyberwave/generic_cube", name="red_cube",
+    center=(0.375, 0.14, 0.74), dimensions=(0.04, 0.04, 0.04),
+    asset_bounds=GENERIC_CUBE_BOUNDS, fixed_base=False,
+)
+
+# The wrist camera, docked to the arm's wrist link.
+wrist = scene.add_twin(
+    asset_key="intel/realsensed455", name="wrist_cam",
+    position=[0.0, 0.0, 0.0], orientation=[0.0, 0.0, 0.0, 1.0],
+    fixed_base=False,
+)
+scene.dock(
+    child_twin=wrist, parent_twin=arm, link_name="openarm_left_link7",
+    offset_position=[0.06, -0.055, 0.13],
+    offset_rotation=[0.25, 0.25, 0.65, 0.65],   # xyzw
+)
+```
+
+<Tip>
+`add_twin` places a twin by its **link origin**; `add_twin_centered` places it by its **visual centre** and scales it to `dimensions` (metres) using the asset's `asset_bounds`. Use the centred helper whenever you scale a generic primitive to a real-world size.
+</Tip>
+
+## Step 3 — Create the RL task
+
+Link the task to the environment and declare the entrypoint files Cyberwave will generate or expect.
+
+```python
+import requests
+
+resp = requests.post(
+    f"{cw.config.base_url}/api/v1/rl-tasks",
+    headers={"Authorization": f"Bearer {cw.config.api_key}"},
+    json={
+        "name": "OpenArm pick-up demo",
+        "workspace_uuid": str(workspace.uuid),
+        "project_uuid": str(project.uuid),
+        "environment_uuid": str(env.uuid),
+        "scene_cfg_path": "scene_cfg.py",
+        "env_cfg_path": "env_cfg.py",
+        "env_cfg_factory": "make_env_cfg",
+        "rl_cfg_path": "rl_cfg.py",
+        "rl_cfg_factory": "make_rl_cfg",
+        "registry_path": "registry.py",
+        "visibility": "private",
+    },
+)
+resp.raise_for_status()
+task_uuid = resp.json()["uuid"]
+print("task:", task_uuid)
+```
+
+## Step 4 — Assign scene entities
+
+Tell Cyberwave which twin is which mjlab entity, whether it is articulated, and which actuators the arm exposes. The wrist depth camera is attached as a sensor on the `robot` entity.
+
+```python
+ARM_JOINTS = [r".*__openarm_left_joint[1-7]$", r".*__openarm_left_finger_joint[12]$"]
+
+# Wrist depth camera (32x32 depth, sourced from the docked D455 twin).
+wrist_cam_sensor = make_camera_sensor(
+    "wrist_cam",
+    source_twin_uuid=str(wrist.uuid),
+    schema_sensor_names=["color_camera", "depth_camera"],
+    data_types=["depth"],
+    bind_mjcf_camera="depth_camera",
+    width=32, height=32, fovy=60.0, min_depth=0.05, max_depth=0.40,
+)
+
+rl.assign_articulation_entity(
+    task_uuid, twin_uuid=str(arm.uuid), name="robot", base_type="fixed",
+    actuators=[{"type": "xml_position", "target_names_expr": ARM_JOINTS}],
+    sensors=[wrist_cam_sensor],
+)
+rl.assign_rigid_entity(task_uuid, twin_uuid=str(table.uuid), name="support_box", base_type="fixed")
+rl.assign_rigid_entity(task_uuid, twin_uuid=str(cube.uuid), name="cube", base_type="free")
+```
+
+<Tip>
+Call `rl.get_orchestration_hints(task_uuid)` to confirm the `robot` entity, its actuated joint names, and the camera sensor name (here `robot__wrist_cam`) before authoring specs against them.
+</Tip>
+
+## Step 5 — Author actions, observations, and the network
+
+```python
+# Actions: one position-delta term driving the arm + fingers.
+rl.set_action_spec(task_uuid, make_action_spec([
+    make_position_delta_action(
+        "joint_delta", entity="robot",
+        target_names_expr=ARM_JOINTS, scale=0.04,
+    ),
+]))
+
+# Observations: a single "policy" group shared by actor and critic.
+rl.set_observation_spec(task_uuid, make_observation_spec({"policy": [
+    make_joint_observation("joint_pos", kind="position", entity="robot", target_names_expr=ARM_JOINTS),
+    make_joint_observation("joint_vel", kind="velocity", entity="robot", target_names_expr=ARM_JOINTS),
+    make_previous_action_observation("actions"),
+    make_camera_observation("wrist_depth", sensor="robot__wrist_cam", data_type="depth"),
+]}))
+
+# RL config: PPO with the default shared-MLP network.
+rl.set_rl_config_spec(task_uuid, make_default_ppo_rlmodule_config())
+```
+
+<Note>
+This walkthrough uses PPO with a small shared MLP to stay readable. For a vision policy you would author a CNN backbone that consumes the `wrist_depth` term — the network builder supports graph topologies for exactly this. See the [Network builder](/feature-reference/rl-tasks#network-builder) section.
+</Note>
+
+## Step 6 — Generate files and export
+
+```python
+# Build the Cyberwave-generated scene_cfg.py + spec-derived files from the
+# linked environment and the specs you just authored.
+rl.regenerate_scene_cfg(task_uuid)
+
+# Download the runnable plugin ZIP.
+import requests
+zip_resp = requests.get(
+    f"{cw.config.base_url}/api/v1/rl-tasks/{task_uuid}/export.zip",
+    headers={"Authorization": f"Bearer {cw.config.api_key}"},
+)
+with open("openarm_pickup.zip", "wb") as fh:
+    fh.write(zip_resp.content)
+```
+
+Your task-local Python — the reward function, resets, and terminations — lives in the user-written `env_cfg.py` inside the export. Cyberwave generates everything else (`scene_cfg.py`, `scene_bindings.py`, the spec wrappers, the MuJoCo assets).
+
+## Step 7 — Train
+
+Drop the exported folder into `cyberwave-rl/tasks/` and train it like any other task:
+
+```bash
+unzip openarm_pickup.zip -d cyberwave-rl/tasks/openarm_pickup
+cd cyberwave-rl
+make start
+make run_cfg arg_overrides="--task=openarm_pickup"
+```
+
+Training writes checkpoints to `logs/<task>/<run>/checkpoints/`. The best one is typically `best_agent.pt`.
+
+## Step 8 — Upload the trained policy
+
+```python
+checkpoint = rl.upload_checkpoint(
+    task_uuid,
+    "cyberwave-rl/logs/openarm_pickup/run-1/checkpoints/best_agent.pt",
+    name="best_agent",
+)
+checkpoint_uuid = checkpoint["uuid"]
+```
+
+See [Uploading Policies](/feature-reference/uploading-policies) for the external-URL alternative and upload limits.
+
+## Step 9 — Deploy the policy
+
+Publish the checkpoint as an `rltask` online controller, then assign it to the arm twin and run it. The controller runs in its own controller host and drives the plant over MQTT, so the same policy works against a simulated or a live OpenArm.
+
+```python
+import requests
+
+publish = requests.post(
+    f"{cw.config.base_url}/api/v1/rl-tasks/{task_uuid}/checkpoints/{checkpoint_uuid}/publish-controller",
+    headers={"Authorization": f"Bearer {cw.config.api_key}"},
+    json={"controller_name": "openarm-pickup-policy"},
+)
+publish.raise_for_status()
+controller_uuid = publish.json()["controller_policy_uuid"]
+```
+
+Now assign `controller_uuid` to the `openarm` twin and start a simulation — see [Online Controllers](/feature-reference/online-controllers) for assigning and running it, including the CPU/GPU compute choice.
+
+Alternatively, run a quick cloud inference loop without publishing a controller:
+
+```python
+run = rl.launch_inference(
+    task_uuid,
+    checkpoint_uuid=checkpoint_uuid,
+    twin_uuid=str(arm.uuid),
+    max_steps=1000,
+    control_rate_hz=50,
+)
+```
+
+## What you authored vs what Cyberwave generated
+
+| You author (user-written) | Cyberwave generates |
+| --- | --- |
+| Reward, reset, and termination logic in `env_cfg.py` | `scene_cfg.py` from the linked environment |
+| Custom observation functions | `scene_bindings.py`, `actions.py`, `observations.py` |
+| The trained checkpoint | The strict task spec + MuJoCo scene assets |
+| Scene/action/observation/RL choices (via SDK or editor) | The runtime adapters and export ZIP |
+
+## Where to go next
+
+<CardGroup cols={3}>
+  <Card title="RL Tasks" icon="graduation-cap" href="/feature-reference/rl-tasks">
+    Full reference for the editor tabs and export contract.
+  </Card>
+  <Card title="Uploading Policies" icon="upload" href="/feature-reference/uploading-policies">
+    Checkpoint upload, publish, and inference in depth.
+  </Card>
+  <Card title="Online Controllers" icon="microchip" href="/feature-reference/online-controllers">
+    Run the deployed policy against a simulated or live robot.
+  </Card>
+</CardGroup>

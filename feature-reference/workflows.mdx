@@ -31,7 +31,7 @@ Nodes are the building blocks of workflows. Each node performs a specific action
     Convert raw signals into reliable observations — reserved for object trackers, sensor fusion, IMU filtering, ASR (no nodes ship today)
   </Card>
   <Card title="Transform & Routing" icon="shuffle">
-    Reshape, convert, route, multiplex, or fan out data: `json_parser`, `annotate`, `anonymize`
+    Reshape, convert, route, multiplex, or fan out data: `json_parser`, `annotate`, `anonymize`, `send_depth` (edge-only)
   </Card>
   <Card title="State & Memory" icon="database">
     Store and retrieve memory over time: `create_asset`, `edit_asset`, `create_attachment`, `update_attachment`, `video_tagger`
@@ -46,7 +46,7 @@ Nodes are the building blocks of workflows. Each node performs a specific action
     Execute physical or twin-side actions: `twin_control` (Move Twin); future joint / gripper / navigation primitives
   </Card>
   <Card title="Integration" icon="plug">
-    Talk to external systems and run user-supplied logic: `http_request`, `send_email`, `code` (edge-only)
+    Talk to external systems and run user-supplied logic: `http_request`, `send_email`, `send_mqtt`, `code` (edge-only)
   </Card>
   <Card title="Observability & Safety" icon="shield-halved">
     Guard, validate, observe, and alert: `send_alert`; validators, watchdogs, e-stop guards, and anomaly detectors are on the roadmap

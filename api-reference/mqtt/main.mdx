@@ -313,7 +313,7 @@ Robot-specific command strings used by bundled controllers:
 | `camera_up` / `camera_down`    | UGV Beast            | Tilt camera                                   |
 | `camera_left` / `camera_right` | UGV Beast            | Pan camera                                    |
 | `camera_default`               | UGV Beast            | Reset camera position                         |
-| `take_photo`                   | UGV Beast, Quadruped | Trigger camera snapshot                       |
+| `take_photo`                   | UGV Beast, Quadruped | Trigger camera snapshot (result published to [`camera/photo`](#cyberwavetwintwin_uuidcameraphoto)) |
 | `battery_check`                | UGV Beast            | Request battery status                        |
 | `lights`                       | UGV Beast            | Set light PWM (pass `pwm` in `data`)          |
 | `set_linear_velocity`          | Quadruped            | Update velocity setting (`linear` in `data`)  |
@@ -428,6 +428,70 @@ Point cloud data as a base64-encoded array.
 | `type`      | string | yes      | Always `"pointcloud"`                |
 | `data`      | string | yes      | Base64-encoded Nx3 float32 XYZ array |
 | `timestamp` | number | no       | Unix timestamp (seconds)             |
+
+### `cyberwave/twin/{twin_uuid}/camera/photo`
+
+**Direction:** publish (edge driver) → subscribe (backend / frontend / SDK clients)
+
+A single still image captured on demand. This is the **result** of a [`take_photo`](#cyberwavetwintwin_uuidcommand) command:
+
+1. A client (frontend keyboard control, or your own code) publishes `{ "command": "take_photo" }` to `cyberwave/twin/{twin_uuid}/command`.
+2. The driver grabs the current camera frame, JPEG-encodes it (downscaled to keep the payload small), and base64-encodes the bytes.
+3. The driver publishes the payload below to `cyberwave/twin/{twin_uuid}/camera/photo`.
+
+The camera does **not** need to be streaming video for this to work — the driver captures a frame on demand.
+
+```json
+{
+  "source_type": "edge",
+  "timestamp": 1700000000.0,
+  "image": "base64EncodedJpeg==",
+  "format": "jpeg",
+  "width": 1280,
+  "height": 720
+}
+```
+
+| Field         | Type   | Required | Description                                        |
+| ------------- | ------ | -------- | -------------------------------------------------- |
+| `source_type` | string | yes      | Always `"edge"` (see [source types](#source-types)) |
+| `image`       | string | yes      | Base64-encoded image bytes (decode to get the file) |
+| `format`      | string | yes      | Image encoding, always `"jpeg"`                    |
+| `width`       | number | no       | Frame width in pixels                              |
+| `height`      | number | no       | Frame height in pixels                             |
+| `timestamp`   | number | no       | Unix timestamp (seconds)                           |
+
+#### Retrieving the photo
+
+Subscribe to the topic, then base64-decode the `image` field. Remember to prepend the [topic prefix](#topic-prefix) in non-production deployments (e.g. `localcyberwave/twin/...`).
+
+```python
+import base64, json
+import paho.mqtt.client as mqtt
+
+TWIN_UUID = "your-twin-uuid"
+
+def on_message(client, userdata, msg):
+    payload = json.loads(msg.payload)
+    if payload.get("source_type") != "edge" or not payload.get("image"):
+        return
+    with open("photo.jpg", "wb") as f:
+        f.write(base64.b64decode(payload["image"]))
+    print(f"Saved {payload['width']}x{payload['height']} photo")
+
+client = mqtt.Client()
+client.on_message = on_message
+client.connect("your-broker-host", 1883)
+# Trigger the capture, then wait for the result.
+client.subscribe(f"cyberwave/twin/{TWIN_UUID}/camera/photo")
+client.publish(
+    f"cyberwave/twin/{TWIN_UUID}/command",
+    json.dumps({"source_type": "tele", "command": "take_photo", "timestamp": 0}),
+)
+client.loop_forever()
+```
+
+---
 
 ### `cyberwave/twin/{twin_uuid}/metrics`
 

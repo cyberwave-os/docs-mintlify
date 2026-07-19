@@ -497,6 +497,42 @@ if RealSenseDiscovery.is_available():
     print(f"Depth resolutions: {info.get_depth_resolutions()}")
 ```
 
+### Streaming from simulation
+
+<Note>stub — pending human curation.</Note>
+
+With `cw.affect("simulation")`, `twin.start_streaming()` starts a simulation for the twin's environment and streams its camera. Switch to `cw.affect("real-world")` and the same code runs against real hardware.
+
+```python
+cw.affect("simulation")
+twin = cw.twin("unitree/go2")
+
+# Blocking — streams the sim camera until Ctrl+C
+twin.start_streaming()
+
+# Non-blocking — starts the simulation in the background
+async def start():
+    await twin.stream_video_background()
+
+asyncio.run(start())
+```
+
+Once the background stream is running, use `get_video()` to consume frames. It connects to the live ongoing WebRTC stream from the twin — either the physical camera or the MuJoCo virtual camera, depending on `cw.affect()`. If both a simulation and a live stream are running at the same time, `cw.affect()` correctly routes to the right one:
+
+```python
+asyncio.run(start())
+
+video = twin.camera.get_video()            # connects to the live WebRTC stream
+video.show()                               # live window; press q/Esc to quit
+frame = video.get_frame(format="numpy")    # or read frames yourself
+```
+
+Calling `start_streaming()` again while a simulation is already running is safe — it reuses the running simulation. `get_video()` waits for the simulation's camera producer to come online, so no manual sleep is needed.
+
+<Warning>
+`start_streaming()` starts a simulation for the **entire environment**, not just the calling twin. All other twins in that environment that have camera sensors will also begin streaming.
+</Warning>
+
 ---
 
 ## Workspaces, Projects, and Environments

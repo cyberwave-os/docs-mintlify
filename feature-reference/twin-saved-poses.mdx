@@ -1,0 +1,26 @@
+---
+title: "Saved poses"
+description: "Save and re-apply named joint poses for a twin from Edit, Live, and Simulate mode"
+tags:
+  - stub
+---
+
+## What it is
+
+Poses are named joint-angle snapshots you can save and re-apply later, from
+the Poses section of a twin's right-hand panel (below Manual Control /
+Joint Editing).
+
+## Where it works
+
+- **Edit mode**: save/edit/delete/apply poses against the twin's rest state.
+- **Live mode**: save captures the twin's current live telemetry (not the
+  rest state); applying a pose sends it to the real device over MQTT.
+- **Simulate mode**: save captures the current simulated joint state;
+  applying a pose drives the simulator over MQTT.
+
+## Scopes
+
+A pose can be saved at twin, environment, or asset scope, controlling
+whether it's specific to this twin, this environment, or shared across every
+instance of the asset.

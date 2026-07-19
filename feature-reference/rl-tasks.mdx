@@ -1,130 +1,352 @@
 ---
 title: "RL Tasks"
-description: "Package a Cyberwave environment + your MDP / RL code as a runnable mjlab/skrl plugin"
+description: "Package a Cyberwave environment plus your MDP and RL code as a runnable mjlab/skrl plugin: author actions, observations, and a graph-based network in the dashboard, then export a ZIP that drops into cyberwave-rl/tasks/."
 icon: "graduation-cap"
 ---
 
-> stub: RL Task is a workspace-scoped, optionally-environment-linked entity that packages a runnable RL plugin. Cyberwave generates the **SceneCfg** from a linked environment (the same MuJoCo scene used everywhere else in the platform) and you bring the rest of the MDP / RL configuration as an arbitrary tree of source files. Exporting an RL task produces a ZIP that drops directly into `cyberwave-rl/tasks/<task_id>/` and is discovered by the existing registry — `make run_cfg` then runs it like any other task.
+{/* stub — pending human review */}
+
+An **RL Task** is a workspace-scoped, optionally environment-linked entity that packages a runnable reinforcement-learning plugin. Cyberwave generates the **SceneCfg** from a linked environment — the same MuJoCo scene used everywhere else in the platform — and you bring the rest of the MDP and RL code as an arbitrary tree of source files. Exporting an RL task produces a ZIP that drops directly into `cyberwave-rl/tasks/<task_id>/`, where the existing registry discovers it and `make run_cfg` runs it like any other task.
+
+<Note>
+Cyberwave currently supports **basic mjlab**: exported tasks are mjlab-compatible (scene config, action and observation terms, skrl training). We're planning to release a richer Cyberwave mjlab extension with useful helpers in the future.
+</Note>
 
 ## Why a separate entity?
 
-> stub: We deliberately keep RL tasks independent of `Environment`. Deleting an environment **detaches** linked RL tasks (`environment=None`) instead of cascading, so a task can keep its source tree even when the world it was originally trained against is gone. This matches how researchers actually iterate: the SceneCfg is a moving target while the reward, action, and observation specs are the long-lived artefact.
+RL tasks are deliberately kept independent of [Environments](/overview/features/environment). Deleting an environment **detaches** any linked RL tasks (sets `environment` to none) instead of cascading the delete, so a task keeps its source tree even after the world it was originally trained against is gone.
+
+This matches how researchers actually iterate: the SceneCfg is a moving target, while the reward, action, and observation specs are the long-lived artefacts.
 
 ## Lifecycle
 
-> stub:
-> 1. **Create** an RL task from `/rl-tasks` or from the **File → Export → Create RL task from this environment** menu in the environment editor.
-> 2. **Import** an existing task ZIP (e.g. an in-tree task from `cyberwave-rl/tasks/`) to seed the source tree, or write the files directly in the editor.
-> 3. **Configure** entrypoint paths (`env_cfg_path` / `env_cfg_factory`, `rl_cfg_path` / `rl_cfg_factory`, optional `registry_path`) and pick where the generated SceneCfg should land via `scene_cfg_path`.
-> 4. **Regenerate SceneCfg** to write the Cyberwave-owned SceneCfg module from the linked environment. Cyberwave never enforces a particular `from … import …` statement; the import path is yours to wire.
-> 5. **Export ZIP** and drop the folder into `cyberwave-rl/tasks/`. Run with `make run_cfg <task_id>` exactly like the in-tree examples.
-> 6. **Round-trip**: edit locally, then re-import the same folder back into Cyberwave to keep the editor in sync.
+<Steps>
+  <Step title="Create">
+    Create an RL task from `/rl-tasks`, or from **File → Export → Create RL task from this environment** in the environment editor.
+  </Step>
+  <Step title="Import or author source">
+    Import an existing task ZIP (for example an in-tree task from `cyberwave-rl/tasks/`) to seed the source tree, or write files directly in the **Files** tab.
+  </Step>
+  <Step title="Configure entrypoints">
+    Set the entrypoint paths — `scene_cfg_path`, `env_cfg_path` / `env_cfg_factory`, `rl_cfg_path` / `rl_cfg_factory`, and an optional `registry_path`. Cyberwave never forces a particular `from … import …` statement; the import wiring is yours.
+  </Step>
+  <Step title="Regenerate SceneCfg">
+    Regenerate the Cyberwave-generated SceneCfg module from the linked environment. This also rewrites the spec-derived files (`scene_bindings.py`, `actions.py`, `observations.py`, `task_export/`, and the strict task spec).
+  </Step>
+  <Step title="Export and run">
+    Download the ZIP and drop the folder into `cyberwave-rl/tasks/`. Run it with `make run_cfg arg_overrides="--task=<id>"` exactly like the in-tree examples.
+  </Step>
+  <Step title="Round-trip">
+    Edit locally, then re-import the same folder back into Cyberwave to keep the editor in sync. The editor stays authoritative for Cyberwave-generated files.
+  </Step>
+</Steps>
+
+## Editor tabs
+
+The RL task editor is organized into tabs that map onto the export contract:
+
+| Tab | What it authors |
+| --- | --- |
+| **Overview** | Task metadata, linked environment, and entrypoint paths. |
+| **Scene entities** | The articulation entities, their simulation actuators, cameras, and contact sensors. See [RL task scene sensors](/feature-reference/rl-task-scene-sensors). |
+| **Actions** | The policy-controlled action terms and their control-mode presets. |
+| **Observations** | Grouped observation terms for the policy and critic heads. |
+| **RL config** | skrl backend, algorithm, graph-based network builder, and trainer parameters. |
+| **Files** | The full source tree, including read-only Cyberwave-generated files. |
+| **Runtime** | Runtime target, accelerator, bundle version, and "Train locally" snippets. |
+| **Policies** | Upload trained checkpoints, publish controllers, and run inference. |
+
+## Author from Python (SDK)
+
+Everything the editor tabs produce can also be authored from the Python SDK — useful for reproducible setup scripts. The `RLTaskClient` covers every tab via its `set_*_spec` methods, so a script and the dashboard produce the same specs. The Actions, Observations, and RL config tabs also ship `make_*` builder helpers; the command tabs are authored as plain dicts passed to `set_training_command_spec` / `set_inference_command_spec` (see step 4b below).
+
+The example below is the **OpenArm pick-up** task: a fixed-base arm, a table, a free-floating cube, and a wrist depth camera. It is the same scene used in the full [RL task walkthrough](/feature-reference/rl-task-walkthrough), trimmed to the essentials.
+
+```python
+from cyberwave import Cyberwave
+from cyberwave.rl_tasks import (
+    RLTaskClient,
+    make_action_spec,
+    make_position_delta_action,
+    make_observation_spec,
+    make_joint_observation,
+    make_previous_action_observation,
+    make_default_ppo_rlmodule_config,
+)
+
+cw = Cyberwave()            # reads CYBERWAVE_BASE_URL + CYBERWAVE_API_KEY
+rl = RLTaskClient(cw)
+task_uuid = "<rl-task-uuid>"   # created via POST /api/v1/rl-tasks
+
+# Match the arm + finger joints (twin-namespaced at runtime).
+ARM_JOINTS = [r".*__openarm_left_joint[1-7]$", r".*__openarm_left_finger_joint[12]$"]
+
+# 1. Scene entities: which twin is which mjlab entity.
+rl.assign_articulation_entity(
+    task_uuid, twin_uuid="<openarm-twin-uuid>", name="robot", base_type="fixed",
+    actuators=[{"type": "xml_position", "target_names_expr": ARM_JOINTS}],
+)
+rl.assign_rigid_entity(task_uuid, twin_uuid="<table-twin-uuid>", name="support_box", base_type="fixed")
+rl.assign_rigid_entity(task_uuid, twin_uuid="<cube-twin-uuid>", name="cube", base_type="free")
+
+# 2. Actions: one position-delta term driving the arm + fingers.
+rl.set_action_spec(task_uuid, make_action_spec([
+    make_position_delta_action("joint_delta", entity="robot", target_names_expr=ARM_JOINTS, scale=0.04),
+]))
+
+# 3. Observations: a single "policy" group the actor and critic share.
+rl.set_observation_spec(task_uuid, make_observation_spec({"policy": [
+    make_joint_observation("joint_pos", kind="position", entity="robot", target_names_expr=ARM_JOINTS),
+    make_joint_observation("joint_vel", kind="velocity", entity="robot", target_names_expr=ARM_JOINTS),
+    make_previous_action_observation("actions"),
+]}))
+
+# 4. RL config: PPO with the default shared-MLP network.
+rl.set_rl_config_spec(task_uuid, make_default_ppo_rlmodule_config())
+
+# 4b. (Optional) Command specs: a target generator your observations read.
+#     Opt-in and split by lifecycle — tasks with no command fall back to a
+#     null manager. The TRAINING spec drives mjlab's CommandManager (sampled
+#     goals, resampled each window); the INFERENCE spec drives the live/
+#     inference command surface (externally supplied targets).
+#     A code-backed term names its uploaded source module by dotted path
+#     (``commands.viewpoint`` → ``commands/viewpoint.py``) and the class it binds.
+rl.set_training_command_spec(task_uuid, {
+    "schema_version": 1,
+    "commands": [{
+        "name": "viewpoint", "type": "custom",
+        "module": "commands.viewpoint", "symbol": "ViewpointCommandCfg",
+        "resampling_time_range": [4.0, 4.0],
+    }],
+})
+rl.set_inference_command_spec(task_uuid, {
+    "schema_version": 1,
+    "commands": [{
+        "name": "viewpoint", "type": "custom",
+        "module": "commands.viewpoint", "symbol": "ViewpointCommandCfg",
+        "payload_schema": {"target_position": "vec3"},
+        "source": {"kind": "mqtt"},
+    }],
+})
+
+# 5. Regenerate the Cyberwave-generated files from the specs + linked environment.
+rl.regenerate_scene_cfg(task_uuid)
+```
+
+<Tip>
+`rl.get_orchestration_hints(task_uuid)` returns the scene-derived dropdown data (articulated entities, actuator groups, actuated vs passive joint names, available sensors) the editor uses to populate its pickers — call it first to discover the exact entity and joint names before authoring specs.
+</Tip>
+
+For the complete version — scaffolding the workspace, environment, and twins, wiring a wrist depth camera and contact sensors, training, and deploying the policy — follow the [RL task walkthrough](/feature-reference/rl-task-walkthrough).
+
+## Actions
+
+Action terms are authored from five control-mode presets:
+
+| Preset | Spec value | Formula | Requires actuator |
+| --- | --- | --- | --- |
+| **Position delta** | `position_delta` | `target = q_now + baseline_delta + action × scale` | `xml_position` |
+| **Smoothed position delta** | `smoothed_position_delta` | same as `position_delta`, delta ramped linearly over the decimation substeps | `xml_position` |
+| **Position target** | `position` | `target = action × scale + offset` (anchored at joint home) | `xml_position` |
+| **Velocity** | `velocity` | `target = action × scale + offset` | `xml_velocity` or `xml_position` |
+| **Effort / torque** | `effort` | `target = action × scale + offset` | `xml_motor` |
+
+`position`, `velocity`, and `effort` mirror the Isaac Lab / mjlab `JointPositionActionCfg` / `JointVelocityActionCfg` / `JointEffortActionCfg` math one-to-one — exactly the `target = action × scale + offset` that mjlab implements in `BaseAction.process_actions`. `position_delta` is Cyberwave's own preset: `baseline_delta` is an explicit per-step bias baked into the target, so an action of zero can drift the joints toward a goal pose. `smoothed_position_delta` is the same delta, but spread evenly across the policy step's physics substeps for a smoother velocity profile.
+
+A single **Use default joint offset** checkbox mirrors mjlab's `use_default_offset`: when on, mjlab replaces `offset` with each joint's `default_joint_pos` (or `default_joint_vel`) at runtime so action zero returns the joint to its home pose. Every numeric field (`scale`, `offset`, `baseline_delta`) has a **Per joint** toggle that switches it between a uniform scalar and a `{joint_name: value}` mapping. The backend rejects per-joint keys that aren't in the action's selected joints, so typos surface at save time. Legacy symbolic offsets (`"default"`, `"zero"`, `"none"`) keep round-tripping unchanged.
+
+The **Scene** tab is where you enable **simulation actuators** for an entity (which `Xml*ActuatorCfg` wrapper drives each joint); the **Actions** tab is where you pick the policy-controlled subset of those actuators. Each action row renders a schema-backed joint table (Joint, Control type, Position min/max, Max velocity, Max torque/force, KP, KD, Selected) with **Select all** / **Clear**. Passive joints, spring-only actuators, and joints driven by an incompatible wrapper appear greyed out with a hint. Incompatible presets are hidden rather than shown disabled. Concrete joint names are stored in `target_names_expr`; a collapsed **Advanced — custom regex** disclosure lets imported or legacy specs keep regex patterns.
+
+<Warning>
+**One action per joint.** Every `(entity, joint)` pair can be assigned to at most one action term — the policy emits a single value per actuated DOF. The Actions tab enforces this in three places: joints already controlled by another row render disabled with an "owned by …" pill; **Select all** only picks unclaimed joints; and `PUT /api/v1/rl-tasks/{uuid}/actions` rejects overlapping payloads with an error naming both action names and a sample of overlapping joints. To split a robot across two terms (for example arm + gripper), give each term a disjoint subset of joints.
+</Warning>
+
+## Observations
+
+Observation terms are organized into named groups (`policy`, `critic`, …) and drawn from a catalog:
+
+| Term | Description |
+| --- | --- |
+| `joint_position` | Joint positions. |
+| `joint_velocity` | Joint velocities. |
+| `joint_effort` | Joint efforts / torques. |
+| `link_position` | Body position; pick among `x` / `y` / `z` components. |
+| `link_pose` | Body pose: `x` / `y` / `z` plus a single `quat` token keeping the full `(qw, qx, qy, qz)` tuple grouped. |
+| `link_velocity` | Body twist: `x` / `y` / `z` linear plus `rx` / `ry` / `rz` angular. |
+| `camera` | Depth or color from a sensor configured on a scene entity. |
+| `previous_action` | The previous action tensor. |
+| `custom` | User `module.symbol` plus literal kwargs. |
+
+Link terms pick bodies from a scene-derived checkbox list and expose **Components** toggles so you only export the axes the policy needs. Joint observation terms reuse the shared **Joint target picker** and — unlike actions — may include both actuated and passive joints, with "All actuated", "All joints", "Passive joints", and "Pick specific joints" exposed directly; "Custom regex" sits behind a small **Advanced** disclosure.
+
+<Tabs>
+  <Tab title="Shared policy/critic (default)">
+    One group is authored, and the runtime aliases the missing `critic` group onto `policy` so both heads see the same tensor.
+  </Tab>
+  <Tab title="Separate policy and critic">
+    Each group is authored independently.
+  </Tab>
+</Tabs>
+
+Observation rows show the term type as a compact chip next to the editable name; the type is fixed after creation (remove and re-add to change it).
+
+## RL config
+
+The **RL config** tab persists the skrl backend, the algorithm (**PPO** or **SAC**), a structured graph-based **Network builder**, the trainer parameters (timesteps, intervals, seed), and the algorithm-config knobs (learning rate, discount factor, ratio clip, batch size, …). Switching algorithm seeds matching defaults. **Experiment paths** (`experiment.name` / `experiment.directory`) default to values derived from the RL task slug and are shown read-only; toggle **Override experiment paths** to write custom values.
+
+### Network builder
+
+The network builder is graph-first: it renders the network as a DAG of typed nodes on an inline canvas, with one canvas per role for the active topology.
+
+- **`shared`** uses the same architecture for both heads. For PPO this yields a true shared-trunk model (`SharedRLModelCfg`); for SAC it instantiates two independent modules (policy + Q) with the same block spec, because SAC heads can't share weights.
+- **`separated`** lets you author one graph per role (`policy` / `value` for PPO, `policy` / `q` for SAC).
+
+Top-level **presets** are graph templates (for example *PPO – shared MLP*, *SAC – separated MLP*) that materialise the equivalent observation → trunk → head topology directly on the canvas. The palette covers inputs (`observation_input`), dense layers (`mlp`, `residual_mlp`), transforms (`activation`, `layer_norm`), recurrent layers (`rnn`, `gru`, `lstm`), vision (`cnn_backbone` with NatureCNN / IMPALA presets), merge nodes (`concat`, `residual_add`), and a role/algorithm-aware **Heads** section that surfaces `actor_head` + `value_head` for PPO and `actor_head` + `q_head` for SAC.
+
+Drag the canvas background to pan, drag a node to reposition it (positions persist in `graphs[role].layout`), and click an edge to delete it. Clicking a node opens an inline inspector below the canvas with the outputs picker (`features_node_id` / `head_node_id`) and the per-node editor. An **Open graph builder** button pops the same graph into a fullscreen dialog for serious authoring.
+
+`observation_input` nodes pick a group and a subset of term names from the **Observations** tab. Each term shows read-only tensor metadata — an `image-like` / `flat` badge and a short kind label — so the builder can route image-like terms into a `cnn_backbone` and reject flat terms feeding one. Gaussian log-std controls (`initial_log_std`, `min_log_std`, `max_log_std`) live in the actor head inspector and apply only to the stochastic Gaussian policy.
+
+<Note>
+Legacy `{kind, hidden_units, activation}` and `architecture: "mlp"` / `"residual_mlp"` / `"custom"` specs are transparently promoted to a graph on load, so older tasks just render. At runtime, `from runners.skrl.network_builder import build_skrl_model_cfg` maps the persisted spec onto `rlmodule.MlpCfg` / `ResidualMlpCfg` / `SharedRLModelCfg` / `SeparatedRLModelCfg` for the skrl runner.
+</Note>
+
+<Tip>
+**Verify before saving.** The **Verify** button next to **Save RL config** runs the same validation the save path uses — without persisting — and reports the first problem (for example *"mlp needs exactly 1 input; got 2 — merge multiple branches with a Concat node first"*). The inline canvas also flags structural issues live as red error badges. A passing Verify guarantees Save will succeed.
+</Tip>
+
+## Runtime: target, accelerator, and bundle
+
+Open the **Runtime** tab to choose how the exported plugin runs:
+
+1. Pick a **`runtime_target`** — `cyberwave-rl-experimental` (plain local Python, no Docker) or `cyberwave-rl` (the dockerized stack).
+2. Pick a **`runtime_accelerator`** — `gpu` is the default; `cpu` is the smoke-friendly opt-in.
+3. Pin a single **`runtime_bundle`** version (default `latest`). The bundle ships `mjlab` + the chosen runtime + `skrl` together, so callers only ever pin one version.
+4. Configure the entrypoints (`scene_cfg_path`, `env_cfg_path` / `env_cfg_factory`, `rl_cfg_path` / `rl_cfg_factory`, optional `registry_path`) inline.
+5. Copy the matching **Train locally** snippet for the selected target and accelerator.
+
+Both runtimes consume the same exported plugin contract, and the runtime spec (target + accelerator + versions + policy interface) is persisted on the `RLTask` and forwarded to checkpoints and inference dispatch with a `task → checkpoint → launch` merge order.
+
+<Tabs>
+  <Tab title="cyberwave-rl (Docker)">
+    ```bash
+    make start
+    make run_cfg arg_overrides="--task=<task_id>"
+    ```
+    Real training expects a CUDA GPU.
+  </Tab>
+  <Tab title="cyberwave-rl-experimental (local Python)">
+    ```bash
+    # CPU smoke test
+    python -m train_from_cfg --device=cpu --num_envs=2 --max_steps=10
+
+    # Full GPU training (same defaults as cyberwave-rl)
+    python -m train_from_cfg
+    ```
+  </Tab>
+</Tabs>
+
+## Policies and inference
+
+The **Policies** tab is the post-training counterpart to the Runtime tab's "Train locally" snippets: upload a trained checkpoint, publish it as a controller, and run inference. Inference deliberately does **not** run MuJoCo — the worker loops Cyberwave joint state through the policy and publishes commands over MQTT.
+
+See the dedicated [Uploading Policies](/feature-reference/uploading-policies) page for the full checkpoint upload, publish, and inference flow, and [Online Controllers](/feature-reference/online-controllers) for serving a published policy.
 
 ## What's in the exported ZIP?
 
-> stub: A minimal Python package with:
->
-> - `__init__.py` — generated header that imports your registry (or the default one).
-> - The user-owned tree exactly as you authored it — arbitrary nesting, free file structure.
-> - The Cyberwave-owned SceneCfg module at `scene_cfg_path` (regenerated from the linked environment), the sibling `scene_bindings.py` with semantic role/twin/sensor aliases that user code consumes instead of hardcoding entity names, the strict `cyberwave_task_spec.py` (canonical Python interchange for scene entities), and a `cyberwave_export.json` manifest.
-> - The MuJoCo scene assets bundled from the same `export_mujoco_zip_cloud` pipeline used elsewhere: one merged `models/mujoco_scene.xml`, one **per-entity** `models/<name>.xml` carved out of it at build time (so each `EntityCfg.spec_fn` can `MjSpec.from_file` its own slice), and the shared `models/assets/` meshes.
-> - A fallback `registry.py` wiring `env_cfg` / `rl_cfg` factories into `register_cyberwave_task`, used only when you don't ship your own registry path.
+The export is a minimal Python package that drops into `cyberwave-rl/tasks/<task_id>/`:
 
-## Compatibility today
+- **`__init__.py`** — generated header that imports your registry (or the default one).
+- **Your source tree** — exactly as you authored it, with arbitrary nesting and free file structure.
+- **`scene_cfg.py`** (at the configured `scene_cfg_path`) — the Cyberwave-generated SceneCfg, regenerated from the linked environment.
+- **`scene_bindings.py`** — semantic role / twin / sensor aliases plus `ACTION_SPEC`, `OBSERVATION_SPEC`, and `RL_CONFIG_SPEC`.
+- **`actions.py`** (`make_actions()`) and **`observations.py`** (`make_observations()`) — the named wrappers.
+- **`task_export/`** — the runtime adapters those wrappers import.
+- **`cyberwave_task_spec.py`** — the strict, canonical Python interchange for scene entities.
+- **`cyberwave_export.json`** — the export manifest (records runtime target, accelerator, and version pins).
+- **MuJoCo assets** — one merged `models/mujoco_scene.xml`, one per-entity `models/<name>.xml` carved out of it at build time (so each `EntityCfg.spec_fn` can `MjSpec.from_file` its own slice), and the shared `models/assets/` meshes.
+- **`registry.py`** — a fallback registry wiring `env_cfg` / `rl_cfg` factories into `register_cyberwave_task`, used only when you don't ship your own `registry_path`.
 
-> stub: The exported plugin targets one of two runtimes selected on the RL task **Runtime** tab:
->
-> - **`cyberwave-rl`** — the existing Docker stack. `make start` brings up the runner; `make run_cfg arg_overrides="--task=<id>"` picks the task by id. Real training expects a CUDA GPU.
-> - **`cyberwave-rl-experimental`** — plain Python install (no Docker). Useful for CPU smoke tests via `python -m train_from_cfg --device=cpu --num_envs=2 --max_steps=10` and full GPU training with the same defaults as `cyberwave-rl`.
->
-> Both runtimes consume the same exported plugin contract. The exporter records the choice (plus optional version pins for `mjlab`, the chosen runtime, and `skrl`) under `cyberwave_export.json → runtime`, and ships a `cyberwave_runtime.py` adapter so the same folder is portable across runtimes. Re-importing the folder back into Cyberwave keeps the editor authoritative.
+### Cyberwave-generated vs user-written
 
-## Runtime target, accelerator & bundle version
+`scene_bindings.py` is the stable interface between Cyberwave-generated scene metadata and user-written training code. It exposes role aliases (`ROBOT_ENTITY`, `OBJECT_ENTITY`, `SUPPORT_ENTITY`), twin namespace prefixes, namespaced joint-position regex keys, actuator target regexes, camera attach paths, contact sensor names, and a `body_pattern(entity, suffix)` helper. Consume these constants from `env_cfg.py` so renaming a twin or moving a camera in the composer regenerates the bindings without touching MDP code.
 
-> stub: Open the **Runtime** tab on any RL task to:
->
-> 1. Pick a `runtime_target` (`cyberwave-rl-experimental` for local Python, or `cyberwave-rl` for the dockerized stack).
-> 2. For the dockerized path, pick an `runtime_accelerator` (`gpu` is the default; `cpu` is the smoke-friendly opt-in).
-> 3. Pin the single `runtime_bundle` version (default `latest`). The bundle ships `mjlab` + the chosen runtime + `skrl` together, so callers only ever pin one version.
-> 4. Configure the entrypoints — `scene_cfg_path`, `env_cfg_path` / `env_cfg_factory`, `rl_cfg_path` / `rl_cfg_factory`, optional `registry_path` — inline as a subsection.
-> 5. Copy the matching **Train locally** snippet for the selected backend + accelerator.
->
-> The runtime contract (target + accelerator + versions + policy interface) is persisted on the `RLTask` and forwarded to checkpoints / inference dispatch with a `task → checkpoint → launch` merge order.
+The editor owns Scene entities, Actions, Observations, RL config, and all generated artefacts. Task-local Python — reward functions, reset / termination logic, metrics, command shaping, and custom observation functions — stays **user-written** under `task_sources/`.
 
-## Duplicate an RL task
+Three execution-only modules in `cyberwave-rl` consume the persisted specs so user-written files only have to provide rewards, resets, terminations, commands, and custom observation functions:
 
-> stub: The RL task editor's header and the cards on `/rl-tasks` both expose a **Duplicate** action. It clones the task definition (metadata, runtime contract, source files, scene entities) into a new row in the same workspace under `Copy of <name>`. Trained checkpoints and inference runs are **not** cloned — the duplicate is a fresh task that hasn't trained yet. The same operation is exposed as `POST /api/v1/rl-tasks/{uuid}/clone` and as `RLTaskClient.clone_task(...)` in the Python SDK.
+```python
+from task_export.action_specs import make_action_cfgs          # ACTION_SPEC → {name: ActionTermCfg}
+from task_export.observation_specs import make_observation_groups  # OBSERVATION_SPEC → {group: ObservationGroupCfg}
+from task_export.rl_config_specs import make_rl_cfg_from_spec   # RL_CONFIG_SPEC → ReinforcementLearningCfg
+```
 
-## Inference (preview)
+<Warning>
+ZIP **import** is intentionally document-only for the generated paths: `scene_cfg.py`, `scene_bindings.py`, and `cyberwave_task_spec.py` are skipped on import and the response carries an explicit warning. Scene entities are **not** auto-restored from a bundled `cyberwave_task_spec.py` — re-compose them in the editor. The export ZIP always carries fresh bytes for the Cyberwave-generated files, so re-running the composer (or hitting `regenerate-scene-cfg`) is enough to refresh the artefact.
+</Warning>
 
-> stub: A separate **checkpoint → inference** path is exposed alongside the export flow. It deliberately **does not run MuJoCo** — the worker loops Cyberwave joint state through the policy and publishes commands via MQTT.
->
-> - `POST /api/v1/rl-tasks/{uuid}/checkpoints` — attach a trained policy checkpoint (weights URL + runtime target + versions + policy IO interface). `GET` / `DELETE` are also available under the same prefix.
-> - `POST /api/v1/rl-tasks/{uuid}/checkpoints/upload` — multipart upload that materialises both an `Attachment` and the matching `RLTaskCheckpoint` row in one call (runtime/interface fields inherit from the parent RL task).
-> - `POST /api/v1/rl-tasks/{uuid}/inference` — launch an inference workload for a target `twin_uuid`. The body accepts `checkpoint_uuid` (preferred), plus optional `mode`, `max_steps`, and `control_rate_hz` overrides. The backend dispatches a `cyberwave-rl-task-inference` cloud-node workload with the merged runtime metadata.
-> - `GET /api/v1/rl-tasks/{uuid}/inference` — list past dispatches with their resolved runtime target/versions and linked workload.
->
-> Frontend hooks (`useRLTaskCheckpoints`, `useCreateRLTaskCheckpoint`, `useUploadRLTaskCheckpoint`, `useRLTaskInferenceRuns`, `useLaunchRLTaskInference`) wrap the same endpoints for the dashboard.
+## API surface
 
-## Policies — upload trained weights and play locally
+All endpoints are under `/api/v1/rl-tasks` and require authentication.
 
-> stub: The **Policies** tab on the RL task editor is the post-training counterpart to the Runtime tab's "Train locally" snippets. After training with `cyberwave-rl`, upload your `best_agent.pt` back to the task with the **Upload policy** card (max 512 MB, `.pt` / `.pth` / `.zip` accepted); the backend registers an `RLTaskCheckpoint` row whose ACL inherits from the RL task. The **Registered policies** list shows attachment-backed uploads ("Uploaded" badge) and external `weights_url` rows ("URL" badge) side by side and exposes `Download` / `Delete` actions. Selecting a checkpoint reveals a copy-paste **Use in MuJoCo locally** snippet that uses the SDK to download the checkpoint, stage it into the `logs/<task>/uploaded/checkpoints/best_agent.pt` layout that `cyberwave-rl/source/play.py` expects, and run `PlayConfig`. The Python SDK exposes the same workflow as `RLTaskClient.upload_checkpoint(...)`, `RLTaskClient.download_checkpoint(...)`, and `RLTaskClient.prepare_checkpoint_for_play(...)`; `cyberwave-rl`'s `play()` also auto-stages any loose checkpoint passed via `--checkpoint` so iterating on one-off files no longer requires manual directory juggling.
+| Method & path | Purpose |
+| --- | --- |
+| `GET/POST /api/v1/rl-tasks` | List / create RL tasks. |
+| `GET/PUT/DELETE /api/v1/rl-tasks/{uuid}` | Read, update, soft-delete (independent of the linked environment). |
+| `POST /api/v1/rl-tasks/{uuid}/clone` | Duplicate the task definition (metadata, runtime contract, source files, scene entities) into a new row; checkpoints and inference runs are not cloned. |
+| `GET /api/v1/rl-tasks/{uuid}/source-files` | List and read/write/delete the user-written source tree (content endpoints live under the same prefix). Unsafe paths and uncompilable Python are rejected. |
+| `POST /api/v1/rl-tasks/{uuid}/regenerate-scene-cfg` | Rewrite the SceneCfg at the configured path plus every spec-derived file (task spec, `scene_bindings.py`, `actions.py`, `observations.py`, `task_export/`). This is the Files-tab "Regenerate all". |
+| `POST /api/v1/rl-tasks/{uuid}/regenerate-task-spec` | Regenerate only the spec-derived files (no SceneCfg rebuild); used by the Actions/Observations "Save & regenerate". |
+| `POST /api/v1/rl-tasks/{uuid}/generate-env-cfg` | Write a runnable starter `env_cfg.py` (user-written). Returns **409** if one already exists unless `overwrite=true`. |
+| `GET /api/v1/rl-tasks/{uuid}/export.zip` | Download the runnable plugin ZIP. |
+| `POST /api/v1/rl-tasks/import.zip` | Import a ZIP as a new task. |
+| `POST /api/v1/rl-tasks/{uuid}/import.zip` | Refresh an existing task from a ZIP (generated files skipped; a bundled task spec surfaces a warning). |
+| `GET/PUT /api/v1/rl-tasks/{uuid}/actions` | Read / write the action spec. |
+| `GET/PUT /api/v1/rl-tasks/{uuid}/observations` | Read / write the observation spec. |
+| `GET/PUT /api/v1/rl-tasks/{uuid}/rl-config` | Read / write the RL config spec. |
+| `GET /api/v1/rl-tasks/{uuid}/orchestration-hints` | Scene-derived dropdown data: articulation entities, actuator groups and types per entity, declared joint/body names, actuated vs passive joint lists, and configured camera / contact sensors. |
+| `GET/POST/PUT /api/v1/rl-tasks/{uuid}/scene-entities` | List, create, and update scene entities. |
+| `PATCH/DELETE /api/v1/rl-tasks/{uuid}/scene-entities/{entity_uuid}` | Partially update or delete a single scene entity. |
 
-## API surface (preview)
+The `RLTask` response surfaces the action, observation, and RL-config specs as `action_spec`, `observation_spec`, and `rl_config_spec` JSON fields. It also surfaces the two **command specs** split by lifecycle — `training_command_spec` and `inference_command_spec` — each paired with an explicit lifecycle switch (`training_command_setup_enabled` / `inference_command_setup_enabled`). Unlike the actions/observations/rl-config specs (which have dedicated `GET/PUT` endpoints), the command specs and their switches are read from the `RLTask` response and written through `POST`/`PUT /api/v1/rl-tasks/{uuid}` (mirrored by the SDK's `set_training_command_spec` / `set_inference_command_spec`).
 
-> stub:
->
-> - `GET/POST /api/v1/rl-tasks` — list / create.
-> - `GET/PUT/DELETE /api/v1/rl-tasks/{uuid}` — read, update, soft-delete (independent of the linked environment).
-> - `POST /api/v1/rl-tasks/{uuid}/clone` — duplicate the task definition into a new row (metadata + runtime contract + source files + scene entities; checkpoints and inference runs are not cloned).
-> - `GET /api/v1/rl-tasks/{uuid}/source-files`, `GET .../source-files/content?path=…`, `PUT .../source-files`, `DELETE .../source-files?path=…` — manage the user-owned tree. Server-side validation rejects unsafe paths and Python files that fail to compile.
-> - `POST /api/v1/rl-tasks/{uuid}/regenerate-scene-cfg` — write the SceneCfg at the configured path.
-> - `GET /api/v1/rl-tasks/{uuid}/export.zip` — download the runnable plugin ZIP.
-> - `POST /api/v1/rl-tasks/import.zip` and `POST /api/v1/rl-tasks/{uuid}/import.zip` — import a ZIP as a new task or refresh an existing one (Cyberwave-owned generated files are skipped; if the ZIP contains `cyberwave_task_spec.py`, the response surfaces an explicit warning because scene entities are **not** auto-restored).
-> - `GET /api/v1/rl-tasks/{uuid}/task-spec.py` and `PUT /api/v1/rl-tasks/{uuid}/task-spec.py` — read or apply the strict scene-entity task spec explicitly. Use this when you actually want to re-apply a `cyberwave_task_spec.py` body to the live composer state.
-> - `GET/POST /api/v1/rl-tasks/{uuid}/checkpoints` and `GET/DELETE /api/v1/rl-tasks/{uuid}/checkpoints/{checkpoint_uuid}` — manage trained policy checkpoints (weights URL + runtime metadata + policy interface).
-> - `GET/POST /api/v1/rl-tasks/{uuid}/inference` — launch and list backend-dispatched policy inference workloads (no MuJoCo loop).
+<Note>
+The spec GET, the regenerate endpoints, and the export ZIP all produce byte-identical output for the same scene-entity rows, so re-reading and re-exporting are always consistent. If a body can't be resolved while splitting the MuJoCo scene, the request fails with **HTTP 400** naming the failing entity and the selectors that were tried — check the twin selectors and re-export.
+</Note>
 
-## Export / generated-file rules
+## Inference Commands (stub)
 
-> stub: The export ZIP always carries fresh bytes for **Cyberwave-owned** generated files (`scene_cfg.py` at the configured path, `scene_bindings.py`, and `cyberwave_task_spec.py`). Stored `RLTaskSourceFile` rows for those paths are skipped during export and the renderer writes current DB state instead — so re-running the composer (or hitting `POST /regenerate-scene-cfg`) is enough to refresh the artefact. The same `render_task_spec_for_rl_task` helper is used by the API GET, the regenerate endpoint, and the export ZIP, so all three produce byte-identical output for the same scene-entity rows. Body-resolution failures during MJCF splitting surface as **HTTP 400** with the failing entity name and the selectors that were tried, instead of a generic 500; check the twin selectors and re-export.
+RL tasks can declare **inference commands** that define a live control surface for deployed policies. Each command declares:
 
-> stub: `scene_bindings.py` is the stable interface between Cyberwave-owned scene metadata and user-owned training code. It exposes role aliases (`ROBOT_ENTITY`, `OBJECT_ENTITY`, `SUPPORT_ENTITY`), twin namespace prefixes, namespaced joint-position regex keys, actuator target regexes, camera attach paths, contact sensor names, and a `body_pattern(entity, suffix)` helper. Consume those constants from `env_cfg.py` so renaming a twin or moving a camera in the composer regenerates the bindings without touching MDP code.
+- A **payload schema** (typed fields like `target_position: vec3`, `object_position: vec3`)
+- A **source binding** (transport + topic, e.g. MQTT)
 
-> stub: ZIP **import** is intentionally **document-only** for the generated paths: `scene_cfg.py`, `scene_bindings.py`, and `cyberwave_task_spec.py` are skipped on import and the response carries an explicit warning. Scene entities are **not** auto-restored from a bundled `cyberwave_task_spec.py` — re-apply it through `PUT /api/v1/rl-tasks/{uuid}/task-spec.py` or compose the entities again in the editor.
+When you deploy an RL task controller, the Online Controllers panel shows schema-driven inputs matching your inference command spec. Submitting values sends them to the running controller over MQTT, updating the policy's command observations in real time.
 
-## Orchestration tabs (Actions / Observations / RL config)
+Common use cases:
+- **Position controllers**: Set a target EE pose for reach tasks
+- **Waypoint controllers**: Set the detected object center for inspection trajectory generation
 
-> stub: Three editor tabs persist structured metadata for the MDP I/O surface and the RL training contract, alongside the existing **Scene entities** tab. The persisted JSON is exported into `scene_bindings.py` (as `ACTION_SPEC`, `OBSERVATION_SPEC`, `RL_CONFIG_SPEC`, plus `ACTION_NAMES` / `OBSERVATION_GROUPS` / `POLICY_OBSERVATION_NAMES`) and into the strict `cyberwave_task_spec.py` interchange. User-owned `env_cfg.py` / `rl_cfg.py` consume those constants; rewards, resets, terminations, and metrics remain user-authored.
+Commands are authored as first-class **terms**, like observation terms: each term references a `CommandTermCfg` subclass (`module.symbol`) implemented in the task's `env_cfg.py`. Add and edit terms in the editor's **Commands tab** (term name, `module.symbol`, lifecycle fields, kwargs) or from the SDK (`set_training_command_spec` / `set_inference_command_spec`); the term's Python implementation lives in the task's source files.
 
-> stub: **Actions** are authored via four control-mode presets: **Position delta** (`action = 0` holds the current pose, maps to `JointDeltaPositionActionCfg`), **Position target** (absolute target, anchored at joint home), **Velocity**, and **Effort / torque**. Each preset seeds canonical defaults (`scale`, `offset`, `use_default_offset`). The Scene tab is where you turn on **simulation actuators** for the entity (which `Xml*ActuatorCfg` wrapper class drives each joint); the Actions tab is where you pick the **policy-controlled subset** of those enabled actuators. Each action row renders a schema-backed joint table mirroring the Scene tab columns (Joint, Control type, Position min/max, Max velocity, Max torque/force, KP, KD, Selected) with **Select all** / **Clear** controls — passive joints, spring-only actuators, and joints driven by an incompatible wrapper class appear in the table greyed out with a hint so users can fix the asset patch or Scene actuator group. The persisted spec stores concrete joint names in `target_names_expr`; a collapsed **Advanced — custom regex** disclosure lets imported / legacy specs keep regex patterns. Presets that are incompatible with the chosen entity (e.g. `Effort / torque` against an `xml_position` actuator) are hidden, not shown disabled. `position_delta` / `position` require an `xml_position` actuator; `velocity` accepts `xml_velocity` or `xml_position`; `effort` requires `xml_motor`. The Save button stays disabled until every row passes client-side validation.
+The Commands tab has two explicit lifecycle switches — **Training command setup** and **Inference command setup**. Turning one off clears its spec by design (a disabled lifecycle is "deliberately off", not a forgotten upload); turning it on requires at least one code-backed term. From the SDK, pass `enabled=` to `set_training_command_spec` / `set_inference_command_spec` to set a switch explicitly, or omit it and the switch is derived from whether the spec has commands.
 
-> stub: **One action per joint.** Every `(entity, joint)` pair can be assigned to at most one action term across the whole spec — the policy emits a single value per actuated DOF, so two terms claiming the same joint would silently stack or overwrite each other. The Actions tab enforces this in three places: joints already controlled by another row render disabled with an "owned by …" pill, **Select all** only picks unclaimed joints (existing conflicts stay visible so they can be cleared, not lost silently), and `PUT /api/v1/rl-tasks/{uuid}/actions` rejects the payload with a clear error naming both action names and a sample of overlapping joints. The validator resolves `target_names_expr` against the entity's schema joints with the same prefix-tolerant matcher the orchestration hints use, so an action driven by a concrete joint list collides with a sibling action whose regex resolves to the same joint. To split a robot across two action terms (e.g. arm + gripper), give each term a disjoint subset of joints.
+## Where to go next
 
-> stub: **Scale, offset, and baseline_delta.** Every action row exposes its formula directly under the control-mode picker, mirroring the Isaac Lab / mjlab `JointPositionActionCfg` / `JointVelocityActionCfg` / `JointEffortActionCfg` math one-to-one. `position`, `velocity`, and `effort` use `target = action × scale + offset` — exactly the formula mjlab implements in `BaseAction.process_actions`. A single `Use default joint offset` checkbox mirrors mjlab's `use_default_offset` boolean: when on, mjlab replaces `offset` with each joint's `default_joint_pos` (or `default_joint_vel`) at runtime so action = 0 returns the joint to its home pose; turning it off lets the user type a literal numeric bias (scalar or per-joint map). `position_delta` is Cyberwave's own preset and uses `target = q_now + baseline_delta + action × scale`; `baseline_delta` is a separate explicit field (it replaced the confusing legacy "Offset reference" / "Use default joint offset" pair for delta actions) that bakes a constant per-step delta into the target so action-zero can drift the joints toward a goal pose. Every numeric field (`scale`, `offset`, `baseline_delta`) carries a **Per joint** toggle that switches the value between a uniform scalar and a `{joint_name: value}` mapping; flipping the toggle on opens an inline column in the joint table for editing per-joint values. The backend validator rejects per-joint mapping keys that aren't in the action's selected joints, so typos surface at save time instead of dropping silently at runtime. Legacy symbolic offsets (`"default"` / `"zero"` / `"none"`) keep round-tripping unchanged.
-
-> stub: **Observations** group terms (`policy`, `critic`, …) and support the catalog: `joint_position`, `joint_velocity`, `joint_effort`, `link_position`, `link_pose` (xyz + quaternion), `link_velocity` (xyz linear + rx/ry/rz angular twist), `camera` (depth/color from a sensor configured on a scene entity), `previous_action`, and `custom` (user `module.symbol` + literal kwargs). Link terms pick bodies from a scene-derived checkbox list (no more typing names by hand) and expose **Components** toggles so users only export the axes the policy needs — `link_position` picks among `x`/`y`/`z`, `link_velocity` adds `rx`/`ry`/`rz` for the angular twist, and `link_pose` exposes `x`/`y`/`z` plus a single `quat` token that keeps the full `(qw, qx, qy, qz)` tuple grouped so the runtime never sees a half rotation. The tab toggles between **Shared policy/critic observations** (default — one group authored, the runtime aliases the missing `critic` group onto `policy` so both heads see the same tensor) and **Separate policy and critic groups** (author each group independently). Observation rows show the term type as a compact chip next to the editable name (the type is fixed after creation — remove + re-add to change it). Joint observation terms reuse the shared **Joint target picker** — observations may include both actuated and passive joints (unlike actions), with "All actuated", "All joints", "Passive joints", and "Pick specific joints" exposed directly; "Custom regex" sits behind a small **Advanced** disclosure to keep the common path uncluttered.
-
-> stub: **RL config** persists the skrl backend + algorithm (PPO or SAC) + a structured **Network builder** (rlmodule library) + trainer parameters (timesteps, intervals, seed) + the algorithm-config knobs (learning rate, discount factor, ratio clip, batch size, …). Switching algorithm seeds matching defaults; saving normalises and round-trips through the API. **Experiment paths** (`experiment.name` / `experiment.directory`) are derived from the RL task slug by default and shown as read-only helper text; toggle **Override experiment paths** to write custom values.
-
-> stub: **Network builder** is graph-first. The RL config tab picks a *topology* and renders the network as a DAG of typed nodes on an inline canvas; there is no separate "MLP form vs graph" editor any more. `shared` means "use the same architecture for both heads" — for PPO that yields a true shared-trunk model (`SharedRLModelCfg`), and for SAC it instantiates two independent modules (policy + Q) with the same block spec because SAC heads can't share weights. `separated` lets the user author one graph per role (`policy` / `value` for PPO, `policy` / `q` for SAC). Top-level **presets** are graph templates — e.g. *PPO – shared MLP* / *SAC – separated MLP* — that materialise the equivalent observation → trunk → head topology directly on the canvas. PPO algorithm-config fields are ordered by training impact: the primary row shows `rollouts`, `discount_factor`, `learning_rate`, and `entropy_loss_scale`, with the rest collapsed into an advanced section. Legacy `{kind, hidden_units, activation}` and `architecture: "mlp"` / `"residual_mlp"` / `"custom"` specs are transparently **promoted** to a graph on load: hydration synthesizes equivalent nodes so the inline canvas just renders, and the `blocks` field stays populated alongside `graphs` for backend / runtime back-compat. At runtime, `from runners.skrl.network_builder import build_skrl_model_cfg` maps the persisted spec onto `rlmodule.MlpCfg` / `ResidualMlpCfg` / `SharedRLModelCfg` / `SeparatedRLModelCfg` for the skrl runner.
-
-> stub: **Inline graph canvas (`architecture: "graph"`)** mounts directly on the RL config tab — one canvas per role for the active topology. The canvas has a subtle dot-grid background and a fixed height; drag the empty background to **pan** around the workspace, drag any node to **reposition** it (positions are persisted in `graphs[role].layout` on pointerup), and click an edge to delete it. Clicking a node opens an **inline inspector below the canvas** showing the outputs picker (`features_node_id` / `head_node_id`) plus the per-node editor — no sidebar dance required. The canvas starts in *compact mode* with the palette collapsed and the inspector hidden until a node is selected; the small **palette** / **inspector** toggle buttons in the canvas header let you pop them open or shut them down manually. There is no passive-aggressive “Graph looks valid.” copy in the header — warnings only render when the validator has something real to flag. An **Open graph builder** button on each role pops the same graph into a 92vh/96vw fullscreen dialog with the palette + canvas + sidebar inspector all expanded for serious authoring. Closing the dialog keeps the draft state; the existing **Save RL config** flow persists everything together. The palette covers inputs (`observation_input`), dense (`mlp`, `residual_mlp`), transforms (`activation`, `layer_norm`), recurrent (`rnn`, `gru`, `lstm`, one per role for v1), vision (`cnn_backbone` with NatureCNN / IMPALA presets), merge (`concat`, `residual_add`), and a role/algorithm-aware **Heads** section that only surfaces `actor_head` + `value_head` for PPO graphs and `actor_head` + `q_head` for SAC graphs. `action_input` and `projection` remain part of the persisted node catalogue (so old graphs still load) but are hidden from the normal palette to keep the surface focused.
-
-> stub: **Observation routing and tensor metadata.** `observation_input` nodes pick a group and a subset of term names from the **Observations** tab. The inspector shows each term as a chip annotated with read-only tensor metadata — an `image-like` / `flat` badge and a short kind label (`joint pos`, `link pose`, `depth camera`, …) — derived from the term type instead of a user-edited modality dropdown (all observations are floats; what actually matters is whether the slice can be reshaped into `[H, W, C]` for a CNN). Selecting only image-like terms upgrades the node to an image-routed input and surfaces an optional `[H, W, C]` reshape override for cases where the camera sensor width/height isn't carried by the orchestration hints. Frontend validation rejects flat terms feeding a `cnn_backbone`, warns on mixed image/flat selections, and the backend mirrors the same rules on save. **Heads by role** are enforced both in the palette and on save: `q_head` is rejected in PPO graphs (even when not the configured terminal), `value_head` is rejected in SAC graphs, and the per-role policy/value/q split allows exactly one head type. **Gaussian log-std controls** (`initial_log_std`, `min_log_std`, `max_log_std`) live inside the actor head inspector in graph mode — they only apply to the stochastic Gaussian policy, never to deterministic value or Q heads — but persist on `network.output` for backend / runtime compatibility.
-
-> stub: Endpoints: `GET/PUT /api/v1/rl-tasks/{uuid}/actions`, `GET/PUT /api/v1/rl-tasks/{uuid}/observations`, `GET/PUT /api/v1/rl-tasks/{uuid}/rl-config`, plus `GET /api/v1/rl-tasks/{uuid}/orchestration-hints` which returns scene-derived dropdown data (articulation entities, actuator groups + types per entity, declared joint/body names, **actuated vs passive** joint lists for the picker, configured camera and contact sensors). The `RLTask` response itself surfaces the three specs as `action_spec` / `observation_spec` / `rl_config_spec` JSON fields.
-
-> stub: **Runtime spec adapters.** Three execution-only modules in `cyberwave-rl` consume the persisted specs so user-owned files only have to provide rewards, resets, terminations, commands, and custom observation functions:
->
-> - `from task_export.action_specs import make_action_cfgs` — `ACTION_SPEC` → `{action_name: ActionTermCfg}` (`JointDeltaPositionActionCfg` / `JointPositionActionCfg` / `JointVelocityActionCfg` / `JointEffortActionCfg`). The `position_delta` runtime class lives in `cyberwave-rl/source/mdp/actions/joint_delta_position_action.py`.
-> - `from task_export.observation_specs import make_observation_groups` — `OBSERVATION_SPEC` → `{group_name: ObservationGroupCfg}`. Joint / link / camera / `previous_action` terms route through small per-category resolvers (the user wires `mdp.joint_pos_rel`, `mdp.last_action`, etc. once); `custom` terms are looked up in a `{name: ObservationTermCfg}` registry the user controls.
-> - `from task_export.rl_config_specs import make_rl_cfg_from_spec` — `RL_CONFIG_SPEC` → `ReinforcementLearningCfg` (PPO/skrl + rlmodule-built network + experiment + trainer wiring).
->
-> Authoring (presets, joint picker, term catalogue, network/PPO defaults) stays in the Cyberwave editor/backend.
-
-> stub: **Cyberwave-owned vs user-owned.** The editor authors Scene entities + Actions + Observations + RL config + network builder, plus all generated artefacts (`scene_cfg.py`, `scene_bindings.py`, `cyberwave_task_spec.py`, the export ZIP). Task-local Python — reward functions, reset / termination logic, metrics, command shaping, and custom observation functions (e.g. wrist-depth preprocessing, object-relative features) — remains user-owned under `task_sources/`. The Python SDK mirrors the editor surface with `RLTaskClient.get_action_spec` / `set_action_spec`, `get_observation_spec` / `set_observation_spec`, `get_rl_config_spec` / `set_rl_config_spec`, and `get_orchestration_hints`, plus low-level builders (`make_action_spec` / `make_action_term` / `make_observation_spec` / `make_observation_term` / `make_rl_config_spec`) **and** one-liner editor presets (`make_position_delta_action`, `make_joint_observation`, `make_previous_action_observation`, `make_camera_observation`, `make_custom_observation`, `make_default_ppo_rlmodule_config`) so setup scripts stay declarative.
-
-## Next steps
-
-> stub: We'll fold this page into a deeper concepts doc once the export contract stabilises (compatibility matrix + cloud runner integration). Until then, treat the surface above as the source of truth and follow the RL task editor in the dashboard for the canonical UI flow.
+<CardGroup cols={2}>
+  <Card title="RL Task Walkthrough" icon="list-check" href="/feature-reference/rl-task-walkthrough">
+    Build the OpenArm pick-up task end-to-end in Python, from empty workspace to deployed policy.
+  </Card>
+  <Card title="Uploading Policies" icon="upload" href="/feature-reference/uploading-policies">
+    Upload trained checkpoints, publish them as controllers, and run inference.
+  </Card>
+  <Card title="Online Controllers" icon="tower-broadcast" href="/feature-reference/online-controllers">
+    Serve a published policy as a live controller.
+  </Card>
+  <Card title="RL Task Scene Sensors" icon="camera" href="/feature-reference/rl-task-scene-sensors">
+    Configure cameras and contact sensors on scene entities.
+  </Card>
+  <Card title="Simulation" icon="cube" href="/overview/features/simulation">
+    Build the MuJoCo environment that backs your RL task's SceneCfg.
+  </Card>
+</CardGroup>

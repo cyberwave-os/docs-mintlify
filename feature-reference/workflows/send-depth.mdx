@@ -1,0 +1,43 @@
+---
+title: "Send Depth node"
+description: "Publish a monocular depth map from an upstream depth-estimation model to the twin's MQTT depth topic."
+tag: stub
+---
+
+`send_depth` is an edge-only transform node that reads a float depth map
+from an upstream `call_model` node (any registered depth estimator — Hailo
+fast_depth / SCDepthV3, Video-Depth-Anything) and publishes it as a
+`uint16 H×W` payload on the canonical twin depth topic
+`cyberwave/twin/{twin_uuid}/depth` — the same shape the PointCloud
+viewer, recording / replay and the `object_pose` node already consume.
+
+## Typical chain
+
+```
+trigger (camera_frame)
+  → call_model  (depth-estimation model)
+  → send_depth
+```
+
+Pipe the same `call_model` output into `object_pose` when the model is
+metric to lift 2D detections into 3D positions.
+
+## Inputs
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `depth_map` | array | ✓ | H×W float32 depth map. Auto-wired when placed downstream of a depth-estimation `call_model`. |
+| `twin_uuid` | string | ✓ | Target twin — depth is published on `cyberwave/twin/{twin_uuid}/depth`. |
+
+## Parameters
+
+| Field | Default | Description |
+|---|---|---|
+| `output_mode` | `normalized_uint16` | `normalized_uint16` stretches the depth range to 0-65535 for visualisation. `metric_mm` multiplies by `scale_factor` and clips — required by consumers that need real distances. |
+| `scale_factor` | `1000.0` | Applied only in `metric_mm` mode. Metres → millimetres by default. |
+| `publish_every_n_frames` | `1` | Throttle. Set higher on tight uplinks. |
+
+## Notes
+
+- Edge-only. The node is filtered out of cloud workflows at compile time.
+- Replaces the retired `cyberwave-edge-camera-depth-estimation` driver — the same MQTT topic shape, now expressed as a workflow.

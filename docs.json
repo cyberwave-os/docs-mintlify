@@ -36,6 +36,7 @@
             "group": "Tutorials · Code (SDK)",
             "icon": "code",
             "pages": [
+              "tutorials/ur-sim-cyberwave-driver",
               "tutorials/so101-teleop-dataset",
               "tutorials/train-vla-cyberwave",
               "tutorials/so101-natural-language-agent",
@@ -64,6 +65,7 @@
             "group": "SDKs and Tools",
             "pages": [
               "overview/tools/python-sdk",
+              "overview/tools/python-sdk-recordings",
               "overview/tools/claude-skill",
               "overview/tools/mcp-server",
               "overview/tools/cpp-sdk"
@@ -145,13 +147,19 @@
                   },
                   "feature-reference/workflows/anonymize-image",
                   "feature-reference/workflows/barcode-reader",
+                  "feature-reference/workflows/object-pose",
+                  "feature-reference/workflows/send-depth",
                   "feature-reference/workflows/spatial-filter",
                   "feature-reference/workflows/timed-condition",
                   "feature-reference/workflows/twin",
+                  "feature-reference/workflows/get-pose",
                   "feature-reference/workflows/fuzzy-matcher",
                   "feature-reference/workflows/virtual-controller",
                   "feature-reference/workflows/send-controller-command",
+                  "feature-reference/workflows/send-pose",
+                  "feature-reference/workflows/online-controller-lifecycle",
                   "feature-reference/workflows/recorder",
+                  "feature-reference/workflows/timer",
                   "feature-reference/workflows/reusing-chains",
                   {
                     "group": "Workers",
@@ -174,6 +182,13 @@
                   "feature-reference/ml-models/speech-to-text"
                 ]
               },
+              "feature-reference/rl-tasks",
+              "feature-reference/rl-task-walkthrough",
+              "feature-reference/rl-task-scene-sensors",
+              "feature-reference/uploading-policies",
+              "feature-reference/online-controllers",
+              "feature-reference/twin-joint-home-positions",
+              "feature-reference/twin-saved-poses",
               "feature-reference/access-control",
               "feature-reference/concepts/slug-system",
               "feature-reference/docker-registry"
@@ -188,6 +203,9 @@
               "feature-reference/edge/jetson-orin-nano",
               "feature-reference/edge/drivers/overview",
               "feature-reference/edge/drivers/writing-compatible-drivers",
+              "feature-reference/edge/drivers/base-driver-class",
+              "feature-reference/edge/drivers/ros2-base-driver",
+              "feature-reference/edge/drivers/ros2-topic-namespacing",
               "feature-reference/edge/drivers/native-microphone-driver",
               "feature-reference/edge/drivers/native-speaker-driver",
               "feature-reference/edge/drivers/alerts",
@@ -858,6 +876,10 @@
     {
       "source": "/capabilities/perception",
       "destination": "/overview/cameras"
+    },
+    {
+      "source": "/capabilities/online-controllers",
+      "destination": "/feature-reference/online-controllers"
     },
     {
       "source": "/capabilities/:slug*",

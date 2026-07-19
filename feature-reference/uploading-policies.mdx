@@ -1,0 +1,257 @@
+---
+title: "Uploading Policies"
+description: "Take a checkpoint you trained locally, upload it back to its RL task, then publish it as an online controller or run cloud inference against your Cyberwave environment."
+icon: "upload"
+---
+
+{/* stub — pending human review */}
+
+## What is a trained policy?
+
+A **trained policy** is a **checkpoint** — the model weights produced by training an [RL task](/feature-reference/rl-tasks) locally with `cyberwave-rl` or `cyberwave-rl-experimental` (for example a `best_agent.pt`). The checkpoint belongs to the RL task it was trained against: you author and export the task, train it on your own machine or GPU, then upload the resulting checkpoint **back to the same RL task** so the platform can serve it.
+
+Once a checkpoint lives on its RL task you can:
+
+- **Publish it as an online controller** and assign it to a twin.
+- **Run cloud inference** that loops live joint state through the policy.
+- **Pull it back into MuJoCo locally** to replay it with the Python SDK.
+
+Everything below happens in the **Policies** tab of the RL task editor (or through the matching REST / Python SDK calls).
+
+## The happy path
+
+<Steps>
+  <Step title="Train locally">
+    Export your RL task, then train it with `cyberwave-rl` / `cyberwave-rl-experimental` on your own machine. Training produces a checkpoint file such as `best_agent.pt`.
+  </Step>
+  <Step title="Upload the checkpoint">
+    Upload the checkpoint file back to its RL task — via the dashboard, the Python SDK, or REST. Runtime and policy-interface fields are inherited from the parent RL task.
+  </Step>
+  <Step title="Use the policy">
+    Choose one (or more):
+
+    - **Publish as a controller** — turn the checkpoint into an assignable online controller.
+    - **Run inference** — dispatch a cloud workload that drives a twin through the policy over MQTT.
+    - **Use in MuJoCo locally** — download the checkpoint with the SDK and replay it locally.
+  </Step>
+</Steps>
+
+## Upload a checkpoint
+
+Uploading stores the weights and registers the checkpoint against the RL task in a single call. The new checkpoint inherits the parent task's runtime target, accelerator, version pins, and policy interface.
+
+<Warning>
+  File uploads accept **`.pt`, `.pth`, or `.zip`** only, up to a **maximum size of 512 MB**. For weights that exceed this limit, [register an external URL](#register-an-external-url) instead.
+</Warning>
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open the RL task and go to the **Policies** tab.
+    2. Choose **Upload checkpoint** and select your `.pt` / `.pth` / `.zip` file.
+    3. Optionally give it a **name** and **description**.
+
+    Uploaded checkpoints appear in the list with an **Uploaded** badge (URL-registered ones show a **URL** badge). Each row exposes **Download** and **Delete**.
+  </Tab>
+  <Tab title="Python SDK">
+    ```python
+    from cyberwave import Cyberwave
+    from cyberwave.rl_tasks import RLTaskClient
+
+    cw = Cyberwave()          # reads CYBERWAVE_BASE_URL + CYBERWAVE_API_KEY
+    rl = RLTaskClient(cw)
+
+    checkpoint = rl.upload_checkpoint(
+        "<rl-task-uuid>",
+        "logs/openarm-pickup/run-1/checkpoints/best_agent.pt",
+        name="best_agent",
+        description="OpenArm pick-up, 1M steps",
+    )
+    print(checkpoint["uuid"])
+    ```
+  </Tab>
+  <Tab title="REST">
+    ```bash
+    curl -X POST \
+      "$CYBERWAVE_API_URL/api/v1/rl-tasks/<rl-task-uuid>/checkpoints/upload" \
+      -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
+      -F "file=@logs/openarm-pickup/run-1/checkpoints/best_agent.pt" \
+      -F "name=best_agent" \
+      -F "description=OpenArm pick-up, 1M steps"
+    ```
+  </Tab>
+</Tabs>
+
+### Register an external URL
+
+If your weights are already hosted elsewhere, register them by URL instead of uploading bytes. This path also lets you override the inherited runtime target, accelerator, version pins, and policy interface.
+
+<Tabs>
+  <Tab title="Python SDK">
+    ```python
+    from cyberwave import Cyberwave
+    from cyberwave.rl_tasks import RLTaskClient
+
+    cw = Cyberwave()
+    rl = RLTaskClient(cw)
+
+    checkpoint = rl.register_checkpoint(
+        "<rl-task-uuid>",
+        name="best_agent (remote)",
+        weights_url="https://example.com/weights/best_agent.pt",
+    )
+    ```
+  </Tab>
+  <Tab title="REST">
+    ```bash
+    curl -X POST \
+      "$CYBERWAVE_API_URL/api/v1/rl-tasks/<rl-task-uuid>/checkpoints" \
+      -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "weights_url": "https://example.com/weights/best_agent.pt",
+        "name": "best_agent (remote)"
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+<Tip>
+  List, inspect, and remove checkpoints with `GET .../checkpoints`, `GET .../checkpoints/{checkpoint-uuid}`, and `DELETE .../checkpoints/{checkpoint-uuid}`. See the [endpoint reference](#endpoint-reference).
+</Tip>
+
+## Publish as a controller
+
+Publishing a checkpoint creates a **ControllerPolicy** — an `rltask` [online controller](/feature-reference/online-controllers) that you can assign to a twin. The controller runs the policy in its own controller-host cloud node and drives the plant over MQTT, so the same policy can target a simulated or a live robot.
+
+<Tabs>
+  <Tab title="Dashboard">
+    From the **Policies** tab, select a checkpoint and choose **Publish as controller**. Optionally set a **controller name** and **description**.
+  </Tab>
+  <Tab title="REST">
+    ```bash
+    curl -X POST \
+      "$CYBERWAVE_API_URL/api/v1/rl-tasks/<rl-task-uuid>/checkpoints/<checkpoint-uuid>/publish-controller" \
+      -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "controller_name": "my-policy-online",
+        "controller_description": "Published from best_agent checkpoint"
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+The response includes the new controller policy's `controller_policy_uuid` and `controller_policy_slug`. From there it behaves like any other online controller — see [Online Controllers](/feature-reference/online-controllers) for assigning and running it.
+
+## Run inference
+
+Inference dispatches a **cloud workload** that loads the checkpoint, loops Cyberwave joint state through the policy, and publishes commands over MQTT.
+
+<Note>
+  This inference path **does not run MuJoCo**. It is a **state-through-policy loop** — live joint state in, policy commands out — not a physics rollout. If you want a full physics simulation, use a [simulated plant with an online controller](/feature-reference/online-controllers) instead.
+</Note>
+
+<Tabs>
+  <Tab title="Python SDK">
+    ```python
+    from cyberwave import Cyberwave
+    from cyberwave.rl_tasks import RLTaskClient
+
+    cw = Cyberwave()
+    rl = RLTaskClient(cw)
+
+    run = rl.launch_inference(
+        "<rl-task-uuid>",
+        checkpoint_uuid="<checkpoint-uuid>",
+        twin_uuid="<twin-uuid>",   # the robot twin to drive
+        max_steps=1000,
+        control_rate_hz=50,
+    )
+    print(run["uuid"])
+
+    # Later: list past runs (each row links to its cloud workload).
+    for r in rl.list_inference_runs("<rl-task-uuid>"):
+        print(r["uuid"], r.get("workload_uuid"))
+    ```
+  </Tab>
+  <Tab title="REST">
+    ```bash
+    curl -X POST \
+      "$CYBERWAVE_API_URL/api/v1/rl-tasks/<rl-task-uuid>/inference" \
+      -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "checkpoint_uuid": "<checkpoint-uuid>",
+        "twin_uuid": "<twin-uuid>",
+        "max_steps": 1000,
+        "control_rate_hz": 50
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+- **`checkpoint_uuid`** (preferred) selects which policy to run.
+- **`twin_uuid`** is the robot twin the policy drives.
+- **`mode`**, **`max_steps`**, and **`control_rate_hz`** are optional and tune the loop.
+
+List past inference runs with `GET /api/v1/rl-tasks/{uuid}/inference`.
+
+## Use in MuJoCo locally
+
+To replay a checkpoint in MuJoCo on your own machine, select it in the **Policies** tab — the dashboard reveals a copy-paste snippet that uses the Python SDK to download the checkpoint, stage it into the layout `cyberwave-rl`'s play step expects, and play it locally.
+
+```python
+from cyberwave import Cyberwave
+from cyberwave.rl_tasks import RLTaskClient
+
+cw = Cyberwave()
+rl = RLTaskClient(cw)
+
+# 1. Download the registered checkpoint's weights.
+local = rl.download_checkpoint(
+    "<rl-task-uuid>",
+    "<checkpoint-uuid>",
+    destination="/tmp/best_agent.pt",
+)
+
+# 2. Stage it into the layout cyberwave-rl's play step expects:
+#    logs/<task_id>/uploaded/checkpoints/best_agent.pt
+staged = RLTaskClient.prepare_checkpoint_for_play(
+    task_id="OpenArm-pick-up-demo",
+    checkpoint_path=local,
+)
+print(f"Staged checkpoint at: {staged}")
+
+# 3. Run cyberwave-rl's play entrypoint against the staged run.
+```
+
+<Tip>
+  The Python SDK exposes `upload_checkpoint(...)`, `download_checkpoint(...)`, and the static `prepare_checkpoint_for_play(...)` helper on `RLTaskClient`, so the full round trip — train, upload, replay — stays in one place.
+</Tip>
+
+## Endpoint reference
+
+| Method | Path | Purpose |
+| ------ | ---- | ------- |
+| `POST` | `/api/v1/rl-tasks/{uuid}/checkpoints/upload` | Upload a checkpoint file (`.pt` / `.pth` / `.zip`, max 512 MB) and register it. |
+| `POST` | `/api/v1/rl-tasks/{uuid}/checkpoints` | Register a checkpoint by external `weights_url`. |
+| `GET` | `/api/v1/rl-tasks/{uuid}/checkpoints` | List checkpoints for an RL task. |
+| `GET` | `/api/v1/rl-tasks/{uuid}/checkpoints/{checkpoint_uuid}` | Get a single checkpoint. |
+| `DELETE` | `/api/v1/rl-tasks/{uuid}/checkpoints/{checkpoint_uuid}` | Delete a checkpoint. |
+| `POST` | `/api/v1/rl-tasks/{uuid}/checkpoints/{checkpoint_uuid}/publish-controller` | Publish a checkpoint as an `rltask` online controller. |
+| `POST` | `/api/v1/rl-tasks/{uuid}/inference` | Dispatch a cloud inference run (state-through-policy, no MuJoCo). |
+| `GET` | `/api/v1/rl-tasks/{uuid}/inference` | List inference runs. |
+
+## Where to go next
+
+<CardGroup cols={3}>
+  <Card title="RL Tasks" icon="graduation-cap" href="/feature-reference/rl-tasks">
+    Author, export, and train the RL task a checkpoint belongs to.
+  </Card>
+  <Card title="Online Controllers" icon="microchip" href="/feature-reference/online-controllers">
+    Run a published policy in its own controller host against a simulated or live robot.
+  </Card>
+  <Card title="Models" icon="cube" href="/feature-reference/ml-models/index">
+    Explore other model types and training flows on the platform.
+  </Card>
+</CardGroup>

@@ -1,0 +1,51 @@
+---
+title: "Online Controller Lifecycle node"
+description: "Start or stop a twin's assigned online controller, optionally steering an RL policy toward a scene object's current pose."
+tag: stub
+---
+
+The **Online Controller Lifecycle** (`online_controller_lifecycle`) node starts or stops the online controller assigned to a twin. On a manual (or any) trigger it deploys the twin's primary controller policy, optionally auto-stopping after a set duration.
+
+<Note>
+**Palette category:** Actuation. Uses the twin's **assigned** controller policy — assign one on the twin first.
+</Note>
+
+## Steer an RL policy toward an object pose
+
+For RL-task policies you can have the node **collect a target object's pose at trigger time** and pass it to the policy as its startup goal (inference command). This is the "pose → policy" pattern: run the workflow and the policy is steered toward the target.
+
+Point the node at the object whose pose is the goal:
+
+- `target_object_external_id` — a scene object (e.g. a procedural primitive) in the workflow's environment, or
+- `target_twin_uuid` — a twin whose world pose is the goal.
+
+The node reads that entity's **authored** pose each run (the scene object's authored primitive position, or the twin's stored world pose) and starts the policy with an `object_position` inference command. This requires the policy's RL task to declare an `object_position` inference command; set `command_name` when the task declares more than one.
+
+<Note>
+When resolved inside this node, the `target_*` params use the **authored** pose, not the live simulator pose. To seed the policy with a target's **live** sim pose, use a [Get Pose](/feature-reference/workflows/get-pose) node upstream (it prefers the live streamed pose) and wire its `position` output into `object_position`.
+</Note>
+
+### Or wire the pose from a Get Pose node
+
+Instead of resolving the pose inside this node, you can keep the pose-reading step as a separate, visible node: put a [Get Pose](/feature-reference/workflows/get-pose) node between the trigger and this node, and wire its `position` output into this node's **`object_position`** input. The mapped pose takes precedence over the `target_*` params.
+
+## Live vs. simulation starts
+
+The node does **not** take a mode input — it follows the **workflow's execution target** (the Live/Simulation toggle on the workflow), the same convention the recorder and navigation nodes use. When the workflow runs **live**, the controller drives the physical robot on the twin's bound edge; a live start against a twin whose edge is online requires `confirm_live` to be `true`, otherwise the safety gate rejects it. For live RL-task dispatches you can also pick the controller↔plant `transport` (`mqtt` default, or `zenoh` for the low-latency edge DataBus when the driver declares it); simulation runs ignore transport and `confirm_live`.
+
+## Inputs
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `twin_uuid` | string | Yes | Twin whose assigned controller is started/stopped. |
+| `action` | string | Yes | `start` or `stop`. |
+| `duration_seconds` | number | No | Auto-stop after N seconds (0 = run until stopped). |
+| `runtime_params` | object | No | Parameters passed to the controller at startup. |
+| `device` | string | No | Inference device override (`cpu`/`gpu`). |
+| `transport` | string | No | Live dispatch wire transport: `mqtt` (default) or `zenoh` (edge low-latency DataBus). Ignored in simulation. Mode itself is inferred from the workflow execution target. |
+| `confirm_live` | boolean | No | Acknowledge this may drive a real robot. Required to start when the twin's edge is online; otherwise the start is rejected. |
+| `object_position` | array | No | RL policies: explicit `[x, y, z]` goal (e.g. wired from a Get Pose node's `position`). Takes precedence over `target_*`. |
+| `inference_command` | object | No | RL policies: a fully-formed startup inference command payload, used verbatim. Highest precedence. |
+| `target_object_external_id` | string | No | RL policies: scene object whose authored pose seeds the inference command. Mutually exclusive with `target_twin_uuid`. |
+| `target_twin_uuid` | string | No | RL policies: twin (in the workflow's environment) whose stored world pose seeds the inference command. |
+| `command_name` | string | No | RL policies: inference command term to seed (defaults to the task's single command). |

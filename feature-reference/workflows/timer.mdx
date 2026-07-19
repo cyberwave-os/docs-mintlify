@@ -1,0 +1,37 @@
+---
+title: "Timer node"
+description: "Pause a workflow for a set amount of time before the downstream nodes run."
+tag: stub
+---
+
+The **Timer** (`timer`) node pauses the workflow for a configured amount of
+time, then lets the nodes connected after it run. Use it to space out actions —
+for example, wait 30 seconds between two commands, or hold before re-checking a
+condition.
+
+<Note>
+**Palette category:** Decision & Control Flow. Runs on **cloud** workflows and
+**edge** workers (identical wait duration in both).
+</Note>
+
+## Configuration
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `duration` | number | Yes | How long to wait, in the selected unit. |
+| `time_unit` | select | No | `seconds` (default) or `minutes`. |
+
+The wait resolves to `duration × 60` seconds for **minutes**, or `duration`
+seconds for **seconds**. Durations are capped at 24 hours.
+
+## Behavior
+
+The Timer simply waits, then completes — the nodes wired after it run next,
+exactly as they would after any other node. Nothing else is required to
+"trigger" them.
+
+<Warning>
+A Timer cannot be placed downstream of a **Camera Frame** trigger: a wait would
+block the per-frame processing loop. Use it in manual, mission, schedule, or
+message-triggered workflows.
+</Warning>

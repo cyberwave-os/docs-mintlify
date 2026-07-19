@@ -1,0 +1,38 @@
+---
+title: "ROS 2 Topic Namespacing (fleets)"
+description: "How the UGV driver scopes its ROS 2 nodes and topics per-robot so multiple robots can share one ROS 2 graph without colliding."
+---
+
+<Warning>
+**STUB DOCUMENT:** Intentionally minimal; a human will expand and curate before publishing.
+</Warning>
+
+When several robots of the same model run on one ROS 2 graph, their nodes and
+topics would collide — every robot otherwise has a `/cmd_vel`, an `/image_raw`,
+and so on. The UGV driver avoids this by scoping its **entire** ROS 2 graph under
+a per-robot namespace derived from the twin UUID:
+
+```
+ugv_beast_<first 6 hex chars of the twin uuid>      e.g. ugv_beast_27dca7
+```
+
+So a robot exposes its topics under that namespace:
+
+```
+/ugv_beast_27dca7/cmd_vel
+/ugv_beast_27dca7/image_raw
+/ugv_beast_27dca7/ugv/led_ctrl
+```
+
+The `ugv_beast_` prefix is required because a raw UUID is **not** a valid ROS 2
+name (it contains `-` and may start with a digit); the prefix guarantees a valid
+leading letter.
+
+Both the hardware nodes and the MQTT bridge use the same namespace, so topics
+stay connected. **MQTT topics are unaffected** — they remain keyed by the full
+twin UUID (`cyberwave/twin/{twin_uuid}/...`).
+
+- **Single robot / dev:** with no twin UUID the namespace is empty and topics are
+  global (`/cmd_vel`, `/image_raw`, ...).
+- **Override:** set `CYBERWAVE_ROS_NAMESPACE` to a valid ROS 2 name to force a
+  specific namespace for both the hardware nodes and the bridge.

@@ -90,6 +90,23 @@ arm.joints.set("shoulder_pan", 30, degrees=True)
 arm.joints.set("elbow_flex",   -45, degrees=True)
 ```
 
+{/* stub — this section will be curated by a human before publishing */}
+
+**Locomotion previews in Playground too.** Locomotion and flight commands drive
+the twin in the browser viewport exactly like the keyboard teleop overlay does,
+so you can sanity-check a driving/flying script before pointing it at hardware:
+
+```python
+dog = cw.twin("unitree/go2")
+dog.move_forward()               # the GO2 walks forward in the viewport
+dog.turn_left()
+
+drone = cw.twin("dji/tello")
+drone.commands.takeoff()         # rises to its hover altitude
+drone.move_forward()
+drone.commands.land()
+```
+
 ### MuJoCo: contact-rich physics, your way
 
 Need real grasps, friction, and reproducible RL sweeps? Cyberwave one-click-exports any environment to MuJoCo, two ways:
@@ -104,6 +121,35 @@ Need real grasps, friction, and reproducible RL sweeps? Cyberwave one-click-expo
 </CardGroup>
 
 All twins in the environment must be marked MuJoCo-compatible before a remote run starts; [see how the compatibility gate works](/feature-reference/catalog/simulation-support).
+
+---
+
+## Runtime profiles, cost, and what each serves
+
+{/* stub — this section will be curated by a human before publishing */}
+
+`cw.affect(...)` picks the runtime and, for MuJoCo, **starts the simulation for you**:
+
+- `cw.affect("simulation")` / `"sim"` / `"mujoco"` — starts (or reuses) a **MuJoCo** run. A MuJoCo simulation is a billable cloud instance (**~0.6 credits/hour**); selecting it logs the cost. Pass `environment_id=` / `duration=` to `affect()`, or set `CYBERWAVE_ENVIRONMENT_ID`.
+- `cw.affect("playground")` — lightweight kinematic runtime, no MuJoCo instance, no cost.
+- `cw.affect("live")` — real hardware.
+
+Stop a run with `sim.stop()` (it also stops at its `duration`):
+
+```python
+cw = Cyberwave(environment_id="acme/envs/floor")
+cw.affect("simulation")               # starts MuJoCo, logs ~0.6 credits/hour
+frame = robot.get_frame()             # reads from the running sim
+...
+cw.environments.simulations.get_active(robot.environment_id).stop()
+```
+
+What each runtime serves:
+
+- **Any sim runtime**: `pose`, `joints`.
+- **MuJoCo only**: camera frames, `get_video()`, depth, point clouds, LiDAR — otherwise `SimulationNotRunningError` / `SimulationLevelError`.
+- **Not in simulation**: `imu` sensor and control surfaces — `twin.commands.*`, `twin.locomotion.*`, `twin.flight.*` and their twin shortcuts (`twin.move_forward()`, `twin.takeoff()`, `twin.land()`, …) — raise `NotSimulatedError` (live/driver-only).
+- **WIP** {/* stub */}: `gps`, `compass` sensors aren't implemented in any runtime yet.
 
 ---
 
