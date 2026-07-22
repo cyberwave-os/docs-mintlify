@@ -13,3 +13,16 @@ Recording playback loads **signed URLs** from the API instead of inlined samples
 - **Point clouds**: FlatBuffer chunk URLs plus coarse timestamp indexes from metadata.
 
 The `GET /api/v1/environments/{uuid}/recordings/{recording_uuid}/data` endpoint returns compact **source descriptors** (URLs + bounds + column hints), not dense per-frame JSON.
+
+## Download a recording
+
+{/* stub: curated later */}
+
+**Manage Recordings** can be filtered by twin, recording type, camera sensor, and date range to quickly find a recording.
+
+Use the per-row **Download** button to save a recording's files locally, straight from the browser:
+
+- A recording with a single file saves that file directly (`.mp4`, `.parquet`, or `.mp3`).
+- A recording with multiple files (for example a camera video plus a depth/point-cloud Parquet) is bundled into one `.zip`.
+
+This mirrors the [Python SDK recordings download](/overview/tools/python-sdk-recordings).
