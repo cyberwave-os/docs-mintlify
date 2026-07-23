@@ -196,12 +196,13 @@ Use this when you also want to send velocities, efforts, or telemetry metadata.
 
 **Direction:** publish (backend) → subscribe (edge driver)
 
-Sends a navigation command to the robot. Published by the backend in response to a REST API call.
+Sends a navigation command to the robot. Published by the backend in response to a REST API call. Two dispatch shapes cover single-point and multi-point targets:
 
 ```json
+// "goto" — single target, list-form position/rotation
 {
   "action_id": "d0b0e8a7-7d6e-4e73-bf2d-9c420ff14c75",
-  "command": "navigate_to_pose",
+  "command": "goto",
   "twin_uuid": "twin-uuid-here",
   "environment_uuid": "env-uuid-here",
   "controller_policy_uuid": "policy-uuid-here",
@@ -209,9 +210,29 @@ Sends a navigation command to the robot. Published by the backend in response to
   "nav_frame_coords": false,
   "position": [1.0, 2.0, 0.0],
   "rotation": [0.0, 0.0, 0.0, 1.0],
-  "waypoints": [{ "x": 0.5, "y": 1.0, "z": 0.0 }],
   "constraints": {},
-  "frame_id": "map",
+  "reference_frame": "map",
+  "timestamp": 1700000000.0
+}
+```
+
+```json
+// "path" — ordered waypoints, dict-form position/rotation per waypoint
+{
+  "action_id": "d0b0e8a7-7d6e-4e73-bf2d-9c420ff14c75",
+  "command": "path",
+  "twin_uuid": "twin-uuid-here",
+  "environment_uuid": "env-uuid-here",
+  "source_type": "tele",
+  "nav_frame_coords": false,
+  "waypoints": [
+    {
+      "id": "wp-1",
+      "position": { "x": 0.5, "y": 1.0, "z": 0.0 },
+      "rotation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 },
+      "duration_seconds": 2.0
+    }
+  ],
   "reference_frame": "map",
   "timestamp": 1700000000.0
 }
@@ -220,20 +241,21 @@ Sends a navigation command to the robot. Published by the backend in response to
 | Field                    | Type       | Required | Description                                                       |
 | ------------------------ | ---------- | -------- | ----------------------------------------------------------------- |
 | `action_id`              | string     | yes      | UUID of the action (use to report status back)                    |
-| `command`                | string     | yes      | Navigation command string (e.g. `"navigate_to_pose"`, `"cancel"`) |
+| `command`                | string     | yes      | `"goto"` \| `"path"` \| `"stop"` \| `"pause"` \| `"resume"` \| `"relative_move"` \| `"takeoff"` \| `"hover"` \| `"land"` |
 | `twin_uuid`              | string     | yes      | UUID of the twin to navigate                                      |
 | `environment_uuid`       | string     | no       | UUID of the environment                                           |
 | `controller_policy_uuid` | string     | no       | UUID of the controller policy                                     |
 | `source_type`            | string     | yes      | See [source types](#source-types)                                 |
 | `nav_frame_coords`       | boolean    | yes      | Whether coordinates are already in the navigation frame           |
-| `position`               | array\[3\] | no       | Target position `[x, y, z]` in metres                             |
-| `rotation`               | array\[4\] | no       | Target orientation as quaternion `[x, y, z, w]`                   |
-| `waypoints`              | array      | no       | List of intermediate waypoints `{x, y, z}`                        |
+| `position`               | array\[3\] | no       | `goto` target `[x, y, z]` in metres (list form)                   |
+| `rotation`               | array\[4\] | no       | `goto` target orientation as quaternion `[x, y, z, w]` (list form) |
+| `waypoints`              | array      | no       | `path` target: ordered `{id?, position: {x,y,z}, rotation?: {w,x,y,z}, duration_seconds?, actions?}` entries (dict form) |
 | `constraints`            | object     | no       | Navigation constraints (planner-specific)                         |
-| `frame_id`               | string     | no       | Coordinate frame for the target                                   |
-| `reference_frame`        | string     | no       | Same as `frame_id`                                                |
+| `frame_id` / `reference_frame` | string | no    | Frame `position`/`waypoints` are expressed in. Omitted, or a map/environment frame name (e.g. `"map"`) → coordinates are environment-absolute. Set to one of **the twin's own link names** (e.g. `"base_link"`, `"end_effector_link"`) → `position`/`rotation` are an offset from that link instead, and the driver resolves the offset into a joint-space move (IK/motion planning) itself — the platform never sends joint angles on this topic. Only `goto` supports a link-relative target today. |
 | `metadata`               | object     | no       | Extra metadata forwarded to the driver                            |
 | `timestamp`              | number     | yes      | Unix timestamp (seconds)                                          |
+
+A driver should only ever have **one in-flight goal**: a new `goto`/`path` supersedes whatever mission is currently running, and `stop` must actually preempt it, not just acknowledge it.
 
 ### `cyberwave/twin/{twin_uuid}/navigate/status`
 
