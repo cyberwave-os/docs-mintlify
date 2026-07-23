@@ -52,7 +52,7 @@ The RL task editor is organized into tabs that map onto the export contract:
 | **Actions** | The policy-controlled action terms and their control-mode presets. |
 | **Observations** | Grouped observation terms for the policy and critic heads. |
 | **RL config** | skrl backend, algorithm, graph-based network builder, and trainer parameters. |
-| **Files** | The full source tree, including read-only Cyberwave-generated files. |
+| **Source files** | The full source tree, including read-only Cyberwave-generated files. |
 | **Runtime** | Runtime target, accelerator, bundle version, and "Train locally" snippets. |
 | **Policies** | Upload trained checkpoints, publish controllers, and run inference. |
 
@@ -141,7 +141,7 @@ For the complete version — scaffolding the workspace, environment, and twins, 
 
 ## Actions
 
-Action terms are authored from five control-mode presets:
+Action terms are authored from five control-mode presets, plus a code-backed `custom` escape hatch:
 
 | Preset | Spec value | Formula | Requires actuator |
 | --- | --- | --- | --- |
@@ -150,12 +150,15 @@ Action terms are authored from five control-mode presets:
 | **Position target** | `position` | `target = action × scale + offset` (anchored at joint home) | `xml_position` |
 | **Velocity** | `velocity` | `target = action × scale + offset` | `xml_velocity` or `xml_position` |
 | **Effort / torque** | `effort` | `target = action × scale + offset` | `xml_motor` |
+| **Custom (code)** | `custom` | defined by your `ActionTermCfg` class/factory | — (the class defines its own joints) |
 
 `position`, `velocity`, and `effort` mirror the Isaac Lab / mjlab `JointPositionActionCfg` / `JointVelocityActionCfg` / `JointEffortActionCfg` math one-to-one — exactly the `target = action × scale + offset` that mjlab implements in `BaseAction.process_actions`. `position_delta` is Cyberwave's own preset: `baseline_delta` is an explicit per-step bias baked into the target, so an action of zero can drift the joints toward a goal pose. `smoothed_position_delta` is the same delta, but spread evenly across the policy step's physics substeps for a smoother velocity profile.
 
-A single **Use default joint offset** checkbox mirrors mjlab's `use_default_offset`: when on, mjlab replaces `offset` with each joint's `default_joint_pos` (or `default_joint_vel`) at runtime so action zero returns the joint to its home pose. Every numeric field (`scale`, `offset`, `baseline_delta`) has a **Per joint** toggle that switches it between a uniform scalar and a `{joint_name: value}` mapping. The backend rejects per-joint keys that aren't in the action's selected joints, so typos surface at save time. Legacy symbolic offsets (`"default"`, `"zero"`, `"none"`) keep round-tripping unchanged.
+A single **Use default joint offset** checkbox mirrors mjlab's `use_default_offset`: when on, mjlab replaces `offset` with each joint's `default_joint_pos` (or `default_joint_vel`) at runtime so action zero returns the joint to its home pose. On the built-in presets every numeric field (`scale`, `offset`, `baseline_delta`) has a **Per joint** toggle that switches it between a uniform scalar and a `{joint_name: value}` mapping. The backend rejects per-joint keys that aren't in the action's selected joints, so typos surface at save time. Legacy symbolic offsets (`"default"`, `"zero"`, `"none"`) keep round-tripping unchanged. The `custom` preset exposes none of these fields — the class/factory defines its own control math.
 
 The **Scene** tab is where you enable **simulation actuators** for an entity (which `Xml*ActuatorCfg` wrapper drives each joint); the **Actions** tab is where you pick the policy-controlled subset of those actuators. Each action row renders a schema-backed joint table (Joint, Control type, Position min/max, Max velocity, Max torque/force, KP, KD, Selected) with **Select all** / **Clear**. Passive joints, spring-only actuators, and joints driven by an incompatible wrapper appear greyed out with a hint. Incompatible presets are hidden rather than shown disabled. Concrete joint names are stored in `target_names_expr`; a collapsed **Advanced — custom regex** disclosure lets imported or legacy specs keep regex patterns.
+
+The **Custom (code)** preset is the exception: it references a user-owned `ActionTermCfg` class or factory by `module` + `symbol` and does **not** render a joint table — the class defines its own joint targeting. See [Custom (code-backed) terms](#custom-code-backed-terms).
 
 <Warning>
 **One action per joint.** Every `(entity, joint)` pair can be assigned to at most one action term — the policy emits a single value per actuated DOF. The Actions tab enforces this in three places: joints already controlled by another row render disabled with an "owned by …" pill; **Select all** only picks unclaimed joints; and `PUT /api/v1/rl-tasks/{uuid}/actions` rejects overlapping payloads with an error naming both action names and a sample of overlapping joints. To split a robot across two terms (for example arm + gripper), give each term a disjoint subset of joints.
@@ -175,7 +178,7 @@ Observation terms are organized into named groups (`policy`, `critic`, …) and 
 | `link_velocity` | Body twist: `x` / `y` / `z` linear plus `rx` / `ry` / `rz` angular. |
 | `camera` | Depth or color from a sensor configured on a scene entity. |
 | `previous_action` | The previous action tensor. |
-| `custom` | User `module.symbol` plus literal kwargs. |
+| `custom` | User code referenced by `module` + `symbol` (function or class). See [Custom (code-backed) terms](#custom-code-backed-terms). |
 
 Link terms pick bodies from a scene-derived checkbox list and expose **Components** toggles so you only export the axes the policy needs. Joint observation terms reuse the shared **Joint target picker** and — unlike actions — may include both actuated and passive joints, with "All actuated", "All joints", "Passive joints", and "Pick specific joints" exposed directly; "Custom regex" sits behind a small **Advanced** disclosure.
 
@@ -190,6 +193,18 @@ Link terms pick bodies from a scene-derived checkbox list and expose **Component
 
 Observation rows show the term type as a compact chip next to the editable name; the type is fixed after creation (remove and re-add to change it).
 
+## Custom (code-backed) terms (stub)
+
+Observations, actions, and commands each expose a `custom` term — the escape hatch for task-specific Python that isn't in the shared runtime library. All three are authored the same way:
+
+- **Reference** the code by a dotted **module** + **symbol** (e.g. `smoothed_blocking` + `SmoothedBlockingDeltaPositionActionCfg`). The module maps to a task-local source file (`a.b.c` → `a/b/c.py`).
+- **Kind** — observations and actions can be a **function** or a **class**; **commands are always a `CommandTermCfg` subclass** (no Kind selector).
+- **Author the file** with **Create & edit file** (opens the Source files editor with a starter scaffold) or by uploading it — there is no inline editing on the term tabs. Use **Open in editor** to edit an existing referenced file, or **Use an existing file…** to point the term at a source file that already exists (fills the module / command name for you).
+- **Custom actions do not touch the joints** — the class/factory defines its own joint targeting *and* control math, so no joint table and no `scale` / `offset` / `baseline_delta` fields are shown. Those values come from the class itself or from `kwargs`.
+- **Custom observations declare an Output dimension** — the number of floats the function/class returns per step. The runtime can't introspect user code, so this width is required: without it the exported observation layout has no offsets for this term (or any term after it in the group) and RL config generation fails.
+
+The referenced code is uploaded as a task-local source file and wired at runtime through the generated `make_actions()` / `make_observations()` / command managers (`custom_terms` registry). Extra `kwargs` round-trip on save; author them via the SDK.
+
 ## RL config
 
 The **RL config** tab persists the skrl backend, the algorithm (**PPO** or **SAC**), a structured graph-based **Network builder**, the trainer parameters (timesteps, intervals, seed), and the algorithm-config knobs (learning rate, discount factor, ratio clip, batch size, …). Switching algorithm seeds matching defaults. **Experiment paths** (`experiment.name` / `experiment.directory`) default to values derived from the RL task slug and are shown read-only; toggle **Override experiment paths** to write custom values.
@@ -201,11 +216,11 @@ The network builder is graph-first: it renders the network as a DAG of typed nod
 - **`shared`** uses the same architecture for both heads. For PPO this yields a true shared-trunk model (`SharedRLModelCfg`); for SAC it instantiates two independent modules (policy + Q) with the same block spec, because SAC heads can't share weights.
 - **`separated`** lets you author one graph per role (`policy` / `value` for PPO, `policy` / `q` for SAC).
 
-Top-level **presets** are graph templates (for example *PPO – shared MLP*, *SAC – separated MLP*) that materialise the equivalent observation → trunk → head topology directly on the canvas. The palette covers inputs (`observation_input`), dense layers (`mlp`, `residual_mlp`), transforms (`activation`, `layer_norm`), recurrent layers (`rnn`, `gru`, `lstm`), vision (`cnn_backbone` with NatureCNN / IMPALA presets), merge nodes (`concat`, `residual_add`), and a role/algorithm-aware **Heads** section that surfaces `actor_head` + `value_head` for PPO and `actor_head` + `q_head` for SAC.
+Top-level **presets** are graph templates (for example *PPO – shared MLP*, *SAC – separated MLP*) that materialise the equivalent observation → trunk → head topology directly on the canvas. The palette covers inputs (`observation_input`), dense layers (`mlp`, `residual_mlp`), transforms (`activation`, `layer_norm`), recurrent layers (`rnn`, `gru`, `lstm`), vision (`cnn_backbone` with NatureCNN / IMPALA / **Custom** presets, plus the volumetric `cnn3d_backbone`), merge nodes (`concat`, `residual_add`), and a role/algorithm-aware **Heads** section that surfaces `actor_head` + `value_head` for PPO and `actor_head` + `q_head` for SAC.
 
 Drag the canvas background to pan, drag a node to reposition it (positions persist in `graphs[role].layout`), and click an edge to delete it. Clicking a node opens an inline inspector below the canvas with the outputs picker (`features_node_id` / `head_node_id`) and the per-node editor. An **Open graph builder** button pops the same graph into a fullscreen dialog for serious authoring.
 
-`observation_input` nodes pick a group and a subset of term names from the **Observations** tab. Each term shows read-only tensor metadata — an `image-like` / `flat` badge and a short kind label — so the builder can route image-like terms into a `cnn_backbone` and reject flat terms feeding one. Gaussian log-std controls (`initial_log_std`, `min_log_std`, `max_log_std`) live in the actor head inspector and apply only to the stochastic Gaussian policy.
+`observation_input` nodes pick a group and a subset of term names from the **Observations** tab. Each term shows read-only tensor metadata — an `image-like` / `flat` badge and a short kind label — so the builder can route image-like terms into a `cnn_backbone` and reject flat terms feeding one. If a selected term is a `custom` term with no declared Output dimension, the builder raises a blocking error and Save is disabled until you set the width in the Observations tab — the runtime can't infer a custom term's size, so this would otherwise only fail at export. NatureCNN and IMPALA are fixed conv stacks; switch a `cnn_backbone` to the **Custom** preset (or use `cnn3d_backbone`) to edit an explicit `layers` stack — per-layer stride, kernel, padding, channels and pooling — with labeled fields for the common torch modules and a raw JSON fallback for the rest. Gaussian log-std controls (`initial_log_std`, `min_log_std`, `max_log_std`) live in the actor head inspector and apply only to the stochastic Gaussian policy.
 
 <Note>
 Legacy `{kind, hidden_units, activation}` and `architecture: "mlp"` / `"residual_mlp"` / `"custom"` specs are transparently promoted to a graph on load, so older tasks just render. At runtime, `from runners.skrl.network_builder import build_skrl_model_cfg` maps the persisted spec onto `rlmodule.MlpCfg` / `ResidualMlpCfg` / `SharedRLModelCfg` / `SeparatedRLModelCfg` for the skrl runner.
@@ -327,9 +342,9 @@ Common use cases:
 - **Position controllers**: Set a target EE pose for reach tasks
 - **Waypoint controllers**: Set the detected object center for inspection trajectory generation
 
-Commands are authored as first-class **terms**, like observation terms: each term references a `CommandTermCfg` subclass (`module.symbol`) implemented in the task's `env_cfg.py`. Add and edit terms in the editor's **Commands tab** (term name, `module.symbol`, lifecycle fields, kwargs) or from the SDK (`set_training_command_spec` / `set_inference_command_spec`); the term's Python implementation lives in the task's source files.
+Commands are authored as first-class **terms**, like observation terms: each term references a `CommandTermCfg` subclass by `module` + `symbol`. The command **name** is the mjlab command key; the **module** defaults to `commands.<name>` (`commands/<name>.py`) but is editable — point a term at **any** source file (type the module or use **Use an existing file…**), just like custom observations and actions (e.g. `env_cfg`, `my_commands`). Add and edit terms in the editor's **Commands tab** (term name, module, cfg symbol, lifecycle fields, kwargs) or from the SDK (`set_training_command_spec` / `set_inference_command_spec`). The term's Python is authored in the Source files editor via **Create & edit file** (or uploaded) — there is no inline editor. See [Custom (code-backed) terms](#custom-code-backed-terms).
 
-The Commands tab has two explicit lifecycle switches — **Training command setup** and **Inference command setup**. Turning one off clears its spec by design (a disabled lifecycle is "deliberately off", not a forgotten upload); turning it on requires at least one code-backed term. From the SDK, pass `enabled=` to `set_training_command_spec` / `set_inference_command_spec` to set a switch explicitly, or omit it and the switch is derived from whether the spec has commands.
+The Commands tab has two collapsible lifecycle sections — **Training commands** and **Inference commands**. Each starts collapsed with a **Set up** button that both enables the lifecycle and opens its authoring UI (with a first term ready to edit); **Turn off** clears the spec by design (a disabled lifecycle is "deliberately off", not a forgotten upload). One term can drive both managers — author it in one section and tick **Also …** on its card to mirror it into the other. From the SDK, pass `enabled=` to `set_training_command_spec` / `set_inference_command_spec` to set a lifecycle explicitly, or omit it and it is derived from whether the spec has commands.
 
 ## Where to go next
 
