@@ -504,7 +504,7 @@ If you publish data over MQTT directly (rather than through the SDK's `cw.data.p
 
 - Twin transform: position, rotation, scale
 - Joint state updates (single-joint, flat multi-joint, and aggregated formats)
-- Navigation commands and status reporting
+- Navigation commands and status reporting — including the `reference_frame` convention manipulator drivers use to receive a `goto` target relative to one of the twin's own links (rather than an environment-absolute pose) and resolve it into a joint-space move themselves
 - Locomotion commands (`move_forward`, `turn_left`, etc.)
 - Telemetry lifecycle events (`connected`, `telemetry_start`, `telemetry_end`)
 - Sensor data: depth frames, point clouds, metrics

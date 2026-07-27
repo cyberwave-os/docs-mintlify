@@ -110,7 +110,7 @@ Execute physical or twin-side actions.
 
 | Node | What it does | Runs on |
 |------|--------------|---------|
-| `twin_control` | Move a twin through one or more environment waypoints. | Either |
+| `twin_control` | Move a twin through one or more environment waypoints. For an arm moving to a single waypoint, an optional fixed tool offset lets waypoints be authored in a mounted sensor's frame (e.g. a wrist camera) while the arm still commands its own link. | Either |
 | `virtual_controller` | Send a controller command to a twin over MQTT. | Either |
 | `send_controller_command` | Issue a specific command through a controller policy (e.g. a timed drive burst). | Either |
 | `send_joint_commands` | **Send Pose** — move a twin into a saved or custom joint pose. | Either |
