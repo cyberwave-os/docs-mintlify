@@ -1,7 +1,7 @@
 ---
 title: "Train an RL policy in MuJoCo"
 sidebarTitle: "Train an RL Policy"
-description: "Export any Cyberwave environment to MuJoCo, train a reinforcement-learning policy locally with your own stack, mirror it into simulation over the SDK, then deploy it to the real robot — same code, no re-modeling."
+description: "Export any Cyberwave environment to MuJoCo, train a reinforcement-learning policy locally with your own stack, mirror it into simulation over the SDK, then deploy it to the real robot. Same code, no re-modeling."
 icon: "graduation-cap"
 ---
 
@@ -15,13 +15,13 @@ This tutorial trains a reinforcement-learning (RL) policy for a robot arm **enti
 
 ## Why reinforcement learning?
 
-Most robot learning on Cyberwave starts with **imitation** — teleoperate the robot, record demonstrations, and train a [VLA policy](/tutorials/train-vla-cyberwave). That works beautifully when you can *show* the robot what to do.
+Most robot learning on Cyberwave starts with **imitation**: teleoperate the robot, record demonstrations, and train a [VLA policy](/tutorials/train-vla-cyberwave). That works beautifully when you can *show* the robot what to do.
 
 Reinforcement learning is the tool when you **can't** demonstrate the behaviour, or when a demonstration isn't the point:
 
-- **No demonstrations available** — the motion is too precise, too fast, or too tedious to teleoperate (full-coverage inspection, dynamic balancing, contact-rich insertion).
-- **You have an objective, not a trajectory** — you can score the outcome (keep the part centred, visit every viewpoint, minimise energy) but you don't know the exact joint path that achieves it. RL discovers the path from the reward.
-- **You need many, cheap rollouts** — RL needs millions of steps. Simulation gives you those for free; the real robot never could.
+- **No demonstrations available**. The motion is too precise, too fast, or too tedious to teleoperate (full-coverage inspection, dynamic balancing, contact-rich insertion).
+- **You have an objective, not a trajectory**. You can score the outcome (keep the part centred, visit every viewpoint, minimise energy) but you don't know the exact joint path that achieves it. RL discovers the path from the reward.
+- **You need many, cheap rollouts**. RL needs millions of steps. Simulation gives you those for free; the real robot never could.
 
 Cyberwave's job is to make RL boring to operate:
 
@@ -42,19 +42,29 @@ Cyberwave's job is to make RL boring to operate:
 
 ## How it works
 
-The pipeline is five steps. You only ever build the scene once — everything downstream reuses it.
+The pipeline is five steps. You only ever build the scene once, and everything downstream reuses it.
 
-```mermaid
-flowchart LR
-    A["1. Set up the<br/>environment"] --> B["2. Export to<br/>MuJoCo"]
-    B --> C["3. Write & train the<br/>RL pipeline locally<br/>(MuJoCo + CPU)"]
-    C --> D["4. Mirror to Cyberwave<br/>with affect('simulation')"]
-    D --> E["5. Drop affect() →<br/>run on the real robot"]
-```
+<Steps>
+  <Step title="Set up the environment">
+    Build the robot twin, parts, and sensors once in the editor or over the SDK. [Jump to step](#step-1-set-up-the-environment)
+  </Step>
+  <Step title="Export the scene to MuJoCo">
+    One SDK call writes an MJCF scene with meshes, joints, and cameras intact. [Jump to step](#step-2-export-the-scene-to-mujoco)
+  </Step>
+  <Step title="Write and train the RL pipeline locally">
+    Your own Gymnasium env and Stable-Baselines3 loop, millions of steps on CPU. [Jump to step](#step-3-write-and-train-the-rl-pipeline-locally)
+  </Step>
+  <Step title="Mirror the policy into Cyberwave">
+    Replay the trained policy against the twin with `cw.affect("simulation")`. [Jump to step](#step-4-mirror-the-policy-into-cyberwave)
+  </Step>
+  <Step title="Deploy to the real robot">
+    Drop the `affect()` call. Same script, live hardware. [Jump to step](#step-5-deploy-to-the-real-robot)
+  </Step>
+</Steps>
 
 ## Prerequisites
 
-- **Python 3.12** (via conda is easiest — ML wheels lag the newest system Python)
+- **Python 3.12** (via conda is easiest, since ML wheels lag the newest system Python)
 - A **Cyberwave environment** with your robot twin ([build one in the editor](/overview/features/environment) or [with the SDK](/overview/tools/python-sdk))
 - A **Cyberwave API key** ([Profile → API Tokens](https://cyberwave.com/profile))
 
@@ -92,7 +102,7 @@ arm = cw.twin("kinova-robotics/kortex-gen3-7dof-vision-robotiq2f85")
   Keep the scene minimal at first. Fewer bodies and a small camera resolution (e.g. 128×128) train dramatically faster. You can always enrich the scene once the task is learnable.
 </Tip>
 
-All twins in the environment must be **MuJoCo-compatible** before it can export — see [simulation support](/feature-reference/catalog/simulation-support).
+All twins in the environment must be **MuJoCo-compatible** before it can export. See [simulation support](/feature-reference/catalog/simulation-support).
 
 ## Step 2: Export the scene to MuJoCo
 
@@ -122,7 +132,7 @@ print(f"{model.nbody} bodies, {model.njnt} joints, {model.nu} actuators")
 
 ## Step 3: Write and train the RL pipeline locally
 
-This is your code, running on your machine — Cyberwave isn't in the loop yet. The three pieces of any RL task are the **reward**, the **environment**, and the **training run**.
+This is your code, running on your machine, and Cyberwave isn't in the loop yet. The three pieces of any RL task are the **reward**, the **environment**, and the **training run**.
 
 <Steps>
   <Step title="Define the reward">
@@ -172,7 +182,7 @@ This is your code, running on your machine — Cyberwave isn't in the loop yet. 
   </Step>
 
   <Step title="Train with PPO">
-    Start with a **privileged baseline** — feed the policy the part's position from simulation ground truth (a small MLP, no camera) to confirm the task is learnable and your reward is sane. It trains in minutes on a CPU.
+    Start with a **privileged baseline**: feed the policy the part's position from simulation ground truth (a small MLP, no camera) to confirm the task is learnable and your reward is sane. It trains in minutes on a CPU.
 
     ```python
     from stable_baselines3 import PPO
@@ -184,17 +194,17 @@ This is your code, running on your machine — Cyberwave isn't in the loop yet. 
     model.save("checkpoints/privileged")
     ```
 
-    Once the baseline works, switch to the **image policy** (`MultiInputPolicy` with a CNN) that observes the raw wrist camera — the version you can actually deploy, since the real robot has pixels, not ground-truth part positions.
+    Once the baseline works, switch to the **image policy** (`MultiInputPolicy` with a CNN) that observes the raw wrist camera. This is the version you can actually deploy, since the real robot has pixels, not ground-truth part positions.
   </Step>
 </Steps>
 
 <Tip>
-  Privileged-first is the fastest way to fail cheaply. If a tiny MLP with perfect information can't solve the task, no amount of CNN training will — fix the reward first.
+  Privileged-first is the fastest way to fail cheaply. If a tiny MLP with perfect information can't solve the task, no amount of CNN training will. Fix the reward first.
 </Tip>
 
 ## Step 4: Mirror the policy into Cyberwave
 
-Your policy runs in MuJoCo, but you want to *see* it on the Cyberwave twin — in the same 3D viewport you'll watch the real robot in. Flip the SDK into simulation mode and send each step's joint targets to the twin:
+Your policy runs in MuJoCo, but you want to *see* it on the Cyberwave twin, in the same 3D viewport you'll watch the real robot in. Flip the SDK into simulation mode and send each step's joint targets to the twin:
 
 ```python
 from cyberwave import Cyberwave
@@ -220,7 +230,7 @@ for _ in range(500):
         obs, _ = env.reset()
 ```
 
-Because `affect("simulation")` is active, nothing here touches physical hardware — it's safe to run while you iterate. Watch the twin move in the [dashboard](https://cyberwave.com) viewport to confirm the policy behaves the way it did in MuJoCo.
+Because `affect("simulation")` is active, nothing here touches physical hardware, so it's safe to run while you iterate. Watch the twin move in the [dashboard](https://cyberwave.com) viewport to confirm the policy behaves the way it did in MuJoCo.
 
 <Note>
   `arm.joints.set({...})` publishes joint positions in **radians** by default (pass `degrees=True` for degrees). See the [Python SDK reference](/overview/tools/python-sdk#joint-control) for the full joint API.
@@ -234,7 +244,7 @@ The payoff: the code that mirrored the policy into simulation is the code that d
 cw.affect("live")   # was: cw.affect("simulation")
 ```
 
-Everything below it is unchanged — the same `arm.joints.set({...})` calls now flow through Cyberwave's live-control path to the real robot (via the [Edge Core](/overview/connecting-hardware/index) paired with your twin).
+Everything below it is unchanged: the same `arm.joints.set({...})` calls now flow through Cyberwave's live-control path to the real robot (via the [Edge Core](/overview/connecting-hardware/index) paired with your twin).
 
 <Warning>
   Test in `affect("simulation")` until you trust the policy. When you switch to `affect("live")`, start with a clear workspace, a hand on the e-stop, and conservative action limits.
@@ -242,7 +252,7 @@ Everything below it is unchanged — the same `arm.joints.set({...})` calls now 
 
 ## Sim-to-real: closing the observation gap
 
-If your deployable policy reads the **wrist camera** (the image policy), it transfers directly — the real robot has a real camera, and you read frames back from the twin:
+If your deployable policy reads the **wrist camera** (the image policy), it transfers directly. The real robot has a real camera, and you read frames back from the twin:
 
 ```python
 frame = arm.get_frame("numpy", sensor_id="wrist_color_camera")   # real camera pixels
@@ -255,7 +265,7 @@ If you deployed the **privileged baseline**, remember its observation included t
     Supply the part's position from your own perception module (a detector, AprilTags, a depth pipeline) and inject it into the observation each step in place of the sim value.
   </Card>
   <Card title="Student distillation" icon="graduation-cap">
-    Train a CNN "student" that takes only the raw camera image + joints and imitates the privileged "teacher". The student learns to infer the part's position from pixels — no external perception needed.
+    Train a CNN "student" that takes only the raw camera image + joints and imitates the privileged "teacher". The student learns to infer the part's position from pixels, with no external perception needed.
   </Card>
 </CardGroup>
 
@@ -272,7 +282,7 @@ If you deployed the **privileged baseline**, remember its observation included t
     How MuJoCo, Playground, and `affect()` fit together.
   </Card>
   <Card title="Python SDK" icon="python" href="/overview/tools/python-sdk">
-    Full SDK reference — twins, joints, cameras, and more.
+    Full SDK reference: twins, joints, cameras, and more.
   </Card>
   <Card title="Train a VLA" icon="robot" href="/tutorials/train-vla-cyberwave">
     The imitation-learning counterpart to this tutorial.
