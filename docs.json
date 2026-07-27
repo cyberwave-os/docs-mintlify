@@ -39,10 +39,10 @@
             "pages": [
               "tutorials/so101-teleop-dataset",
               "tutorials/train-vla-cyberwave",
+              "tutorials/train-rl-policy",
               "tutorials/so101-natural-language-agent",
               "tutorials/so101-voice-pick-and-place",
               "tutorials/ugv-voice-controlled",
-              "tutorials/train-rl-policy",
               "tutorials/ur-sim-cyberwave-driver",
               "tutorials/agilex-piper-quickstart",
               "tutorials/bring-your-own-hardware",
@@ -67,9 +67,10 @@
             "group": "SDKs and Tools",
             "pages": [
               "overview/tools/python-sdk",
-              "overview/tools/python-sdk-recordings",
               "overview/tools/claude-skill",
+              "overview/tools/rl-policy",
               "overview/tools/mcp-server",
+              "overview/tools/python-sdk-recordings",
               "overview/tools/cpp-sdk"
             ]
           },
