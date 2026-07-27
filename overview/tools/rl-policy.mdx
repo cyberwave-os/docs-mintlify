@@ -11,7 +11,7 @@ icon: "brain"
 Reinforcement learning (RL) trains a policy by **trial and error against a reward**, not from demonstrations. On Cyberwave, the world your policy learns in is a real Cyberwave [environment](/overview/features/environment) exported to [MuJoCo](/overview/features/simulation), so the scene, twins, joints, and sensors are identical from training to deployment. When the policy is ready, the same [Python SDK](/overview/tools/python-sdk) code that drove it in simulation drives the physical robot.
 
 <Note>
-  New to the idea? [**Train an RL policy in MuJoCo**](/tutorials/train-rl-mujoco) is a step-by-step walkthrough from an empty environment to a policy running on real hardware. This page is the orientation; the tutorial is the details.
+  New to the idea? [**Train an RL policy in MuJoCo**](/tutorials/train-rl-policy) is a step-by-step walkthrough from an empty environment to a policy running on real hardware. This page is the orientation; the tutorial is the details.
 </Note>
 
 ## When to reach for RL
@@ -25,7 +25,7 @@ Most robot learning here starts with **imitation**: teleoperate, record, and tra
 ## Two ways to train
 
 <CardGroup cols={2}>
-  <Card title="Bring your own RL stack" icon="code" href="/tutorials/train-rl-mujoco">
+  <Card title="Bring your own RL stack" icon="code" href="/tutorials/train-rl-policy">
     Export the environment to MuJoCo and train with any library you like (Gymnasium + Stable-Baselines3, CleanRL, etc.). You own the training loop; Cyberwave provides the scene export and the sim-to-real bridge. **Start here if you already have RL code.**
   </Card>
   <Card title="Platform-managed RL Tasks" icon="graduation-cap" href="/feature-reference/rl-tasks">
@@ -77,13 +77,13 @@ Approaching RL with Cyberwave is always the same five moves. You build the scene
 </Steps>
 
 <Tip>
-  Each step is expanded in [Train an RL policy in MuJoCo](/tutorials/train-rl-mujoco), with reward design, the Gymnasium environment, PPO training, and sim-to-real notes.
+  Each step is expanded in [Train an RL policy in MuJoCo](/tutorials/train-rl-policy), with reward design, the Gymnasium environment, PPO training, and sim-to-real notes.
 </Tip>
 
 ## Next steps
 
 <CardGroup cols={3}>
-  <Card title="Train an RL policy" icon="graduation-cap" href="/tutorials/train-rl-mujoco">
+  <Card title="Train an RL policy" icon="graduation-cap" href="/tutorials/train-rl-policy">
     The full walkthrough: export, train, mirror, deploy.
   </Card>
   <Card title="RL Tasks" icon="list-check" href="/feature-reference/rl-tasks">
