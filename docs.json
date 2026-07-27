@@ -18,7 +18,8 @@
             "pages": [
               "overview/index",
               "overview/hello-robot",
-              "overview/develop-remote-hardware"
+              "overview/develop-remote-hardware",
+              "overview/python-sdk-quickstart"
             ]
           },
           {
