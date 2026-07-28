@@ -1,0 +1,104 @@
+---
+title: "Reinforcement Learning"
+description: "Train reinforcement-learning policies against your Cyberwave environments in MuJoCo, then deploy them to the real robot with the same SDK."
+icon: "brain"
+---
+
+{/* stub: content pending human curation before publishing */}
+
+## What it is
+
+Reinforcement learning (RL) trains a policy by **trial and error against a reward**, not from demonstrations. On Cyberwave, the world your policy learns in is a real Cyberwave [environment](/overview/features/environment) exported to [MuJoCo](/overview/features/simulation), so the scene, twins, joints, and sensors are identical from training to deployment. When the policy is ready, the same [Python SDK](/overview/tools/python-sdk) code that drove it in simulation drives the physical robot.
+
+<Note>
+  New to the idea? [**Train an RL policy in MuJoCo**](/tutorials/train-rl-policy) is a step-by-step walkthrough from an empty environment to a policy running on real hardware. This page is the orientation; the tutorial is the details.
+</Note>
+
+## When to reach for RL
+
+Most robot learning here starts with **imitation**: teleoperate, record, and train a [VLA](/tutorials/train-vla-cyberwave). Reach for RL when a demonstration isn't available or isn't the point:
+
+- You have an **objective you can score** (keep the part centred, cover every viewpoint, minimise energy) but not the exact joint trajectory.
+- The motion is **too precise or too tedious to teleoperate**: contact-rich insertion, dynamic balancing, full-coverage inspection.
+- You need **millions of cheap rollouts**, which are free in simulation and impossible on real hardware.
+
+## Two ways to train
+
+<CardGroup cols={2}>
+  <Card title="Bring your own RL stack" icon="code" href="/tutorials/train-rl-policy">
+    Export the environment to MuJoCo and train with any library you like (Gymnasium + Stable-Baselines3, CleanRL, etc.). You own the training loop; Cyberwave provides the scene export and the sim-to-real bridge. **Start here if you already have RL code.**
+  </Card>
+  <Card title="Platform-managed RL Tasks" icon="graduation-cap" href="/feature-reference/rl-tasks">
+    Author actions, observations, and the reward network in the dashboard, then export a runnable `mjlab`/`skrl` task built on the open-source [`cyberwave-rl`](https://github.com/cyberwave-os) framework. **Start here if you want structure and less boilerplate.**
+  </Card>
+</CardGroup>
+
+## The core idea in code
+
+Whichever path you take, the sim-to-real seam is the same one line. Train and validate against the digital twin:
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+cw.affect("simulation")                 # policy drives the digital twin
+arm = cw.twin("kinova-robotics/kortex-gen3-7dof-vision-robotiq2f85")
+
+# ...inside your policy rollout loop:
+arm.joints.set({f"joint_{i}": float(p) for i, p in enumerate(joint_positions, 1)})
+```
+
+When you trust the policy, flip one line and the exact same code runs on the physical robot:
+
+```python
+cw.affect("live")                       # policy now drives real hardware
+```
+
+## The five steps
+
+Approaching RL with Cyberwave is always the same five moves. You build the scene once; everything after reuses it.
+
+<Steps>
+  <Step title="Set up the environment">
+    Build your world in Cyberwave: the robot twin, any parts it interacts with, and the sensors the policy observes (e.g. a wrist camera).
+  </Step>
+  <Step title="Export to MuJoCo">
+    Download the environment as a self-contained MuJoCo scene (`mujoco_scene.xml` + meshes) that runs on your laptop, cluster, or CI.
+  </Step>
+  <Step title="Write & train locally">
+    Define a reward, wrap the scene as a training environment, and train on your own machine with MuJoCo and a CPU. Millions of cheap rollouts, no hardware.
+  </Step>
+  <Step title="Mirror to Cyberwave with affect('simulation')">
+    Run the trained policy and stream its joint commands to the digital twin. Nothing touches hardware, so you can watch and validate it safely in the dashboard.
+  </Step>
+  <Step title="Drop affect() → go live">
+    Switch to `affect('live')` and the same code drives the real robot through its paired Edge Core.
+  </Step>
+</Steps>
+
+<Tip>
+  Each step is expanded in [Train an RL policy in MuJoCo](/tutorials/train-rl-policy), with reward design, the Gymnasium environment, PPO training, and sim-to-real notes.
+</Tip>
+
+## Next steps
+
+<CardGroup cols={3}>
+  <Card title="Train an RL policy" icon="graduation-cap" href="/tutorials/train-rl-policy">
+    The full walkthrough: export, train, mirror, deploy.
+  </Card>
+  <Card title="RL Tasks" icon="list-check" href="/feature-reference/rl-tasks">
+    Dashboard-authored tasks and the export contract.
+  </Card>
+  <Card title="Uploading policies" icon="upload" href="/feature-reference/uploading-policies">
+    Store a checkpoint on Cyberwave and serve it as a controller.
+  </Card>
+  <Card title="Simulation" icon="atom" href="/overview/features/simulation">
+    How MuJoCo, Playground, and `affect()` fit together.
+  </Card>
+  <Card title="Python SDK" icon="python" href="/overview/tools/python-sdk">
+    Twins, joints, cameras, and the full SDK surface.
+  </Card>
+  <Card title="Train a VLA" icon="robot" href="/tutorials/train-vla-cyberwave">
+    The imitation-learning counterpart.
+  </Card>
+</CardGroup>
