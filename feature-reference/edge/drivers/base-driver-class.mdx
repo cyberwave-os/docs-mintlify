@@ -111,7 +111,7 @@ Pure forward-only ROS drivers often leave the four async `on_*` hooks as no-ops 
 | `driver_info_extra()` | Extra fields merged into telemetry snapshots |
 | Cloud connect | `Cyberwave(source_type="edge")` — uses `CyberwaveConfig` / `CYBERWAVE_*` env (same as CLI) |
 | `TICK_RATE_HZ` | `10.0` Hz |
-| `TELEMETRY_PUBLISH_RATE_HZ` | `2.0` Hz for built-in `twin/telemetry` publisher |
+| `TELEMETRY_PUBLISH_RATE_HZ` | `1.0` Hz for built-in `twin/telemetry` publisher |
 | `auto_register_interface` | `True` |
 | `driver_family` | `"python"` |
 
@@ -221,7 +221,7 @@ define_interface(iface)            # your driver class body
 | Command `teleoperate` | same | Enter local teleop mode |
 | Command `remoteoperate` | same | Enter remote teleop mode |
 | Command `controller-changed` | same | Controller identity updates |
-| Publisher `twin/telemetry` | `cyberwave/twin/{uuid}/telemetry` | Debounced **`driver_info`** @ `TELEMETRY_PUBLISH_RATE_HZ` (default 2 Hz) |
+| Publisher `twin/telemetry` | `cyberwave/twin/{uuid}/telemetry` | Debounced **`driver_info`** @ `TELEMETRY_PUBLISH_RATE_HZ` (default 1 Hz) |
 
 Handlers are wired to internal methods (`_on_stop_cmd`, …) that update **`operation_mode`** and re-wire listeners when modes change.
 
@@ -304,8 +304,8 @@ High-frequency sources (sensor topics, IMUs) can exceed 100–200 Hz; publishing
 
 | API | Purpose |
 | --- | ------- |
-| `STREAM_PUBLISH_MAX_HZ` | Class attribute, default **50 Hz** — the cap applied to throttled streams |
-| `stream_publish_max_hz(stream_key)` | Override to set a per-stream cap |
+| `STREAM_PUBLISH_MAX_HZ` | Class attribute, default **30 Hz** — the cap applied to throttled streams |
+| `stream_publish_max_hz(stream_key)` | Resolves the effective cap for `stream_key` (see resolution order below) |
 | `acquire_stream_publish_slot(stream_key, *, max_hz=None)` | Returns `True` when a publish on `stream_key` is due (latest-wins; drops samples that arrive faster than the cap) |
 
 ```python
@@ -314,6 +314,8 @@ def _on_sensor_sample(self, sample) -> None:
         return  # too soon since last publish — drop this sample
     self._publish(sample)
 ```
+
+**Resolution order** for the effective cap (highest wins): a per-publisher `TopicSpec(rate_hz=...)` on the `from_ros`/`add_publisher` entry → the node manifest's top-level `mqtt_max_hz:` value → the `STREAM_PUBLISH_MAX_HZ` class default. No environment variable controls this.
 
 Tick-based registry publishers are already paced by `PublisherArgs.rate_hz`; this throttle is for callback-driven streams you publish yourself. `BaseROS2Driver` adds a ROS-topic-aware wrapper — see the ROS page.
 
@@ -436,6 +438,30 @@ Edge Core also sets twin JSON path, child twin UUIDs, restart tuning — see [Wr
 
 ---
 
+## Edge health (twin liveness)
+
+`BaseDriver` automatically starts an `EdgeHealthCheck` publisher on `cyberwave/twin/{uuid}/edge_health` right after the MQTT interface is wired, and stops it on shutdown — no lifecycle wiring required.
+
+| API | Purpose |
+| --- | ------- |
+| `edge_health_extras()` | Override to merge driver-specific fields into every heartbeat (default `{}`) |
+| `edge_health_streams()` | Override to return `[(stream_id, stream_config), ...]` registered on the publisher (default `[]`) |
+| `_touch_edge_health()` | Call from a data-received callback to mark the stream alive |
+
+```python
+def edge_health_extras(self) -> dict:
+    return {"ctrl_mode": self._ctrl_mode}
+
+def edge_health_streams(self):
+    return [("arm-joints", {"kind": "imu", "source": "joint_states", "rate_hz": 10})]
+```
+
+<Warning>
+`cyberwave-edge-core` also runs its own `EdgeHealthCheck` per linked twin for host-level metrics (memory, CPU temp, watchdog). A driver container's `edge_health_extras()` is a stopgap reuse of the same publish mechanism for driver-specific fields — a dedicated per-driver telemetry channel is planned to replace it.
+</Warning>
+
+---
+
 ## MQTT reconnect
 
 If **`RECONNECT_MAX_ATTEMPTS`** > 0 (default **5**) and you override **`on_reconnect()`** to return `True` when transport is restored, `_reconnect_loop_async` reacts to **`_connection_lost`** (set this from your device code on disconnect).
@@ -470,8 +496,8 @@ class MyDriver(BaseDriver):
     ASSET_KEY = "acme-corp/my-device"      # manifest + auto register
     driver_family = "python"               # cw-driver metadata
     TICK_RATE_HZ = 50.0                    # on_tick + publisher scheduling base
-    TELEMETRY_PUBLISH_RATE_HZ = 2.0        # built-in twin/telemetry publisher
-    STREAM_PUBLISH_MAX_HZ = 50.0           # cap for acquire_stream_publish_slot()
+    TELEMETRY_PUBLISH_RATE_HZ = 1.0        # built-in twin/telemetry publisher
+    STREAM_PUBLISH_MAX_HZ = 30.0           # cap for acquire_stream_publish_slot()
     auto_register_interface = True         # False if set_schema before run()
     RECONNECT_MAX_ATTEMPTS = 5
     RECONNECT_BACKOFF_BASE = 2.0

@@ -1,0 +1,31 @@
+---
+title: "Arm commands"
+description: "Standard end-effector, gripper, and base commands for robotic arms"
+tag: "stub"
+---
+
+Robotic-arm twins expose a standard command vocabulary via `twin.commands` (and
+grouped handles like `twin.gripper`). Availability depends on the robot.
+
+| Command | Args | Description |
+| --- | --- | --- |
+| `ee_move` | `forward`, `up`, `left` (m), `frame` (`tool`\|`base`) | Translate the end-effector. |
+| `ee_rotate_left` / `ee_rotate_right` | `angle` (rad) | Yaw the end-effector. |
+| `ee_rotate_up` / `ee_rotate_down` | `angle` (rad) | Pitch the end-effector. |
+| `base_rotate_left` / `base_rotate_right` | `angle` (rad) | Rotate the base joint. |
+| `grip` | `force` (0–1) | Close the gripper. Also `twin.gripper.grip(force)`. |
+| `release` | — | Open the gripper. Also `twin.gripper.release()`. |
+| `home` | — | Return to the home pose. |
+| `ee_pose` | `pose` — 6-element array `[x, y, z, roll, pitch, yaw]` (m, rad) | Move the end-effector to an absolute pose. |
+
+```python
+twin.commands.ee_move(forward=0.05)
+twin.commands.ee_pose(pose=[0.3, 0.0, 0.4, 0.0, 1.57, 0.0])
+twin.commands.grip(force=1.0)
+twin.commands.release()
+twin.commands.home()
+```
+
+Dual-arm robots (one twin, two end-effectors) expose the same commands prefixed
+per arm — `left_ee_move`, `right_grip`, `left_ee_pose`, … — plus a conjunct
+`home` that returns both arms.

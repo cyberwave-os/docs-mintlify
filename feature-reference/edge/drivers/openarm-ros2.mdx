@@ -1,0 +1,252 @@
+---
+title: "OpenArm (ROS 2)"
+description: "Set up an OpenArm bimanual robot for the first time and connect it to Cyberwave as a ROS 2 edge driver — CAN bus, ROS 2 Humble, Docker, and MQTT mode switching."
+---
+
+<Warning>
+**STUB DOCUMENT:** First-pass setup guide for the OpenArm ROS 2 driver. A human will curate before publishing.
+</Warning>
+
+[OpenArm](https://docs.openarm.dev) is an open-source bimanual manipulator. On Cyberwave it runs as a **ROS 2 edge driver** built on [`BaseROS2Driver`](/feature-reference/edge/drivers/ros2-base-driver): the driver forwards joint feedback into Cyberwave over MQTT and accepts teleop/planning commands back from the cloud.
+
+This page has two parts:
+
+1. **First-time hardware setup** — bring the physical arm up on its edge computer (mostly the [official OpenArm docs](https://docs.openarm.dev)).
+2. **Connect to Cyberwave** — register the driver on a twin and stream it into the platform.
+
+<Info>
+If you only need the driver framework (lifecycle, `from_ros` forwarding, hooks), read [`BaseROS2Driver`](/feature-reference/edge/drivers/ros2-base-driver) first. This page is the hardware- and platform-specific wrapper around it.
+</Info>
+
+---
+
+## Part 1 — First-time OpenArm setup
+
+Follow the official [OpenArm Setup Guide](https://docs.openarm.dev/software/setup/) as the source of truth. The steps below summarize the path validated on Cyberwave edge hardware.
+
+### 1. Edge computer
+
+The reference edge computer is an **NVIDIA Jetson Orin Nano** on **JetPack 6.x**:
+
+- JetPack 6 is built on **Ubuntu 22.04 LTS** → use **ROS 2 Humble** (the native distro for 22.04).
+- Flash the [official JetPack SD card image](https://developer.nvidia.com/embedded/learn/get-started-jetson-orin-nano-devkit#write) with Etcher, then update the base system:
+
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl git build-essential python3-pip
+```
+
+<Tip>
+For heavy on-device AI work, unlock max clocks with `sudo nvpmodel -m 0 && sudo jetson_clocks`.
+</Tip>
+
+### 2. Wiring and power
+
+Follow the OpenArm [Power & CAN wiring guide](https://docs.openarm.dev/hardware/wiring-and-casing-guide/power-can). Each arm communicates over a **CAN FD** bus; a bimanual setup uses two CAN channels (one per arm), and leader–follower teleop uses up to four.
+
+### 3. CAN bus
+
+Install CAN tooling from the OpenArm PPA:
+
+```bash
+sudo add-apt-repository -y ppa:openarm/main
+sudo apt update
+sudo apt install -y can-utils iproute2 openarm-can-utils
+```
+
+Bring each interface up in **CAN FD** mode (1 Mbps arbitration / 5 Mbps data):
+
+```bash
+sudo ip link set can0 down
+sudo ip link set can0 type can bitrate 1000000 dbitrate 5000000 fd on
+sudo ip link set can0 up
+```
+
+Repeat for `can1` (and `can2`/`can3` for leader–follower). Verify traffic:
+
+```bash
+ip -br link | grep '^can'      # interfaces up?
+candump can0                   # watch bus traffic
+```
+
+<Note>
+USB‑CAN adapters can enumerate in a different order across reboots or USB ports, which swaps `can0`/`can1`. If the arms behave as if mirrored, re-seat the adapters in a known plug-in order and re-verify. Adapter driver setup on Jetson (e.g. PEAK) can require extra kernel steps — see the [OpenArm CAN docs](https://docs.openarm.dev/software/setup/).
+</Note>
+
+### 4. Verify the motors
+
+Confirm each joint answers on its CAN ID (response ID = command ID + `0x10`):
+
+```bash
+# Terminal 1
+candump can0
+# Terminal 2 — ping motor #1
+cansend can0 001#0102030405060708   # expect a reply on 011
+```
+
+The OpenArm [motor setup docs](https://docs.openarm.dev/software/setup/) cover motor ID assignment and baudrate changes.
+
+<Warning>
+Motor parameters have a limited write budget — do **not** run baudrate/ID scripts repeatedly.
+</Warning>
+
+### 5. ROS 2 Humble + OpenArm packages
+
+Install ROS 2 Humble ([official instructions](https://docs.openarm.dev/software/ros2/install/)), then the OpenArm ROS 2 stack:
+
+```bash
+sudo apt install -y ros-humble-ros-base python3-colcon-common-extensions
+
+# OpenArm workspace
+mkdir -p ~/ros2_ws/src && cd ~/ros2_ws/src
+git clone https://github.com/enactic/openarm_description.git
+git clone https://github.com/enactic/openarm_ros2.git
+
+cd ~/ros2_ws && colcon build --symlink-install
+source install/setup.bash
+```
+
+At this point you have a working, ROS 2–controllable OpenArm. Everything below connects it to Cyberwave.
+
+---
+
+## Part 2 — Connect to Cyberwave
+
+Cyberwave ships the OpenArm driver as a **Docker image** managed by [Edge Core](/feature-reference/edge/overview). The driver:
+
+- streams `/joint_states` and telemetry into Cyberwave MQTT (`source_type: edge`),
+- accepts controller assignments (teleop / planning) from the cloud,
+- hot-switches between **local operation** (physical leader arm drives the follower) and **remote operation** (cloud/teleop drives the arm) without restarts.
+
+### Prerequisites
+
+1. A **twin** for the OpenArm in your Cyberwave environment (created from the OpenArm catalog asset).
+2. A Cyberwave **API key** for that workspace.
+3. Edge Core installed on the arm's edge computer — see [Cyberwave Edge](/feature-reference/edge/overview).
+
+### Register the driver on the twin
+
+Drivers are registered in a twin's `metadata.drivers` (Environment view → **Advanced editing**). See [Drivers → How to use drivers](/feature-reference/edge/drivers/overview#how-to-use-drivers) for the general pattern.
+
+```json
+{
+  "drivers": {
+    "default": {
+      "docker_image": "cyberwaveos/openarm-driver",
+      "version": "latest",
+      "params": [
+        "--privileged",
+        "--cap-add", "NET_RAW",
+        "--cap-add", "NET_ADMIN",
+        "--cap-add", "SYS_ADMIN",
+        "--cap-add", "SYS_MODULE",
+        "-v", "/dev:/dev",
+        "-v", "/sys:/sys:rw",
+        "-v", "/lib/modules:/lib/modules:ro",
+        "-e", "OPENARM_ROBOT_ID=robot_openarm_v1"
+      ]
+    }
+  }
+}
+```
+
+The elevated capabilities and `/dev`, `/sys`, `/lib/modules` mounts let the container manage the host CAN interfaces. Edge Core auto-injects `CYBERWAVE_API_KEY`, `CYBERWAVE_TWIN_UUID`, MQTT connection settings, and child-twin UUIDs — you do **not** put secrets in metadata.
+
+<Tip>
+On Jetson, Edge Core auto-tries a `jetson-` image tag and can pass `--gpus`. See [Drivers → Platform-specific drivers](/feature-reference/edge/drivers/overview#platform-specific-drivers).
+</Tip>
+
+### Environment variables
+
+When running the container directly (for local debugging), supply the platform connection via env vars. Use placeholders — never commit real keys or UUIDs.
+
+```bash
+export CYBERWAVE_BASE_URL="https://api.cyberwave.com"
+export CYBERWAVE_MQTT_HOST="mqtt.cyberwave.com"
+export CYBERWAVE_MQTT_PORT=8883
+export CYBERWAVE_API_KEY="<your-api-key>"
+export CYBERWAVE_TWIN_UUID="<openarm-twin-uuid>"
+export CYBERWAVE_CHILD_TWIN_UUIDS="<child-twin-uuid>"   # optional: bimanual sub-twins
+```
+
+<Note>
+Under Edge Core these are injected automatically from the edge credentials — the manual exports above are only for standalone `docker run` debugging.
+</Note>
+
+### Run the container (standalone debug)
+
+```bash
+docker run \
+  --name openarm-driver \
+  --restart unless-stopped \
+  --network host --privileged \
+  --cap-add=NET_RAW --cap-add=NET_ADMIN --cap-add=SYS_ADMIN --cap-add=SYS_MODULE \
+  -e CYBERWAVE_BASE_URL -e CYBERWAVE_MQTT_HOST -e CYBERWAVE_MQTT_PORT \
+  -e CYBERWAVE_API_KEY -e CYBERWAVE_TWIN_UUID \
+  -e OPENARM_ROBOT_ID=robot_openarm_v1 \
+  -v /dev:/dev -v /sys:/sys:rw -v /lib/modules:/lib/modules:ro \
+  cyberwaveos/openarm-driver:latest
+```
+
+Once connected, the twin appears live in the Cyberwave UI and joint feedback streams in real time.
+
+### Operation modes
+
+The OpenArm driver bridges Cyberwave [operation modes](/feature-reference/edge/drivers/base-driver-class#operation-modes-driveroperationmode) to the ROS 2 lifecycle:
+
+| Mode | Meaning |
+| ---- | ------- |
+| **Local operation** | A physical leader arm drives the follower over CAN; Cyberwave observes and records. |
+| **Remote operation** | The cloud controller (teleop / planning) drives the arm. |
+| **Idle** | Node stays warm; joint feedback keeps streaming, no control. |
+
+A twin with **no controller assigned streams telemetry but stays idle** — assigning a controller in Cyberwave activates the matching mode. You can also switch modes by publishing a controller-change command to the twin's command topic:
+
+```bash
+# Switch to remote operation (cloud/teleop)
+mosquitto_pub -h mqtt.cyberwave.com -p 8883 \
+  -u mqttcyb -P "$CYBERWAVE_API_KEY" \
+  -t "cyberwave/twin/$CYBERWAVE_TWIN_UUID/command" \
+  -m '{"command":"controller-changed","controller":{"controller_type":"teleop"}}'
+
+# Switch to local operation (physical leader arm)
+mosquitto_pub -h mqtt.cyberwave.com -p 8883 \
+  -u mqttcyb -P "$CYBERWAVE_API_KEY" \
+  -t "cyberwave/twin/$CYBERWAVE_TWIN_UUID/command" \
+  -m '{"command":"controller-changed","controller":{"controller_type":"localop"}}'
+```
+
+Assigning a controller from the Cyberwave UI does the same thing without touching MQTT directly.
+
+---
+
+## Troubleshooting
+
+| Symptom | Likely cause / fix |
+| ------- | ------------------ |
+| No CAN interfaces (`ip -br link` empty) | Adapter driver not loaded or arm unpowered — see [OpenArm CAN docs](https://docs.openarm.dev/software/setup/). |
+| Arms behave mirrored / swapped | `can0`/`can1` enumerated in the wrong order — re-seat adapters in a known plug-in order. |
+| Motor gives no `candump` reply | Wrong CAN ID, bus not in CAN FD mode, or bitrate mismatch (must be 1 Mbps / 5 Mbps). |
+| Twin connects but no joint data | ROS 2 stack not reaching ACTIVE, or `/joint_states` not published — check the driver logs. |
+| Twin never appears in UI | Bad/absent `CYBERWAVE_API_KEY` or `CYBERWAVE_TWIN_UUID`, or MQTT host unreachable. |
+
+For lifecycle-level issues (hangs at *Waiting for ROS lifecycle ACTIVE*, missing `from_ros` forwards), see the [`BaseROS2Driver` troubleshooting table](/feature-reference/edge/drivers/ros2-base-driver#troubleshooting).
+
+---
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="BaseROS2Driver" icon="book" href="/feature-reference/edge/drivers/ros2-base-driver">
+    The ROS 2 driver base this driver is built on.
+  </Card>
+  <Card title="Drivers" icon="cube" href="/feature-reference/edge/drivers/overview">
+    Registering drivers on a twin, platform keys, GPU.
+  </Card>
+  <Card title="Cyberwave Edge" icon="microchip" href="/feature-reference/edge/overview">
+    Installing Edge Core on the arm's edge computer.
+  </Card>
+  <Card title="OpenArm official docs" icon="robot" href="https://docs.openarm.dev">
+    Hardware, wiring, CAN, and ROS 2 reference.
+  </Card>
+</CardGroup>
