@@ -89,11 +89,22 @@ Connection validation prevents invalid graphs: self-connections, cycles, and inv
 5. Configure each node's parameters
 6. Click **Activate**
 
+> stub: Before a workflow can be activated it must make sense to run. Activation
+> is blocked (with an error naming the offending node) when:
+> - a node is **not connected** to anything, or sits on an island that **no
+>   trigger can reach** — it could never run;
+> - a node still has a mandatory (`*`) input undeclared — every required input
+>   needs a value, an upstream wire, or a mapping.
+>
+> The same checks run whether you activate from the editor toggle or the API.
+
 > stub: The workflow canvas supports two ways to multi-select nodes:
 > - **Modifier-click** — hold **Cmd / Ctrl / Alt** and click nodes to add them to (or remove them from) the current selection. Works without entering any tool. The previously-selected single node is folded into the group on the first modifier-click. Click the canvas background to clear the whole group.
 > - **Multi-select tool** (bottom-right toolbar) — toggle it on, then marquee-drag across the canvas or **Shift-click** individual nodes to pick a group. Press **Esc** to leave the tool.
 >
 > Once a group is selected (either way), drag any selected node to shift the whole group, and press **Delete** / **Backspace** or the floating **Delete** button to remove them in bulk.
+
+> stub: Every node's config panel header has a **Clone** button (copy icon, next to Edit/Delete) that creates a new node pre-filled with the source node's settings — type/subtype, parameters, trigger, disabled state, and notes. The clone is dropped on a free slot next to the original with a disambiguated "… Copy" name and is selected so you can adjust it immediately; connections are not copied. Cloning is undoable and hidden while the workflow is active.
 
 > stub: The workflow editor supports undo (**Ctrl/Cmd + Z**) and redo (**Ctrl/Cmd + Shift + Z**, or **Ctrl + Y**), with up to 50 steps per session. It covers node creation, deletion (single & bulk), node moves (single & group), connection wiring, node renames / notes, and workflow-level changes (name, description, slug, visibility, activation). Toolbar buttons next to the **Hide/Show Nodes** button mirror the same actions.
 

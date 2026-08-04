@@ -223,7 +223,7 @@ iface.add_publisher(
 | Rule | Detail |
 | ---- | ------ |
 | **`from_ros` only on `add_publisher`** | `add_listener` rejects `Ros2TopicSpec` |
-| **No `PublisherArgs.rate_hz` with `from_ros`** | ROS message rate drives MQTT publishes |
+| **No `PublisherArgs.rate_hz` with `from_ros`** | Use **`TopicSpec.rate_hz`** on the topic spec to cap MQTT outbound |
 | **`operation_modes`** | Forwarders often use **all** modes: `frozenset(DriverOperationMode)` |
 
 ### What `wire_ros_publishers()` does at runtime
@@ -268,6 +268,72 @@ Notice the `"source_type": "edge"` field above. This is the platform-wide conven
 - Inbound messages **without** a `source_type` are treated leniently (accepted as commands) — not every producer stamps the field — but the `edge*` self-echo guard always applies.
 
 A topic registered as **both** a `from_ros` publisher (`edge`) and a command listener (`tele`/`edit`/`sim_tele`) — e.g. `joint/update` on an arm — is the canonical case where the `edge*` rejection matters.
+
+### Arm drivers: mixin listener + `from_ros` publisher
+
+For a full manipulator stack, **do not** register `joint/update` yourself. Compose [driver mixins](/feature-reference/edge/drivers/driver-mixins). The **[Piper driver](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-edge-nodes/piper/piper_driver.py)** shows the full integration.
+
+| Registration | Owner |
+| ------------ | ----- |
+| `joint/update` listener (`tele` / `edit` / `sim_tele`) | `JointControllerMixin` (via `super().define_interface`) |
+| `twin/command` arm verbs | `ArmCapabilityMixin` (via `super().define_interface`) |
+| `joint/update` publisher (`edge`) | **Your** `define_interface` → `from_ros=Ros2TopicSpec(...)` |
+
+```text
+MQTT joint/update (tele)  →  JointControllerMixin  →  submit_joint_targets  →  inbox
+  →  tick() / pump_joint_commands  →  _publish_joint_command  →  ros_publish(cmd)
+
+MQTT twin/command         →  ArmCapabilityMixin  →  IK  →  same JointController path
+
+ROS joint_states_single   →  Ros2JointFeedbackMixin  →  _joint_states (IK, gripper latch)
+                         →  from_ros forwarder       →  mqtt.publish @ rate_hz (edge)
+```
+
+**Critical:** `define_interface` must call `super().define_interface(iface)` **before** adding the `from_ros` publisher so mixin listeners are registered exactly once.
+
+---
+
+## Composing mixins on `BaseROS2Driver`
+
+See **[Driver mixins and capabilities](/feature-reference/edge/drivers/driver-mixins)** for the Piper walkthrough. Minimum integration for a teleoperable ROS arm:
+
+```python
+class PiperDriver(
+    JointControllerMixin,
+    ArmCapabilityMixin,
+    Ros2JointFeedbackMixin,
+    JointCommandBufferMixin,
+    BaseROS2Driver,
+):
+    use_joint_controller = True
+    use_joint_feedback = True
+    use_base_commands = True
+
+    def __init__(self, node_name: str, **kwargs):
+        super().__init__(node_name, **kwargs)
+        self._init_joint_feedback()
+        self._init_joint_command_buffer()
+
+    def define_interface(self, iface):
+        super().define_interface(iface)
+        iface.add_publisher(
+            TopicSpec(namespace="joint", leaf="update", rate_hz=30.0, ...),
+            CallbackGroup(),
+            protocol=ProtocolArgs(source_types=[SOURCE_TYPE_EDGE]),
+            from_ros=Ros2TopicSpec(topic="joint_states_single"),
+        )
+
+    def tick(self):
+        self.pump_joint_commands()
+```
+
+| Integration point | Why it matters |
+| ----------------- | -------------- |
+| MRO: `JointControllerMixin` before `ArmCapabilityMixin` | Arm IK targets and MQTT teleop share `_apply_joint_targets` |
+| `_init_joint_feedback()` + `_init_joint_command_buffer()` in `__init__` | Allocates `_joint_states` and the thread-safe command inbox |
+| `super().define_interface` then `from_ros` publisher | Mixins own inbound catalog; driver owns outbound edge feedback |
+| `tick()` → `pump_joint_commands()` | Moves MQTT-thread targets onto the ROS executor via `_publish_joint_command` |
+| `joint_controller_motion() → None` | Passthrough when the vendor shapes motion in ROS (Piper vel/effort on `JointState`) |
 
 ---
 
@@ -338,12 +404,11 @@ The SDK is distro-agnostic: it **does not** default a ROS distro or guess a work
 
 ## ROS stream → Cyberwave rate limiting
 
-ROS sensor topics often exceed 100 Hz. The `from_ros` forwarder and any custom ROS callback can throttle outbound Cyberwave publishes with a per-topic cap (default **50 Hz**):
+ROS sensor topics often exceed 100 Hz. The `from_ros` forwarder and any custom ROS callback throttle outbound Cyberwave publishes with a per-topic cap that inherits `BaseDriver`'s resolution (default **30 Hz**):
 
 | API | Purpose |
 | --- | ------- |
-| `ROS_STREAM_PUBLISH_MAX_HZ` | Class attribute, default **50 Hz** |
-| `ros_stream_publish_max_hz(ros_topic)` | Override per topic |
+| `ros_stream_publish_max_hz(ros_topic)` | Resolves the cap: per-publisher `TopicSpec(rate_hz=...)` → manifest `mqtt_max_hz:` → `BaseDriver.STREAM_PUBLISH_MAX_HZ` (default 30 Hz) — no separate ROS-only default |
 | `acquire_ros_stream_publish_slot(ros_topic, *, max_hz=None)` | `True` when a publish for that topic is due (latest-wins) |
 | `ros_stream_key(ros_topic)` | Stable throttle key (`ros:<topic>`) |
 
@@ -546,10 +611,12 @@ Protocol layers (TCP, ROS DDS, MQTT): **[Custom integrations](/overview/connecti
 
 | Pattern | Direction | When |
 | ------- | --------- | ---- |
-| **`from_ros=Ros2TopicSpec(...)`** | ROS → Cyberwave | Telemetry, joints, poses — preferred |
-| **`CallbackGroup(fn)` + `from_ros`** | ROS → Cyberwave | Transform/filter before MQTT |
+| **`from_ros=Ros2TopicSpec(...)`** | ROS → Cyberwave | Telemetry, joints, poses — **preferred for edge drivers** |
+| **`CallbackGroup(fn)` + `from_ros`** | ROS → Cyberwave | Transform/filter before MQTT (`convert_joints_to_payload` seam) |
 | **`add_publisher` + tick callback** | Cyberwave timer → MQTT | Synthetic sensors (no ROS source) |
 | **`add_listener` + `ros_publish()`** | Cyberwave → ROS | Commands / teleop |
+| **`JointControllerMixin`** | Cyberwave → ROS (joint teleop) | Registers `joint/update` listener — do not duplicate |
+| **`twin.joints.set()`** | Cyberwave → MQTT | **Clients only** — application teleop, not driver feedback |
 | Manual bridge node | Both | Avoid — duplicates registry and alerts |
 
 ---
