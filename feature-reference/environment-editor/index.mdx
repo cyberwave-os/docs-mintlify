@@ -171,6 +171,27 @@ stub: In the environment editor, open **Executions → Workflow Executions** to 
 - Select a run to inspect trigger data, errors, and metadata.
 - **Node Executions** stay collapsed behind **Show more** so the default view stays lightweight.
 
+---
+
+## Sensor coverage previews
+
+stub: In **Edit** and **Live** modes, the viewer draws each sensor's coverage envelope, matched to how that sensor actually sees the world:
+
+| Sensor | Preview |
+|---|---|
+| RGB / depth cameras | Pinhole frustum from the camera's field of view and image aspect ratio |
+| 2D lidar / laser scanners | Flat scan fan across the horizontal sweep |
+| 3D / 4D lidar | Swept volume rounded at the sensor's full range, bounded above and below by its vertical spread |
+| Radar | Cone |
+
+Ranged sensors take their reach from `max_range`, and sweeps up to a full 360° are supported. A lidar with less than 180° of vertical spread does not cover straight up or straight down, so its envelope is closed off at the top and bottom rather than drawn as a full sphere. Sensors with no spatial coverage — IMU, GPS, compass, microphones — draw nothing. Each preview uses its sensor type's color; RGB and depth cameras are colored differently so overlapping cones on the same mount stay distinguishable.
+
+Very long ranges are shortened so they don't swamp the scene. When that happens, the twin's sensor settings show **Preview extent** with both the drawn distance and the sensor's full range, so you can tell a truncated preview from a short-range sensor. Set a preview length override on the sensor to draw its full reach.
+
+Control them from **View → Show sensor previews**, then **Sensor preview types** to toggle camera frustums, laser scan fans, lidar sweep volumes, and radar cones independently. The same submenu has **Only the selected twin**, which limits previews to the twin you have selected — deselect to see every twin's previews again. Per-sensor color and preview length can be overridden in the twin's sensor settings.
+
+---
+
 ## Live point cloud alignment
 
 stub: In **Live** mode, depth-camera point clouds now keep the viewer's existing camera-local basis (`X` lateral, `Z` depth) while still honoring the sensor pose and offset, so RealSense clouds stay vertically aligned in front of the sensor after refresh and axis migrations.
