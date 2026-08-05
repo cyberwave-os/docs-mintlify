@@ -116,6 +116,8 @@ For a privacy-preserving end-to-end recipe combining `camera_frame`, `call_model
 5. Configure each node's parameters
 6. Click **Activate**
 
+Activation validates the workflow first: it must have at least one trigger node and at least one non-trigger (action) node — a trigger with nothing downstream can never do anything — plus every mandatory input on the trigger's chain must be configured. If validation fails, activation is blocked and the error names the specific node and field to fix.
+
 For edge workflows, activation also publishes a `sync_workflows` MQTT command to every twin the workflow references, so the edge picks up the new `wf_*.py` within seconds. Running `cyberwave workflow sync` or waiting for the periodic reconcile still works and is the fallback if the MQTT broker is unreachable.
 
 ---

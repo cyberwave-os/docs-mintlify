@@ -163,7 +163,50 @@ export CYBERWAVE_WORKER_INPUT_RESOLUTION=640x480
 
 Zenoh shared-memory (SHM) transport offers zero-copy frame delivery between the camera driver and worker containers on the same host. Edge Core leaves `ZENOH_SHARED_MEMORY` **disabled by default** because SHM between Docker containers requires them to share an IPC namespace via `--ipc=host`, which weakens container isolation and has historically been a source of instability in production.
 
-To opt in, set `ZENOH_SHARED_MEMORY=true` in the edge-core process environment **and** ensure every Cyberwave container is launched with `--ipc=host`. Edge Core then propagates the flag to both driver and worker containers through the same env-builder, keeping the two sides in lock-step.
+To opt in, enable the flag on **both** the publisher and any same-host consumer, and give each container a shared IPC namespace (`--ipc=host`) and a raised locked-memory limit (`memlock=-1` — the default 8 MB cap is too small for a frame pool, and without it the transport silently falls back to copy):
+
+```yaml
+# docker-compose fragment — publisher + same-host consumer
+services:
+  camera-driver:
+    ipc: host                 # shared /dev/shm + IPC namespace
+    ulimits:
+      memlock: -1
+    environment:
+      ZENOH_SHARED_MEMORY: "true"
+  ml-worker:
+    ipc: host
+    ulimits:
+      memlock: -1
+    environment:
+      ZENOH_SHARED_MEMORY: "true"
+```
+
+Under Edge Core, set `ZENOH_SHARED_MEMORY=true` once in its environment and it propagates the flag to the driver and worker containers; with the SDK directly, set it on each container (or pass `ZenohBackend(shared_memory=True)`). Zero-copy applies only to frame-sized payloads; small messages (joint states, etc.) always copy. Optional publisher knobs:
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `ZENOH_SHM_POOL_BYTES` | 64 MB | Size of the shared-memory pool. Raise for large frames or deep in-flight buffering. |
+| `ZENOH_SHM_MIN_BYTES` | 4096 | Payloads below this size skip SHM and publish via copy. |
+| `ZENOH_SHM_ON_EXHAUSTION` | `copy` | Backpressure when the pool is full: `copy` (guaranteed delivery, latency grows under overload) or `drop` (skip the frame, stay low-latency — for live video). |
+
+If the pool can't be created, publishing degrades to the copy path with a warning rather than failing. When it's exhausted by a slow consumer, the `ZENOH_SHM_ON_EXHAUSTION` policy decides between copying and dropping the frame. The pool is allocated per frame whether or not a subscriber can use zero-copy, so enable SHM only when a same-host, SHM-capable consumer is actually reading the stream.
+
+<Warning>
+**A healthy-looking publisher does not prove zero-copy delivery.** The pool is created and used successfully even when no consumer can map it — for example if the containers omit `ipc: host`, each gets its own private `/dev/shm`. In that case the publisher reports SHM enabled and its `shm_frames` counter climbs, while every consumer silently receives ordinary wire copies and you get none of the latency benefit.
+
+Those counters are publish-side intent only. The single source of truth is the **receiving** end: a sample is genuinely zero-copy only when `sample.payload.as_shm()` is not `None`. Verify there once when rolling SHM out, rather than trusting the publisher's stats.
+</Warning>
+
+#### Consuming the stream from your own process
+
+The SHM path isn't specific to the ML worker — **any Zenoh peer on the same host can read a driver's frames zero-copy**. To consume from your own process:
+
+- **Run it on the same host.** If it's containerized, launch it with `--ipc=host` (or `--ipc=container:<driver>`) so it shares the IPC namespace; a process running directly on the host already qualifies.
+- **Enable SHM in its Zenoh session** — `ZENOH_SHARED_MEMORY=true` via the SDK, or `transport/shared_memory/enabled=true` on a raw Zenoh session. A consumer that leaves SHM off still receives every frame, just copied over loopback instead of zero-copy.
+- **Subscribe to the driver's channel.** With the SDK, use `DataBus.subscribe(...)` — it resolves the key for you. `memlock=-1` is only needed if your process *also* publishes SHM.
+
+Read-side note: a **Python** consumer (SDK or raw `eclipse-zenoh`) receives each frame as a copy — the zero-copy is the transport hop, so it still cuts latency and jitter but not the final ingest copy. A native **C++/Rust** Zenoh consumer can map the shared buffer and read it zero-copy end-to-end.
 
 ## GPU Access
 
