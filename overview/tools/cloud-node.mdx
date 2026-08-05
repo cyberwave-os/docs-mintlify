@@ -165,6 +165,25 @@ All settings can also be provided via environment variables. They override `cybe
 
 ---
 
+## Reserving a node for one environment (stub)
+
+Reserve a self-hosted node for a single environment so only that environment's
+workloads run on it:
+
+```bash
+export CYBERWAVE_NODE_ENVIRONMENT_UUID=<environment-uuid>
+cyberwave-cloud-node start
+# or: cyberwave-cloud-node start --environment <environment-uuid>
+```
+
+- The environment must belong to the same workspace as the node.
+- Workloads from that environment prefer the reserved node; if it is busy they
+  fall back to other available nodes.
+- Workloads from other environments (or with no environment) never run on the
+  reserved node.
+
+---
+
 ## CLI Usage
 
 ```bash
