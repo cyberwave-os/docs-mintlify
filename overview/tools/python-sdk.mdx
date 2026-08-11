@@ -789,7 +789,9 @@ This calls `POST /api/v1/environments/{uuid}/preview` and returns attachment met
 Import, manage, and export robotics datasets.
 
 ```python
-# Import from HuggingFace.
+# Import from HuggingFace. Any repository can be imported and its format
+# detected, but only robotics datasets (like LeRobot) are correctly shown
+# and usable today.
 # Idempotent by default: if the same repo was already imported it is reused.
 # Pass reuse_existing=False to force a fresh import.
 ds = cw.datasets.add("lerobot/pusht", name="pusht")
@@ -802,7 +804,9 @@ ds = cw.datasets.add(
     hf_subset="default",
 )
 
-# Upload a local dataset (directory or zip)
+# Upload a local dataset (directory or zip).
+# Zip upload only supports LeRobot (v2.1/v3) today — see the import format
+# matrix linked below for other formats via HuggingFace.
 ds = cw.datasets.add("./my_lerobot_dataset", name="my-dataset")
 
 # List, get, delete
@@ -827,6 +831,8 @@ ds = cw.datasets.wait_until_ready(
 # Fully silent (for libraries / production):
 ds = cw.datasets.wait_until_ready(ds, on_poll=None)
 ```
+
+See [Import Datasets](/feature-reference/datasets/import) for the full format support matrix.
 
 ### Export / download a converted format
 

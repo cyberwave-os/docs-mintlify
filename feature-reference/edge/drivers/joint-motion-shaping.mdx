@@ -1,0 +1,66 @@
+---
+title: "Joint Motion Shaping"
+description: "Shape joint commands with velocity-constrained smooth motion in custom drivers"
+---
+
+<Note>
+**stub** — This page will be curated before publishing. Content below reflects the current implementation.
+</Note>
+
+## When to use it
+
+Enable **`JointControllerMixin`** (`use_joint_controller=True`) when MQTT `joint/update` teleop targets should be **smoothed** before reaching hardware — instead of applying every target instantly.
+
+Arm commands (`ee_move`, `grip`, …) from **`ArmCapabilityMixin`** use the same controller path when both mixins are composed.
+
+Full mixin composition: [Driver mixins and capabilities](/feature-reference/edge/drivers/driver-mixins).
+
+---
+
+## Default: trapezoidal motion
+
+With no override, `joint_controller_motion()` returns **`trapezoidal_motion`**. The controller:
+
+- Reads current positions from `_current_joint_positions()` (often via `Ros2JointFeedbackMixin`)
+- Builds a time-parameterized waypoint stream from velocity limits
+- Calls `joint_controller_after_process()` for each waypoint (typically `submit_joint_targets` → `tick()` → hardware)
+
+Move duration is driven by the largest joint delta ÷ its velocity constraint (from arm kinematics when available).
+
+---
+
+## Passthrough mode
+
+Return **`None`** from `joint_controller_motion()` to forward a **single waypoint** per target with no SDK shaping:
+
+```python
+def joint_controller_motion(self):
+    return None  # passthrough
+```
+
+Use passthrough when the vendor stack already applies velocity/effort in the native command message (common on ROS `JointState` command topics). The Agilex Piper driver follows this pattern: MQTT targets queue immediately; Piper-specific templates live in the ROS publish path.
+
+---
+
+## Custom generators
+
+Implement a **`MotionGenerator`** callable and return it from `joint_controller_motion()` for alternate profiles (minimum-jerk, s-curve, etc.). See `cyberwave.driver.control.motion` in the Python SDK.
+
+---
+
+## Required seams
+
+| Method | Purpose |
+| ------ | ------- |
+| `joint_controller_config()` | `JointControllerConfig(joints=..., passthrough_joints=...)` |
+| `joint_controller_after_process()` | Write seam after each planned waypoint |
+| `joint_controller_motion()` | Optional — default trapezoidal; `None` = passthrough |
+
+**Do not** register your own `joint/update` listener when `use_joint_controller=True` — the mixin owns teleop ingress.
+
+---
+
+## Related
+
+- [Driver mixins](/feature-reference/edge/drivers/driver-mixins) — MRO, `JointCommandBufferMixin`, bidirectional `joint/update`
+- [BaseROS2Driver](/feature-reference/edge/drivers/ros2-base-driver) — `from_ros` feedback vs teleop listener
