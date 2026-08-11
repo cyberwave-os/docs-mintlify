@@ -1,0 +1,33 @@
+---
+title: "When episodes fail"
+description: "Why a dataset can be marked failed, what you can still do with it, and how to fix it"
+icon: "triangle-alert"
+---
+
+> stub: A dataset is built from episodes, and an episode can fail to build. Cyberwave never lets a dataset look healthy when it isn't — the dataset is marked **Failed**, and each episode shows why.
+
+## A failed episode fails the dataset
+
+> stub: If any episode fails, the dataset is marked **Failed** and cannot be used to start a training. This is deliberate: training on a dataset that quietly lost part of its data produces a model you cannot trust. Open the dataset to see which episodes failed and the reason for each.
+
+## Fixing it
+
+> stub: **Remove the failing episode** from the dataset. The dataset becomes usable again straight away.
+
+> stub: If the episode's data matters to you, record it again — or contact support if you believe the recording itself is intact.
+
+## Exports still work
+
+> stub: You can still export a dataset that has a small number of failed episodes — the export is built from the episodes that are valid, and tells you how many were skipped. If more than 10% of the episodes are unusable, the export stops instead of producing a badly incomplete file.
+
+## Episodes recorded with different cameras
+
+> stub: Episodes recorded with different cameras can be combined into one dataset, as long as each episode has the **same number** of cameras. The cameras are lined up by position: the first camera of every episode becomes the dataset's first camera, and so on. If an episode is missing a camera, it is skipped rather than guessed at.
+
+## Episodes still recording
+
+> stub: If you try to create a dataset while one of its recordings is still being processed, Cyberwave tells you which episodes are affected and lets you choose: wait and retry, drop those episodes, or continue anyway. If you continue, those episodes may be incomplete — they will be marked failed rather than silently shortened. Waiting until processing finishes and then creating the dataset is the safe choice.
+
+## Creating and recomputing a dataset is asynchronous
+
+> stub: Creating a dataset (or recomputing one) returns right away — the dataset appears immediately with a **Queued** or **Generating** status. Keep polling the dataset until it reaches **Ready** or **Failed**. If the selected episodes don't share the same number of robot or camera recordings, that also surfaces as a **Failed** dataset with a reason, the same way an individual episode failure does.
