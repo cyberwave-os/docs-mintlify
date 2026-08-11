@@ -5,7 +5,7 @@ description: stub — Reading the replay timeline, the color legend, and slicing
 
 {/* stub: curated later */}
 
-The **Replay** timeline shows everything an [environment](/feature-reference/environment-editor/index) recorded over a time window, laid out left-to-right. Dots mark captured frames; filled bars show where each track has data.
+The **Replay** timeline shows everything an [environment](/feature-reference/environment-editor/index) recorded over a time window, laid out left-to-right. Each kind of data gets its own labeled row, filled bars show where that data exists, and dots in the **Events** row mark things that happened.
 
 ## Open replay over a recording
 
@@ -14,29 +14,76 @@ The **Replay** timeline shows everything an [environment](/feature-reference/env
 3. Pick the date (the day you recorded, or **May 8, 2026** if you're using the suggested demo environment).
 4. **Load sessions**, no filters needed and the timeline fills in.
 
+The recordings list has its own filters in its header — **twin**, **data source** (live or simulation) and **replay stream** (robot, camera, audio, depth, point cloud). Each is a dropdown you can tick several values in; everything is included until you untick something, and **Clear filters** puts it back.
+
+## Rows
+
+One row per kind of data, labeled on the left. A row only appears when there is something in it:
+
+| Row | What it holds |
+| --- | --- |
+| Robot | Joint states and actuation telemetry |
+| Video | Recorded camera streams |
+| Depth | Depth / LiDAR frames, geometry only |
+| Point cloud | Depth frames fused with camera color |
+| Audio | Recorded audio samples |
+| Events | Alerts, workflow steps and telemetry |
+| Episodes | Segments you labeled yourself |
+
+When two sources of the same kind overlap in time — two cameras recording the same minute — their bars stack inside the row so you can see both. The row gets taller; the bars stay the same thickness, so a bar never looks different just because something overlaps it. If more overlap than fit, the row label shows a **+N**, and hovering still lists every one of them.
+
+**Episodes stack the same way.** Two episodes covering the same stretch, or one nested inside another, each get their own line in the Episodes row, so you can hover and click either. Each line down the stack is a shade deeper green, so you can follow one episode from start to end even where others cross it. When more episodes overlap than there are lines, the ones sharing a line are drawn with a diagonal hatch — they cover each other, so hover any of them to list what is actually there.
+
 ## Color legend
 
-Open the **Legend** popover in the toolbar at any time. Colors map to the kind of data, not severity:
+Open the **Legend** popover in the toolbar at any time. There are only three things a color can mean here:
 
-| Color | Track |
+| Color | Meaning |
 | --- | --- |
-| 🔵 Blue | Robot / point cloud (joint states, depth/LiDAR frames) |
-| 🟣 Purple | Camera / video |
-| 🟢 Green (dots/bar) | Audio |
-| 🟢 Green (span) | An **episode** — a labeled segment you created |
+| 🔵 Cyan bar | A **recording** — the row label on the left says which kind |
+| 🟢 Green span | An **episode** — a labeled segment you created |
+| 🟢 Deeper green | How deep in the overlap stack that episode sits |
+| Hatched green | Episodes sharing one line, so they cover each other |
+| Dot | An **event** — colored by severity, see below |
 
-Tracks that overlap in time — for example a camera and a microphone recorded together —
-are drawn in **separate lanes** so you can see both at once. As the playhead moves, the
-panel on the right shows only the recordings active at that moment (a camera's video, a
-microphone's audio, or both), and clears when nothing is recorded there.
+Every recording bar is the same cyan, whatever kind of data it holds. The row label tells you the kind, so the color doesn't need to repeat it — and it means you never have to tell two similar shades apart.
+
+Event dots use a separate scale, so an event can never be mistaken for a recording:
+
+| Dot | Meaning |
+| --- | --- |
+| ⚪ Gray | Info — informational alerts, workflow steps, telemetry |
+| 🟠 Orange | Warning |
+| 🔴 Red | Error or critical |
+
+A **solid** dot is an alert; a **hollow** one is a workflow step or telemetry. When several events land too close together to draw apart they merge into one wider dot carrying their count — hover to see each of them individually.
+
+## Hover to see what's there
+
+Hover any row and a card appears next to the cursor.
+
+**Hover a recording bar** and it tells you whose recording it is — the kind of data, the twin's name, and the twin's UUID (click to copy). That's it: the bar's position and width already show you when it starts and how long it runs.
+
+When several sources overlap, each one gets its own stacked bar in the row, so you hover the specific bar you're interested in and get that source — not a list of everything sharing the row. On a keyboard, **←** / **→** move along one source and **↑** / **↓** switch between the stacked ones.
+
+**Hover the Events row** and you get the events at that moment instead, in the order you need them: the **twin** (name, plus its UUID to copy), the **severity** spelled out — Info, Warning or Critical — then the event's name and its message. The timestamp sits in the card's header.
+
+Each row only ever tells you about its own contents, so a card never mixes recordings and events. If nothing is there, the card says so rather than going blank.
+
+**Click an Events dot to pin its card open.** A hover card disappears as soon as you move away, which makes the UUIDs on it hard to click; a pinned one stays until you click elsewhere or press **Esc**, and says so. Clicking still moves the playhead to the event as well.
+
+Keyboard works the same way: **Tab** to a row, **←** / **→** to step between recording edges, **Home** / **End** for the first and last, **Enter** to move the playhead there — and in the Events row, **Enter** also pins the card.
 
 ## What you can do here
 
-- **Scrub & play back** at 1× or 2×; click any frame to jump to it.
+The row above the timeline holds what you reach for while watching — playback speed, play/pause, Create Episode, the calendar. Everything that changes how the timeline *reads* sits under the **Settings** gear beside the Legend: time reference, 3D rendered mode, and the Events filter. A setting only appears there when there is something to choose.
+
+- **Scrub & play back** at 1× or 2×; click anywhere on a row to jump there.
 - **Zoom** into a stretch of the timeline for frame-level detail.
-- **Filter markers** by twin with the **Markers** dropdown.
+- **Filter the Events row** by twin with **Settings → Events for**. Recording rows are unaffected.
+- **Pick the 3D rendered mode** — **Depth** or **Point cloud** — under **Settings**, when a recording holds both. It chooses which one the 3D view draws, and emphasizes the matching row.
 - **Browse sessions** by date with the calendar picker.
-- **Create an episode** — select a window and label it as a [training/dataset](/feature-reference/datasets/import) segment.
+- **Create an episode** — mark a window and label it as a [training/dataset](/feature-reference/datasets/import) segment. Hit **Create Episode** and a short panel opens next to the button telling you which point it wants next; then click the timeline twice. The playhead jumps to each click and turns green once the first mark lands, the two marks are ruled across every row, and the range between them fills in green with its duration before the naming dialog opens. **M** at the playhead does the same from the keyboard, and **Esc** leaves the mode.
 
 ## Why it matters
 

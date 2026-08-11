@@ -13,7 +13,363 @@ Drivers can run on edge hardware, on the robot, in the cloud, or on a developer 
 
 Each driver ships as a **Docker image**. Edge Core pulls and runs it with the environment variables below, so local development matches production deployment.
 
-## Quickstart: scaffold with the Claude skill
+---
+
+## Choose a starting path
+
+<CardGroup cols={3}>
+  <Card title="UR Sim (ROS 2) — recommended" icon="robot" href="/tutorials/ur-sim-cyberwave-driver">
+    End-to-end Docker lab + `ursim_driver.py`. SDK concepts: [Python SDK drivers](#python-sdk-drivers) below.
+  </Card>
+  <Card title="Fake IMU (no hardware)" icon="gauge" href="#tutorial-build-your-first-driver-fake-imu">
+    Synthetic IMU on a D455 twin — manifest, commands, MQTT + optional Zenoh before real sensors.
+  </Card>
+  <Card title="Custom protocol" icon="code" href="#quickstart-python-sdk">
+    **BaseDriver** from scratch — serial, SDK, WebRTC, or hand-written MQTT.
+  </Card>
+</CardGroup>
+
+Deep references: **[BaseDriver](/feature-reference/edge/drivers/base-driver-class)** · **[BaseROS2Driver](/feature-reference/edge/drivers/ros2-base-driver)**
+
+---
+
+## Quickstart: Python SDK
+
+Use the **[`cyberwave`](https://pypi.org/project/cyberwave/)** package and **`BaseDriver`** in `cyberwave.driver`. You declare topics and commands in Python; the SDK generates the MQTT catalog and wires runtime subscriptions.
+
+<CardGroup cols={2}>
+  <Card title="BaseDriver reference" icon="code" href="/feature-reference/edge/drivers/base-driver-class">
+    Lifecycle, hooks, manifest export, alerts, and what the SDK runs for you.
+  </Card>
+  <Card title="BaseROS2Driver (ROS 2)" icon="robot" href="/feature-reference/edge/drivers/ros2-base-driver">
+    Dual lifecycle, `from_ros` forwarding, hooks — often under 100 LOC for ROS → twin streaming.
+  </Card>
+</CardGroup>
+
+```python
+from cyberwave import Cyberwave
+from my_driver import MyDriver
+
+cw = Cyberwave()
+twin = cw.twin("acme-corp/my-device", twin_id="...")
+
+# 1. Register catalog on the twin (no running driver required)
+twin.driver.set_schema(MyDriver.get_manifest())
+
+# 2. Optional: export cw-driver.yml for Docker / git
+MyDriver.get_manifest(path="cw-driver.yml")
+
+# 3. Run — driver wires MQTT (+ Zenoh when declared)
+MyDriver(twin).run()
+
+# Introspection vs invocation
+print(twin.commands.get_supported_commands())  # command catalog introspection
+twin.commands.get_schema()                     # MQTT catalog (topics, commands.specs)
+twin.commands.stop()                           # bound methods from commands.supported
+```
+
+`get_manifest()` builds the compiled **MQTT** catalog from `define_interface()` only — no twin connect, no `run()`. Use `get_manifest_bundles()` when you also declare Zenoh channels (see [Zenoh edge catalog](#zenoh-edge-catalog)).
+
+| Handle | Role |
+| ------ | ---- |
+| `twin.driver` | Full catalogs (`get_schemas`, Zenoh/topics/transports getters) and **`set_schema`** (persist + re-bind commands) |
+| `twin.commands` | **`get_schema()`**, **`get_supported_commands()`**, and **`twin.commands.<name>(...)`** from `commands.supported` |
+
+**ROS 2 integrators:** start with the **[UR Sim tutorial](/tutorials/ur-sim-cyberwave-driver)**, then read [Python SDK drivers](#python-sdk-drivers) below for what the SDK handles vs what you implement.
+
+Otherwise see the [fake IMU tutorial](#tutorial-build-your-first-driver-fake-imu), then [reference](#reference) for `cw-driver.yml`, REST/MQTT, and sensor buses.
+
+(C++ drivers use the same platform contract via `cw-driver.yml`; see the [C++ SDK](/tools/cpp-sdk).)
+
+---
+
+## Python SDK drivers {#python-sdk-drivers}
+
+The [`cyberwave`](https://pypi.org/project/cyberwave/) package provides **base classes** so you declare the platform contract once in Python instead of hand-wiring MQTT and catalog JSON.
+
+| Base class | Use when |
+| ---------- | -------- |
+| **[`BaseDriver`](/feature-reference/edge/drivers/base-driver-class)** | Serial, vendor SDK, WebRTC, cameras, custom polling loops |
+| **[`BaseROS2Driver`](/feature-reference/edge/drivers/ros2-base-driver)** | ROS 2 Humble+ — subscribe on ROS topics and forward to Cyberwave with **`from_ros=`** |
+
+### What you declare vs what the SDK runs
+
+| You provide | SDK provides automatically |
+| ----------- | -------------------------- |
+| **`ASSET_KEY`** on the driver subclass (required) | `Cyberwave(source_type="edge")` — API/MQTT from env / CLI |
+| **`define_interface(iface)`** — topics, commands, `from_ros` | Compiles `metadata["mqtt"]` / optional `metadata["zenoh"]`; `twin.driver.set_schema` |
+| Lifecycle hooks (`on_*` or ROS `configure` / `activate`) | MQTT subscribe/publish wiring, tick publishers, session telemetry |
+| Optional publisher/command callbacks | Default management commands (`stop`, teleop modes), `driver_info` on `twin/telemetry` |
+| Optional `operation_modes=` per interface entry | **Operation mode derived from the twin's attached controller** at startup (`NO_OP` when none) and re-wired on controller/teleop commands |
+| — | Lifecycle **twin alerts** (*Driver starting* → *Driver active*) after connect |
+| **`from_ros=Ros2TopicSpec(...)`** only on ROS drivers | ROS subscribe + `JointState` → `cyberwave/joint/{uuid}/update` serialization |
+
+<Tip>
+**Source-type convention.** A driver **publishes** its state as **`edge`** (or **`sim`** when driving a simulator) and **listens** for teleop commands — **`tele`**, `edit`, `sim_tele`. It must **never act on `edge*`** messages (that's its own feedback), and inbound messages with **no** `source_type` are accepted leniently. Full rules: [BaseDriver → Source-type convention](/feature-reference/edge/drivers/base-driver-class#source-type-convention).
+
+A driver with **no controller assigned starts in `NO_OP`** — control commands stay idle while edge telemetry/`from_ros` forwarders keep streaming. Declare always-on publishers with `operation_modes=frozenset(DriverOperationMode)`. See [Operation modes](/feature-reference/edge/drivers/base-driver-class#operation-modes-driveroperationmode). High-rate streams should throttle with `TopicSpec.rate_hz` on `from_ros` publishers (or `acquire_stream_publish_slot()` in custom callbacks; default cap 30 Hz). ROS drivers can also have the SDK spawn a vendor `ros2 launch` (`managed_launch`) and export a combined ROS+MQTT `manifest.yaml` (`write-manifest`) — see the [BaseROS2Driver reference](/feature-reference/edge/drivers/ros2-base-driver#managed-vendor-launch-managed_launch).
+</Tip>
+
+### Driver mixins (arm + joints) {#driver-mixins}
+
+For manipulator arms, compose SDK mixins instead of hand-wiring MQTT joint teleop, arm commands, and ROS feedback. See **[Driver mixins and capabilities](/feature-reference/edge/drivers/driver-mixins)** for the full inventory and a **Piper walkthrough**.
+
+| Concern | Mixin / pattern |
+| ------- | ---------------- |
+| MQTT `joint/update` teleop in | `JointControllerMixin` (`use_joint_controller=True`) — **do not** add your own listener |
+| `ee_move`, `grip`, `home`, … | `ArmCapabilityMixin` (`use_base_commands=True`) |
+| ROS → local joint state + MQTT feedback | `Ros2JointFeedbackMixin` + `add_publisher(..., from_ros=...)` in `define_interface` |
+| Async MQTT → ROS executor hand-off | `JointCommandBufferMixin` — `_publish_joint_command`, `tick()` |
+
+**Bidirectional `joint/update`:** call `super().define_interface(iface)` first (mixins register the **teleop listener**); then add your **edge publisher** with `from_ros`. Clients use `twin.joints.set()` for commands and `twin.joints.get()` to read feedback — drivers use the registry, not `twin.joints.set()`.
+
+#### Integration example: `PiperDriver`
+
+Reference: [`cyberwave-edge-nodes/piper/piper_driver.py`](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-edge-nodes/piper/piper_driver.py).
+
+```python
+class PiperDriver(
+    JointControllerMixin,
+    ArmCapabilityMixin,
+    Ros2JointFeedbackMixin,
+    JointCommandBufferMixin,
+    BaseROS2Driver,
+):
+    use_joint_controller = True
+    use_joint_feedback = True
+    use_base_commands = True
+
+    def __init__(self, node_name, **kwargs):
+        super().__init__(node_name, **kwargs)
+        self._init_joint_feedback()
+        self._init_joint_command_buffer()
+
+    def define_interface(self, iface):
+        super().define_interface(iface)  # listeners: joint/update + twin/command
+        iface.add_publisher(              # publisher: joint/update @ edge only
+            TopicSpec(namespace="joint", leaf="update", rate_hz=30.0, ...),
+            CallbackGroup(),
+            protocol=ProtocolArgs(source_types=[SOURCE_TYPE_EDGE]),
+            from_ros=Ros2TopicSpec(topic="joint_states_single"),
+        )
+
+    def joint_controller_motion(self):
+        return None  # passthrough — Piper sets vel/effort on the ROS JointState
+
+    def joint_controller_after_process(self):
+        return lambda cmd: self.submit_joint_targets(cmd.positions)
+
+    def tick(self):
+        self.pump_joint_commands()  # inbox → _publish_joint_command → ros_publish
+```
+
+| Step | Responsibility |
+| ---- | -------------- |
+| MQTT teleop in | `JointControllerMixin` → `submit_joint_targets` |
+| Arm commands | `ArmCapabilityMixin` → IK → same controller path |
+| ROS cmd out | `JointCommandBufferMixin._publish_joint_command` |
+| ROS feedback in | `Ros2JointFeedbackMixin` updates `_joint_states` for IK |
+| MQTT feedback out | `from_ros` forwarder (30 Hz, `source_type=edge`) |
+
+Motion shaping (trapezoidal vs passthrough): [Joint motion shaping](/feature-reference/edge/drivers/joint-motion-shaping).
+
+<CardGroup cols={2}>
+  <Card title="Driver mixins reference" icon="layer-group" href="/feature-reference/edge/drivers/driver-mixins">
+    MRO, seams, Piper-style ROS arm pattern.
+  </Card>
+  <Card title="Joint motion shaping" icon="wave-square" href="/feature-reference/edge/drivers/joint-motion-shaping">
+    `joint_controller_motion()` — shaped vs passthrough.
+  </Card>
+</CardGroup>
+
+### ROS 2 minimal example (`ursim_driver.py`)
+
+Flagship sample: [`examples/ursim_driver.py`](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-sdks/cyberwave-python/examples/ursim_driver.py) (~75 lines).
+
+```python
+from cyberwave.driver import CallbackGroup, TopicSpec
+from cyberwave.driver.ros2 import BaseROS2Driver, Ros2TopicSpec
+
+class UrSimDriver(BaseROS2Driver):
+    ASSET_KEY = "universal_robots/UR7"
+
+    def define_interface(self, iface):
+        iface.add_publisher(
+            TopicSpec(
+                topic_slug="cyberwave/joint/{twin_uuid}/update",
+                payload_schema_ref="JointStatesPayload",
+            ),
+            CallbackGroup(),  # JointState auto-serialized — no manual MQTT loop
+            from_ros=Ros2TopicSpec(topic="/joint_states"),
+        )
+```
+
+Run after ROS and UR Sim are up (full lab): **[UR Sim tutorial](/tutorials/ur-sim-cyberwave-driver)**.
+
+<CardGroup cols={2}>
+  <Card title="UR Sim tutorial" icon="play" href="/tutorials/ur-sim-cyberwave-driver">
+    Docker, pendant program, `ur_robot_driver`, run `ursim_driver.py`, GIFs.
+  </Card>
+  <Card title="Custom integrations" icon="plug" href="/overview/connecting-hardware/custom-hardware">
+    TCP, ROS DDS, MQTT — how the lab stack fits together.
+  </Card>
+  <Card title="BaseROS2Driver reference" icon="robot" href="/feature-reference/edge/drivers/ros2-base-driver">
+    Dual lifecycle, env vars, `ros_publish()` for commands.
+  </Card>
+  <Card title="BaseDriver reference" icon="code" href="/feature-reference/edge/drivers/base-driver-class">
+    Non-ROS drivers, manifest export, hooks.
+  </Card>
+  <Card title="Driver mixins" icon="layer-group" href="/feature-reference/edge/drivers/driver-mixins">
+    Arm + joint mixin composition, bidirectional joint/update.
+  </Card>
+</CardGroup>
+
+---
+
+## Tutorial: build your first driver (fake IMU)
+
+Reference implementation: **`cyberwave-python/examples/fake_imu_driver.py`** — hardware-free, useful to validate manifest + MQTT + `twin.imu.get()` before real sensors. **ROS 2 arms:** use the **[UR Sim tutorial](/tutorials/ur-sim-cyberwave-driver)** and [Python SDK drivers](#python-sdk-drivers).
+
+```bash
+export CYBERWAVE_API_KEY=...
+export CYBERWAVE_TWIN_UUID=<d455-twin-uuid>   # optional
+cd cyberwave-python
+PYTHONPATH=. python examples/fake_imu_driver.py
+```
+
+### Step 1 — Class skeleton and identity
+
+```python
+class FakeImu6dDriver(BaseDriver):
+    ASSET_KEY = "intel/realsensed455"
+    TICK_RATE_HZ = 50.0
+    auto_register_interface = False  # demo calls set_schema() before run()
+```
+
+`ASSET_KEY` ties the driver to a catalog asset. `TICK_RATE_HZ` drives both `on_tick` and registry publisher scheduling.
+
+### Step 2 — `define_interface` (manifest + runtime contract)
+
+```python
+def define_interface(self, iface):
+  iface.add_listener(
+      TopicSpec(namespace="twin", leaf="command", payload_schema_ref="TwinCommandPayload"),
+      CallbackGroup(callback=self._on_rotate),
+      command=CommandArgs(name="rotate"),
+      protocol=ProtocolArgs(source_types=["tele", "live", "edge"]),
+  )
+  iface.add_publisher(
+      TopicSpec(
+          topic_slug=TWIN_IMU_TOPIC_SLUG,
+          payload_schema_ref="ImuPayload",
+          enable_zenoh=True,
+          zenoh_channel="imu",
+      ),
+      CallbackGroup(callback=self._publish_imu_sample),
+      publisher=PublisherArgs(rate_hz=self._imu_params.imu_rate_hz),
+      protocol=ProtocolArgs(source_types=["live"]),
+  )
+```
+
+This single method feeds `get_manifest()` / `driver.manifest`, optional **`metadata["zenoh"]`**, and `_wire_interface_from_registry()` (MQTT subscribe/publish plus edge **DataBus** when dual specs are present). **`twin/command` stays MQTT-only** — do not set `enable_zenoh=True` on command listeners.
+
+### Step 3 — Lifecycle hooks (map to `run_async` order)
+
+| Hook | Fake IMU behavior |
+| ---- | ----------------- |
+| `on_configure` | Log params (`sensor_id`, rate) |
+| `on_connect_to_device` | No hardware — log ready |
+| `on_register_callbacks` | `pass` — no device SDK callbacks |
+| `on_activate` | Log IMU topic active; `emit_driver_info` |
+| `on_shutdown` | `pass` |
+
+For a real camera driver, `on_connect_to_device` opens the device SDK and `on_register_callbacks` attaches frame callbacks.
+
+### Step 4 — Publisher callback (MQTT stream)
+
+```python
+def _publish_imu_sample(self) -> ImuPayload:
+    gyro, accel = random_imu_vectors(gyro_base=self._imu.gyro(), ...)
+    return build_imu_payload(gyro=gyro, accel=accel, sensor_id=self._imu_params.sensor_id)
+```
+
+`BaseDriver` calls this from `_run_registry_publishers()` at 50 Hz and publishes to `cyberwave/twin/{uuid}/imu`. You do **not** call `mqtt.publish` yourself for registry publishers.
+
+### Step 5 — Command callback (`rotate`)
+
+```python
+def _on_rotate(self, envelope: dict[str, Any]) -> None:
+    if envelope.get("command") == "status":
+        return
+    data = envelope.get("data") or {}
+    axis = str(data.get("axis", "")).lower()
+    rate_deg_s = float(data.get("amount_deg", 0.0))
+    logger.info("command received, rotating sensor ...")
+    self._imu.set_gyro_rate_deg_s(axis, rate_deg_s)
+```
+
+`twin.commands.rotate(...)` publishes to `cyberwave/twin/{uuid}/command`; the registry routes it here while the driver is **ACTIVE**.
+
+### Step 6 — Twin bring-up script (recommended order)
+
+| Order | Action |
+| ----- | ------ |
+| 1 | Create / resolve twin; add `d455_imu` to `capabilities.sensors` if missing (D455 has no hardware IMU) |
+| 2 | `twin.driver.set_schema(FakeImu6dDriver.get_manifest())` — persists `metadata["mqtt"]` / `metadata["zenoh"]` and **re-binds** `twin.commands.*` |
+| 3 | `driver.run()` or `asyncio.create_task(driver.run_async())` on the **main** thread |
+| 4 | `twin.imu.get(timeout=5)` from a consumer client while ACTIVE |
+| 5 | `twin.commands.rotate(axis="yaw", amount_deg=30, source_type="live")` |
+
+**Expected logs:** `inactive → active`, `IMU stream active`, then `command received, rotating sensor` on the driver logger; `imu.get()` shows higher `gyro.z` after yaw rotate (~0.52 rad/s + noise).
+
+`rotate` is a **sensor command** (not locomotion) — no teleop policy required on camera-only twins.
+
+### Minimal skeleton (any driver)
+
+```python
+from cyberwave.driver import BaseDriver, CallbackGroup, CommandArgs, TopicSpec
+
+class MyDriver(BaseDriver):
+    ASSET_KEY = "acme-corp/my-arm-v1"
+
+    def define_interface(self, iface):
+        iface.add_listener(
+            TopicSpec(namespace="twin", leaf="command", payload_schema_ref="TwinCommandPayload"),
+            CallbackGroup(callback=self._on_stop),
+            command=CommandArgs(name="stop"),
+        )
+
+    async def on_configure(self): ...
+    async def on_connect_to_device(self): ...
+    async def on_register_callbacks(self): ...
+    async def on_activate(self): ...
+    async def on_shutdown(self): ...
+
+    @classmethod
+    def create(cls):
+        return cls.from_env()
+```
+
+### Registry API reference
+
+| API | Role |
+| --- | --- |
+| `define_interface(iface)` | **Source of truth** — topics, commands, callbacks |
+| `CustomDriver.get_manifest()` | Classmethod → compiled **MQTT** bundle for `twin.driver.set_schema` |
+| `CustomDriver.get_manifest_bundles()` | `{ "mqtt": ..., "zenoh": ... \| null }` — both catalogs from `define_interface` |
+| `CustomDriver.get_manifest(path=...)` | Also write `cw-driver.yml` |
+| `driver.manifest` | Compiled MQTT bundle on a live instance |
+| `driver.register_interface_on_twin()` | `twin.driver.set_schema(manifest)` on bound twin |
+| `DriverOperationMode` | Gates actuation-related listeners |
+| `BaseTelemetry` | Debounced `driver_info` on `twin/telemetry` |
+
+Session markers (`telemetry_start`, `connected`, …) use `client.mqtt` directly. Queue operational fields with `emit_driver_info()`; the registry telemetry publisher flushes them.
+
+---
+
+## Twin SDK: `twin.driver` vs `twin.commands`
+
+After you register a catalog with **`twin.driver.set_schema(...)`**:
 
 The fastest way to get started is the **Cyberwave Driver skill** for [Claude Code](https://claude.ai/claude-code). It asks you a few questions about your hardware and scaffolds a complete, production-ready driver project — including the Dockerfile, local dev setup, and a working twin connection.
 
@@ -128,7 +484,7 @@ Top-level fields:
 | `mqtt.schema_version` | Catalog format version (currently `1`) |
 | `mqtt.driver_family` | Implementation hint (`ros_cpp`, `python`, `android`, …) |
 | `mqtt.<namespace>.<leaf>` | Per-topic contract — see [YAML path → MQTT topic](#yaml-path--mqtt-topic) below |
-| `mqtt.commands.supported` | Command names the driver accepts on the twin command topic — plain strings (discrete) or `{name, continuous, rate_hz}` objects |
+| `mqtt.commands.supported` | Command names the driver accepts on the twin command topic — plain strings (discrete) or `{name, continuous, rate_hz, description}` objects |
 | `mqtt.commands.routers` | Optional routing hints for the edge bridge (e.g. `actuation`, `get_status`) |
 | `mqtt.commands.constraints` | Human-readable rules (source types, safety notes) surfaced to agents and docs |
 
@@ -185,10 +541,21 @@ On the platform, your asset (and twins created from it) store a JSON bundle at *
 
 - `topics` — map of canonical slug → `{ direction, payload_schema_ref, description, … }`
 - `commands.supported` — list of command name strings
-- `commands.specs` — per-command flags such as `continuous` and `rate_hz`
+- `commands.specs` — per-command flags such as `continuous`, `rate_hz`, and `description` (defaults to `""`)
 - `schema_version`, `driver_family` — format and implementation hints
 
-Author in YAML for readability; the SDK compiles it into `metadata["mqtt"]` when you call `set_schema` on a twin.
+<Note>
+stub: expand with a worked example once the description field has shipped
+on more than one driver family.
+</Note>
+
+**`metadata["zenoh"]`** (optional, edge workers on the same host):
+
+- `channels` — map of channel name → `{ direction, payload_schema_ref, description, … }`
+- `locality` — typically `edge_colocated`
+- `schema_version`, `driver_family` — same versioning pattern as MQTT
+
+Author in YAML (or Python `define_interface`); the SDK compiles into metadata when you call **`twin.driver.set_schema`**. That call also **re-binds** `twin.commands.<name>` from the updated `commands.supported` list.
 
 ### Reference implementations (Cyberwave drivers)
 
@@ -285,12 +652,14 @@ Declared in `cw-driver.yml` → compiled into `metadata.mqtt.topics`. At runtime
 | `cyberwave/twin/{twin_uuid}/webrtc-answer` | `cyberwave/twin/abc/webrtc-answer` | Signaling |
 | `cyberwave/twin/{twin_uuid}/webrtc-candidate` | `cyberwave/twin/abc/webrtc-candidate` | ICE candidates |
 
-| SDK publish helper | MQTT topic pattern |
-| ---------------- | ------------------ |
-| `twin.commands.<name>(...)` | `cyberwave/twin/{uuid}/command` |
-| `client.mqtt.update_joints_state(...)` | `cyberwave/joint/{uuid}/update` |
-| `client.mqtt.update_twin_position(...)` | `cyberwave/twin/{uuid}/position` |
-| `client.mqtt.update_twin_rotation(...)` | `cyberwave/twin/{uuid}/rotation` |
+| SDK publish helper | MQTT topic pattern | Typical caller |
+| ---------------- | ------------------ | -------------- |
+| `twin.commands.<name>(...)` | `cyberwave/twin/{uuid}/command` | SDK clients, UI |
+| `twin.joints.set(...)` | `cyberwave/joint/{uuid}/update` | **Application teleop** (commands) |
+| `define_interface` + `from_ros` | `cyberwave/joint/{uuid}/update` | **Edge drivers** (measured `edge` feedback) |
+| `client.mqtt.update_joints_state(...)` | `cyberwave/joint/{uuid}/update` | Scripts, sims, non-registry publishers |
+| `client.mqtt.update_twin_position(...)` | `cyberwave/twin/{uuid}/position` | Drivers, sims |
+| `client.mqtt.update_twin_rotation(...)` | `cyberwave/twin/{uuid}/rotation` | Drivers, sims |
 
 Payload shapes: [MQTT API Reference](/api-reference/mqtt/main).
 
@@ -624,3 +993,34 @@ Once you have a working driver, these guides cover the platform features your dr
     navigation, joint states, and more.
   </Card>
 </CardGroup>
+
+## ROS 2 drivers
+
+Use **`BaseROS2Driver`** with **`from_ros=`** instead of hand-written MQTT bridges.
+
+<CardGroup cols={2}>
+  <Card title="UR Sim tutorial" icon="play" href="/tutorials/ur-sim-cyberwave-driver">
+    Full end-to-end lab and success GIFs.
+  </Card>
+  <Card title="Python SDK drivers" icon="code" href="#python-sdk-drivers">
+    What BaseDriver / BaseROS2Driver automate.
+  </Card>
+  <Card title="BaseROS2Driver reference" icon="robot" href="/feature-reference/edge/drivers/ros2-base-driver">
+    API, troubleshooting, `ros_publish()` for commands.
+  </Card>
+  <Card title="Custom integrations" icon="plug" href="/overview/connecting-hardware/custom-hardware">
+    Protocol stack (TCP, ROS DDS, MQTT) for the UR Sim lab.
+  </Card>
+</CardGroup>
+
+## Cartesian pose & dual-arm drivers
+
+Set `use_cartesian_pose = True` to expose an absolute `ee_pose` command. By
+default the raw pose is forwarded to your `_apply_ee_pose(pose, *, arm=None)`
+seam (implement it to send your robot's native cartesian target). Pass
+`process_joints_ik=True` to solve IK locally and apply joint targets instead.
+
+Set `use_dual_arm = True` and return a `DualArmConfig(left=..., right=...)` from
+`dual_arm_config()` for a single twin with two arms. Commands are exposed
+per arm (`left_*` / `right_*`) plus a conjunct `home`; telemetry stays a single
+combined payload.
