@@ -24,6 +24,12 @@ condition.
 The wait resolves to `duration × 60` seconds for **minutes**, or `duration`
 seconds for **seconds**. Durations are capped at 24 hours.
 
+<Note>
+`duration` must be set before the workflow can be activated. Like any mandatory
+(`*`) input, a Timer with no duration blocks activation and the editor shows a
+"Configure Duration" prompt on the node.
+</Note>
+
 ## Behavior
 
 The Timer simply waits, then completes — the nodes wired after it run next,

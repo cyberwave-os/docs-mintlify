@@ -17,8 +17,15 @@ When you pick a target twin that has no **controller policy** associated, Cyberw
 
 ## Configuration flow
 
-1. **Target Twin** — pick the twin to control. Only **joint-controllable** twins (robots with movable joints) appear in the list.
-2. **Twin Poses** — pick a **saved pose** for that twin, or **Custom Pose** to author a new one.
+1. **Target Twin** — pick the twin to control. Only **joint-controllable** twins (robots with movable joints) appear in the list. **Required.**
+2. **Twin Poses** — pick a **saved pose** for that twin, or **Custom Pose** to author a new one. **Required.**
+
+<Note>
+Both **Target Twin** and **Twin Poses** are mandatory (`*`). A workflow with a
+Send Pose that is missing either can't be activated — the editor flags it and
+activation returns an error. Positions/velocities/efforts maps refine a pose;
+they don't replace picking one.
+</Note>
 3. **Advanced** (optional) — under **Control Settings**, choose which channels to send with the **Positions / Velocities / Efforts** checkboxes (and set per-joint velocity/effort values); under **Explicit Joint Update**, restrict the message to specific joints.
 
 A live **Message Preview** shows the exact topic and payload that will be sent.
@@ -44,7 +51,7 @@ By default the node sends a **full joint update** — every joint of the pose is
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `twin_uuid` | string | Yes | Target twin (inspector picker, joint-controllable only). |
-| `pose_name` | string | No | Saved pose to send. Set by the Twin Poses picker. |
+| `pose_name` | string | Yes | Saved (or custom) pose to send. Set by the Twin Poses picker. |
 | `positions` | object | No | Per-joint target positions (radians/metres). Set by the pose/custom editor or wired from upstream. |
 | `velocities` | object | No | Per-joint target velocities. Sent only when **Send velocities** is enabled; unset joints are omitted, not `0`. |
 | `efforts` | object | No | Per-joint target efforts. Sent only when **Send efforts** is enabled; unset joints are omitted, not `0`. |
