@@ -63,6 +63,8 @@ GET /api/v1/alerts?workflow_uuid={workflow_uuid}
 
 Generated edge workers call `client.publish_alert(..., workflow_uuid=WORKFLOW_UUID, workflow_node_uuid=..., workflow_execution_uuid=...)`. The SDK forwards `workflow_uuid` as a top-level field (sets the FK) and merges `workflow_node_uuid` / `workflow_execution_uuid` into `metadata` for full provenance.
 
+When an alert is attributable to one node, the alert card also shows a `Node: <name> (<type>)` badge (from `metadata.workflow_node_name` / `metadata.workflow_node_type`), and a `POST /activate` rejection returns that same node identity in the response body so the editor can highlight the offending node directly instead of showing a generic failure message.
+
 ## Source attribution: `metadata.source_chain`
 
 <Warning>
@@ -131,6 +133,12 @@ Edge Core automatically raises technical alerts for operational issues. These ar
 | `driver_health` | `warning` | `edge` | Driver container stopped unexpectedly |
 | `model_download_failure` | `warning` | `edge` | Required ML model could not be downloaded |
 | `worker_start_failure` | `warning` | `edge` | Worker container failed to start |
+| `workflow_activation_error` | `error` | `workflow` | You tried to activate a workflow that's invalid or missing a required input — activation is blocked and the alert names the specific node and field that need fixing. Clears once the workflow activates successfully. |
+| `workflow_compile_error` | `error` | `workflow` | An active workflow couldn't be compiled for the edge, so it won't run there until fixed. The alert explains why; scoped to the twin the failing node targets when applicable. Clears automatically once the workflow compiles successfully. |
+| `workflow_sync_failure` | `error` | `edge` | The edge could not download one or more workflow workers from the cloud — affected workflows won't run on that twin until the next successful sync |
+| `worker_load_error` | `error` | `edge` | A workflow worker on the edge failed to load and will not run |
+| `worker_runtime_error` | `error` | `edge` / `cloud` | A workflow node raised an error while running. Attached to the workflow (and twin) so you can find it from the workflow. Appears the same way whether the workflow runs on edge or cloud — only `source_type` differs. |
+| `driver_starting` / `worker_starting` | `info` while starting, `critical` on failure | `edge` | Tracks a driver/worker container's docker pull and startup. A failed pull (including a timed-out download of the driver image, the ML worker image, or any other required image) flips the alert to `critical` before resolving it — never a quiet `warning`. |
 | `edge_core_restart` | `info` | `cloud` | Backend has accepted an edge-core restart request and is tracking the lifecycle (see below) |
 
 ### `edge_core_restart` lifecycle alert

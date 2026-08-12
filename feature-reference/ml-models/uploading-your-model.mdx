@@ -1,0 +1,284 @@
+---
+title: "Uploading Your Model"
+description: "Bring your own model into Cyberwave — call your own API, or hand Cyberwave code to run — and use it in workflows, the Playground, and the SDK."
+icon: "upload"
+---
+
+{/* stub — pending human review */}
+
+<Note>
+  Custom models are currently available in **early access**. Reach out to
+  your Cyberwave contact to enable it for your workspace.
+</Note>
+
+## Concepts
+
+A **custom model** is an [ML Model](/feature-reference/ml-models/index) you register yourself, instead of picking one from the catalog. There are two kinds:
+
+<CardGroup cols={2}>
+  <Card title="custom-api" icon="cloud">
+    Your model already runs somewhere — your own inference server, a
+    HuggingFace Inference Endpoint, a colleague's project. Cyberwave calls
+    it over HTTP whenever the model is used.
+  </Card>
+  <Card title="custom-hosted" icon="server">
+    You give Cyberwave a Python function; Cyberwave runs it for you on
+    demand. No servers to keep online yourself.
+  </Card>
+</CardGroup>
+
+Both kinds are ordinary `MLModel` rows once created — they show up in the model catalog, can be selected in a workflow's **Call Model** node, and run through the same `POST /mlmodels/{uuid}/run` endpoint and Playground as any built-in model. Custom models are always scoped to `private` or `workspace` visibility (never made public to other workspaces).
+
+### Describing inputs and outputs
+
+Every custom model declares its inputs and outputs with `metadata.io_schema` — a list of named, typed ports:
+
+```json
+{
+  "io_schema": {
+    "inputs": [
+      { "name": "prompt", "type": "text", "required": false },
+      { "name": "frame", "type": "image", "required": true }
+    ],
+    "outputs": [{ "name": "detections", "type": "json" }]
+  }
+}
+```
+
+Supported types: `text`, `image`, `audio`, `video`, `json`, `number`, `boolean`, `array`. `video` is a reference to a stored recording (a whole clip), not a single live frame — see [Passing a recording as input](#passing-a-recording-as-input).
+
+<Warning>
+  Only upload or point at code and endpoints you trust. Custom models run
+  without additional sandboxing today — treat them the same way you'd treat
+  any other code you run on your own infrastructure.
+</Warning>
+
+---
+
+## Upload a model hosted behind your API
+
+Use this when the model already runs somewhere reachable over HTTPS.
+
+<Steps>
+  <Step title="Register the model">
+    Create the model with `model_provider_name: "custom-api"` and your
+    endpoint configuration in `metadata`.
+
+    ```python
+    from cyberwave import Cyberwave
+
+    cw = Cyberwave(api_key="your_api_key")
+
+    model = cw.api.create_mlmodel({
+        "name": "Warehouse Defect Classifier",
+        "description": "Calls our own defect-detection API",
+        "model_external_id": "defect-classifier-v1",
+        "model_provider_name": "custom-api",
+        "visibility": "private",
+        "can_take_image_as_input": True,
+        "output_format": "json",
+        "metadata": {
+            "endpoint_url": "https://api.example.com/v1/classify",
+            "http_method": "POST",
+            "payload_template": {
+                "model": "{model_id}",
+                "image": "{image_url}"
+            },
+            "response_key": "output",
+            "timeout_seconds": 30,
+            "max_retries": 1,
+            "io_schema": {
+                "inputs": [{ "name": "frame", "type": "image", "required": True }],
+                "outputs": [{ "name": "defects", "type": "json" }]
+            }
+        }
+    })
+    print(model.uuid)
+    ```
+
+    `payload_template` values may use the placeholders `{prompt}`, `{model_id}`,
+    and (for `video` inputs) `{video_url}` — Cyberwave substitutes them into
+    the JSON body it sends to `endpoint_url`. `response_key` names the
+    top-level field in your endpoint's JSON response that holds the result.
+
+    `timeout_seconds` defaults to `120` and is a budget for the **whole**
+    call, retries included — `max_retries` never extends it. Values outside
+    the allowed range are clamped; unparseable values fall back to the
+    default.
+
+    A few `metadata` keys are reserved for the Cyberwave platform and are
+    rejected on create and update: `cloud_node_profile_slug`,
+    `cloud_node_result_type`, `fallback_provider`, and `fallback_model_id`.
+  </Step>
+  <Step title="Add authentication (if your endpoint needs it)">
+    Credentials are write-only: once set, Cyberwave never returns the
+    secret value again — only whether one is configured.
+
+    ```bash
+    curl -X POST \
+      "$CYBERWAVE_API_URL/api/v1/mlmodels/<model-uuid>/credential" \
+      -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "auth_type": "bearer",
+        "secret": "sk-your-endpoint-token"
+      }'
+    ```
+
+    `auth_type` is one of `none`, `bearer`, `api_key_header` (also set
+    `header_name`, e.g. `"X-API-Key"`), or `basic`. Remove a credential with
+    `DELETE .../credential`.
+  </Step>
+  <Step title="Test it">
+    Run one real call against your endpoint to confirm the config:
+
+    ```bash
+    curl -X POST \
+      "$CYBERWAVE_API_URL/api/v1/mlmodels/<model-uuid>/test-call" \
+      -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"image_url": "https://example.com/sample.jpg"}'
+    ```
+
+    This is a real inference against your endpoint, so it consumes credits
+    like any other run. It requires `metadata.endpoint_url` to be set.
+  </Step>
+  <Step title="Use it">
+    The model now behaves like any catalog model — run it directly, from the
+    Playground, or from a workflow's **Call Model** node.
+
+    ```python
+    result = cw.api.run_mlmodel(model.uuid, image_url="https://example.com/frame.jpg")
+    ```
+  </Step>
+</Steps>
+
+---
+
+## Upload a model and let Cyberwave host it
+
+Use this when you don't want to run your own server — give Cyberwave a
+Python function and (optionally) a weights file, and Cyberwave runs it on
+demand.
+
+Your code must define one function:
+
+```python
+def run(inputs: dict, artifacts_dir: str | None) -> dict:
+    # inputs matches your declared io_schema.inputs, e.g. {"prompt": "...", "frame": "..."}
+    # artifacts_dir is a local path to your downloaded weights, or None if you didn't upload any
+    ...
+    return {"detections": [...]}   # matches your declared io_schema.outputs
+```
+
+The base runtime ships with `torch`, `onnxruntime`, `ultralytics`, `opencv`,
+`numpy`, `pillow`, and `transformers` pre-installed — import them directly
+from `run()`. Installing extra packages at run time isn't supported yet.
+
+<Steps>
+  <Step title="Register the model with your code">
+    ```python
+    model = cw.api.create_mlmodel({
+        "name": "My Detector",
+        "description": "Custom ONNX detector, hosted by Cyberwave",
+        "model_external_id": "my-detector-v1",
+        "model_provider_name": "custom-hosted",
+        "visibility": "private",
+        "can_take_image_as_input": True,
+        "output_format": "json",
+        "metadata": {
+            "code": open("run.py").read(),
+            "io_schema": {
+                "inputs": [{ "name": "frame", "type": "image", "required": True }],
+                "outputs": [{ "name": "detections", "type": "json" }]
+            }
+        }
+    })
+    ```
+
+    <Info>
+      Only inline code (`metadata.code`, shown above) is supported today —
+      uploading code as a separate file isn't wired up yet.
+    </Info>
+  </Step>
+  <Step title="Upload weights (optional)">
+    If your `run()` function needs a checkpoint, upload it as a tar archive
+    in two steps: request a signed upload URL, then confirm the upload.
+
+    ```bash
+    # 1. Request a signed URL
+    curl -X POST \
+      "$CYBERWAVE_API_URL/api/v1/mlmodels/<model-uuid>/artifacts/upload-urls" \
+      -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"files": [{"path": "checkpoint.tar"}]}'
+
+    # 2. PUT your file to the returned upload_url, then confirm:
+    curl -X POST \
+      "$CYBERWAVE_API_URL/api/v1/mlmodels/<model-uuid>/artifacts/complete" \
+      -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"files": [{"path": "checkpoint.tar"}], "primary_path": "checkpoint.tar"}'
+    ```
+
+    Your `run()` function receives the extracted contents' directory as
+    `artifacts_dir`.
+  </Step>
+  <Step title="Run it">
+    Same as any other model — direct call, Playground, or a workflow's
+    **Call Model** node. The first run after registering may take longer
+    while capacity is provisioned.
+
+    ```python
+    result = cw.api.run_mlmodel(model.uuid, image_url="https://example.com/frame.jpg")
+    ```
+  </Step>
+</Steps>
+
+---
+
+## Passing a recording as input
+
+A model that analyzes a whole recorded clip (rather than a single live
+frame) declares a `video`-typed input in its `io_schema`, and the caller
+passes the recording's UUID:
+
+```python
+result = cw.api.run_mlmodel(
+    model.uuid,
+    recording_uuid="<recording-uuid>",   # from GET /twins/{uuid}/recordings
+)
+```
+
+Cyberwave resolves `recording_uuid` into a temporary signed URL for the
+underlying video file before calling your endpoint or `run()` function.
+Whole-clip calls typically take longer than a single-frame call — timeouts
+are extended automatically when a model declares a `video` input.
+
+---
+
+## Endpoint reference
+
+| Method   | Path                                        | Purpose                                          |
+| -------- | -------------------------------------------- | ------------------------------------------------- |
+| `POST`   | `/api/v1/mlmodels`                           | Register a `custom-api` or `custom-hosted` model. |
+| `POST`   | `/api/v1/mlmodels/{uuid}/credential`         | Set (or replace) auth credentials.                |
+| `DELETE` | `/api/v1/mlmodels/{uuid}/credential`         | Remove stored credentials.                        |
+| `POST`   | `/api/v1/mlmodels/{uuid}/test-call`          | Run one validation call against your endpoint.    |
+| `POST`   | `/api/v1/mlmodels/{uuid}/artifacts/upload-urls` | Request signed URLs to upload weights.         |
+| `POST`   | `/api/v1/mlmodels/{uuid}/artifacts/complete` | Confirm an uploaded artifact.                     |
+| `POST`   | `/api/v1/mlmodels/{uuid}/run`                | Run the model.                                    |
+
+## Where to go next
+
+<CardGroup cols={3}>
+  <Card title="ML Models" icon="brain" href="/feature-reference/ml-models/index">
+    Model visibility, capabilities, and the catalog in general.
+  </Card>
+  <Card title="Model Playground" icon="flask" href="/feature-reference/ml-models/playground">
+    Try any model — including your own — from an interactive UI.
+  </Card>
+  <Card title="Model Catalog API" icon="book" href="/api-reference/models/catalog">
+    Full request/response reference for the model catalog endpoints.
+  </Card>
+</CardGroup>

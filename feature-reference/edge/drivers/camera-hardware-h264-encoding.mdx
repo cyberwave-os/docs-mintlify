@@ -1,0 +1,26 @@
+---
+title: "Camera Driver: Hardware H264 Encoding"
+description: "Hardware-accelerated H264 encoding for edge video streaming, with automatic software fallback."
+---
+
+<Warning>
+**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
+</Warning>
+
+Cyberwave edge video streaming auto-detects a usable hardware H264 encoder at stream start and falls back to software encoding (`libx264`) when none is available.
+
+| Platform | Hardware encode | Notes |
+| --- | --- | --- |
+| Raspberry Pi 4 | ✓ | pass `--device /dev/video11` to the container |
+| Raspberry Pi 5 | ✗ | no H264 encode silicon — software fallback |
+| Jetson Orin NX / AGX | ✓ | jetson image variant + NVIDIA container runtime |
+| Jetson Orin Nano | ✗ | no encode silicon — software fallback |
+| amd64 | ✗ (planned) | software fallback today |
+
+## Configuration
+
+Set `CYBERWAVE_VIDEO_ENCODER` to `auto` (default), a specific encoder name (e.g. `h264_v4l2m2m`), or `libx264` to force software encoding.
+
+The active encoder is visible in the WebRTC offer's stream attributes (`video_encoder`).
+
+See the public README at [`cyberwave-edge-camera-driver`](https://github.com/cyberwave-os/cyberwave-edge-camera-driver) for the full configuration matrix.

@@ -1,0 +1,53 @@
+---
+title: "Recording playback readiness"
+description: "stub — Understand whether a listed recording is ready to play."
+tag: "stub"
+---
+
+Each recording returned by `GET /api/v1/environments/{uuid}/recordings` includes
+an optional `playback_readiness` object. Its top-level `state` tells you whether
+the recording is `ready`, `materializing`, or `failed`; its `streams` list gives
+the same detail for each available camera, robot, audio, depth, or point-cloud
+stream.
+
+## Include recordings that are not ready
+
+The list normally follows the server's configured default. Pass
+`include_unready=true` to include recordings that are still materializing or
+have failed:
+
+```text
+GET /api/v1/environments/{uuid}/recordings?include_unready=true
+```
+
+## Browse a large catalog or populate a calendar
+
+Pass `limit` to receive a stable page ordered newest-first. Follow the opaque
+`next_cursor` while `has_more` is true; cursors are signed and bound to the
+current filters, so a `400 Invalid recording catalog cursor` means restart the
+query. `limit` is capped at 100.
+
+```text
+GET /api/v1/environments/{uuid}/recordings?limit=50&source_type=camera&include_unready=false
+```
+
+You can repeat `twin_uuid`, `context`, or `source_type`; values are ORed within
+the same filter and combined with other filters. Source values are `camera`,
+`robot`, `audio`, `depth`, and `pointcloud`. Responses include source, twin,
+context, and readiness facets for the fully filtered catalog.
+
+For calendar day counts without loading media, request availability with the
+same filters. Use an IANA timezone when the calendar is not UTC.
+
+```text
+GET /api/v1/environments/{uuid}/recordings/availability?start_date=2026-08-01&end_date=2026-08-31&timezone=Europe/Rome
+```
+
+Availability does not sign media URLs or probe object storage.
+
+## Retry materializing playback
+
+`GET /api/v1/environments/{uuid}/recordings/{recording_uuid}/data` can return
+`202 Accepted` when the recording is known but its playback files are not ready
+yet. The response includes `retry_after_seconds`; wait approximately that long
+and retry the same request instead of treating it as a missing recording.
