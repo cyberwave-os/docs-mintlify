@@ -29,7 +29,7 @@ print(result.output)
 The catalog below is the **single source of truth** for structured
 actions. It is authored in
 `cyberwave-backend/src/lib/structured_actions.py`, mirrored in the
-Python SDK at `cyberwave.mlmodels.actions`, and served live at
+Python SDK as `cyberwave.STRUCTURED_ACTIONS`, and served live at
 `GET /api/v1/mlmodels/structured-actions` so the frontend, SDKs, and
 this doc page all agree.
 </Info>
@@ -117,11 +117,16 @@ Capability is derived from the model's metadata, so the list stays in
 sync as you seed new entries. In code:
 
 ```python
-from cyberwave.mlmodels import STRUCTURED_ACTIONS
+from cyberwave import STRUCTURED_ACTIONS
 
 for action in STRUCTURED_ACTIONS:
-    print(action.id, action.output_format, action.default_prompt_template)
+    print(action.id, action.output_format, action.description)
 ```
+
+The SDK mirror carries `id`, `label`, `description`, `output_format`, and
+`requires_image`. Prompt templates and result schemas are server-side — read
+them from `GET /api/v1/mlmodels/structured-actions` when you need the live
+contract.
 
 Rules applied server-side (see
 `src/lib/structured_actions.py::_supports_any_spatial`):
@@ -150,9 +155,8 @@ The backend is lenient with provider output:
   surrounding prose.
 - Returns `raw` on every response so you can debug when parsing fails.
 
-When you call the Python SDK, `MLModelRunResult.output` is already parsed
-JSON. When you call the HTTP API, parse as standard JSON and branch on
-`output_format`:
+When you call the Python SDK, `result.output` is already parsed JSON. When you
+call the HTTP API, parse as standard JSON and branch on `output_format`:
 
 ```python
 import requests
@@ -179,13 +183,15 @@ so you can email it, archive it, or attach it to an audit log. The SDK
 ships a one-liner for that:
 
 ```python
+import cyberwave as cw
+
 result = client.mlmodels.run(
     "acme/models/gemini-robotics-er",
     image="scene.jpg",
     prompt="cups",
     structured_task="segment",
 )
-result.save_annotated_image("scene.jpg", "scene.annotated.png")
+cw.save_annotated_image("scene.jpg", result, "scene.annotated.png")
 ```
 
 `save_annotated_image`:
@@ -216,9 +222,10 @@ sending the image to a third party).
 2. If the output needs a new parse branch, update
    `MLModelPlaygroundService._parse_output`.
 3. Mirror the action in
-   `cyberwave-sdks/cyberwave-python/cyberwave/mlmodels/actions.py`.
-   The SDK test `tests/test_mlmodels_actions.py::TestBackendAlignment`
-   will fail until the two files agree.
+   `cyberwave-sdks/cyberwave-python/cyberwave/models/playground.py`
+   (`STRUCTURED_ACTIONS`). The SDK test
+   `tests/test_mlmodels_actions.py::TestBackendAlignment` will fail until
+   the two files agree.
 4. Add a frontend overlay if the new `output_format` is visual.
 5. Update this page.
 

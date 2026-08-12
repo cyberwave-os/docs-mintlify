@@ -67,10 +67,11 @@
             "group": "SDKs and Tools",
             "pages": [
               "overview/tools/python-sdk",
+              "overview/tools/python-sdk-recordings",
+              "overview/tools/recording-playback-readiness",
               "overview/tools/claude-skill",
               "overview/tools/rl-policy",
               "overview/tools/mcp-server",
-              "overview/tools/python-sdk-recordings",
               "overview/tools/cpp-sdk"
             ]
           },
@@ -120,6 +121,7 @@
               "feature-reference/catalog",
               "feature-reference/create-asset",
               "feature-reference/digital-twins",
+              "feature-reference/arm-commands",
               {
                 "group": "Environment Editor",
                 "icon": "pen-to-square",
@@ -178,6 +180,7 @@
                 "group": "Models",
                 "pages": [
                   "feature-reference/ml-models/index",
+                  "feature-reference/ml-models/uploading-your-model",
                   "feature-reference/ml-models/playground",
                   "feature-reference/ml-models/structured-actions",
                   "feature-reference/ml-models/smolvla-training",
@@ -208,7 +211,10 @@
               "feature-reference/edge/drivers/writing-compatible-drivers",
               "feature-reference/edge/drivers/base-driver-class",
               "feature-reference/edge/drivers/ros2-base-driver",
+              "feature-reference/edge/drivers/driver-mixins",
+              "feature-reference/edge/drivers/openarm-ros2",
               "feature-reference/edge/drivers/ros2-topic-namespacing",
+              "feature-reference/edge/drivers/joint-motion-shaping",
               "feature-reference/edge/drivers/native-microphone-driver",
               "feature-reference/edge/drivers/native-speaker-driver",
               "feature-reference/edge/drivers/alerts",
@@ -230,6 +236,7 @@
                   "feature-reference/edge/drivers/multi-camera-driver-orchestration",
                   "feature-reference/edge/drivers/camera-detection-overlays",
                   "feature-reference/edge/drivers/camera-v4l2-backend",
+                  "feature-reference/edge/drivers/camera-hardware-h264-encoding",
                   "feature-reference/edge/drivers/frame-filters",
                   "feature-reference/edge/drivers/security-pipeline"
                 ]
@@ -675,6 +682,10 @@
       {
         "label": "Contact",
         "href": "https://cyberwave.com/contact-us"
+      },
+      {
+        "label": "Status",
+        "href": "https://status.cyberwave.com"
       }
     ]
   },
@@ -695,7 +706,30 @@
       "x": "https://x.com/cyberwave_com",
       "linkedin": "https://www.linkedin.com/company/cyberwave-com/",
       "youtube": "https://www.youtube.com/channel/UCmw6EQ1nJj7sqjkITm2wjCw"
-    }
+    },
+    "links": [
+      {
+        "header": "Resources",
+        "items": [
+          {
+            "label": "Status",
+            "href": "https://status.cyberwave.com"
+          },
+          {
+            "label": "Changelog",
+            "href": "https://docs.cyberwave.com/changelog"
+          },
+          {
+            "label": "Discord",
+            "href": "https://discord.gg/dfGhNrawyF"
+          },
+          {
+            "label": "GitHub",
+            "href": "https://github.com/cyberwave-os"
+          }
+        ]
+      }
+    ]
   },
   "integrations": {
     "posthog": {

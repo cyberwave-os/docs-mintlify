@@ -105,14 +105,14 @@ Each sensor entry can include:
 | Sensor field | Type | Description |
 |---|---|---|
 | `id` | string | Stable sensor identifier (for example `wrist_camera`). |
-| `type` | enum | Sensor type (`rgb`, `depth`, `lidar_2d`, `lidar_3d`, `lidar_4d`, `map`, `audio`, `audio_mono`, `audio_stereo`, `gps`, `compass`, `imu`, `flashlight`). |
+| `type` | enum | Sensor type (`rgb`, `depth`, `lidar`, `lidar_2d`, `lidar_3d`, `lidar_4d`, `radar`, `map`, `audio`, `audio_mono`, `audio_stereo`, `gps`, `compass`, `imu`, `flashlight`). |
 | `model` | string | Optional hardware/model label. |
 | `offset.position` | object | Position offset from twin origin (`x`, `y`, `z`). |
 | `offset.rotation` | object | Rotation offset quaternion (`x`, `y`, `z`, `w`). |
 | `fov_degrees` | number | Optional camera FOV override. |
 | `width`, `height` | number | Optional image resolution (camera sensors). |
-| `min_range`, `max_range` | number | Optional range values (depth/lidar sensors). |
-| `fov_horizontal`, `fov_vertical` | number | Optional horizontal/vertical FOV values. |
+| `min_range`, `max_range` | number | Optional range values (depth/lidar sensors). `max_range` sets how far a lidar/radar coverage preview reaches. |
+| `fov_horizontal`, `fov_vertical` | number | Optional horizontal/vertical FOV values. Used to draw lidar/radar coverage previews (horizontal sweeps up to 360° are supported). |
 | `points_per_second` | number | Optional lidar density/throughput hint. |
 | `velocity_sensing` | boolean | Optional 4D lidar velocity support flag. |
 | `update_rate` | number | Optional update frequency (Hz). |
