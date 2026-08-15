@@ -8,10 +8,27 @@ tag: "stub"
 List and fetch recordings for a twin or an environment, then inspect the fetched
 artifacts locally.
 
+## Defaults at a glance
+
+`recordings.list()` deliberately narrows a request before it downloads catalog
+pages. Its defaults are the same for `twin.recordings.list()` and
+`cw.environments.recordings.list()`; twin-scoped calls additionally apply that
+twin filter on the server.
+
+| Argument | Default | Effect |
+|---|---:|---|
+| `start`, `end` | both omitted | Calls availability and selects the most recent UTC day with eligible recordings. |
+| `include_unready` | `False` | Returns ready recordings only. Set `True` to include materializing or failed rows when your access allows it. |
+| `limit` | `200` | Returns at most 200 items, in HTTP pages of 50. |
+| `limit=0` | — | Follows every page in the selected day or explicit date range. |
+| `filter` | omitted | Applied locally after retrieval; it does not widen the selected day/range or search past `limit`. |
+
+Pass **both** `start` and `end` to select an older or wider UTC date range.
+
 ## Twin-scoped
 
 ```python
-items = twin.recordings.list()                       # all recordings for the twin
+items = twin.recordings.list()                       # the twin's most recent recording day
 cams = twin.recordings.list(filter=[twin.recordings.types.CAMERA])
 pcs = twin.recordings.list().filter(twin.recordings.types.POINTCLOUD)
 
@@ -40,6 +57,44 @@ date-only and full datetime forms, with or without a `Z`/offset suffix). Provide
 items = twin.recordings.list(start="2026-07-01", end="2026-07-05")
 items = twin.recordings.list(start="2026-07-01T00:00:00Z", end="2026-07-05")
 ```
+
+With **no** `start`/`end`, `list()` checks which days have recordings and lists
+the most recent one, rather than the environment's whole history. Pass an
+explicit window to reach older recordings.
+
+## Paging
+
+`list()` fetches recordings in pages of 50 and returns at most `limit`
+(default `200`). Use `limit=0` to keep following pages until the window is
+exhausted.
+
+```python
+items = twin.recordings.list(limit=500)              # up to 500, 50 per request
+items = twin.recordings.list(start="2026-07-01", end="2026-07-05", limit=0)  # everything in range
+```
+
+`filter=` narrows the recordings that were fetched, so widen `limit` (or the
+date window) rather than relying on `filter` to search further back.
+
+Like the replay picker, `list()` excludes materializing or failed recordings by
+default. Pass `include_unready=True` only when those rows are needed.
+
+`list()` warns when it returns a partial view, so a truncated result never looks
+complete:
+
+```text
+recordings.list(): no start/end given, so only 2026-07-05 is listed — the most
+recent day with recordings. Pass start=/end= to list a wider window.
+recordings.list(): stopped at limit=200 and more recordings are available for
+2026-07-05. Raise limit= or pass limit=0 to fetch every page.
+```
+
+Silence them with `logging.getLogger("cyberwave.managers.recordings").setLevel(logging.ERROR)`.
+
+If the API gateway rejects a catalog response because its payload is too large,
+the SDK raises `RecordingPayloadTooLargeError` instead of exposing the opaque
+platform HTTP 500. Its message includes the selected window, cloud trace, and
+instructions to use a shorter `start`/`end` interval or lower `limit`.
 
 ## Types & viewers
 
