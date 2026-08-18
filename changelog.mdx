@@ -8,50 +8,42 @@ rss: true
 
 ## New Features
 
-- **Locomotion RL policy for the Go2 in Cyberwave Sim**: Integrated a reinforcement-learning locomotion policy for the Unitree Go2 into Cyberwave Sim, bringing RL-driven walking to the simulated robot (#3456).
-- **Hardware-accelerated video for the Kinova Gen3 arm**: The Kinova Gen3 driver can now use the Jetson's onboard NVENC encoder for the color camera's WebRTC stream (opt-in), cutting CPU usage and improving motion smoothness during teleop (#3424).
-- **Zero-copy data bus for co-located edge consumers**: The Python SDK's Zenoh data bus can now publish frames through shared memory instead of copying bytes, measured at 5-6x lower per-frame latency on Jetson hardware for same-host consumers (#3440).
-- **Zenoh transport for Cyberwave Sim**: Cyberwave Sim now exposes a same-host Zenoh transport (velocity/joint commands in, measured state out), so an on-host autonomy stack — including a new Go2 Nav2/SLAM proxy — can drive a simulated twin without a round trip through the cloud MQTT broker (#3431).
-- **Colored mesh support in MuJoCo scene export**: Environments and twins using GLB assets with color textures now export those textures correctly into MuJoCo scenes, keeping simulated appearance in sync with the source mesh (#3428, #3433).
+- **Locomotion RL policy for the Go2 in Cyberwave Sim**: Integrated a reinforcement-learning locomotion policy for the Unitree Go2 into Cyberwave Sim, bringing RL-driven walking to the simulated robot.
+- **Zero-copy data bus for co-located edge consumers**: The Python SDK's Zenoh data bus can now publish frames through shared memory instead of copying bytes, measured at 5-6x lower per-frame latency on Jetson hardware for same-host consumers.
+- **Colored mesh support in MuJoCo scene export**: Environments and twins using GLB assets with color textures now export those textures correctly into MuJoCo scenes, keeping simulated appearance in sync with the source mesh.
 
 ## Feature Improvements
 
 ### Platform
 
-- **Workspace admins can now invite and manage members**: Previously only workspace/organization owners could invite users; admins can now invite and manage members of workspaces they administer (#3474).
-- **Autosave for simulation stream profiles and the workflow editor**: The simulation stream profile panel and manager now autosave changes (debounced) with a live pending/saving/saved status indicator instead of requiring an explicit save action; the workflow editor was extended to use the same autosave mechanism (#3476).
-- **Clearer workflow run failures**: When an inline "Run workflow" action fails validation (e.g. a required input isn't mapped), the failure toast now shows the actual reason instead of a generic error (#3480).
-- **Primitive assets are easier to place**: Procedural primitives (spheres, cubes, walls, and other shapes) now spawn correctly grounded instead of half-buried, drag smoothly in the editor instead of jerking, and are auto-placed in a collision-free spot near the origin when created programmatically (#3430).
+- **Workspace admins can now invite and manage members**: Previously only workspace/organization owners could invite users; admins can now invite and manage members of workspaces they administer.
+- **Autosave for simulation stream profiles and the workflow editor**: The simulation stream profile panel and manager now autosave changes (debounced) with a live pending/saving/saved status indicator instead of requiring an explicit save action; the workflow editor was extended to use the same autosave mechanism.
+- **Clearer workflow run failures**: When an inline "Run workflow" action fails validation (e.g. a required input isn't mapped), the failure toast now shows the actual reason instead of a generic error.
+- **Primitive assets are easier to place**: Procedural primitives (spheres, cubes, walls, and other shapes) now spawn correctly grounded instead of half-buried, drag smoothly in the editor instead of jerking, and are auto-placed in a collision-free spot near the origin when created programmatically.
 - **Attachments carry integrity metadata**: Uploaded attachments now record a SHA-256 checksum and size at upload time, exposed via the API (#3357).
 
 ### Edge & Drivers
 
-- **OpenArm driver hardening**: Per-twin ROS 2 namespacing so topics no longer collide across robots on the same network, a substantially smaller Docker image, an updated SDK, and an explicit direct/MoveIt motion-controller selector (#3077).
-- **Kinova Gen3 reliability**: Fixed a boot-time race that could crash the driver on power-cycle, smoothed out teleop motion under CPU/timer jitter, and corrected the default camera sensor id used for pose estimation (#3434, #3439, #3426).
-- **UGV Beast streaming fix**: The UGV bridge now sources twin/environment/sensor identity from the edge-core twin configuration instead of the driver's local mapping file, fixing a mismatch that broke the camera WebRTC stream (#3443).
-- **SO-101 fixes**: Restored continuous hold-to-move keyboard teleop (a recent change had reduced it to one step per key press), and fixed a heartbeat regression that could show the robot as disconnected after edge-core updates (#3478, #3367).
+- **OpenArm driver hardening**: Per-twin ROS 2 namespacing so topics no longer collide across robots on the same network, a substantially smaller Docker image, an updated SDK, and an explicit direct/MoveIt motion-controller selector.
+- **Kinova Gen3 reliability**: Fixed a boot-time race that could crash the driver on power-cycle, smoothed out teleop motion under CPU/timer jitter, and corrected the default camera sensor id used for pose estimation.
+- **UGV Beast streaming fix**: The UGV bridge now sources twin/environment/sensor identity from the edge-core twin configuration instead of the driver's local mapping file, fixing a mismatch that broke the camera WebRTC stream.
+- **SO-101 fixes**: Restored continuous hold-to-move keyboard teleop (a recent change had reduced it to one step per key press), and fixed a heartbeat regression that could show the robot as disconnected after edge-core updates.
 - **Go2 cloud simulation routing**: Go2 environment simulations now always run through the dedicated Go2 simulation runtime instead of occasionally falling back to a generic simulator profile (#3395).
-- **Workflow node fixes**: `object_pose`'s `target_frame` input is no longer silently ignored when configured through the node inspector, the node can also accept a fixed depth value as a stand-in when a depth sensor isn't available, and the `annotate` node now accepts raw camera frames in addition to encoded images (#3437, #3438, #3429).
-- **Media snapshot codec support**: Live camera snapshots now support VP8/VP9 streams in addition to H.264 (#3365).
+- **Workflow node fixes**: `object_pose`'s `target_frame` input is no longer silently ignored when configured through the node inspector, the node can also accept a fixed depth value as a stand-in when a depth sensor isn't available, and the `annotate` node now accepts raw camera frames in addition to encoded images.
+- **Media snapshot codec support**: Live camera snapshots now support VP8/VP9 streams in addition to H.264.
 
 ### SDK
 
-- **Python SDK**: Extracted reusable arm-driver building blocks (kinematics, joint control, motion shaping, teleop buffering) into the SDK, now used by the Piper driver and available to other arm integrations via the `cyberwave[drivers]` extra (#3099).
-- **Python SDK**: Added the Zenoh SHM zero-copy publish path described above under New Features (#3440).
+- **Python SDK**: Extracted reusable arm-driver building blocks (kinematics, joint control, motion shaping, teleop buffering) into the SDK, now used by the Piper driver and available to other arm integrations via the `cyberwave[drivers]` extra.
+- **Python SDK**: Added the Zenoh SHM zero-copy publish path described above under New Features.
 
 ## Bug Fixes
 
 - Fixed a crash when opening the inspector panel for a `move_waypoint` workflow node.
-- Fixed the Recorder workflow node not emitting telemetry start/stop for twins with no camera or microphone, so robot-only recordings are now captured correctly (#3477, #3413).
-- Fixed environments becoming invisible on the dashboard after their workspace was deleted, caused by a stale default-workspace reference (#3459).
-- Fixed asset updates with a duplicate registry alias returning a server error instead of a validation message (#3418).
-- Improved robot recording list query performance by using existing indexes and a read replica (#3315).
-
-## Docs
-
-- The [OpenArm ROS 2 driver](/feature-reference/edge/drivers/openarm-ros2) and [ROS 2 topic namespacing](/feature-reference/edge/drivers/ros2-topic-namespacing) pages reflect the per-twin namespacing and image-size hardening.
-- The [camera hardware H.264 encoding](/feature-reference/edge/drivers/camera-hardware-h264-encoding) page covers the new opt-in NVENC path for the Kinova Gen3 driver.
-- The [driver mixins](/feature-reference/edge/drivers/driver-mixins) page documents the new reusable arm-driver building blocks in the Python SDK.
+- Fixed the Recorder workflow node not emitting telemetry start/stop for twins with no camera or microphone, so robot-only recordings are now captured correctly.
+- Fixed environments becoming invisible on the dashboard after their workspace was deleted, caused by a stale default-workspace reference.
+- Fixed asset updates with a duplicate registry alias returning a server error instead of a validation message.
+- Improved robot recording list query performance by using existing indexes and a read replica.
 
 </Update>
 
