@@ -5,7 +5,7 @@ stub: true
 ---
 
 <Info>
-**Robot datasets first.** Cyberwave currently focuses on robot manipulation and navigation datasets (LeRobot, RLDS, Cyberwave Parquet, and similar time-series formats). Image classification, video, audio, and multimodal dataset formats are detected on import but full support — playback, conversion, and training — is coming in a future release.
+**Robot datasets first.** Cyberwave currently focuses on robot manipulation and navigation datasets (LeRobot, RLDS, and similar time-series formats). Zip upload supports LeRobot only; HuggingFace Hub import detects any dataset repository, but only robotics datasets are correctly displayed today. Full support for non-robotics formats — playback, conversion, and training — is coming in a future release.
 </Info>
 
 ## Overview
@@ -19,40 +19,29 @@ Format detection happens automatically on the server side and sets the `source_f
 
 ## Supported formats
 
-### Robot datasets (full support)
+The two import sources have different levels of format support today.
 
-These formats are fully supported for import, playback, conversion, and ML training.
+### Zip upload — LeRobot only
+
+Zip upload currently supports **LeRobot v2.1 and v3 only**. Other dataset formats are not yet supported via zip upload.
 
 | Format | `source_format` value | Description |
 |---|---|---|
 | LeRobot v3 | `lerobot3` | Latest LeRobot format — parquet episodes + `meta/info.json` |
 | LeRobot v2.1 | `lerobot21` | Legacy LeRobot format with splits (normalised to v3 on export) |
-| RLDS / TFDS | `rlds` | TensorFlow Datasets format (Open-X-Embodiment style) |
-| Cyberwave Parquet | `cyberwave_parquet` | Native format for datasets generated directly on Cyberwave |
-| HDF5 | `hdf5` | Robomimic / ACT / ALOHA style datasets |
-| Zarr | `zarr` | Diffusion Policy / UMI style datasets |
-| GR00T | `gr00t` | NVIDIA Isaac GR00T (LeRobot v2 + embodiment metadata) |
-| RoboDM | `robodm` | Berkeley .vla format |
-| MCAP | `mcap` | ROS2 CDR + Foxglove Protobuf |
-| ROS bag | `rosbag` | ROS1 .bag / ROS2 SQLite3 |
 
-### Other dataset types (detection only — full support coming later)
+### HuggingFace Hub — broader import, robotics-only display
 
-Cyberwave detects these formats and stores the `source_format` value, but playback, conversion, and training pipelines for them are not yet available.
+HuggingFace Hub import works for **any dataset repository** — Cyberwave queries the repo and detects its format automatically regardless of what kind of dataset it is. However, only **robotics datasets** are correctly displayed and usable in Cyberwave today.
 
-| Source format | Description |
-|---|---|
-| `coco_detection` | COCO object detection JSON |
-| `yolov4` / `yolov5` | YOLO format datasets |
-| `voc_detection` | Pascal VOC |
-| `kitti_detection` | KITTI |
-| `image_classification_directory_tree` | ImageNet-style class folders |
-| `image_directory` / `video_directory` / `media_directory` | Plain media folders |
-| `image_segmentation_directory` | Per-pixel masks alongside images |
-| `cvat_image` / `cvat_video` | CVAT exports |
-| `openlabel_image` / `openlabel_video` | OpenLABEL exports |
-| `bdd`, `csv`, `dicom`, `geojson`, `geotiff` | Specialty formats |
-| `unknown` | Detector could not classify the layout |
+| Category | Examples | Status via HuggingFace import |
+|---|---|---|
+| Robotics / time-series | LeRobot, RLDS, HDF5, Zarr, GR00T, RoboDM, MCAP, ROS bag | Detected and correctly shown |
+| Everything else | COCO, YOLO, ImageNet, video/audio, CVAT, and other image/video/CV formats | Detected and catalogued, but not yet correctly shown or usable |
+
+<Note>
+Playback, conversion, and ML training are fully wired up only for LeRobot today. Other robotics formats imported from HuggingFace are recorded correctly (`source_format`, sample counts) but full episode playback is still being built out.
+</Note>
 
 ## Import from HuggingFace Hub
 
@@ -62,6 +51,8 @@ Cyberwave detects these formats and stores the `source_format` value, but playba
 4. Click **Import**
 
 HuggingFace imports are **lazy by default**: Cyberwave queries the HF API for tags, card data, and the file list, and for LeRobot datasets reads only the small `meta/*.json` files. The dataset card appears immediately with episode counts, FPS, robot type, and cameras — without copying the multi-GB payload. Frames are fetched on demand when a training run or visualisation needs them. The `metadata.import.materialized` flag stays `false` until a follow-up materialisation step runs.
+
+Any repository can be imported this way — Cyberwave will detect and catalogue whatever format it finds — but only robotics datasets are correctly displayed and usable today (see [Supported formats](#supported-formats)).
 
 <Info>
 For private HuggingFace repositories, ensure your organisation has configured the HuggingFace token in the deployment settings.
@@ -74,7 +65,7 @@ For private HuggingFace repositories, ensure your organisation has configured th
 3. Select your zip file (max 10 GB)
 4. Click **Upload**
 
-The system automatically detects the format after the upload completes.
+The system automatically detects the format after the upload completes. Zip upload only supports **LeRobot** (v2.1/v3) today (see [Supported formats](#supported-formats)); other formats should be imported from HuggingFace Hub instead.
 
 ## Monitor progress
 
