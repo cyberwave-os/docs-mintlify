@@ -13,3 +13,9 @@ Recording playback loads **signed URLs** from the API instead of inlined samples
 - **Point clouds**: FlatBuffer chunk URLs plus coarse timestamp indexes from metadata.
 
 The `GET /api/v1/environments/{uuid}/recordings/{recording_uuid}/data` endpoint returns compact **source descriptors** (URLs + bounds + column hints), not dense per-frame JSON.
+
+## Downloading recordings
+
+Each recording in the Manage Recordings dialog shows a status: **ready** (all data available) or **processing** (data still being prepared). Both can be downloaded — from the dialog or the Python SDK (`item.get()`).
+
+A recording that is still processing downloads the unprocessed segments available so far. If nothing is ready yet, retry in a few minutes.

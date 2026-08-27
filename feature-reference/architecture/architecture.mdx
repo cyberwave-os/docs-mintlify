@@ -142,11 +142,20 @@ Because WebRTC and TURN negotiate connections outbound, you typically don't need
 |---------|-------------------|-------------|
 | STUN/TURN negotiation | UDP + TCP `3478` | `turn.cyberwave.com` |
 | Media relay (when direct P2P isn't possible) | UDP `49152–65535` | `turn.cyberwave.com` |
+| TURN over TLS | TCP `443` | `tls.turn.cyberwave.com` |
 | Direct peer-to-peer media (when reachable) | UDP, ephemeral, negotiated via ICE | Directly between edge and browser |
 
 <Warning>
 Some corporate and industrial networks block outbound UDP on high port ranges. If your edge device or operator network enforces this, allow-list the ports above for `turn.cyberwave.com`, or video streaming will be unable to establish a media path even though MQTT control still works.
 </Warning>
+
+<Info>
+**TCP `443` to `tls.turn.cyberwave.com` is the one row to allow-list if you can only allow-list one.** Edge devices relay over TLS on `443`, and it's also what an operator's browser falls back to when nothing else connects — so video works with `443` alone.
+
+Note the hostname differs from the other rows: TLS is served on `tls.turn.cyberwave.com`, while STUN and the UDP relay use `turn.cyberwave.com`. Allow-list both names.
+
+Allow-listing the other rows as well is still worth doing: the browser prefers a direct path and `3478` when they're reachable, which avoids the slower relayed path. `3478` also carries STUN, which is how each side discovers its own public address.
+</Info>
 
 ## Local Data Bus (Zenoh)
 
