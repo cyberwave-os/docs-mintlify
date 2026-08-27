@@ -8,7 +8,7 @@ icon: "diagram-project"
 
 Workflows in Cyberwave let you create automated sequences of robot operations. Connect nodes visually to build complex behaviors without writing procedural code.
 
-Workflows can run **on the cloud** (Celery tasks) or **on the edge device** depending on the trigger type. Cloud triggers handle schedule, webhook, event, and manual execution. The `camera_frame` trigger runs ML inference directly on the edge — no video leaves the device.
+Workflows can run **on the cloud** (Celery tasks) or **on the edge device** depending on the trigger type. Cloud triggers handle schedule and manual execution today; webhook and email triggers are implemented but not yet exposed in the node palette (see the trigger table below). The `camera_frame` trigger runs ML inference directly on the edge — no video leaves the device.
 
 ---
 
@@ -72,11 +72,11 @@ Connection validation prevents invalid graphs: trigger nodes cannot accept incom
 |---------|--------------|-------------|
 | **Manual** | Cloud (Celery) | User clicks "Run" in the UI or triggers via SDK/API |
 | **Schedule** | Cloud (Celery) | Cron or interval timer |
-| **Webhook** | Cloud (Celery) | HTTP POST to a webhook URL |
+| **Webhook** | Cloud (Celery) | HTTP POST to a per-node webhook URL. *Coming soon — not yet available in the node palette.* |
 | **Event** | Cloud (Celery) | Business event matching conditions |
 | **MQTT** | Cloud (Celery) | MQTT message on a topic |
 | **Zenoh** | Edge/local data plane | Zenoh message on a key expression |
-| **Email** | Cloud (Celery) | Incoming email |
+| **Email** | Cloud (Celery) | Incoming email. *Coming soon — not yet available in the node palette.* |
 | **Camera Frame** | **Edge device** | Every camera frame, locally — never sends video to the cloud |
 
 ---
@@ -280,6 +280,16 @@ if wf.is_running():
 This returns `True` when any run has status `running`, `waiting`, or `requested`.
 
 In the dashboard, a **Running** indicator appears next to the Active badge in the workflow editor header whenever the workflow has an active execution. It refreshes automatically every 2 seconds.
+
+### Running, Stopping, and Deactivating
+
+The header Play button (and the matching row button in an environment's workflow list) reflects what it can actually do at that moment:
+
+- **Nothing running** — shows **Run**. Clicking triggers a manual execution.
+- **An execution is currently active** — shows **Stop**. Clicking cancels that execution (`cw.workflow_runs.cancel(...)` / the dashboard's Cancel action). For workflows running on an edge device, canceling now actually interrupts the in-flight worker on the device — not just backend bookkeeping. (One narrow exception: a workflow with more than one `camera_frame` trigger on different twins doesn't yet stop mid-invocation on cancel — it still cancels in the backend, just not on-device for that specific shape.)
+- **Active on an automated trigger (schedule, MQTT, camera_frame, …) with nothing currently running** — shows **Deactivate**. There's nothing to cancel yet, so the button turns the workflow off instead.
+
+The button never shows a generic "always green" active indicator disconnected from real execution state — what you see is either idle, actually running, or armed-and-waiting, never ambiguous between the two.
 
 ---
 

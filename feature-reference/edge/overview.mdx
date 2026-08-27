@@ -24,6 +24,40 @@ SSH to the edge device where you want to install Edge Core, then install the Cyb
 </Note>
 
 <Note>
+**Pin the environment** (stub): pass `-e/--environment` to attach the device to a specific environment instead of picking from a prompt. Takes an environment UUID or its full slug, and the environment must already exist:
+
+```bash
+sudo cyberwave pair -e acme/envs/production-floor
+```
+
+Without `-e`, `-y` attaches to the most recently created environment in the workspace — worth pinning when you are provisioning more than one device.
+
+`-e` pins the environment only. Twin selection still prompts, and adding `-y` to skip that prompt picks the first edge-compatible twin, so a fully scripted install is currently only reliable for an environment with a single twin.
+</Note>
+
+<Note>
+**Pair with an API token** (stub): pass `--token` to authenticate with a specific API token instead of the credentials saved by `cyberwave login`, `CYBERWAVE_API_KEY`, or an email and password prompt:
+
+```bash
+sudo cyberwave pair --token cw_XXXX -e acme/envs/production-floor -y
+```
+
+`--token` always wins over stored credentials, so re-pairing a device onto a different workspace does not silently reuse the old token. A rejected token stops the install instead of falling back to a prompt.
+
+The token appears in your shell history and in `ps` output — prefer `CYBERWAVE_API_KEY` on shared machines.
+</Note>
+
+<Note>
+**Re-pairing releases the device's previous twins** (stub): the twins you select during an install become the complete set the device serves. Any twin that device was previously paired to is released — including twins in a different environment from an earlier pairing session.
+
+Previously those twins stayed attached, so they kept appearing under the device in **Workspace settings → Edges** and the device kept starting drivers for them — including two drivers competing for the same camera.
+
+Pairing selects twins from one environment, so a device paired this way serves one environment at a time. Twins in other workspaces are never touched.
+
+`cyberwave edge uninstall` releases them the same way, so removing a device frees its twins to pair elsewhere.
+</Note>
+
+<Note>
 **Prerequisites by platform** (stub):
 - **Linux**: Docker is auto-installed via `apt-get` when missing (Ubuntu / Debian / Raspbian).
 - **macOS**: Docker Desktop must be installed and running before `cyberwave edge install` (the installer aborts early with a hint if not). The Rust toolchain is auto-installed via `rustup` (with confirmation) when missing — it is needed to compile the USB/IP server used for USB device passthrough.
@@ -34,6 +68,8 @@ Manage the edge node service lifecycle, configuration, and monitoring:
 | Subcommand | Description |
 | --- | --- |
 | `install` | Install cyberwave-edge-core and register systemd service. On macOS, also sets up the camera stream bridge and prompts for camera selection. |
+| `install -e <uuid \| slug>` | Install and attach to a specific environment, skipping the environment prompt |
+| `install --token <token>` | Install using a specific API token, skipping the login prompt |
 | `install --reconfigure-camera` | Re-select camera and restart the stream and edge-core without a full reinstall |
 | `start` | Start the edge node |
 | `stop` | Stop the edge node |
@@ -59,15 +95,63 @@ Every `edge_health` heartbeat carries the host's dynamic resource pressure along
 - `host_memory_percent`, `host_memory_available_mb`
 - `cpu_temp_c`
 - `consecutive_critical` — reconcile cycles where memory or CPU sat above the critical threshold; resets when pressure clears
-- `watchdog_layers` — e.g. `["systemd"]` on a developer laptop or `["systemd", "hardware"]` on a Raspberry Pi with `/dev/watchdog`
 
-Driver containers see their container's `/proc`, not the host's, and omit these fields. Only the bootstrap publisher running on the edge host populates them.
+Driver containers see their container's `/proc`, not the host's, and omit these fields. Only the bootstrap publisher running on the edge host populates them — and that publisher stops once your first driver starts, so on a busy edge the heartbeat carries stream health but no memory or temperature. The REST identity below closes that gap: it repeats the memory, CPU-temperature and power readings on its own ~30 s cadence, and the dashboard falls back to them whenever the heartbeat copy is missing or has gone stale. A reading sourced that way can be around a minute old — the edge re-posts every ~30 s and the dashboard polls on its own ~30 s cycle — so read it as a trend rather than an instantaneous sample. Polling pauses while the browser tab is in the background, so give a tab you have just switched back to a moment to catch up.
 
-Static hardware identity — total RAM, CPU model, kernel, thermal source, hardware-watchdog availability — is uploaded via `POST /api/v1/edges/discover` and stored on `Edge.metadata.host_facts`. The first POST runs synchronously at startup; a background daemon then re-POSTs every ~30 s so the backend can tell "edge daemon alive" apart from "edge daemon dead" even when no twin MQTT traffic is flowing. The Edge Devices tab renders both signals: a colour-coded pressure pill from the live heartbeat plus a "what hardware is this" row from the REST identity.
+Hardware identity — total RAM, CPU model, kernel, thermal source, which watchdog layers are protecting the device, current network interfaces, plus the memory, CPU-temperature and power readings described above — is uploaded via `POST /api/v1/edges/discover` and stored on `Edge.metadata.host_facts`. The first POST runs synchronously at startup; a background daemon then re-POSTs every ~30 s so the backend can tell "edge daemon alive" apart from "edge daemon dead" even when no twin MQTT traffic is flowing. The two signals surface in different places. A twin's **Edge details** card shows a colour-coded pressure pill — green below the warning threshold, amber above it, red once memory or CPU temperature crosses critical. When neither source has a reading the pill is omitted rather than greyed, so an empty spot means "nothing is reporting", not "everything is fine". The **Edge Devices** tab shows the "what hardware is this" row from the REST identity — including which watchdog layers are protecting the device, e.g. `watchdog: systemd, hardware` on a Raspberry Pi with `/dev/watchdog` versus `watchdog: systemd` on a developer laptop. A `(+hw idle)` suffix means the board has a watchdog device that nothing has claimed — expected briefly after a reboot, and a sign the service lacks the privileges to arm it if it persists. Because that rides the REST identity rather than the heartbeat, it stays visible on an edge whose drivers have taken over. (stub)
+
+The name, IPv4 address and MAC of the interface the device actually reaches the network on are shown alongside the other host details, so you can find and SSH into a device even after it reconnects with a different IP (e.g. a new WiFi network). On the Edge Devices tab that line is prefixed **LAN** — don't confuse it with **Seen from**, which is the address your request appeared to come from and is usually not reachable. Only that one interface is listed, because a device running drivers has dozens of virtual ones you can never reach; hover the line to see every interface it reported, with each one's link state — that's where an unplugged port's MAC or a VPN address lives. When the observed set of interfaces changes, a short note also appears in the Logs tab of any twin bound to that edge. (stub)
+
+Below that, each row carries the identifiers you copy elsewhere — the edge **ID** (fingerprint), its **MAC** address, and the board **SN** (serial number, on Raspberry Pi and Jetson) — each with a one-click copy button. The MAC is the one belonging to the interface the device routes traffic out of, so it's the one to enter in a DHCP reservation. If that interface is WiFi and your device randomises its WiFi address per network, the MAC shown is the randomised one — which is still what your DHCP server sees, but it changes if the device joins a different network. In a workspace with more than one edge, a filter box above the list matches any of these plus name, hostname and every interface's IP and MAC, so you can paste a MAC from a switch's ARP table or an IP from a log line and land on the right row. (stub)
 
 The REST keepalive powers a three-state liveness pill — **Online** (twin MQTT activity), **Idle** (edge alive, no twin work; `liveness_state="standby"` on the wire), **Offline** (neither signal within window). Idle is what shows up on a freshly-paired edge that hasn't had any twins bound to it yet: previously such an edge would render as "Offline" even though `edge-core` was running fine. The Edge Devices tab sorts rows by liveness — online → idle → offline → unresolved binding — so working edges land at the top and broken bindings sink to the bottom.
 
-Static facts work on both Linux and macOS: Linux reads `/proc/{meminfo,cpuinfo}` and `/sys/class/thermal`; Darwin shells out to `sysctl` for RAM, CPU model and (logical) core count. Dynamic host pressure (memory %, CPU temp) remains Linux-only for now — the dashboard hides the pressure pill on macOS edges and shows only the static identity row, and `thermal_source` is omitted on macOS so it never claims a sensor that isn't being sampled.
+Hardware identity works on both Linux and macOS: Linux reads `/proc/{meminfo,cpuinfo}` and `/sys/class/thermal`; Darwin shells out to `sysctl` for RAM, CPU model and (logical) core count, and to `ifconfig` for network interfaces. The primary interface and its MAC are resolved the same way on every platform — Linux, macOS, Jetson and Raspberry Pi — by asking the kernel which interface it would route out of. Serial numbers are read on Raspberry Pi and Jetson only. Host pressure (memory %, CPU temp) remains Linux-only for now, on both the heartbeat and the REST fallback — the dashboard hides the pressure pill on macOS edges and shows only the identity row, and `thermal_source` is omitted on macOS so it never claims a sensor that isn't being sampled.
+
+### Edge details card
+
+Selecting a twin in Live mode shows an **Edge details** card in the side panel. Collapsed, it gives you two things: how long the edge has been up, and a one-word verdict on whether data is arriving.
+
+The verdict is always a state, never a measurement — measured rates stay in the rows below, next to the targets that make them judgeable. It reads `healthy` when every stream is working end to end, `starting` while streams are declared but not yet publishing, `idle` when the edge is up with nothing running, `degraded` or `down` when streams are unhealthy, and `stale`, `no telemetry`, `no link` or `offline` as the signal is lost — hover it for the reason and the counts. `streaming` means media is reaching your browser while telemetry isn't, so the figures below are either missing or frozen: an edge that keeps sending video after its telemetry publisher dies reads `streaming`, not `stale`. `checking` appears briefly on open while the first heartbeat arrives.
+
+The uptime counter carries seconds (`Up 1h 05m 12s`) and steps forward each time a heartbeat lands, so a counter that keeps moving is itself confirmation the card is live. Hover it for the heartbeat interval and the exact age of the last one.
+
+Expand the card for per-stream health, then the device itself: **CPU**, **Machine** (RAM, cores, kernel), **Network** and **Driver** image. The `Live` and `Device` captions mark which rows come from the live heartbeat and which from the ~30 s hardware snapshot.
+
+A stream row never blames the driver on evidence it doesn't have. If telemetry stops while that stream is still reaching your browser the row says so — the driver is plainly running — and its measured rate blanks to `—`, since the last number that arrived is no longer a current reading.
+
+The **Network** row shows a single address rather than every interface, since container bridges like `docker0` are never the one you want. Click it to copy. Hover for the device's own interfaces, their MAC addresses and any links that are down. The address on the line is the one your Cyberwave instance saw the edge connect from; when it matches one of the device's own interfaces the interface name is shown beside it, and when no name appears the device is behind NAT and its own addresses are in the tooltip instead. (stub)
+
+---
+
+## Stream health
+
+<Warning>
+**STUB:** content below pending human curation.
+</Warning>
+
+Each stream row in a twin's edge status panel carries a health dot. It reads the driver's heartbeat, whether anything is actually being sent for that stream, and whether frames are arriving in your browser — so a stream can no longer look healthy while its tile is black:
+
+| Dot | Meaning | What to check |
+| --- | --- | --- |
+| ● Green | Driver is publishing and, if you have the stream open, frames are arriving | — |
+| ● Yellow | Driver is alive but the stream isn't getting through — either nothing is being sent, or it isn't reaching this browser tab | Read the message under the row (below) |
+| ● Red | Either the camera stopped feeding the driver or the driver stopped reporting — the rate reads `—` | Read the message under the row: it says which |
+| ● Grey | The stream is declared for this twin but isn't publishing yet | Wait for the driver to start |
+
+Yellow and red add a one-line explanation under the row, worded for the stream's sensor kind. Media travels **device → driver → server → browser**, and the three "not reaching" messages tell you how far it got — the problem is always the hop just before the point named:
+
+| Message | Meaning | What to check |
+| --- | --- | --- |
+| `Camera driver offline.` | The driver has stopped reporting altogether | The driver container and the machine it runs on |
+| `Camera driver connecting.` | The driver is alive and still starting up | Nothing yet — give it a moment |
+| `Video not reaching driver.` | The driver is still reporting, but the camera has produced nothing for about 30 seconds — typically unplugged, powered down, or failed | The camera and its cable; the driver keeps retrying on its own |
+| `Video not reaching server.` | The driver reports it's connected, but nothing is arriving at Cyberwave for this stream | The driver's stream configuration and its outbound network; the camera itself is fine |
+| `Video not reaching browser.` | The stream reached Cyberwave, but it isn't getting to this tab | Your network and firewall; reload the tile |
+
+The last two split what would otherwise look identical, so you know whether to look at the edge machine or at your own connection. Both only appear while you actually have the stream open — a stream nobody is watching never reports them.
+
+Unplugging a camera mid-stream leaves the last picture on screen while the driver retries: that is deliberate, so a brief glitch doesn't tear the stream down. The dot is what tells you the picture is no longer live — it turns red about 30 seconds after the camera stops responding.
 
 ---
 

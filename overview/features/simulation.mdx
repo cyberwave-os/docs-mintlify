@@ -122,6 +122,38 @@ Need real grasps, friction, and reproducible RL sweeps? Cyberwave one-click-expo
 
 All twins in the environment must be marked MuJoCo-compatible before a remote run starts; [see how the compatibility gate works](/feature-reference/catalog/simulation-support).
 
+### One simulation per environment
+
+{/* stub — this section will be curated by a human before publishing */}
+
+An environment runs one cloud simulation at a time. Starting a new one stops
+whatever was still running first, so pressing **Simulate** again always gives you
+a clean run rather than two robots fighting over the same twin.
+
+If a second start arrives while one is already in flight — a second browser tab,
+a teammate, or an SDK call racing the editor — the API returns `409` naming the
+simulation that already holds the environment.
+
+---
+
+## Mapping and autonomous navigation in simulation
+
+{/* stub — this section will be curated by a human before publishing */}
+
+Mobile twins can build an occupancy map during a MuJoCo run, exactly as they do
+on hardware. Start the simulation, press **Start Mapping**, drive the robot
+around the environment, then press **Stop Mapping**: the map streams into the
+viewport while you drive and is saved to the twin when you stop.
+
+Once a map is saved, the twin localizes against it and follows waypoints on its
+own — the same **Move Twin** and waypoint workflows you use on a real robot, and
+the same navigation stack running behind them. Send a goal and the robot plans a
+path, avoids what its lidar sees, and reports progress back to the workflow.
+
+Supported today: **Unitree Go2** and **MiR250** (including the Coesia variant).
+The MiR250 fuses its front and rear lidars into a single 360° scan, so a single
+pass down an aisle maps both sides.
+
 ---
 
 ## Runtime profiles, cost, and what each serves

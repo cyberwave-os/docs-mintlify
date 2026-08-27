@@ -403,6 +403,14 @@ declare:
   hooks silently drop these. The checker accepts only the canonical shape
   `cw/<twin-uuid>/data/<channel>[/<sensor>]`.
 
+Driver and worker logs also report bus membership directly. `Zenoh session has
+no remote peers` means that container is alone on the bus — the other side is
+down, or multicast discovery is blocked on this host and you need to set
+`ZENOH_CONNECT` on every participant. `Zenoh session linked to N remote peer(s)`
+confirms they found each other. A container that starts before its counterpart
+waits a few seconds before warning, so the line means a real problem rather than
+normal startup skew.
+
 Skip the runtime probe with `--no-runtime` (pure paperwork) or extend
 the window with `--window 6` when traffic is bursty. The probe requires
 `eclipse-zenoh` on the host (`pip install --user eclipse-zenoh`); when

@@ -7,7 +7,7 @@ description: "Automate robot operations with visual workflow orchestration"
 
 Workflows in Cyberwave let you create automated sequences of robot operations. Connect nodes visually to build complex behaviors without writing procedural code.
 
-Workflows run either **on the cloud** (Celery tasks — for manual, schedule, webhook, event, MQTT, and email triggers) or **on the edge device** (for `camera_frame` triggers that run ML inference locally without sending video to the cloud).
+Workflows run either **on the cloud** (Celery tasks — for manual, schedule, MQTT, and — once exposed in the node palette — webhook and email triggers) or **on the edge device** (for `camera_frame` triggers that run ML inference locally without sending video to the cloud).
 
 ---
 
@@ -22,7 +22,8 @@ Nodes are the building blocks of workflows. Each node performs a specific action
 <CardGroup cols={2}>
   <Card title="Triggers" icon="bolt">
     Start the workflow on an event, schedule, or incoming message: manual,
-    schedule, webhook, event, MQTT, email, camera_frame, audio_track, alert
+    schedule, event, MQTT, camera_frame, audio_track, alert — plus webhook
+    and email (implemented, coming soon to the node palette)
   </Card>
   <Card title="Data Sources" icon="database">
     Pull snapshots and samples from sensors, cameras, and external systems on

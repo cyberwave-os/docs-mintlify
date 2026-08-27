@@ -15,6 +15,21 @@ The **Send Pose** (`send_joint_commands`) node commands a robot into a **joint p
 
 When you pick a target twin that has no **controller policy** associated, Cyberwave tries to attach a sensible default automatically at setup time. If no suitable controller policy is available to attach, the inspector shows an error (and raises an alert on the twin) so you can create or share one. A controller policy is not required for the pose to reach the simulator.
 
+**In Live, the robot must be connected.** A live pose is refused unless the robot's
+edge device is publishing health, so a pose is never silently delivered to nobody.
+When that happens the run **fails** with the reason, and a warning alert is raised on
+the robot telling you which of the three causes it is and what to do:
+
+| What happened | What to do |
+|---|---|
+| The robot is not paired to an edge device | Pair it from the robot's page |
+| The edge device is online but the robot's driver is not running | Start the driver |
+| The edge device has gone quiet | Check that it is powered on and on the network |
+
+This is always on — there is no setting to turn it off, because a pose that reaches
+nobody is indistinguishable from one that worked. **Simulation is exempt:** poses are
+always sent there, whether or not any robot is connected.
+
 ## Configuration flow
 
 1. **Target Twin** — pick the twin to control. Only **joint-controllable** twins (robots with movable joints) appear in the list. **Required.**
@@ -37,6 +52,10 @@ Poses are named joint snapshots stored on the twin/asset. The dropdown lists eac
 - The custom editor shows only the twin's **movable joints** with a numeric field each (keyboard-editable).
 - Values are validated against each joint's real limits — out-of-range values turn red and block saving.
 - Give the pose a name and save; it's stored on the twin and can be reused (and edited later) from the dropdown.
+
+If a pose contains a joint the selected robot doesn't have — usually a pose copied
+from a different robot — saving is blocked and the joint is named, rather than the
+pose being sent with that joint quietly missing.
 
 ## Velocities & efforts
 
@@ -68,7 +87,7 @@ By default the node sends a **full joint update** — every joint of the pose is
 | `twin_uuid` | string | Twin that received the command. |
 | `positions` / `velocities` / `efforts` | object | The commanded values. |
 | `pose_name` | string | The pose that was sent, if any. |
-| `sent` | boolean | Whether the publish was attempted. |
+| `sent` | boolean | Always `true` — if the pose could not be sent the node fails instead. |
 | `topic` | string | The joint topic published to. |
 
 ## Example

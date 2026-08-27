@@ -4,6 +4,90 @@ description: "Product updates and announcements"
 rss: true
 ---
 
+<Update label="August 26, 2026">
+
+## New Features
+
+- **SO-101 Freedrive controller**: A new read-only "observe" controller type streams a SO-101 arm's joint state without actuating it, with torque-off, a safety watchdog, and calibration enforcement — useful for teaching and demonstration workflows.
+- **Keyboard (Driver) teleop overhaul**: The keyboard teleop controller now highlights held keys, shows live joint-position bars with a rad/deg toggle, fires one-shot commands (photo capture, sit, stand) once per keypress while continuous commands keep repeating at their configured rate, and can drive two robots at once — including binding a single key to multiple joints.
+- **Snap to pose and Home controls**: Twins can now be moved instantly to a saved pose or their home position from edit, simulation, and live modes.
+- **Auto-generated keyboard controllers**: Keyboard teleop controllers can now be generated automatically from a robot's `cw-driver.yml`, making it easier to bring up teleop for external and community robot integrations.
+- **Reworked replay timeline**: Recording replay now groups events per twin across three view modes, and no longer intermittently fails to load with a 422 error.
+- **Blender MCP support**: Cyberwave assets and scenes are now accessible from the Blender MCP integration.
+
+## Feature Improvements
+
+### Platform
+
+- Environment creation, workflow, and Control Agent flows were streamlined across the dashboard, workflow editor, and control surfaces.
+- Login now returns users to the environment they were trying to reach instead of dropping them on the dashboard.
+- Asset import (`.cbw` packages) is fixed end to end — the import endpoint had been unreachable since it was added. This also closes a gap where an import could return another workspace's private asset, and restores joint/schema data, 3D mesh files, and the simulation-capability setting that were previously dropped on import.
+- The asset catalog's search box produces a shareable, reloadable URL again.
+- Dataset export/conversion is hardened against memory exhaustion on large datasets. The dataset name label, the Convert/Download action, and OpenVLA's camera-role auto-fill are now consistent across export formats, and conversion-progress polling no longer misreports a load-balancer idle timeout as a failed conversion.
+- The public model page's call-to-action now links to sign-up.
+
+### Robotics & Simulation
+
+- Motion dispatched from outside the browser — a workflow, an AI agent, or the Task API — now renders in the 3D viewer instead of the robot appearing frozen.
+- Simulated legged-robot control (e.g. Go2) no longer gets jittery when the simulation clock stutters: the RL control loop now paces on simulation time instead of wall-clock time.
+- Joint pose/axis edits made in the schema editor now persist to the exported URDF and 3D viewer instead of silently reverting on the next rebuild.
+- Fixed several bugs affecting custom differential-drive robots built through the public schema API: incorrect lidar sample counts, 2D lidar sensors misclassified as 3D (which broke obstacle-avoidance costmaps), and incorrect wheel velocity limits.
+- Fixed the environment editor seeding a robot's pose from live/runtime joint state instead of its authored URDF pose.
+- Fixed robot odometry not being published during simulation, and improved how simulation joint issues are reported.
+- Robots deployed via Edge Core (verified on Unitree Go2 and MiR250) now reliably publish position and joint-state telemetry — they previously could appear frozen in the UI.
+- Fixed a race condition on macOS that broke SO-101 arm and camera setups when used together.
+- Fixed the live camera feed not appearing in the agentic Live view, and made workbench panel layout persist.
+- Fixed a keyboard teleop bug where holding one joint's key would slowly drag every other bound joint off its position.
+
+### MCP
+
+- The Cyberwave MCP server no longer reports failed tool calls as successful, and no longer leaks internal transport details — including bearer tokens — in error messages.
+- MCP tools now reject unknown or misspelled arguments instead of silently ignoring them, and advertise real numeric/array bounds so clients can validate a call before sending it.
+- The MCP server's reported version, capability card, and documentation link are now accurate, and every tool now advertises read-only/destructive annotations.
+- The Environment/Control Agent no longer returns an opaque error on the first request after the MCP backend cold-starts from idle — it retries automatically and returns a clear message if a retry is still needed.
+- Fixed the Environment Agent's workflow-drafting occupancy detection misreading unrelated words (e.g. "cargo") as vehicle-related.
+- Fixed the Environment Agent discarding its conversation context after a failed request.
+
+## Bug Fixes
+
+- Fixed controller policies seeded from newer catalog data disappearing from the controller-selection list or failing to run.
+- Fixed catalog search not resolving "guardrail" to the safety-fence primitive when creating it by name.
+- Fixed an edge case downloading recordings while they were still being finalized.
+- AI-assisted workflow suggestions no longer fail on certain GPT-5 models due to unsupported request parameters.
+- Cloud-hosted AI models can no longer be selected on workflow paths that process camera frames.
+- Fixed a 3D coordinates bug.
+- Fixed a caching bug in the im2mesh playground.
+
+## Docs
+
+- Expanded the Kinova Gen3 setup docs with macOS Ethernet network configuration and edge device (Raspberry Pi / Jetson Orin) network setup steps, and corrected an outdated FAQ claiming ARM devices weren't supported.
+- Documented tested SO-101 leader/follower/camera USB combinations and noted that USB hubs cannot reliably drive robot arms or multiple cameras.
+- Added a Kinova network troubleshooting doc page.
+
+</Update>
+
+<Update label="August 20, 2026">
+
+## Assistant creation and editing
+
+- Environment creation is now prompt-first, accepts image context, opens the environment as soon as it exists, and streams scene changes, requirements, previews, and recovery status in the editor.
+- Catalog search now includes procedural primitives. Each primitive exposes its parameters and an asynchronous 3D preview before it is added to a new or existing environment.
+- Workflow editing includes assistant prompts, contextual suggestions, compact objectives, and reusable creation templates. Deterministic objective fallbacks are labelled separately from AI-generated descriptions.
+- The MCP environment preview supports perspective-by-default rendering, twin focus, orbit azimuth/elevation, distance, zoom, and fit padding so agents can validate scenes from multiple useful viewpoints.
+
+## API additions
+
+- `POST /api/v1/workflows/{uuid}/objective` generates and caches a compact workflow objective for users with write access.
+- `POST /api/v1/procedural-primitives/preview` renders a configured primitive preview.
+- `POST /api/v1/users/@me/tours/{tour_id}/complete/` persists acknowledgements for shipped product tours.
+- Environment listing accepts `search` for server-side filtering.
+
+## Model cost note
+
+GPT-5.6 Sol with medium reasoning is the default assistant model when configured. Its current rate card is $5.00/M input tokens, $0.50/M cached input tokens, and $30.00/M output tokens. Where a model picker is available, users can select another configured model for a lower-cost operating point.
+
+</Update>
+
 <Update label="July 28, 2026">
 
 ## New Features

@@ -68,6 +68,20 @@ Full reference: [Live Teleoperation](/feature-reference/environment-editor/teleo
 
 ---
 
+## Keyboard (Driver)
+
+{/* stub: content pending human curation before publishing */}
+
+New twins get their own assigned controller. Catalog robots default to the public **Keyboard (Driver)** template. **Save as my copy** links your bindings to that asset, so later twins of the same asset keep those bindings; an explicit UI or slug/uuid assignment still wins.
+
+The overlay lists commands from **this twin's** driver catalog. A saved controller's keys only fire for the **intersection** with that catalog — bindings for commands the twin does not declare are ignored.
+
+Commands are one-shot unless the driver marks them `continuous` (hold repeats at `rate_hz`, else 10 Hz). Photo capture stays one-shot. Joint keys stream while held; a tap still sends one step.
+
+Full reference: [Live Teleoperation](/feature-reference/environment-editor/teleoperation#keyboard-driver).
+
+---
+
 ## Alerts, escalation, and who can do what
 
 Real production deployments need more than "someone is watching the dashboard". Cyberwave wires the rest of the loop for you:
