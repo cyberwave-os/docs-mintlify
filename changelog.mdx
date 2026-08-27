@@ -4,6 +4,28 @@ description: "Product updates and announcements"
 rss: true
 ---
 
+<Update label="August 20, 2026">
+
+## Assistant creation and editing
+
+- Environment creation is now prompt-first, accepts image context, opens the environment as soon as it exists, and streams scene changes, requirements, previews, and recovery status in the editor.
+- Catalog search now includes procedural primitives. Each primitive exposes its parameters and an asynchronous 3D preview before it is added to a new or existing environment.
+- Workflow editing includes assistant prompts, contextual suggestions, compact objectives, and reusable creation templates. Deterministic objective fallbacks are labelled separately from AI-generated descriptions.
+- The MCP environment preview supports perspective-by-default rendering, twin focus, orbit azimuth/elevation, distance, zoom, and fit padding so agents can validate scenes from multiple useful viewpoints.
+
+## API additions
+
+- `POST /api/v1/workflows/{uuid}/objective` generates and caches a compact workflow objective for users with write access.
+- `POST /api/v1/procedural-primitives/preview` renders a configured primitive preview.
+- `POST /api/v1/users/@me/tours/{tour_id}/complete/` persists acknowledgements for shipped product tours.
+- Environment listing accepts `search` for server-side filtering.
+
+## Model cost note
+
+GPT-5.6 Sol with medium reasoning is the default assistant model when configured. Its current rate card is $5.00/M input tokens, $0.50/M cached input tokens, and $30.00/M output tokens. Where a model picker is available, users can select another configured model for a lower-cost operating point.
+
+</Update>
+
 <Update label="July 28, 2026">
 
 ## New Features

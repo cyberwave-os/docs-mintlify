@@ -237,6 +237,48 @@ With both set, `cw.twin("the-robot-studio/so101")` will return the first SO101 t
 
 ---
 
+## Error Handling
+
+{/* stub — this section will be curated by a human before publishing */}
+
+Every exception the SDK raises is importable from `cyberwave.exceptions`.
+
+```python
+from cyberwave import Cyberwave
+from cyberwave.exceptions import CyberwaveAPIError, CyberwaveInsufficientCreditsError
+
+cw = Cyberwave()
+
+try:
+    env = cw.environments.get("11111111-1111-1111-1111-111111111111")
+except CyberwaveInsufficientCreditsError as exc:
+    print(f"Out of credits (balance: {exc.balance})")
+except CyberwaveAPIError as exc:
+    print(f"Request failed with HTTP {exc.status_code}: {exc}")
+```
+
+| Exception                           | Raised when                                                                             |
+| ----------------------------------- | --------------------------------------------------------------------------------------- |
+| `CyberwaveAPIError`                 | The API returned an error; carries `status_code`, `response_data`, `operation`           |
+| `CyberwaveInsufficientCreditsError` | HTTP 402 — credits exhausted or the account is blocked                                  |
+| `CyberwaveTimeoutError`             | A workflow did not finish within the timeout you gave it                                |
+| `CyberwaveError`                    | Base class for the `Cyberwave*` exceptions above                                        |
+| `ApiException`                      | The generated `cw.api.*` methods; `UnauthorizedException`, `NotFoundException` subclass it |
+
+On the resource managers (`cw.environments`, `cw.assets`, `cw.twins`, …) an
+invalid or missing API key raises `CyberwaveAPIError` with `status_code` 401 and
+a message explaining how to set `CYBERWAVE_API_KEY`. Error messages show only
+the first few characters of your key, never the whole value.
+
+<Note>
+`cw.workflows.*`, `cw.alerts.*` and the twin helpers currently raise a plain
+`CyberwaveError` without `status_code`, so catch `CyberwaveError` there. The
+generated `cw.api.*` methods raise `ApiException` subclasses, which are **not**
+`CyberwaveError` subclasses.
+</Note>
+
+---
+
 ## Affect Simulation vs Live Environment
 
 Use `cw.affect()` to decide whether high-level robot actions should impact the simulation or the live robot.

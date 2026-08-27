@@ -55,6 +55,25 @@ Supported types: `text`, `image`, `audio`, `video`, `json`, `number`, `boolean`,
 
 ---
 
+## From the app
+
+Once early access is enabled for your workspace, open **Models** and click
+**Create custom model**. A short wizard walks through the same fields as the
+API below — name, endpoint or code, input/output ports, and who can see it —
+and creates the model for you.
+
+Open the model afterwards and click **Edit model** to change any of it:
+credentials, the endpoint URL, the input/output port list, and (for
+`custom-hosted` models) the code editor and weights upload. The same panel
+has an **Open Playground** link — use it to make one real invocation against
+your endpoint (including uploading a video, if your model declares a `video`
+input) before using the model in a workflow.
+
+The steps below use the Python SDK / raw API directly — useful for
+scripting model registration, or for anything the wizard doesn't expose yet.
+
+---
+
 ## Upload a model hosted behind your API
 
 Use this when the model already runs somewhere reachable over HTTPS.
@@ -109,6 +128,46 @@ Use this when the model already runs somewhere reachable over HTTPS.
     A few `metadata` keys are reserved for the Cyberwave platform and are
     rejected on create and update: `cloud_node_profile_slug`,
     `cloud_node_result_type`, `fallback_provider`, and `fallback_model_id`.
+
+    ### Endpoints that take a file upload
+
+    Some endpoints accept a `multipart/form-data` file upload rather than a
+    JSON body with a URL in it. Set `request_encoding` to opt in:
+
+    ```python
+    "metadata": {
+        "endpoint_url": "https://api.example.com/v1/upload/analyze",
+        "http_method": "POST",
+        "request_encoding": "multipart",
+        "multipart_file_field": "file",
+        "io_schema": {
+            "inputs": [{ "name": "clip", "type": "video", "required": True }],
+            "outputs": [{ "name": "events", "type": "json" }]
+        }
+    }
+    ```
+
+    | Key | Default | Meaning |
+    | --- | --- | --- |
+    | `request_encoding` | `"json"` | `"multipart"` sends a `multipart/form-data` body instead of JSON. |
+    | `multipart_file_field` | `"file"` | Form field name the uploaded file is attached under. |
+
+    In multipart mode Cyberwave downloads the video itself and posts the bytes
+    to your endpoint, so your endpoint never sees the source URL (unlike the
+    `{video_url}` placeholder, which only tells your endpoint where to fetch
+    from). Any other `payload_template` fields ride alongside the file as
+    ordinary form fields. `multipart` requires `http_method: "POST"`, and
+    `Content-Type` is set for you — don't set it yourself, or the multipart
+    boundary will be missing.
+
+    ### URL inputs
+
+    Any URL you pass to a run — `image_url`, `audio_url`, or `video_url` —
+    must be an `http(s)` URL on a publicly reachable host. Private, loopback,
+    and link-local addresses are rejected, downloads are size-capped, and
+    `video_url` additionally does not follow redirects. Point at a recording
+    (`recording_uuid`) or an uploaded attachment instead of a host only
+    reachable from inside your own network.
   </Step>
   <Step title="Add authentication (if your endpoint needs it)">
     Credentials are write-only: once set, Cyberwave never returns the

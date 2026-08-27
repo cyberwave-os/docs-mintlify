@@ -1,0 +1,26 @@
+---
+title: "Transferring assets between instances"
+description: "Move an asset, its schema and its mesh files between Cyberwave instances as a .cbw package."
+---
+
+> stub: `.cbw` is the portable form of a catalog asset. Export from one instance, import into another, and the asset's schema and files travel with it.
+
+## Export
+
+> stub: `GET /api/v1/assets/{uuid}/export` returns a `.cbw` (a zip). It carries `asset.json` (name, description, `registry_id`, `visibility`, `metadata`, `kinematics`, `universal_schema`, `fixed_base`, `supported_simulation_backends`), any GLB, thumbnail and attachments, the URDF project archive under `files/urdf/`, and any schema variants under `schemas/{kind}.json`.
+
+## Import
+
+> stub: `POST /api/v1/assets/import` takes the `.cbw` as a multipart `file`, plus optional form fields:
+>
+> - `workspace_uuid` — target workspace. Defaults to your first workspace. You must be an active member of it.
+> - `custom_registry_id` — registry ID for the new asset. Rejected with `400` if it is already taken.
+>
+> The response is the created asset.
+
+## What to expect
+
+> stub:
+> - **Nothing is overwritten.** Import always creates a new asset. If the package's `registry_id` is already in use, the new asset gets a numeric suffix (`acme/robot` → `acme/robot-2`), the same way `POST /api/v1/assets` behaves.
+> - **Mesh files arrive shortly after.** A package with a URDF project queues extraction, so the asset comes back before its meshes have finished landing. `build_status` does not track this — it describes the schema, and a package carrying one imports as `built` straight away. To confirm the files have landed, fetch the asset's `urdf_file` URL until it resolves; a large archive can take a few minutes.
+> - **Older packages still import.** A `.cbw` exported before `universal_schema`, `fixed_base` and `supported_simulation_backends` were added to the format imports without them; an asset with a URDF recovers its schema from the archive, and its simulation backends are derived from its `registry_id`.
