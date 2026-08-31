@@ -1,0 +1,102 @@
+---
+title: "Keyboard Controller from a Driver YAML"
+description: "Turn the command vocabulary your driver already declares in cw-driver.yml into a ready-to-use keyboard controller, without assigning every key by hand."
+icon: "keyboard"
+---
+
+{/* stub — pending human review */}
+
+## What it does
+
+Your `cw-driver.yml` already declares what your robot accepts under
+`mqtt.commands.supported`. Post that file and Cyberwave builds a keyboard
+controller for it: every declared command gets a key, and pressing it publishes
+that command to your twin.
+
+```bash
+curl -X POST https://api.cyberwave.com/api/v1/controller-policies/from-driver-yaml \
+  -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "asset_uuid": "…",
+    "driver_yaml": "'"$(cat cw-driver.yml)"'"
+  }'
+```
+
+You get back a controller policy you can attach to any twin of that asset.
+
+In the dashboard, the same idea is **Keyboard (Driver)**: the public template assigned to new twins by default. It reads each twin's driver catalog at runtime, so running a [`BaseDriver`](/feature-reference/edge/drivers/base-driver-class) (or applying `cw-driver.yml`) is enough for the keyboard UI to show that robot's commands. Save a copy to keep your key bindings as the asset default; see [which controller a new twin gets](/feature-reference/environment-editor/teleoperation#which-controller-a-new-twin-gets).
+
+## Commands the overlay shows
+
+{/* stub — pending human review */}
+
+The overlay lists commands from **this twin's** catalog, not a frozen list on the controller. If you reuse a saved controller on another twin of the same asset whose catalog differs, only the **intersection** is usable: keys bound in the controller **and** declared by this twin. Bindings for missing commands do nothing; unbound catalog commands stay without a key.
+
+## One-shot vs continuous
+
+{/* stub — pending human review */}
+
+Declare this on the command itself (`CommandArgs` on `BaseDriver`, or `continuous` / `rate_hz` in `cw-driver.yml`):
+
+| Kind | When to use | Hold behavior |
+| --- | --- | --- |
+| Discrete (default) | `capture_photo`, sit, stand, stop | One payload per press |
+| Continuous | locomotion, velocity | Repeats while held, at `rate_hz` (10 Hz if omitted) |
+
+Joints are different: holding a key streams setpoints; a single tap still sends one step.
+
+## How keys are assigned
+
+| Kind of command | Keys |
+|-----------------|------|
+| Locomotion (forward / backward / left / right) | `W` `S` `A` `D` |
+| Every other command | Next free key — digits first, then letters outside `WASD` |
+| Controllable joints (when your driver exposes a joint topic) | Paired keys for increase / decrease |
+
+Joints coupled by a URDF `mimic` (a gripper's follower finger, for example) get no
+keys of their own. The coupling travels on the driving joint's binding, so pressing
+that joint's key moves the follower with it.
+
+Commands that take numeric arguments are split into one key per argument, plus an
+opposite key when the argument name has a natural inverse (`forward`/`backward`,
+`up`/`down`, `open`/`close`, …). Each key publishes the real command with the
+argument already filled in, so `ee_move` with `forward` and `up` arguments becomes
+four keys rather than one.
+
+## Choosing your own keys
+
+Pass `key_bindings` to pin specific keys. They are honored first; everything else
+is auto-assigned around them.
+
+```json
+{
+  "asset_uuid": "…",
+  "driver_yaml": "…",
+  "key_bindings": [
+    { "key": "SPACE", "command": "stop", "label": "Emergency stop" },
+    { "key": "g", "command": "start_grouting" },
+    { "key": "1", "jointName": "arm_joint1", "direction": "increase" }
+  ]
+}
+```
+
+Keys are case-insensitive, and named keys such as `SPACE`, `UP`, `ENTER`, `ESC`,
+and `TAB` are accepted. A key name that no keypress could ever produce is
+rejected with the list of accepted names, so you never end up with a binding that
+silently does nothing.
+
+## Other options
+
+| Field | Meaning |
+|-------|---------|
+| `name`, `description` | Defaults derive from the asset name |
+| `visibility` | `private` (default) or another visibility you're allowed to set |
+| `joint_mode` | `position` (default), `velocity`, or `acceleration` |
+| `workspace_uuid` | Defaults to your current workspace |
+
+The asset and the driver YAML must describe the same robot: if both declare a
+`registry_id` and they differ, the request is rejected rather than producing a
+controller whose keys your robot ignores. Driver files are limited to 256 KB, and
+YAML anchors/aliases (`&name` / `*name`) are rejected — a `cw-driver.yml` has no
+need for them, and refusing keeps a hostile file from expanding without bound.

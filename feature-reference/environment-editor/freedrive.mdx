@@ -1,0 +1,38 @@
+---
+title: "Freedrive"
+description: "Release a robot arm's torque and move it by hand while its twin follows the real joint angles."
+icon: "hand-back-fist"
+tags:
+  - stub
+---
+
+**Freedrive** releases the arm's motor torque so you can move it by hand, and streams the arm's measured joint angles up to its [digital twin](/use-cyberwave/digital-twins). It is **read-only**: Cyberwave sends the arm no commands while Freedrive is active, so the twin follows the physical robot instead of the other way around.
+
+---
+
+## Assign it
+
+Open the twin in the [dashboard](https://cyberwave.com/dashboard), run **Calibrate** if you haven't yet, then **Assign Controller** → **Freedrive**.
+
+Like every other controller, only one runs at a time — assigning **Keyboard**, **Local Teleop**, or an AI policy replaces Freedrive. Freedrive goes through the same calibration check as the others.
+
+<Warning>
+  The arm goes limp the moment Freedrive starts. Support it by hand before
+  assigning it, or it will fall under its own weight.
+</Warning>
+
+---
+
+## When to use it
+
+- **Check your calibration and mounting.** Move the arm through its range by hand and confirm the twin tracks it.
+- **Find a pose by hand.** Position the real arm where you want it, then read the joint values off the twin.
+- **Rehearse a motion** before recording it with a controller that can drive the arm.
+
+For **recording training datasets**, use [Local Teleop](/use-cyberwave/environment-editor/teleoperation) instead — it captures leader-arm motion at a much higher rate. Freedrive publishes at a lower rate, which produces sparse trajectories.
+
+---
+
+## Availability
+
+Freedrive is available on the [SO-101](https://cyberwave.com/the-robot-studio/so101). Support depends on the arm's driver being able to disable torque, so it is not offered for every arm in the catalog — check the twin's **Assign Controller** list.
