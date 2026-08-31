@@ -154,6 +154,18 @@ stub: In **Simulate → Playground**, Cyberwave now applies lightweight frontend
 
 ---
 
+## Simulations keep running in the background
+
+stub: Starting a simulation in **Simulate** mode no longer ties it to the tab you started it from. It keeps running until its **Duration** elapses or you stop it.
+
+- Switching to **Design** or reloading the page leaves the simulation running. Return to **Simulate** and the run reappears with its live status, elapsed time, and **Stop Simulation** button.
+- Navigating away from the environment asks whether to **Keep running** or **Stop simulation**.
+- Environments with a live run show a **Simulating** badge in your environment and dashboard lists.
+- Switching to or from **Live** mode stops running controllers, so a simulation policy never sends commands while you are driving real hardware.
+- **Playground** physics runs in your browser rather than as a simulation run, so it always resets when you reload.
+
+---
+
 ## Start the agent from the Edit menu
 
 stub: In the 3D editor, open **Edit → Editor Agent** to launch the Environment Agent. It can inspect the current environment and call Cyberwave MCP tools for supported edits.

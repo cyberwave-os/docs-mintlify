@@ -1,0 +1,68 @@
+---
+title: "Point Cloud Export"
+description: "Export an environment as a LAS/LAZ point cloud for reality-capture viewers."
+tag: "stub"
+---
+
+<Note>
+This page is a stub and has not been reviewed.
+</Note>
+
+Export any environment's surfaces as a coloured point cloud in **LAS** or **LAZ** —
+the formats reality-capture and survey viewers read directly.
+
+## Download
+
+```bash
+curl -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
+  "https://api.cyberwave.com/api/v1/environments/{uuid}/pointcloud.laz" \
+  -o room.laz
+```
+
+| Endpoint | Returns |
+| --- | --- |
+| `GET /api/v1/environments/{uuid}/pointcloud.las` | Uncompressed LAS |
+| `GET /api/v1/environments/{uuid}/pointcloud.laz` | LAZ — same data, roughly 9× smaller |
+| `GET /api/v1/environments/{uuid}/pointcloud-manifest.json` | Sidecar describing the cloud |
+| `POST /api/v1/environments/{uuid}/pointcloud/publish` | Saves the cloud to the environment and returns a stable download URL |
+
+### Options
+
+| Parameter | Default | Meaning |
+| --- | --- | --- |
+| `density` | `2000` | Points per square metre of surface |
+| `max_points` | `5000000` | Upper bound; the cloud is thinned evenly if exceeded |
+| `seed` | `0` | Sampling seed — the same parameters always produce the same cloud |
+| `include_robots` | `true` | Set `false` for the static scene only |
+
+## What the points carry
+
+Coordinates are in the environment's own frame — **metres, Z-up, origin at the
+environment origin** — so they line up exactly with twin positions, waypoints and
+areas. No alignment step is needed.
+
+Each point also carries:
+
+- **Colour** from the object's material.
+- **A classification** — floor, wall, ceiling, fixture, furniture or robot — so
+  viewers can colour the cloud by surface type.
+- **A source id** identifying which object in the scene it came from.
+
+The manifest lists every object with its id, name, and bounding box, so a point
+or a coordinate can be traced back to the specific twin or object it belongs to.
+
+<Warning>
+Source ids are assigned per export. If you store a reference to an object, use
+its `uuid` from the manifest rather than the numeric source id.
+</Warning>
+
+## Opening the file
+
+LAS and LAZ open in standard point-cloud software, including **CloudCompare**
+(free), Autodesk ReCap, Potree and Cesium ion.
+
+## Notes
+
+- Robots are exported in their default joint pose, not their live pose.
+- Every surface is sampled, including ones a physical scanner could not see, so
+  the cloud is complete rather than shadowed the way a real scan would be.

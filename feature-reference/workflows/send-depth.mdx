@@ -5,11 +5,18 @@ tag: stub
 ---
 
 `send_depth` is an edge-only transform node that reads a float depth map
-from an upstream `call_model` node (any registered depth estimator — Hailo
-fast_depth / SCDepthV3, Video-Depth-Anything) and publishes it as a
-`uint16 H×W` payload on the canonical twin depth topic
+from an upstream `call_model` node (any registered depth estimator — YOLO26
+Depth, Hailo fast_depth / SCDepthV3, Depth Anything V2, Video-Depth-Anything)
+and publishes it as a `uint16 H×W` payload on the canonical twin depth topic
 `cyberwave/twin/{twin_uuid}/depth` — the same shape the PointCloud
 viewer, recording / replay and the `object_pose` node already consume.
+
+It also publishes a decimated coloured point cloud on
+`cyberwave/twin/{twin_uuid}/pointcloud`, so an ordinary RGB camera twin
+running a depth model renders in the 3-D viewer with no depth hardware and
+no extra configuration. The cloud's density is capped by `max_points`, so a
+1080p camera costs the same per frame as a 480p one (~0.6 MB at the default)
+instead of nine times as much.
 
 ## Typical chain
 
@@ -33,11 +40,29 @@ metric to lift 2D detections into 3D positions.
 
 | Field | Default | Description |
 |---|---|---|
-| `output_mode` | `normalized_uint16` | `normalized_uint16` stretches the depth range to 0-65535 for visualisation. `metric_mm` multiplies by `scale_factor` and clips — required by consumers that need real distances. |
-| `scale_factor` | `1000.0` | Applied only in `metric_mm` mode. Metres → millimetres by default. |
-| `publish_every_n_frames` | `1` | Throttle. Set higher on tight uplinks. |
+| `output_mode` | `normalized_uint16` | `normalized_uint16` maps the `[min_depth, max_depth]` window onto 1-65535. `metric_mm` multiplies by `scale_factor` and clips — required by consumers that need real distances. Only a metric model can produce it: with a relative checkpoint the node publishes `normalized_uint16` instead and logs why, rather than dropping every frame. |
+| `scale_factor` | `1000.0` | Applied only in `metric_mm` mode. Metres → millimetres by default. Also sets the far range: the wire format is `uint16`, so `1000` clips past **65.5 m**. Use `500` (~131 m) or `250` (~262 m) with a long-range metric model such as YOLO26 Depth, which reaches 150 m. |
+| `min_depth` | `0.1` | Near clip in metres. In `normalized_uint16` mode this is the encode window's lower bound; anything nearer is clamped onto it rather than discarded. Advanced. |
+| `max_depth` | `10.0` | Far clip in metres. In `normalized_uint16` mode the window fixes the scale across frames instead of letting it track each frame's own range — for a **metric** model. For relative (non-metric) models it is the display range the unitless output is stretched onto, and the mapping still tracks each frame. Advanced. |
+| `max_points` | `20000` | Ceiling on points per published point cloud — the spatial counterpart to `publish_every_n_frames`. Given in points, not a pixel stride, so the cost is the same on a 480p and a 1080p camera; the device coarsens its sampling to fit. Advanced. |
+| `publish_every_n_frames` | `1` | Temporal throttle on **publishing**. Set higher on tight uplinks. The model still runs on every frame — to cut inference cost, lower the camera trigger's `fps` instead. |
+
+Every published frame carries `output_mode`, `min_depth`, `max_depth` and
+`depth_scale` alongside the pixels, so a consumer reconstructs real-world
+distances from the frame itself rather than from out-of-band configuration.
+Those numbers are a true calibration only for a metric model: relative input is
+auto-ranged per frame, so the window is a display range and the same distance
+can land on a different value from one frame to the next.
+
+## Tuning throughput
+
+Depth estimation, not publishing, dominates the cost of this chain. In order of
+impact: pick a "Small" (ViT-S) checkpoint, lower `input_size` on the upstream
+`call_model` node, and lower the camera trigger's `fps`. See
+[Depth model resolution](/feature-reference/ml-models/edge-worker#depth-model-resolution).
 
 ## Notes
 
 - Edge-only. The node is filtered out of cloud workflows at compile time.
+- Relative (non-metric) checkpoints emit disparity, where a larger value means *nearer*. The node detects this from the upstream model and flips it, so `min_depth`/`max_depth` act as the display range rather than a true calibration. Use a metric checkpoint when you need real distances.
 - Replaces the retired `cyberwave-edge-camera-depth-estimation` driver — the same MQTT topic shape, now expressed as a workflow.
