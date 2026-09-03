@@ -118,7 +118,6 @@ All URIs are relative to _http://localhost_
 | [**src_app_api_environments_list_environments_for_project**](#src_app_api_environments_list_environments_for_project)                     | **GET** `/api/v1/projects/{uuid}/environments`                                        | List Environments For Project           |
 | [**src_app_api_environments_process_all_environment_sessions**](#src_app_api_environments_process_all_environment_sessions)               | **POST** `/api/v1/environments/{uuid}/process-all-sessions`                           | Process All Environment Sessions        |
 | [**src_app_api_environments_remove_user_from_environment**](#src_app_api_environments_remove_user_from_environment)                       | **DELETE** `/api/v1/environments/{uuid}/users/{user_id}`                              | Remove User From Environment            |
-| [**src_app_api_environments_reset_environment**](#src_app_api_environments_reset_environment)                                             | **POST** `/api/v1/environments/{uuid}/reset`                                          | Reset Environment                       |
 | [**src_app_api_environments_restore_environment_snapshot**](#src_app_api_environments_restore_environment_snapshot)                       | **PUT** `/api/v1/environments/{uuid}/snapshots/{snapshot_uuid}/restore`               | Restore Environment Snapshot            |
 | [**src_app_api_environments_revoke_environment_link**](#src_app_api_environments_revoke_environment_link)                                 | **POST** `/api/v1/environments/{uuid}/revoke-link`                                    | Revoke Environment Link                 |
 | [**src_app_api_environments_share_environment_with_user**](#src_app_api_environments_share_environment_with_user)                         | **POST** `/api/v1/environments/{uuid}/share`                                          | Share Environment With User             |
@@ -296,7 +295,6 @@ All URIs are relative to _http://localhost_
 | [**src_users_api_workspaces_leave_team**](#src_users_api_workspaces_leave_team)                                                           | **DELETE** `/api/v1/users/workspaces/{team_uuid}/members/{uuid}/leave`                | Leave Team                              |
 | [**src_users_api_workspaces_list_team_members**](#src_users_api_workspaces_list_team_members)                                             | **GET** `/api/v1/users/workspaces/{team_uuid}/members`                                | List Team Members                       |
 | [**src_users_api_workspaces_list_workspaces**](#src_users_api_workspaces_list_workspaces)                                                 | **GET** /api/v1/users/workspaces                                                    | List Workspaces                         |
-| [**src_users_api_workspaces_remove_team_member**](#src_users_api_workspaces_remove_team_member)                                           | **DELETE** `/api/v1/users/workspaces/{team_uuid}/members/{uuid}`                      | Remove Team Member                      |
 | [**src_users_api_workspaces_remove_workspace_member**](#src_users_api_workspaces_remove_workspace_member)                                 | **DELETE** `/api/v1/users/workspaces/{uuid}/members/{user_uuid}`                      | Remove Workspace Member                 |
 | [**src_users_api_workspaces_set_default_workspace**](#src_users_api_workspaces_set_default_workspace)                                     | **POST** /api/v1/users/workspaces/default                                           | Set Default Workspace                   |
 | [**src_users_api_workspaces_update_workspace**](#src_users_api_workspaces_update_workspace)                                               | **PUT** `/api/v1/users/workspaces/{uuid}`                                             | Update Workspace                        |
@@ -8931,79 +8929,6 @@ with cyberwave.rest.ApiClient(configuration) as api_client:
 | ----------- | ------- | ----------- | ----- |
 | **uuid**    | **str** |             |
 | **user_id** | **str** |             |
-
-### Return type
-
-**Dict[str, object]**
-
-### Authorization
-
-CustomTokenAuthentication
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: application/json
-
-### HTTP response details
-
-| Status code | Description | Response headers |
-| ----------- | ----------- | ---------------- |
-| **200**     | OK          | -                |
-
-
-# **src_app_api_environments_reset_environment**
-
-> Dict[str, object] src_app_api_environments_reset_environment(uuid)
-
-Reset Environment
-
-### Example
-
-- Api Key Authentication (CustomTokenAuthentication):
-
-```python
-import cyberwave.rest
-from cyberwave.rest.rest import ApiException
-from pprint import pprint
-
-# Defining the host is optional and defaults to http://localhost
-# See configuration.py for a list of all supported configuration parameters.
-configuration = cyberwave.rest.Configuration(
-    host = "http://localhost"
-)
-
-# The client must configure the authentication and authorization parameters
-# in accordance with the API server security policy.
-# Examples for each auth method are provided below, use the example that
-# satisfies your auth use case.
-
-# Configure API key authorization: CustomTokenAuthentication
-configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
-
-# Enter a context with an instance of the API client
-with cyberwave.rest.ApiClient(configuration) as api_client:
-    # Create an instance of the API class
-    api_instance = cyberwave.rest.DefaultApi(api_client)
-    uuid = 'uuid_example' # str |
-
-    try:
-        # Reset Environment
-        api_response = api_instance.src_app_api_environments_reset_environment(uuid)
-        print("The response of DefaultApi->src_app_api_environments_reset_environment:\n")
-        pprint(api_response)
-    except Exception as e:
-        print("Exception when calling DefaultApi->src_app_api_environments_reset_environment: %s\n" % e)
-```
-
-### Parameters
-
-| Name     | Type    | Description | Notes |
-| -------- | ------- | ----------- | ----- |
-| **uuid** | **str** |             |
 
 ### Return type
 
@@ -22708,81 +22633,6 @@ CustomTokenAuthentication
 
 - **Content-Type**: Not defined
 - **Accept**: application/json
-
-### HTTP response details
-
-| Status code | Description | Response headers |
-| ----------- | ----------- | ---------------- |
-| **200**     | OK          | -                |
-
-
-# **src_users_api_workspaces_remove_team_member**
-
-> src_users_api_workspaces_remove_team_member(team_uuid, uuid)
-
-Remove Team Member
-
-Delete a member from a team
-
-### Example
-
-- Api Key Authentication (CustomTokenAuthentication):
-
-```python
-import cyberwave.rest
-from cyberwave.rest.rest import ApiException
-from pprint import pprint
-
-# Defining the host is optional and defaults to http://localhost
-# See configuration.py for a list of all supported configuration parameters.
-configuration = cyberwave.rest.Configuration(
-    host = "http://localhost"
-)
-
-# The client must configure the authentication and authorization parameters
-# in accordance with the API server security policy.
-# Examples for each auth method are provided below, use the example that
-# satisfies your auth use case.
-
-# Configure API key authorization: CustomTokenAuthentication
-configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
-
-# Enter a context with an instance of the API client
-with cyberwave.rest.ApiClient(configuration) as api_client:
-    # Create an instance of the API class
-    api_instance = cyberwave.rest.DefaultApi(api_client)
-    team_uuid = 'team_uuid_example' # str |
-    uuid = 'uuid_example' # str |
-
-    try:
-        # Remove Team Member
-        api_instance.src_users_api_workspaces_remove_team_member(team_uuid, uuid)
-    except Exception as e:
-        print("Exception when calling DefaultApi->src_users_api_workspaces_remove_team_member: %s\n" % e)
-```
-
-### Parameters
-
-| Name          | Type    | Description | Notes |
-| ------------- | ------- | ----------- | ----- |
-| **team_uuid** | **str** |             |
-| **uuid**      | **str** |             |
-
-### Return type
-
-void (empty response body)
-
-### Authorization
-
-CustomTokenAuthentication
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: Not defined
 
 ### HTTP response details
 
