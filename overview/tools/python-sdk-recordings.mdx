@@ -77,7 +77,8 @@ items = twin.recordings.list(start="2026-07-01", end="2026-07-05", limit=0)  # e
 date window) rather than relying on `filter` to search further back.
 
 Like the replay picker, `list()` excludes materializing or failed recordings by
-default. Pass `include_unready=True` only when those rows are needed.
+default. Pass `include_unready=True` only when those rows are needed; it
+requires elevated access and otherwise fails with HTTP 403.
 
 `list()` warns when it returns a partial view, so a truncated result never looks
 complete:
@@ -96,6 +97,32 @@ the SDK raises `RecordingPayloadTooLargeError` instead of exposing the opaque
 platform HTTP 500. Its message includes the selected window, cloud trace, and
 instructions to use a shorter `start`/`end` interval or lower `limit`.
 
+## Migrating to a bounded `list()`
+
+An argument-free `list()` returns the most recent day that has recordings — ready
+rows only, capped at 200 items. Up to Python SDK `0.6.5` it returned the whole
+recording history in one response (server-capped at 100 rows), including
+materializing and failed rows.
+
+The change shipped in `0.6.6`; `0.7.0` is the same behavior with a version number
+that labels the break. If you are on `0.6.6` you already have it.
+
+To widen the window again, name it explicitly and lift the cap. `limit=0` on its
+own is not enough — the implicit single-day window applies first, so both date
+bounds are still required:
+
+```python
+items = twin.recordings.list(
+    start="2026-01-01",       # both bounds are required together
+    end="2026-07-05",
+    limit=0,                  # follow every page in that window
+)
+```
+
+There is no argument meaning "all history" — choose a `start` early enough to
+cover the range you need. Code that just wants the latest recordings needs no
+change: that is the default.
+
 ## Types & viewers
 
 Recording types: `camera`, `robot`, `pointcloud` (colored/lidar points), `depth`
@@ -111,6 +138,25 @@ pip install 'cyberwave[data]'
 
 The `data` extra installs headless OpenCV (decoding only). For GUI video playback
 with `show_video()`, also install a non-headless build: `pip install opencv-python`.
+
+## Fetching less, and faster
+
+A long recording is stored as many parts. `get()` fetches them in parallel and
+returns them in timeline order whenever the server labels each part's position, so
+`local_paths` and `show_video()` follow the recording, not the download.
+
+```python
+rec = twin.recordings.get(items[0], max_workers=1)      # strictly serial
+rec = twin.recordings.get(items[0], path=".parquet")    # tables only, skip video
+```
+
+`max_workers` defaults to 8 and is capped at 32. The gain scales with the number of
+parts — a recording stored as one large file gains nothing.
+
+`path` keeps only artifacts whose URL or filename contains the given text, so it
+selects by extension rather than by stream. `".parquet"` skips `.mp4` video, which
+is usually most of a camera recording's bytes. Calling a reader whose artifact was
+filtered out raises instead of returning empty.
 
 ## Contextual accessors
 

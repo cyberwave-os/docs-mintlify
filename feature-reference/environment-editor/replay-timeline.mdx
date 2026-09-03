@@ -5,7 +5,7 @@ description: stub — Reading the replay timeline, the color legend, and slicing
 
 {/* stub: curated later */}
 
-The **Replay** timeline shows everything an [environment](/feature-reference/environment-editor/index) recorded over a time window, laid out left-to-right. Each kind of data gets its own labeled row, filled bars show where that data exists, and dots in the **Events** row mark things that happened.
+The **Replay** timeline shows everything an [environment](/feature-reference/environment-editor/index) recorded over a time window, laid out left-to-right. Each twin gets a labeled row per kind of data it recorded, filled bars show where that data exists, and dots in the **Events** row mark things that happened.
 
 ## Open replay over a recording
 
@@ -18,21 +18,35 @@ The recordings list has its own filters in its header — **twin**, **data sourc
 
 ## Rows
 
-One row per kind of data, labeled on the left. A row only appears when there is something in it:
+**One row per twin, per kind of data.** Five twins recording video give you five Video rows. If three of those twins also record robot data, that is three more rows. A row only ever holds one twin's data of one kind.
 
-| Row | What it holds |
+Rows are labeled with the **kind of data**, not the twin — with a row per twin the name repeated down the whole column, and hovering a bar tells you which twin it belongs to. So to answer "whose recording is this?", hover it.
+
+| Kind of data | What it holds |
 | --- | --- |
 | Robot | Joint states and actuation telemetry |
 | Video | Recorded camera streams |
 | Depth | Depth / LiDAR frames, geometry only |
 | Point cloud | Depth frames fused with camera color |
 | Audio | Recorded audio samples |
-| Events | Alerts, workflow steps and telemetry |
-| Episodes | Segments you labeled yourself |
+| Events | Alerts, workflow steps and telemetry — one row for the whole window |
+| Episodes | Segments you labeled yourself — one row for the whole window |
 
-When two sources of the same kind overlap in time — two cameras recording the same minute — their bars stack inside the row so you can see both. The row gets taller; the bars stay the same thickness, so a bar never looks different just because something overlaps it. If more overlap than fit, the row label shows a **+N**, and hovering still lists every one of them.
+When one twin recorded the same kind of data twice over overlapping stretches, both bars are drawn in the same row, one over the other. They are the same twin and the same kind of data, so hovering lists both.
 
-**Episodes stack the same way.** Two episodes covering the same stretch, or one nested inside another, each get their own line in the Episodes row, so you can hover and click either. Each line down the stack is a shade deeper green, so you can follow one episode from start to end even where others cross it. When more episodes overlap than there are lines, the ones sharing a line are drawn with a diagonal hatch — they cover each other, so hover any of them to list what is actually there.
+### Changing how rows are grouped
+
+**Settings → View** picks between three groupings. Switching keeps your zoom, scroll position, playhead and any episode marks.
+
+| View | Rows | Use it to |
+| --- | --- | --- |
+| **Expanded** (the default) | One per twin, per kind of data | See who recorded what, which is the usual question |
+| **Collapse by twin** | One per twin, all its data kinds together — labeled with the twin name | Scan which twins were recording, ignoring what they recorded |
+| **Collapse by data type** | One per kind of data, every twin merged into a single bar | Ask "was there video at all in this window?" — the bar spans from the earliest recording to the latest, gaps included |
+
+Expanded is where you start, and it is as expanded as the timeline gets: every twin already has its own row for every kind of data it recorded, and nothing is hidden behind a count. In the two collapse modes a row deliberately merges things, so hovering is where you find out what is actually behind a bar.
+
+**Episodes stack.** Two episodes covering the same stretch, or one nested inside another, each get their own line in the Episodes row, so you can hover and click either. Each line down the stack is a shade deeper green, so you can follow one episode from start to end even where others cross it. When more episodes overlap than there are lines, the ones sharing a line are drawn with a diagonal hatch — they cover each other, so hover any of them to list what is actually there.
 
 ## Color legend
 
@@ -64,24 +78,25 @@ Hover any row and a card appears next to the cursor.
 
 **Hover a recording bar** and it tells you whose recording it is — the kind of data, the twin's name, and the twin's UUID (click to copy). That's it: the bar's position and width already show you when it starts and how long it runs.
 
-When several sources overlap, each one gets its own stacked bar in the row, so you hover the specific bar you're interested in and get that source — not a list of everything sharing the row. On a keyboard, **←** / **→** move along one source and **↑** / **↓** switch between the stacked ones.
+When recordings overlap, they share a bar, so the card lists every one under your cursor rather than picking one. On a keyboard, **←** / **→** step through every recording edge in the row.
 
 **Hover the Events row** and you get the events at that moment instead, in the order you need them: the **twin** (name, plus its UUID to copy), the **severity** spelled out — Info, Warning or Critical — then the event's name and its message. The timestamp sits in the card's header.
 
-Each row only ever tells you about its own contents, so a card never mixes recordings and events. If nothing is there, the card says so rather than going blank.
+Each row only ever tells you about its own contents, so a card never mixes recordings and events. If nothing is there, the card says so rather than going blank — and in **Collapse by data type**, where the bar runs straight across the gaps between recordings, hovering one of those gaps tells you it is a gap rather than claiming there is nothing there.
 
 **Click an Events dot to pin its card open.** A hover card disappears as soon as you move away, which makes the UUIDs on it hard to click; a pinned one stays until you click elsewhere or press **Esc**, and says so. Clicking still moves the playhead to the event as well.
 
-Keyboard works the same way: **Tab** to a row, **←** / **→** to step between recording edges, **Home** / **End** for the first and last, **Enter** to move the playhead there — and in the Events row, **Enter** also pins the card.
+Keyboard works the same way: **Tab** between rows, **←** / **→** to step between recording edges, **Home** / **End** for the first and last, **Enter** to move the playhead there — and in the Events row, **Enter** also pins the card.
 
 ## What you can do here
 
-The row above the timeline holds what you reach for while watching — playback speed, play/pause, Create Episode, the calendar. Everything that changes how the timeline *reads* sits under the **Settings** gear beside the Legend: time reference, 3D rendered mode, and the Events filter. A setting only appears there when there is something to choose.
+The row above the timeline holds what you reach for while watching — playback speed, play/pause, Create Episode, the calendar. Everything that changes how the timeline *reads* sits under the **Settings** gear beside the Legend: the row grouping (**View**), time reference, 3D rendered mode, and the Events filter. A setting only appears there when there is something to choose.
 
 - **Scrub & play back** at 1× or 2×; click anywhere on a row to jump there.
 - **Zoom** into a stretch of the timeline for frame-level detail.
 - **Filter the Events row** by twin with **Settings → Events for**. Recording rows are unaffected.
-- **Pick the 3D rendered mode** — **Depth** or **Point cloud** — under **Settings**, when a recording holds both. It chooses which one the 3D view draws, and emphasizes the matching row.
+- **Pick the 3D rendered mode** — **Depth** or **Point cloud** — under **Settings**, when a recording holds both. It chooses which one the 3D view draws, and the timeline shows only that one's row. A twin that recorded just one of the two always shows it.
+- **Change how rows are grouped** with **Settings → View** — see [Rows](#rows).
 - **Browse sessions** by date with the calendar picker.
 - **Create an episode** — mark a window and label it as a [training/dataset](/feature-reference/datasets/import) segment. Hit **Create Episode** and a short panel opens next to the button telling you which point it wants next; then click the timeline twice. The playhead jumps to each click and turns green once the first mark lands, the two marks are ruled across every row, and the range between them fills in green with its duration before the naming dialog opens. **M** at the playhead does the same from the keyboard, and **Esc** leaves the mode.
 

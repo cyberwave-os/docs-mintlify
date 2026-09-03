@@ -1,0 +1,77 @@
+---
+title: "Drone commands"
+description: "Takeoff, landing, and flight-state rules for aerial twins, in the simulator and on real aircraft"
+tag: "stub"
+---
+
+Aerial twins expose the same command vocabulary whether they are flying for real
+or in the simulator. What differs is which limits apply.
+
+## Takeoff altitude
+
+`takeoff()` and `takeoff(altitude=…)` mean different things:
+
+| Call | Meaning |
+| --- | --- |
+| `drone.takeoff()` | Climb to the aircraft's own hover height (~1.2 m on DJI). Never descends — a drone already higher stays where it is. |
+| `drone.takeoff(altitude=2.0)` | Fly to exactly 2.0 m, climbing or descending as needed. |
+
+On real DJI aircraft the MSDK takeoff action is parameter-less, so `altitude` is
+honoured only in simulation.
+
+Altitude is absolute world **z**, not height above whatever is underneath the
+drone. Landing over a raised platform therefore descends toward world zero
+rather than stopping on the platform.
+
+## Repeated takeoff is refused
+
+A second `takeoff` on an aircraft that is already flying is rejected rather than
+sent, with error code `ALREADY_FLYING` and a hint pointing at `land` or
+`return_to_home`. `land` is never refused: landing an aircraft that is already
+parked is a harmless no-op, and refusing it would leave you with no way down if
+the reported flight state were out of date.
+
+The refusal needs the aircraft to actually report its flight state. A twin whose
+edge does not publish one is not gated, and neither is a simulated twin — a
+takeoff performed in **Simulate** is scoped to that session and does not carry
+over to **Live**.
+
+## Recording hover state from the SDK
+
+`takeoff()`, `land()`, and `hover()` already record the flight state the refusal
+above is based on, so a script that uses them needs to do nothing extra.
+
+If you fly an aerial twin some other way — your own command publisher, or a
+custom controller — record the intent yourself:
+
+```python
+drone.set_hovering_status(hovering=True, hovering_altitude=2.0)
+drone.set_hovering_status(hovering=False)   # once it is down
+```
+
+or, when you hold a twin UUID rather than a twin object:
+
+```python
+client.twins.set_flight_request(twin_uuid, hovering=True, hovering_altitude=2.0)
+```
+
+Omitting `hovering_altitude` leaves any previous value untouched on a takeoff,
+and clears it on a landing so a stale hover height cannot outlive its flight.
+
+<Warning>
+Do not record this through `twins.update(metadata=...)`. That call replaces the
+twin's whole status block, discarding the flight state the aircraft itself
+reports — which is exactly what the repeated-takeoff refusal reads, so a
+`takeoff` that should have been refused gets sent. `set_hovering_status` sends
+only your intent and leaves the aircraft's own report alone.
+</Warning>
+
+## Flying in the MuJoCo simulator
+
+Drones fly under thrust in the MuJoCo simulator: they obey gravity, lean into a
+turn, settle onto the floor when landed, and cannot be pushed through geometry.
+Waypoint navigation works — a workflow *Move Twin* step, a `navigate` call, or a
+path flies the drone to the point and holds it there.
+
+One limit today: **`hover` holds the current altitude** rather than flying to a
+named one.

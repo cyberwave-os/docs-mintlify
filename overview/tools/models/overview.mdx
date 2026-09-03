@@ -190,6 +190,8 @@ for d in pred:
 
 `predict()` returns a concrete **`PredictionResult` subclass** — e.g. **`DetectionResult`**, **`ClassificationResult`**, **`TextResult`**, **`PoseResult`**, **`InstanceSegmentationResult`**, **`OBBResult`**, **`EmbeddingResult`**. Use type-specific fields (`.detections`, `.top`, `.text`, …) rather than a wrapper.
 
+For YOLO models, extra keyword arguments pass through to Ultralytics — `model.predict(img, imgsz=512, iou=0.45, max_det=10)` — and an unrecognised name is rejected rather than ignored. Other edge runtimes still ignore keyword arguments they don't recognise.
+
 | Field         | Role                                                                                  |
 | ------------- | ------------------------------------------------------------------------------------- |
 | `pred` | Concrete result subclass (`DetectionResult`, `ClassificationResult`, `TextResult`, …) |
