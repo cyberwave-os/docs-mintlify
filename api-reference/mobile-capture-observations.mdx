@@ -1,0 +1,71 @@
+---
+title: 'Mobile capture and twin observations'
+description: 'Record physical-world state, scope mobile lists to a workspace, and upload Apple spatial captures.'
+---
+
+This page collects the small REST additions used by mobile and field clients.
+They reuse the normal Cyberwave authentication, object ACLs, attachments, and
+workflow execution model.
+
+## Record a twin observation
+
+Use `POST /api/v1/twins/{twin_uuid}/observations` for a small, typed state
+update such as plant color, humidity, pump status, or an inspection result.
+
+```bash
+curl -X POST "https://api.cyberwave.com/api/v1/twins/$TWIN_UUID/observations" \
+  -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "values": {"humidity": 42.5, "color": "green"},
+    "units": {"humidity": "%"},
+    "note": "Checked after watering",
+    "observed_at": "2026-08-20T11:30:00Z"
+  }'
+```
+
+Observation field names are exact and case-sensitive. When the twin has a
+universal state schema, each field must exist in that schema and its scalar
+value must match the declared type, enum, and bounds. A request can update at
+most 25 fields. Past timestamps support offline backfill; timestamps more than
+five minutes ahead of server time are rejected to protect current-state and
+latest-metrics views.
+
+Users with write access record immediately. Read-only users can submit only
+when the environment has an observation-curation workflow they are allowed to
+read. The response `status` is therefore either `recorded` or `submitted`.
+Internal workflow configuration remains an environment-admin concern and is
+not part of the mobile API contract.
+
+## Scope lists to the active workspace
+
+The following optional filters narrow an already ACL-scoped result set; they do
+not grant access or reveal inaccessible workspaces:
+
+| Resource | Request |
+|---|---|
+| Assets | `GET /api/v1/assets?workspace_uuid={workspace_uuid}` |
+| Edges | `GET /api/v1/edges?workspace_uuid={workspace_uuid}` |
+| Workflows | `GET /api/v1/workflows?workspace_uuid={workspace_uuid}` |
+
+Workflow pickers can additionally request only workflows with an enabled
+trigger of a specific type:
+
+```text
+GET /api/v1/workflows?workspace_uuid={workspace_uuid}&trigger_type=manual
+```
+
+Fetch workflow details before execution to obtain its current trigger node and
+configuration. Do not cache node identifiers across workflow edits.
+
+## Upload Apple spatial captures
+
+The standard attachment upload flow accepts `.usdz` RoomPlan scenes and
+`.arworldmap` ARKit maps in addition to the existing photo, video, archive, and
+3D formats. Create an attachment with `POST /api/v1/attachments`, then upload
+the file with `POST /api/v1/attachments/{attachment_uuid}/upload` (or use the
+existing large-upload flow for large files).
+
+Cyberwave stores these formats as opaque source attachments. Reconstruction,
+asset detection, or environment updates should continue through registered
+platform workflows rather than being reimplemented in the client.

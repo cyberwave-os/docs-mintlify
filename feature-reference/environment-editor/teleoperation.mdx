@@ -51,6 +51,114 @@ flowchart LR
 | **Leader arm**          | Teleoperate a follower arm using a physical leader arm (e.g. SO101 leader/follower setup)                                             |
 | **Python SDK**          | Send commands programmatically with `cw.affect("live")` — see the [SDK docs](/tools/python-sdk#affect-simulation-vs-live-environment) |
 
+<Note>
+  For the inverse — moving the arm by hand and having the twin follow it — see
+  [Freedrive](/use-cyberwave/environment-editor/freedrive).
+</Note>
+
+---
+
+## Keyboard (Driver)
+
+{/* stub: content pending human curation before publishing */}
+
+**Keyboard (Driver)** is the default keyboard controller for robots that ship a driver catalog. It does not hard-code a command list. Each twin shows the commands that twin actually declares (from the driver interface on that twin). Bind a key in the controller, then reuse the same saved controller on another twin of the same asset: only the **intersection** is usable — commands present in both the twin's catalog and the saved bindings. Extra bindings for commands this twin does not have are ignored; catalog commands with no binding stay unbound.
+
+That is intentional. Subclass [`BaseDriver`](/feature-reference/edge/drivers/base-driver-class) (or declare the same commands in `cw-driver.yml`), run the driver, and the keyboard UI follows the manifest. See [Keyboard controller from a driver YAML](/feature-reference/keyboard-controller-from-driver-yaml).
+
+### Commands vs joints
+
+{/* stub: content pending human curation before publishing */}
+
+| Surface | Default | Hold a key | Tap a key |
+| --- | --- | --- | --- |
+| **Commands** | One-shot | Repeats only if the driver marks the command `continuous` (at that command's `rate_hz`, or 10 Hz) | Always one payload |
+| **Joints** | Continuous stream while held | Keeps sending setpoint updates | One step |
+
+A command like **capture photo** / **take photo** must stay one-shot. Locomotion and velocity commands are usually continuous. The driver manifest is the source of truth — the dashboard does not guess.
+
+- **Rebind** a key by clicking its slot and pressing a new key — the previous owner of that key is replaced.
+- **Radians / degrees** is a per-panel toggle: the overlay and the controller card each convert their own joint readout.
+
+### Which controller a new twin gets
+
+{/* stub: content pending human curation before publishing */}
+
+Each twin gets its own assigned controller. New twins start from the asset default — for catalog robots that is usually the public **Keyboard (Driver)** template.
+
+When more than one keyboard controller matches that default:
+
+1. A **Save as my copy** controller linked to the asset is chosen first (your bindings stay the default for new twins of that asset).
+2. Other controllers in the same workspace.
+3. The public template.
+
+Picking a controller in the UI (or a specific slug/uuid in the SDK) always wins over this default. The public template is never overwritten; copies are yours.
+
+## Driving Several Robots at Once
+
+{/* stub: content pending human curation before publishing */}
+
+Assign the same keyboard controller to more than one robot and a single keypress drives all of
+them together. From an assigned controller, use **Assign this controller to other twins** to give
+it to the environment's other robots in one step.
+
+Every robot with a keyboard controller receives keyboard input — selecting one in the scene does
+not stop the others from being driven. Each robot resolves the key against its own controller, so
+a robot whose controller does not bind that key simply does nothing, and robots with different
+controllers can still respond to the same key.
+
+Each robot keeps its own commanded targets and its own panel, so two arms starting from different
+poses stay independent: they receive the same *step*, not the same absolute position.
+
+## Binding One Key to Several Joints
+
+{/* stub: content pending human curation before publishing */}
+
+A key can be bound to more than one joint. Press it and every joint bound to it steps together;
+release it and all of them stop. In the key-bindings editor, assigning a key that another joint
+already uses no longer replaces that binding — both are kept, and the row notes which other joints
+the key drives.
+
+This is for joints you want to move *independently but together*. Joints that are mechanically
+coupled (a gripper's mirrored fingers, for example) already follow their driver automatically and
+do not need their own binding.
+
+---
+
+## Joint Targets Readout
+
+{/* stub: content pending human curation before publishing */}
+
+The keyboard controller panel shows, for each independently controllable joint:
+
+| Column | Meaning |
+| --- | --- |
+| **target** | The position the controller last commanded |
+| **position** | The position the robot (or simulator) reports |
+| **Δ** | How far the joint still has to travel |
+| **vel** / **effort** | Measured velocity and effort, when the driver publishes them |
+
+It behaves the same in Simulation and Live mode. While you hold a key, the joint's current position and commanded target are also shown next to the key itself, as `position → target`.
+
+Each key press moves the target by one fixed step from the **previous target**, so repeated presses add up predictably even while the robot is still moving toward the last one. A gap in the **Δ** column simply means the robot has not arrived yet; it turns amber if the robot is falling far enough behind that further presses are being held until it catches up.
+
+A joint you have not driven yet shows no **target** at all, and driving one joint never gives the others a target: each key press commands only the joints it actually moves, and every other joint simply holds the last position it was commanded to.
+
+The joint currently under a held key is highlighted. Mimic and fixed joints are not listed — they have no target of their own. Rotational joints are shown in degrees, linear joints in metres. A dash means the robot does not report that channel, and a dimmed position means the reading is stale.
+
+If the connection to the robot drops, held keys are released and the commanded target is discarded rather than resumed. When the link comes back the target re-seeds from the position the robot actually reports, so the first press afterwards steps from where the arm really is.
+
+---
+
+## Shared Controller Templates
+
+{/* stub — this section will be curated by a human before publishing */}
+
+Some controllers in the catalog are shared, read-only templates (for example **Keyboard (Driver)**, which builds its key bindings from the robot's driver manifest). You can configure one without special permissions:
+
+- Open the controller, set your key bindings as usual, then **Save as my copy** — your changes land in a new controller owned by your workspace and bound to that robot's asset. The shared template is left untouched. New twins of that asset then prefer this copy; see [which controller a new twin gets](#which-controller-a-new-twin-gets).
+- If the template is already configured the way you want it, use **Assign as-is** to attach it to the twin without making a copy. The button hides if you change a binding, because that action assigns the saved template and would drop those edits.
+
 ---
 
 ## Switching Between Simulation and Live
@@ -73,6 +181,19 @@ robot.joints.set("shoulder_pan", 45, degrees=True)  # moves the digital twin
 cw.affect("live")
 robot.joints.set("shoulder_pan", 45, degrees=True)  # moves the physical robot
 ```
+
+### Controllers that only work on real hardware
+
+{/* stub — this section will be curated by a human before publishing */}
+
+Some controllers drive the physical robot's driver directly and do nothing in
+simulation:
+
+- **Keyboard (Driver)** — not compatible with simulation. Cyberwave warns you
+  when you enter Simulation mode; twins will not react to those keypresses.
+  There is no automatic replacement.
+- **Local controller** — not valid in simulation. Cyberwave warns you; there is
+  no automatic replacement.
 
 ---
 

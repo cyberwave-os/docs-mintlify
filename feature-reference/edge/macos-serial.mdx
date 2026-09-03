@@ -1,0 +1,77 @@
+---
+title: "macOS Serial Bridge"
+sidebarTitle: "macOS Serial"
+description: "Reach USB serial robots from Docker on a Mac by bridging the host serial port over TCP."
+icon: "plug"
+---
+
+<Warning>
+**STUB DOCUMENT:** Operational guide for the macOS host serial bridge. A human will expand it before publishing.
+</Warning>
+
+Docker Desktop on macOS runs **Linux** containers, and macOS keeps its own driver attached to USB serial devices — so a container can see the device enumerate but never exchange data with it. Cyberwave mirrors the [camera MJPEG bridge](/feature-reference/edge/overview) and [microphone bridge](/feature-reference/edge/macos-microphone) pattern: the **host publishes each serial port over TCP**, and the **driver container turns it back into an ordinary serial device**.
+
+## Architecture
+
+```text
+Mac host (/dev/cu.usbmodem*)
+  └─ serial bridge LaunchAgent  com.cyberwave.serial-bridge*
+       └─ TCP  :8300+  (host.docker.internal from container)
+            └─ driver container: socat → /dev/ttyACM0, /dev/ttyACM1
+                 └─ robot driver (unchanged)
+```
+
+| Layer | Artifact |
+| --- | --- |
+| Host bridge | pyserial, managed by `launchctl` |
+| Device map | `~/.cyberwave/serial_bridges.json` → `bridges[]` |
+| Container env | `CYBERWAVE_SERIAL_BRIDGE_PORTS=8300,8301` |
+| Edge-core | Reads the map on Darwin, skips a port with no listener, injects the rest |
+
+## Setup
+
+`cyberwave edge install` discovers connected SO-101 USB serial devices, creates
+one LaunchAgent per device, and records the mapping. Other USB CDC devices are
+ignored by default. No extra flags are needed.
+
+```bash
+cyberwave edge install
+cyberwave edge restart
+```
+
+Verify the services and ports:
+
+```bash
+launchctl list | grep serial-bridge
+lsof -nP -iTCP:8300 -sTCP:LISTEN
+```
+
+## Configuration
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `CYBERWAVE_SERIAL_DEVICE_GLOB` | `/dev/cu.usbmodem*` | Host glob override; setting it explicitly disables the default SO-101 VID:PID filter |
+| `CYBERWAVE_USBIP_SERIAL_VIDPID` | `1a86:55d3` | Adapter VID:PID allowed for bridge discovery |
+| `CYBERWAVE_SERIAL_BRIDGE_HOST` | `host.docker.internal` | Host the container connects to |
+| `CYBERWAVE_SERIAL_BRIDGE_WAIT_SECS` | `10` | Seconds to wait for each device to appear in the container |
+
+## Troubleshooting
+
+**No device in the container.** Check a bridge is listening on its port. Edge-core
+ignores entries with no listener and falls back to USB/IP only when no healthy
+bridge entries remain. A device moved to a different USB port needs
+`cyberwave edge install` re-run — macOS device names encode USB location.
+
+**USB/IP fallback.** The SO-101 image uses USB/IP only when edge-core finds zero
+healthy serial-bridge listeners as the driver starts. One remaining listener
+keeps bridge mode active for the whole container; SO-101 cameras then use host
+MJPEG mappings rather than USB/IP.
+
+**Ports.** Serial bridges start at **8300**, kept clear of the camera (8091+),
+microphone (8101) and speaker (8201) bridges.
+
+<Note>
+The bridge listens on all interfaces so the Docker VM can reach it, and applies
+no authentication. Treat it like the camera and microphone bridges: only run it
+on a trusted network.
+</Note>

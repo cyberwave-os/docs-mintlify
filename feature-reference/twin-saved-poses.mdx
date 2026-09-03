@@ -14,13 +14,25 @@ Joint Editing).
 ## Where it works
 
 - **Edit mode**: save/edit/delete/apply poses against the twin's rest state.
+  Applying (**GO**) drives the joints there gradually.
 - **Live mode**: save captures the twin's current live telemetry (not the
   rest state); applying a pose sends it to the real device over MQTT.
-- **Simulate mode**: save captures the current simulated joint state;
-  applying a pose drives the simulator over MQTT.
+- **Simulate / Playground mode**: save captures the current simulated joint
+  state; applying (**Snap**) **teleports** the simulated robot to the pose
+  instantly instead of driving it there gradually. A running controller can
+  override the snap on its next tick — pause it first.
+
+## Home (edit pose)
+
+The panel also lists the twin's authored edit/home pose as a **Home (edit
+pose)** item (with a **Preview**). Triggering it returns the robot to that
+pose — **Snap** in Edit (applied and saved) and in Simulate/Playground
+(instant), **Drive** (rate-limited real move) in Live. See
+[Joint home positions](/feature-reference/twin-joint-home-positions).
 
 ## Scopes
 
 A pose can be saved at twin, environment, or asset scope, controlling
 whether it's specific to this twin, this environment, or shared across every
-instance of the asset.
+instance of the asset. On a twin, the **Twin** scope lists only poses
+authored on that twin (asset-shared poses appear under the **Asset** scope).
