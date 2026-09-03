@@ -99,7 +99,10 @@ print(twin.slug)   # "acme/twins/my-arm"
 print(wf.slug)     # "acme/workflows/pick-and-place"
 ```
 
+## Slugs vs. catalog origin
+
+A Controller Policy's `slug` identifies that specific policy instance — its workspace and name. It does not indicate which catalog template, if any, the policy was originally created from; that is tracked separately and is not part of the slug system.
+
 ## Deprecation Notices
 
 - **`registry_id`** and **`registry_id_alias`** on Assets: deprecated in favor of the unified `slug` field. Will be removed in a future release.
-- **`catalog_seed_id`** / **`catalog_key`** on ControllerPolicy metadata: deprecated. Use the `slug` field instead.

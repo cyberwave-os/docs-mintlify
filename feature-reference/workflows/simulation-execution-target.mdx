@@ -1,0 +1,47 @@
+---
+title: "Running a workflow in simulation"
+description: "Set a workflow's execution target to Simulation to run it against a cloud physics simulation instead of real hardware"
+tag: "stub"
+---
+
+Every workflow has an execution target:
+
+| Target | Where twin commands go |
+| --- | --- |
+| **Live** (default) | Real hardware, through your edge drivers. |
+| **Simulation** | A cloud physics simulation of the environment. |
+
+Set it from the workflow's runtime badge in the environment's workflow list.
+
+## Simulation runs are provisioned for you
+
+Triggering a Simulation workflow starts a simulation for its environment if one
+is not already running, and waits for the physics to be ready before the first
+twin command is sent. An already-running simulation is reused rather than
+restarted, so you can watch the run live.
+
+You need write access to the environment to trigger a Simulation workflow.
+
+<Note>
+A Simulation run needs simulation capacity in your workspace. If none is
+available the run fails with the reason instead of hanging.
+</Note>
+
+## Robot arms follow waypoints through IK
+
+A **Move Twin** node pointed at a fixed-base arm treats each waypoint as a
+target for the arm's end effector, solving the joint angles that reach it. The
+arm's catalog entry must declare an end-effector frame; arms without one, and
+other jointed-but-anchored objects such as pan-tilt mounts, keep the base
+navigation behaviour.
+
+Waypoints may be placed in the environment or relative to the arm's own base
+link. Each waypoint's authored duration becomes the time the arm takes to move
+to it.
+
+### Take picture on arrival
+
+Works for arms as well as mobile robots. The image is attached to the run and
+exposed on the node's output as `attachment_uuid`, `file_url` and `captures`,
+ready to wire into a Call Model or Annotate node. If no camera frame is
+available the run continues and the node reports `capture_error`.
