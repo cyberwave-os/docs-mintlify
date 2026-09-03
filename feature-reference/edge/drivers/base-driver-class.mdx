@@ -256,6 +256,8 @@ def define_interface(self, iface):
 | `add_publisher` | Driver → Cyberwave (MQTT/Zenoh out) | `CallbackGroup` returning `dict` **or** empty group + tick `rate_hz` |
 | `add_publisher(..., from_ros=…)` | — | **Only on `BaseROS2Driver`** — see ROS page |
 
+`CommandArgs(name=..., continuous=..., rate_hz=...)` is what **Keyboard (Driver)** reads. Discrete commands (`continuous=False`, the default) fire once per key — use that for `capture_photo`. Continuous commands repeat while the key is held. Joint teleop is separate: held keys stream setpoints; a tap still sends one step. [Keyboard (Driver)](/feature-reference/environment-editor/teleoperation#keyboard-driver) · [from a driver YAML](/feature-reference/keyboard-controller-from-driver-yaml)
+
 <Warning>
 **`on_register_callbacks` is not for MQTT.** Registry wiring happens in `_wire_interface_from_registry()` after your hook returns. Use `on_register_callbacks` for hardware/SDK subscriptions only.
 </Warning>
