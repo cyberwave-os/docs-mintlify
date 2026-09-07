@@ -132,6 +132,21 @@ stub: Discover procedural primitive templates with `cw_search_catalog`. Results 
 stub: `cw_list_node_schemas` is an **optional** discovery aid; the Workflow Agent already knows the full node catalog. Use it to confirm exact `(node_type, node_subtype)` identifiers, then pass them to `cw_create_workflow_from_prompt` via `node_hints` to bias the composed graph. Hints support a single fork to multiple alert/notify effects; they are advisory and unresolved hints come back as `dropped_node_hints`.
 </Note>
 
+#### Workflow setup modes
+
+Workflow prompt tools accept an optional `setup_mode` when a proposed graph
+needs supporting environment configuration, such as a waypoint or compatible
+digital twin:
+
+- `explicit` is the default. The response reports the proposed setup and the
+  caller decides whether to apply it.
+- `auto` lets the backend apply its own compatible setup proposals as part of
+  the request. Use it only when the caller intentionally grants that capability.
+
+`auto` does not bypass workspace permissions or destructive-action safeguards.
+The authenticated caller must still have write access to every object the setup
+changes, and risky or destructive changes keep their normal confirmation path.
+
 ### ML Models
 
 | Tool | Description |
@@ -155,6 +170,28 @@ stub: `cw_list_node_schemas` is an **optional** discovery aid; the Workflow Agen
 ## Safety Pattern
 
 stub: Environment object mutation tools rely on the calling agent/client for confirmation policy. Use read/list tools first, ask before destructive deletes, then call the delete tool once with normal target arguments after confirmation.
+
+### Tool arguments
+
+stub: Tools reject arguments they do not declare instead of ignoring them. A misspelled or invented field returns a `VALIDATION_ERROR` naming the argument, suggesting the closest declared one, and listing what the tool accepts — so the call can be corrected in one retry rather than appearing to succeed while running on defaults.
+
+Input schemas also advertise the limits the server enforces: value ranges, list sizes, allowed enum values, and the arity of vectors such as `position` (3 numbers) and `quaternion` (4). Read them from the tool's `inputSchema` rather than discovering them by being rejected. Where a parameter accepts alternative spellings (`view: "top_down"`, `mode: "edge"`) the schema leaves it an open string rather than advertising a set it does not enforce.
+
+stub: Errors always come back in the same envelope — `status`, `request_id`, `code`, `details` — matching the `outputSchema` the tool advertises. That holds for an unknown tool name and for an unexpected server-side failure, not just for a rejected argument.
+
+### Tool annotations
+
+stub: Every tool advertises the standard MCP `readOnlyHint` and `destructiveHint` annotations, so a client can tell a read from a write without knowing Cyberwave tool names. Clients that gate on annotations will auto-approve reads and prompt on the rest.
+
+| Annotation | Meaning |
+|---|---|
+| `readOnlyHint: true` | Inspection only, nothing is changed |
+| `readOnlyHint: false`, `destructiveHint: false` | Creates or updates something |
+| `destructiveHint: true` | Deletes something — `cw_delete_environment_object`, `cw_delete_model`, `cw_delete_dataset` |
+
+Tools that default to `execute=false` (`cw_motion_pose`, `cw_navigation_goto`, `cw_navigation_stop`) are annotated as writes, because the annotation describes the tool rather than one call's arguments.
+
+`cw_render_environment_preview` is also annotated as a write: rendering saves the image to the environment. On a client that gates on annotations, expect a prompt before a preview render.
 
 **Recommended sequence for environment edits:**
 
@@ -483,11 +520,13 @@ Area images can be attached via a direct `image_url` (recommended for large imag
 
 ### Environment Preview
 
-`cw_render_environment_preview(environment_uuid?)` renders a static PNG snapshot of the environment.
+`cw_render_environment_preview(environment_uuid?, view?, focus_twin_uuid?, orbit_azimuth_deg?, orbit_elevation_deg?, distance?, zoom?, fit_padding?)` renders a static PNG snapshot of the environment. The default view is `perspective`; use `top`, `side`, `front`, `isometric`, or camera controls for additional inspection angles.
 
 - Calls the same backend endpoint as the web app: `POST /api/v1/environments/{uuid}/preview`
 - Returns attachment metadata (`type=environment_preview`) and a Base64 PNG payload that multimodal models can inspect directly
 - If `environment_uuid` is omitted and only one environment is visible, it resolves automatically
+- `focus_twin_uuid` frames one twin; orbit angles rotate around the target, while `distance`, `zoom`, and `fit_padding` control framing
+- Camera controls are optional and can be combined with `width`, `height`, and `renderer` for repeatable validation captures
 
 ---
 

@@ -181,6 +181,7 @@ If you're running the Cyberwave Edge runtime (Edge Core plus drivers) on your ow
 | MQTT (telemetry, commands, WebRTC signaling) | TCP `8883` (MQTT over TLS) | `mqtt.cyberwave.com` | Always |
 | STUN/TURN negotiation | UDP + TCP `3478` | `turn.cyberwave.com` | Streaming video |
 | TURN media relay | UDP `49152–65535` | `turn.cyberwave.com` | Streaming video, when a direct peer-to-peer path isn't possible |
+| TURN over TLS | TCP `443` | `tls.turn.cyberwave.com` | Streaming video. The relay path edge devices use, and the browser's fallback when the ports above are blocked. Note the different hostname |
 | Zenoh peer discovery | UDP multicast, local subnet only | Local network | Running more than one driver/worker process on the edge |
 | Zenoh router (multi-host) | TCP `7447` | Between edge hosts on your site | Only if drivers are split across multiple hosts on the same site |
 

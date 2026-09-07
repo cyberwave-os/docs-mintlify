@@ -1,0 +1,59 @@
+---
+title: "Running a workflow in simulation"
+description: "Set a workflow's execution target to Simulation to run it against a cloud physics simulation instead of real hardware"
+tag: "stub"
+---
+
+Every workflow has an execution target:
+
+| Target | Where twin commands go |
+| --- | --- |
+| **Live** (default) | Real hardware, through your edge drivers. |
+| **Simulation** | A cloud physics simulation of the environment. |
+
+Set it from the workflow's runtime badge in the environment's workflow list.
+
+## Simulation runs are provisioned for you
+
+Triggering a Simulation workflow starts a simulation for its environment if one
+is not already running, and waits for the physics to be ready before the first
+twin command is sent. An already-running simulation is reused rather than
+restarted, so you can watch the run live.
+
+You need write access to the environment to trigger a Simulation workflow.
+
+<Note>
+A Simulation run needs simulation capacity in your workspace. If none is
+available the run fails with the reason instead of hanging.
+</Note>
+
+## Robot arms follow waypoints through IK
+
+A **Move Twin** node pointed at a fixed-base arm treats each waypoint as a
+target for the arm's end effector, solving the joint angles that reach it. The
+arm's catalog entry must declare an end-effector frame; arms without one, and
+other jointed-but-anchored objects such as pan-tilt mounts, keep the base
+navigation behaviour.
+
+Waypoints may be placed in the environment or relative to the arm's own base
+link — those are the two frames an arm accepts, on either target. Each
+waypoint's authored duration becomes the time the arm takes to move to it.
+
+<Note>
+This solving happens in the cloud, for the simulation only. On a **Live** target
+the same node sends the waypoints to the robot and its own driver plans the
+motion — so the arm moves in a straight line and refuses a path it cannot reach
+without a collision.
+
+A Live arm therefore needs a driver that supports waypoint missions (MoveIt on
+our ROS 2 drivers). If the arm's driver does not, the run fails immediately
+saying so rather than waiting on a robot that will never move — switch the
+target to **Simulation**, or bind a driver that does.
+</Note>
+
+### Take picture on arrival
+
+Works for arms as well as mobile robots. The image is attached to the run and
+exposed on the node's output as `attachment_uuid`, `file_url` and `captures`,
+ready to wire into a Call Model or Annotate node. If no camera frame is
+available the run continues and the node reports `capture_error`.

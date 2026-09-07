@@ -170,6 +170,42 @@ curl -X PATCH "https://api.cyberwave.com/api/v1/assets/$ASSET_UUID/universal-sch
   }'
 ```
 
+### Apply many operations in one request
+
+> stub:
+> Making several edits? Send them as one batch instead of one request per
+> operation. Operations are applied in order, so a later one can build on an
+> earlier one, and the batch is much faster than the equivalent sequence of
+> single-operation calls.
+>
+> - `PATCH /api/v1/assets/{uuid}/universal-schema/batch`
+> - `PATCH /api/v1/twins/{uuid}/universal-schema/batch`
+
+```bash
+curl -X PATCH "https://api.cyberwave.com/api/v1/assets/$ASSET_UUID/universal-schema/batch" \
+  -H "Authorization: Bearer $CYBERWAVE_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "operations": [
+      { "op": "replace", "path": "/physics/gravity", "value": { "x": 0, "y": 0, "z": -3.71 } },
+      { "op": "replace", "path": "/physics/timestep", "value": 0.002 }
+    ]
+  }'
+```
+
+> stub:
+> The batch is all-or-nothing: if one operation fails, nothing is applied and the
+> `400` response tells you which one by `index`, `op` and `path`.
+>
+> A successful response looks like
+> `{"schema": {...}, "applied": 2, "changed": true}`. `changed` is `false` when
+> your operations produced the schema that was already stored — so re-sending the
+> same batch is safe and does nothing.
+>
+> The Python SDK exposes the same thing as
+> `cw.assets.patch_universal_schema_batch(asset_uuid, operations)` and
+> `cw.twins.patch_universal_schema_batch(twin_uuid, operations)`.
+
 ### Set physics via Python SDK
 
 The Python SDK provides convenience methods so you don't need to craft JSON Pointer operations manually. All setter methods use a read-modify-write pattern: omitted fields keep their current values.
@@ -302,7 +338,9 @@ cw.assets.patch_universal_schema(
 cw.assets.rebuild_universal_schema(asset_id)
 ```
 
-Re-parses the uploaded URDF/MJCF/SDF and regenerates the schema. Useful after uploading new source files or to discard manual edits.
+Re-parses the uploaded URDF/MJCF/SDF and regenerates the schema. Useful after uploading new source files.
+
+The source files cannot express every schema field, so by default anything you authored outside them is carried forward: per-joint home positions, sensors, actuators, capabilities and collision config. Pass `preserve_authored=false` to discard that and take the re-parse wholesale — the right choice when the source files themselves genuinely changed.
 
 ---
 

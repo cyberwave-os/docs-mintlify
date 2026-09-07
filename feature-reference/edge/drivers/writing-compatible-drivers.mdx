@@ -466,7 +466,7 @@ Without a declared interface catalog, the platform cannot know which MQTT topics
 
 | Consumer | What it uses from the catalog |
 | -------- | ----------------------------- |
-| **Web UI** | Dynamic control surfaces — e.g. the keyboard teleop overlay lists only `commands.supported` entries and respects `commands.specs[name].continuous` |
+| **Web UI** | Dynamic control surfaces — **Keyboard (Driver)** lists this twin's `commands.supported` entries, uses only the intersection with saved key bindings, and respects `commands.specs[name].continuous` / `rate_hz`. See [Live Teleoperation](/feature-reference/environment-editor/teleoperation#keyboard-driver). |
 | **Python SDK** | `twin.commands.get_schema()` and catalog methods such as `twin.commands.move_forward(...)` bound from `commands.supported` |
 | **Your driver** | A single source of truth for reviews, tests, and parity with production behavior |
 

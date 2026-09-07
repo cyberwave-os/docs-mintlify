@@ -123,6 +123,7 @@
               "feature-reference/create-asset",
               "feature-reference/digital-twins",
               "feature-reference/arm-commands",
+              "feature-reference/drone-commands",
               {
                 "group": "Environment Editor",
                 "icon": "pen-to-square",
@@ -130,14 +131,17 @@
                   "feature-reference/environment-editor/index",
                   "feature-reference/environment-editor/environment-templates",
                   "feature-reference/environment-editor/teleoperation",
+                  "feature-reference/environment-editor/freedrive",
                   "feature-reference/environment-editor/replay",
-                  "feature-reference/environment-editor/replay-timeline"
+                  "feature-reference/environment-editor/replay-timeline",
+                  "feature-reference/environment-editor/point-cloud-export"
                 ]
               },
               {
                 "group": "Workflows",
                 "pages": [
                   "feature-reference/workflows",
+                  "feature-reference/workflows/simulation-execution-target",
                   "feature-reference/workflows/edge-dependencies",
                   "feature-reference/workflows/audio-in-workflows",
                   "feature-reference/workflows/audio-track/overview",
@@ -194,6 +198,7 @@
               "feature-reference/rl-task-scene-sensors",
               "feature-reference/uploading-policies",
               "feature-reference/online-controllers",
+              "feature-reference/keyboard-controller-from-driver-yaml",
               "feature-reference/twin-joint-home-positions",
               "feature-reference/twin-saved-poses",
               "feature-reference/access-control",
@@ -208,6 +213,8 @@
               "feature-reference/edge/overview",
               "feature-reference/edge/raspberry-pi",
               "feature-reference/edge/jetson-orin-nano",
+              "feature-reference/edge/macos-microphone",
+              "feature-reference/edge/macos-serial",
               "feature-reference/edge/drivers/overview",
               "feature-reference/edge/drivers/writing-compatible-drivers",
               "feature-reference/edge/drivers/base-driver-class",
@@ -265,7 +272,8 @@
           {
             "group": "Overview",
             "pages": [
-              "api-reference/overview"
+              "api-reference/overview",
+              "api-reference/mobile-capture-observations"
             ]
           },
           {

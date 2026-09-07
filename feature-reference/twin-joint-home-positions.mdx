@@ -58,3 +58,37 @@ asset can carry different durable poses.
 controllable joint without an explicit runtime entry. The same fallback
 is used by `Twin._derive_joint_states()` so MJCF composition, RL task
 hints, and the manual control bar all agree on the same default pose.
+
+The response carries a `position_source` array parallel to `name`, so a
+client can tell a real reading from a fallback:
+
+| Value | Meaning |
+| ----- | ------- |
+| `state` | A recorded runtime position — the robot reported it. |
+| `home` | No runtime position; the authored `home_position`. |
+| `default` | No runtime position and no authored home; the geometric zero. |
+
+Only `state` means the robot is actually there. Treating a `home` or
+`default` row as a live reading shows a never-moved joint as a measured
+pose. `velocity` and `effort` keep ROS all-or-nothing semantics — they are
+empty unless *every* reported joint carries the value — so index them
+defensively rather than assuming they parallel `name`.
+
+## Returning to the edit/home pose
+
+The Poses panel lists the twin's authored edit/home pose (the durable
+`home_position`) as a **Home (edit pose)** item, with a **Preview** so you can
+see it before triggering. Use it to recover a robot that has ended up in a bad
+configuration.
+
+- **Edit** — **Snap** applies the home pose to the twin's joints and saves it,
+  the same as moving each joint slider back to its home value.
+- **Simulate / Playground** — **Snap** instantly teleports the simulated robot
+  to the home pose. (A running controller can override the snap; pause it
+  first.)
+- **Live** — **Drive** commands the real robot to move to the home pose
+  (rate-limited), the same way executing a saved pose drives it. Hardware is
+  never teleported.
+
+To capture a *new* target pose, use **Save Pose** (it opens the pose dialog);
+to snap/drive to any saved pose, see [Saved poses](/feature-reference/twin-saved-poses).
