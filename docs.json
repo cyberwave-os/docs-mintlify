@@ -92,7 +92,8 @@
             "group": "Built by the Community",
             "pages": [
               "tutorials/sandwich-robot-smolvla",
-              "tutorials/cloth-folding-so101"
+              "tutorials/cloth-folding-so101",
+              "tutorials/so101-zero-shot-picking-cell"
             ]
           },
           {
