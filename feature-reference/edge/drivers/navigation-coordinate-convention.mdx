@@ -1,0 +1,182 @@
+---
+title: "Navigation Coordinate Convention"
+description: "Proposed coordinate-frame extension for the shared Cyberwave navigation MQTT contract."
+---
+
+<Note>
+**stub** — This page will be curated before publishing. Content reflects the geodetic navigation contract implemented by the DJI Wayline driver.
+</Note>
+
+<Warning>
+  **Incremental convention.** Cartesian payloads remain fully compatible. The
+  geodetic form is implemented by the DJI Wayline driver; other drivers opt in
+  by declaring their navigation capabilities.
+</Warning>
+
+## Goal
+
+Cyberwave uses one navigation lifecycle for every autonomous asset:
+
+```text
+cyberwave/twin/{twin_uuid}/navigate/command
+cyberwave/twin/{twin_uuid}/navigate/status
+```
+
+The command topic, `action_id`, commands (`goto`, `path`, `stop`, `pause`, and
+`resume`), and status lifecycle are shared. What differs by asset is the
+coordinate representation:
+
+- Ground robots normally navigate in a Cartesian `map` frame, in metres.
+- GPS-native vehicles, such as a DJI aircraft executing a Wayline mission,
+  navigate using latitude, longitude, and altitude.
+
+The coordinate representation must therefore be explicit in the command
+payload. A driver must never infer it from the robot model or from the numeric
+values.
+
+## Proposed `coordinate_frame`
+
+New navigation payloads include a `coordinate_frame` object with a required
+`kind`. The coordinate values themselves do not contain unit suffixes: their
+units are declared once by the frame.
+
+| `kind` | Position field | Required frame fields | Intended assets |
+| --- | --- | --- | --- |
+| `cartesian` | `position: { x, y, z }` | `frame_id`, `linear_units: "m"` | Nav2 / ground robots |
+| `geodetic` | `geodetic_position: { latitude, longitude, altitude }` | `horizontal_units: "deg"`, `vertical_units: "m"`, `altitude_reference` | GPS mission vehicles |
+
+`coordinate_frame` is the single source of truth for units. Do not mix it with
+field names such as `latitude_deg` or `altitude_m`.
+
+### Cartesian waypoint example
+
+```json
+{
+  "command": "path",
+  "action_id": "navigation-action-uuid",
+  "coordinate_frame": {
+    "kind": "cartesian",
+    "frame_id": "map",
+    "linear_units": "m",
+    "yaw_units": "deg"
+  },
+  "waypoints": [
+    {
+      "position": { "x": 2.0, "y": 4.5, "z": 0.0 },
+      "yaw": 90.0
+    }
+  ]
+}
+```
+
+`frame_id` identifies the local coordinate frame. The existing navigation
+anchor transform applies only to this representation.
+
+### Geodetic waypoint example
+
+```json
+{
+  "command": "path",
+  "action_id": "navigation-action-uuid",
+  "coordinate_frame": {
+    "kind": "geodetic",
+    "horizontal_units": "deg",
+    "vertical_units": "m",
+    "altitude_reference": "relative_to_takeoff",
+    "yaw_units": "deg",
+    "yaw_reference": "true_north"
+  },
+  "waypoints": [
+    {
+      "geodetic_position": {
+        "latitude": 47.3769,
+        "longitude": 8.5417,
+        "altitude": 30.0
+      },
+      "orientation": { "heading": 90.0 }
+    }
+  ]
+}
+```
+
+For `geodetic`, latitude and longitude use standard GPS/WGS84 decimal degrees.
+For the first DJI implementation, altitude is measured relative to the takeoff
+point. `orientation.heading` is clockwise from true north (`0` = north,
+`90` = east). `yaw` remains accepted as a legacy input alias during migration,
+but the backend publishes the canonical `orientation` object.
+
+### Single-target `goto`
+
+`goto` always means “reach one target”. Cartesian drivers receive the target
+in `position`; geodetic drivers receive it in `geodetic_position`:
+
+```json
+{
+  "command": "goto",
+  "action_id": "navigation-action-uuid",
+  "coordinate_frame": {
+    "kind": "geodetic",
+    "horizontal_units": "deg",
+    "vertical_units": "m",
+    "altitude_reference": "relative_to_takeoff",
+    "yaw_units": "deg",
+    "yaw_reference": "true_north"
+  },
+  "geodetic_position": {
+    "latitude": 47.3769,
+    "longitude": 8.5417,
+    "altitude": 30.0
+  },
+  "orientation": { "heading": 90.0 }
+}
+```
+
+A DJI driver expands a geodetic `goto` into an internal two-point Wayline: its
+current GPS position followed by the requested target. It must reject the
+command when its current GPS position is unavailable.
+
+## Compatibility and driver behaviour
+
+Existing Cartesian clients and drivers remain compatible. During migration, a
+payload without `coordinate_frame` is treated as the legacy Cartesian
+representation and follows the existing frame-transform behaviour.
+
+Drivers declare the coordinate kinds they support. A driver must reject a
+command whose `coordinate_frame.kind` it does not support and publish a
+`failed` response on `navigate/status` using the received `action_id`.
+
+A geodetic payload must never be passed through a Cartesian navigation-anchor
+transform. Conversely, a Cartesian payload must not be treated as GPS merely
+because it targets a GPS-capable vehicle.
+
+## Orientation capabilities
+
+`capabilities.navigation.orientation` tells clients which target-orientation
+members a hardware profile can actually command, and which are owned by the
+provider. For the DJI Mini 4 Pro Wayline profile:
+
+```json
+{
+  "coordinate_frames": ["geodetic"],
+  "orientation": {
+    "commandable": ["heading"],
+    "provider_managed": ["roll", "pitch"],
+    "heading_reference": "true_north"
+  },
+  "requires_runtime_wayline_probe": true
+}
+```
+
+This is a static hardware profile, not an availability result. The separate
+Wayline probe reports whether the connected aircraft/firmware is currently
+`READY`, `NOT_SUPPORTED`, or `INCONCLUSIVE`. A UI should expose only the
+commandable fields; the driver remains the final validation boundary.
+
+## Implementation scope
+
+Implementing this convention requires coordinated changes to the backend
+navigation schema and service, driver capability metadata, and each supporting
+driver. Workflow authoring is intentionally separate: a future workflow node
+can select a coordinate representation based on the target driver's declared
+capabilities while continuing to use the same navigation topic and action
+lifecycle.
