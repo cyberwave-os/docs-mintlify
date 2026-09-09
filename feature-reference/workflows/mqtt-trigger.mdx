@@ -26,6 +26,12 @@ The Cyberwave SDK runtime owns the broker subscription via
 triggers with camera-frame and audio-track triggers because the
 emitter opts into the per-trigger function path.
 
+Each handler runs on its own thread, so a slow handler no longer holds
+up other triggers or the worker's own broker traffic. Messages for a
+single handler stay in order and are processed one at a time; if a
+handler falls far enough behind, further messages for it are dropped
+rather than queued without bound.
+
 ## Cloud execution
 
 When the workflow is **not** flagged as `run_on_edge`, dispatch is

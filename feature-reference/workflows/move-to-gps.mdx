@@ -1,0 +1,57 @@
+---
+title: "Direct GPS targets with Move Twin"
+description: "Send a GPS-capable twin to an explicit geodetic target while preserving legacy workflow compatibility."
+tag: stub
+---
+
+Use **Move Twin** and set **Purpose** to **Use GPS coordinates** to command a
+GPS-native aircraft—such as a DJI drone—to one explicit geodetic
+target. This is a direct WGS84 target, not a conversion of an environment waypoint.
+
+The older `move_to_gps` node remains executable and editable for saved workflows,
+but it is hidden from new authoring. Both forms use the same navigation contract
+in cloud and edge workflows; new integrations should target **Move Twin**.
+
+## Inputs
+
+| Field | Meaning |
+| --- | --- |
+| `latitude` | WGS84 latitude in decimal degrees, in `[-90, 90]`. |
+| `longitude` | WGS84 longitude in decimal degrees, in `[-180, 180]`. |
+| `altitude` | Metres relative to the aircraft takeoff point. |
+| `heading` | Degrees clockwise from true north, in `[0, 360)`. |
+| `take_picture_on_arrival` | Capture an image once the twin reaches the target. Off by default. |
+
+The node sends the twin to the target and waits for it to report arrival before the
+workflow continues.
+
+<Note>
+  The target twin's effective capabilities must explicitly include `geodetic` in
+  `navigation_coordinate_frames` and declare a positive `max_altitude`. Its
+  deployed instance must advertise the matching navigation command and geodetic
+  frame when the asset requires a runtime probe. Coordinates are absolute GPS
+  positions — they are not relative to your environment's origin, and altitude is
+  measured from the aircraft's takeoff point rather than from the environment floor.
+</Note>
+
+<Warning>
+  A direct GPS target never authorizes takeoff or landing. The standard policy
+  assumes the aircraft is already airborne with fresh GPS and flight-state telemetry;
+  flight-phase changes remain explicit. GPS rover support needs a distinct vertical
+  reference contract and is intentionally not inferred from this aircraft mode.
+  Direct GPS is currently live-only: simulation activation is blocked until the
+  environment geo reference can materialize geodetic targets as simulator-native
+  Cartesian positions.
+</Warning>
+
+## Outputs
+
+`action_id`, `navigation_response`, and the terminal `navigation_result`.
+
+`navigation_result` is the platform's record of the completed action: `status`
+and `message` at the top level, with progress details such as
+`reached_waypoint_count` under `metadata`.
+
+When `take_picture_on_arrival` is on, the node also outputs the captured image:
+`file_url` (and its `image_url` alias, so a downstream **Call Model** node receives
+it over a plain connection), `attachment_uuid`, `capture_count`, and `captures`.
