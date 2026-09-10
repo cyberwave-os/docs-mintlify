@@ -376,6 +376,20 @@ shoulder_pan              0.7854 rad      45.00 °
 | `joints.get_all()`                      | Get all joint states as a `dict[name, radians]`                      |
 | `joints.print_joint_states()`           | Print all joint states in a human-readable table (radians + degrees) |
 
+### Velocity- or effort-only targets
+
+For applications using `cw.mqtt.update_joints_state`, set `as_targets=True`
+to send commands. You may pass `joint_positions={}` with a non-empty
+`velocities` or `efforts` dictionary when the target robot supports that
+control mode. Do not fill position targets with zeros merely to send an effort
+command: that would also request a position change.
+
+Omitted channels are not commanded; a supplied zero is a real target.
+Measured-state updates retain their position requirement. Check the robot's
+supported control modes, units, limits and stop behavior before sending
+commands. A successfully published message does not prove that the robot
+supports or executed it.
+
 ---
 
 ## Frame Capture
@@ -532,6 +546,22 @@ Calling `start_streaming()` again while a simulation is already running is safe 
 <Warning>
 `start_streaming()` starts a simulation for the **entire environment**, not just the calling twin. All other twins in that environment that have camera sensors will also begin streaming.
 </Warning>
+
+---
+
+### Timestamped custom camera sources
+
+{/* stub — this section will be curated by a human before publishing */}
+
+For asynchronous `VirtualCameraStreamer` sources, return a cached
+`CapturedVideoFrame` from `get_frame`. It pairs RGB pixels with Unix and
+monotonic acquisition times (seconds) and an increasing acquisition ID.
+Create it once when a new source state is acquired, not on every stream tick.
+Repeated sends keep that timestamp; `None` displays a placeholder without a
+capture timestamp. Existing RGB-array callbacks remain supported.
+
+Source timestamps alone do not verify recording/Replay synchronization.
+See the [SDK example](https://github.com/cyberwave-os/cyberwave-python#timestamped-virtual-camera-sources).
 
 ---
 

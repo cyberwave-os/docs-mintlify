@@ -9,7 +9,7 @@ The **Create Attachment** node uploads a new `Attachment` onto a Twin using a UR
 ## When to use it
 
 - A workflow generates a fresh image (annotated frame, model output, screenshot) that you want to persist as a *new* capture rather than overwriting an existing one.
-- You need an attachment that is discoverable under the environment **Captures** tab — the node automatically stamps `metadata.environment_uuid`.
+- You need an attachment that is discoverable in the environment's **Executions → Gallery** view — the node automatically stamps `metadata.environment_uuid`.
 - You want the new attachment to appear in the workflow execution's captures list — `metadata.workflow_execution_uuid` is always set.
 
 ## Supported file types
@@ -46,9 +46,9 @@ Every attachment must belong to *something* so it has an ACL parent and a discov
 
 Discoverability per anchor:
 
-- `twin_uuid` → twin Captures tab + environment Captures tab (via auto-stamped `metadata.environment_uuid`) + workflow run captures.
+- `twin_uuid` → twin captures + the environment's **Executions → Gallery** view (via auto-stamped `metadata.environment_uuid`) + workflow run captures.
 - `asset_uuid` → asset attachments + workflow run captures.
-- `environment_uuid` → environment Captures tab + workflow run captures.
+- `environment_uuid` → the environment's **Executions → Gallery** view + workflow run captures.
 - workflow-only (workspace anchor via the workflow's workspace) → workflow run captures only.
 
 ## Chaining with `update_attachment`

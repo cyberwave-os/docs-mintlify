@@ -1,0 +1,32 @@
+---
+title: "Point Cloud Import"
+description: "Import LAS, LAZ, and PLY scans into the catalog or an environment."
+tag: "stub"
+---
+
+<Note>This page is a stub and has not been reviewed.</Note>
+
+Import **LAS**, **LAZ**, or point-only **PLY** scans. Cyberwave reports the point
+count, bounds, colour depth, and available CRS text, then prepares the cloud for
+the 3D viewer.
+
+## Uploading
+
+Use **Upload asset** to add a reusable catalog scan, or **Import scan or splat**
+inside an environment to place it there. Direct uploads support files up to 32 MB;
+larger files upload through the attachment flow and may continue processing in the
+background.
+
+LAS, LAZ, and PLY scans all get the same normalization and measured point radius.
+A PLY that contains Gaussian splat data is recognised and kept as a splat, so
+uploading one never flattens it.
+
+## Alignment
+
+Scans are interpreted as metres and Z-up when their metadata does not say
+otherwise. Set units or choose Y-up when needed. Large georeferenced scans are
+recentred automatically and retain their offset in the import report.
+
+An imported scan is not automatically aligned with an environment unless it came
+from a Cyberwave environment export. Use the normal scene transform controls to
+register it before using it for environment-frame work.
