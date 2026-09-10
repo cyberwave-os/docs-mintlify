@@ -1,0 +1,49 @@
+---
+title: "Fixed and Free-Floating Objects"
+description: "Decide whether a procedural object stays put or moves under physics in simulation."
+icon: "anchor"
+---
+
+<Note>This page is a stub. A human will curate and expand it before publishing.</Note>
+
+Every procedural object you place — a wall, a rack, a crate — is either **fixed
+base** (welded to the world) or **free base** (a physical body that falls under
+gravity and can be pushed).
+
+## Where to set it
+
+Select the object in the environment editor. The right-hand panel has a
+**Physics** section with a **Fixed base** switch:
+
+- **On** — the object stays exactly where you placed it, no matter what hits it.
+- **Off** — the object is simulated: it drops onto whatever is beneath it, and
+  robots or other objects can move it.
+
+**Reset** puts it back to the default for that kind of object. Fixtures (walls,
+racks, floors, tables) default to fixed; loose objects (boxes, spheres,
+cylinders, pallet stacks, carts) default to free.
+
+## What changes in simulation
+
+- A **free** object gets a free joint in MuJoCo, so it obeys gravity and
+  contacts. Its live pose is streamed back, and the 3D scene follows it.
+- A **fixed** object is welded to the world. Its pose is a constant, so nothing
+  is streamed for it.
+- The editor's own physics preview follows the same setting once you enable the
+  physics toggle in the viewport.
+
+## Things worth knowing
+
+- **A freed fixture is still heavy.** Freeing a concrete wall or a loaded pallet
+  rack is allowed, and it will topple or slide once the simulation starts.
+- **Very thin objects cannot be freed usefully.** A marker with essentially no
+  volume has no mass to simulate, so it stays welded — the editor warns you when
+  this happens.
+- **The setting sticks.** Switching an object to a different template keeps your
+  choice; use **Reset** if you want the new template's default instead.
+
+## Setting it from an agent
+
+`cw_create_procedural_primitive` takes a `fixed_base` argument, and
+`cw_edit_environment` can change it on an existing object. Leave it out to
+inherit the default for that kind of object.

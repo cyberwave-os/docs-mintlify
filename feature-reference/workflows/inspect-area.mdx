@@ -1,0 +1,105 @@
+---
+title: "Inspect areas with Move Twin"
+description: "Turn an area into a bounded reach, patrol, or sensor-aware inspection route."
+tag: stub
+---
+
+Use the existing **Move Twin** node when a robot should reach, patrol, or inspect
+an area. Cyberwave derives the waypoints for the selected purpose, so you do not
+need to create a separate area-mission node or manually draw a coverage route.
+
+The same node works with drones, quadrupeds, and wheeled robots. Its original
+**Follow waypoints** purpose remains the default for existing workflows.
+
+## Choose a purpose
+
+| Purpose | Result | Sensor required |
+| --- | --- | --- |
+| **Follow waypoints** | Follow an authored ordered route | No |
+| **Reach area** | Navigate to the area's target point | No |
+| **Patrol perimeter** | Follow the area's boundary | No |
+| **Inspect area** | Derive a bounded sensor-aware coverage route | Yes |
+
+## Start from a template
+
+From **Workflows**, create a workflow and choose a public template. The catalog
+includes waypoint, reach-area, and inspect-area examples. You can also start
+with a blank workflow and add **Move Twin** from the node library.
+
+Area templates start in **Simulation**, so moving to physical hardware remains
+an explicit decision.
+
+## Select the area and robot
+
+Choose an existing area from the environment, or connect an `area` output from
+an upstream controller or model node. A connected area is used for that run and
+does not silently create a permanent environment object.
+
+For **Reach area** and **Patrol perimeter**, select a locomotion-capable twin.
+For **Inspect area**, also choose an imaging sensor available on that twin or on
+a docked component.
+
+If the selected twin cannot perform the requested purpose, the editor explains
+which capability or calibration is missing instead of presenting the workflow
+as ready.
+
+## Mark no-go areas
+
+Areas and environment objects can carry semantic properties. Use the
+**Semantics** section in the environment inspector to mark an object as no-go or
+restricted. You can optionally scope the rule to a particular robot or asset.
+
+Structured access tags affect route planning. A free-text semantic description
+provides context to assistants, but does not weaken or replace a no-go rule.
+
+## Configure inspection coverage
+
+For **Inspect area**, select the sensor and set an inspection distance. Cyberwave
+uses the sensor's declared field of view and range to derive coverage spacing.
+The preview shows the route, inspection viewpoints, sensor field of view, and
+covered cells. You can hide sensor overlays from the environment viewer without
+changing the route.
+
+A fixed forward camera usually requires the robot to advance through a deep
+area. A downward-facing aerial camera can cover the same area from above. A
+gimballed sensor is accepted only when the deployed runtime can command it and
+confirm its measured orientation before capture.
+
+## Configure flight transitions
+
+For an aerial twin, **Flight transitions** is explicit:
+
+| Setting | Behavior |
+| --- | --- |
+| **No transition · already airborne** | Navigate without changing flight phase |
+| **Take off at start** | Add a takeoff or climb phase before the route |
+| **Land at end** | Land after the route |
+| **Take off, then land** | Apply both transitions |
+
+The default never infers takeoff or landing from altitude or inspection intent.
+Simulation also requires an explicit transition when the aircraft starts on a
+support surface. Live workflows require fresh flight-state telemetry and do not
+silently arm an aircraft.
+
+## Simulation and Live
+
+Use **Simulation** to review the generated route and visual coverage before
+commissioning. Simulation does not turn an incomplete configuration into a live
+approval.
+
+Before switching to **Live**, confirm that the selected robot advertises the
+required navigation and inspection actions, the sensor geometry is calibrated,
+and the environment contains the relevant obstacles and access rules. Dynamic
+obstacle avoidance, localization, geofencing, emergency stop, and battery limits
+remain responsibilities of the deployed runtime.
+
+Manipulator area inspection is shown as a feasibility requirement until every
+sensor pose can be checked for reachability, collision, orientation, and capture.
+Ordinary authored manipulator waypoints remain available for validated arm motion.
+
+## Outputs
+
+Move Twin reports the navigation action, selected twin and area, mission purpose,
+derived waypoint count, coverage summary, and whether per-waypoint capture was
+requested. Downstream nodes resume after navigation completes and any configured
+dwell time has elapsed.

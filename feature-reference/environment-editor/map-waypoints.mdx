@@ -1,0 +1,68 @@
+---
+title: "Waypoints on the Map"
+description: "Drop route stops onto the satellite map, including while a simulation or live session is running."
+icon: "map-pin"
+---
+
+<Note>This page is a stub. A human will curate and expand it before publishing.</Note>
+
+## What this is for
+
+A **waypoint** is a named stop on a route. A mission built with the **Move Twin**
+node walks them in order.
+
+Waypoints can be placed directly on the georeferenced satellite map, and unlike
+the rest of the scene they can be placed in **Simulate** and **Live** as well as
+**Edit**. So you can watch a run, see somewhere the robot should also visit, and
+add it without leaving the session.
+
+Placing waypoints works with or without a map. To place them *on the satellite
+map* you need a
+[geo reference](/feature-reference/environment-editor/geo-reference) and the
+basemap turned on — without a geo reference the environment has no place on
+Earth, so there is no map to show. Right-clicking the ground in the 3D scene
+works either way.
+
+## Add a waypoint
+
+1. Turn on the basemap from the header (optional — see above).
+2. Right-click the ground where you want the stop.
+3. Choose **Add waypoint**.
+
+The new waypoint opens in the right panel, where you can rename it, group it into
+a collection, and adjust its position. When the environment has a geo reference
+the panel also shows the waypoint's latitude and longitude underneath the
+position fields.
+
+Drag an existing waypoint's gizmo to move it. This works in Simulate and Live
+too.
+
+## While a mission is running
+
+**Waypoints are locked for the duration of a run.** Adding, deleting or dragging
+one is unavailable while a workflow is walking the route, and the disabled
+**Add waypoint** entry names the run that is holding it.
+
+This is deliberate. A route that changed mid-mission would send the robot
+somewhere you never approved, and the run's arrival records would refer to stops
+that no longer exist. Wait for the run to finish, or cancel it, then edit.
+
+Renaming a workflow's waypoints is not the same as changing the route — the
+mission holds waypoint identities, so a rename is safe once the run ends.
+
+## Collect data along a route
+
+On a **Move Twin** node:
+
+| Option | What you get |
+|--------|--------------|
+| Take picture on arrival | One image per waypoint, attached to the run |
+| Pause seconds | Dwell time at each stop before the workflow continues |
+| Per-waypoint duration | How long the move to each stop should take |
+
+Bracket the mission with **Recorder** nodes to capture audio or video for the
+whole run.
+
+Captures and recordings appear on the run in the workflow execution detail. Each
+waypoint the robot reaches is also logged, so you can see the route it actually
+walked in the environment's **Events** tab.

@@ -256,7 +256,7 @@ def define_interface(self, iface):
       TopicSpec(namespace="twin", leaf="command", payload_schema_ref="TwinCommandPayload"),
       CallbackGroup(callback=self._on_rotate),
       command=CommandArgs(name="rotate"),
-      protocol=ProtocolArgs(source_types=["tele", "live", "edge"]),
+      protocol=ProtocolArgs(source_types=[SOURCE_TYPE_TELE]),
   )
   iface.add_publisher(
       TopicSpec(
@@ -267,9 +267,14 @@ def define_interface(self, iface):
       ),
       CallbackGroup(callback=self._publish_imu_sample),
       publisher=PublisherArgs(rate_hz=self._imu_params.imu_rate_hz),
-      protocol=ProtocolArgs(source_types=["live"]),
+      protocol=ProtocolArgs(source_types=[SOURCE_TYPE_EDGE]),
   )
 ```
+
+A driver publishes state as `edge` and listens for commands as `tele`, so the two
+declarations never share a value. Import them from `cyberwave.constants` rather
+than spelling them inline — a string outside the enum is accepted here and
+silently coerced downstream.
 
 This single method feeds `get_manifest()` / `driver.manifest`, optional **`metadata["zenoh"]`**, and `_wire_interface_from_registry()` (MQTT subscribe/publish plus edge **DataBus** when dual specs are present). **`twin/command` stays MQTT-only** — do not set `enable_zenoh=True` on command listeners.
 
@@ -318,7 +323,7 @@ def _on_rotate(self, envelope: dict[str, Any]) -> None:
 | 2 | `twin.driver.set_schema(FakeImu6dDriver.get_manifest())` — persists `metadata["mqtt"]` / `metadata["zenoh"]` and **re-binds** `twin.commands.*` |
 | 3 | `driver.run()` or `asyncio.create_task(driver.run_async())` on the **main** thread |
 | 4 | `twin.imu.get(timeout=5)` from a consumer client while ACTIVE |
-| 5 | `twin.commands.rotate(axis="yaw", amount_deg=30, source_type="live")` |
+| 5 | `twin.commands.rotate(axis="yaw", amount_deg=30, source_type="tele")` |
 
 **Expected logs:** `inactive → active`, `IMU stream active`, then `command received, rotating sensor` on the driver logger; `imu.get()` shows higher `gyro.z` after yaw rotate (~0.52 rad/s + noise).
 
