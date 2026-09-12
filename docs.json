@@ -123,15 +123,27 @@
               "feature-reference/create-asset",
               "feature-reference/digital-twins",
               "feature-reference/arm-commands",
+              "feature-reference/drone-commands",
+              "feature-reference/twin-live-position-and-frames",
               {
                 "group": "Environment Editor",
                 "icon": "pen-to-square",
                 "pages": [
                   "feature-reference/environment-editor/index",
+                  "feature-reference/environment-editor/assistant-asset-generation",
                   "feature-reference/environment-editor/environment-templates",
+                  "feature-reference/environment-editor/fixed-base-objects",
                   "feature-reference/environment-editor/teleoperation",
+                  "feature-reference/environment-editor/simulation-view",
+                  "feature-reference/environment-editor/simulation-timing",
+                  "feature-reference/environment-editor/geo-reference",
+                  "feature-reference/environment-editor/map-waypoints",
+                  "feature-reference/environment-editor/generated-occupancy-map",
+                  "feature-reference/environment-editor/freedrive",
                   "feature-reference/environment-editor/replay",
-                  "feature-reference/environment-editor/replay-timeline"
+                  "feature-reference/environment-editor/replay-timeline",
+                  "feature-reference/environment-editor/point-cloud-import",
+                  "feature-reference/environment-editor/point-cloud-export"
                 ]
               },
               {
@@ -154,6 +166,7 @@
                   "feature-reference/workflows/anonymize-image",
                   "feature-reference/workflows/barcode-reader",
                   "feature-reference/workflows/object-pose",
+                  "feature-reference/workflows/move-to-gps",
                   "feature-reference/workflows/send-depth",
                   "feature-reference/workflows/spatial-filter",
                   "feature-reference/workflows/timed-condition",
@@ -162,6 +175,7 @@
                   "feature-reference/workflows/fuzzy-matcher",
                   "feature-reference/workflows/virtual-controller",
                   "feature-reference/workflows/send-controller-command",
+                  "feature-reference/workflows/inspect-area",
                   "feature-reference/workflows/send-pose",
                   "feature-reference/workflows/online-controller-lifecycle",
                   "feature-reference/workflows/recorder",
@@ -210,6 +224,7 @@
               "feature-reference/edge/jetson-orin-nano",
               "feature-reference/edge/drivers/overview",
               "feature-reference/edge/drivers/writing-compatible-drivers",
+              "feature-reference/edge/drivers/navigation-coordinate-convention",
               "feature-reference/edge/drivers/base-driver-class",
               "feature-reference/edge/drivers/ros2-base-driver",
               "feature-reference/edge/drivers/driver-mixins",
@@ -265,7 +280,9 @@
           {
             "group": "Overview",
             "pages": [
-              "api-reference/overview"
+              "api-reference/overview",
+              "api-reference/mobile-capture-observations",
+              "api-reference/a2a-partner-api"
             ]
           },
           {
@@ -497,7 +514,6 @@
               "api-reference/rest/TwinMetricsQuerySchema",
               "api-reference/rest/TwinMotionResponseSchema",
               "api-reference/rest/TwinNavigationCommandSchema",
-              "api-reference/rest/TwinRelationshipSchema",
               "api-reference/rest/TwinSchema",
               "api-reference/rest/TwinStateUpdateSchema",
               "api-reference/rest/TwinTelemetryMetadataSchema",

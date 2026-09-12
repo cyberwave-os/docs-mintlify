@@ -224,7 +224,6 @@ All URIs are relative to _http://localhost_
 | [**src_app_api_twins_get_twin_motions**](#src_app_api_twins_get_twin_motions)                                                             | **GET** `/api/v1/twins/{uuid}/motions`                                                | Get Twin Motions                        |
 | [**src_app_api_twins_get_twin_notebook**](#src_app_api_twins_get_twin_notebook)                                                           | **GET** `/api/v1/twins/{uuid}/notebook.ipynb`                                         | Get Twin Notebook                       |
 | [**src_app_api_twins_get_twin_recordings**](#src_app_api_twins_get_twin_recordings)                                                       | **GET** `/api/v1/twins/{uuid}/recordings`                                             | Get Twin Recordings                     |
-| [**src_app_api_twins_get_twin_relationships**](#src_app_api_twins_get_twin_relationships)                                                 | **GET** `/api/v1/twins/{uuid}/relationships`                                          | Get Twin Relationships                  |
 | [**src_app_api_twins_get_twin_universal_schema_at_path**](#src_app_api_twins_get_twin_universal_schema_at_path)                           | **GET** `/api/v1/twins/{uuid}/universal-schema/at`                                    | Get Twin Universal Schema At Path       |
 | [**src_app_api_twins_link_occupancy_map**](#src_app_api_twins_link_occupancy_map)                                                         | **POST** `/api/v1/twins/{uuid}/occupancy-map`                                         | Link Occupancy Map                      |
 | [**src_app_api_twins_list_all_twins**](#src_app_api_twins_list_all_twins)                                                                 | **GET** /api/v1/twins                                                               | List All Twins                          |
@@ -17146,82 +17145,6 @@ with cyberwave.rest.ApiClient(configuration) as api_client:
 ### Return type
 
 [**List[TwinConnectionEventSchema]**](/api-reference/rest/TwinConnectionEventSchema)
-
-### Authorization
-
-CustomTokenAuthentication
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: application/json
-
-### HTTP response details
-
-| Status code | Description | Response headers |
-| ----------- | ----------- | ---------------- |
-| **200**     | OK          | -                |
-
-
-# **src_app_api_twins_get_twin_relationships**
-
-> List[TwinRelationshipSchema] src_app_api_twins_get_twin_relationships(uuid)
-
-Get Twin Relationships
-
-MVP: Generate mock relationships based on twin names and environment
-
-### Example
-
-- Api Key Authentication (CustomTokenAuthentication):
-
-```python
-import cyberwave.rest
-from cyberwave.rest.models.twin_relationship_schema import TwinRelationshipSchema
-from cyberwave.rest.rest import ApiException
-from pprint import pprint
-
-# Defining the host is optional and defaults to http://localhost
-# See configuration.py for a list of all supported configuration parameters.
-configuration = cyberwave.rest.Configuration(
-    host = "http://localhost"
-)
-
-# The client must configure the authentication and authorization parameters
-# in accordance with the API server security policy.
-# Examples for each auth method are provided below, use the example that
-# satisfies your auth use case.
-
-# Configure API key authorization: CustomTokenAuthentication
-configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
-
-# Enter a context with an instance of the API client
-with cyberwave.rest.ApiClient(configuration) as api_client:
-    # Create an instance of the API class
-    api_instance = cyberwave.rest.DefaultApi(api_client)
-    uuid = 'uuid_example' # str |
-
-    try:
-        # Get Twin Relationships
-        api_response = api_instance.src_app_api_twins_get_twin_relationships(uuid)
-        print("The response of DefaultApi->src_app_api_twins_get_twin_relationships:\n")
-        pprint(api_response)
-    except Exception as e:
-        print("Exception when calling DefaultApi->src_app_api_twins_get_twin_relationships: %s\n" % e)
-```
-
-### Parameters
-
-| Name     | Type    | Description | Notes |
-| -------- | ------- | ----------- | ----- |
-| **uuid** | **str** |             |
-
-### Return type
-
-[**List[TwinRelationshipSchema]**](/api-reference/rest/TwinRelationshipSchema)
 
 ### Authorization
 

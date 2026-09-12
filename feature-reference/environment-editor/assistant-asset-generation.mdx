@@ -1,0 +1,33 @@
+---
+title: "Assistant asset generation"
+description: "Create and revise private URDF assets while continuing to edit an environment"
+icon: "wand-magic-sparkles"
+---
+
+The Environment Assistant can create a private URDF asset when catalog search and procedural primitives do not satisfy the request. Asset work runs asynchronously, so you can enter the editor and continue arranging the scene while the asset builds.
+
+## Create an asset
+
+Describe the environment normally. The assistant searches the catalog first, uses a procedural primitive for simple geometry, and requests generation only when a supported programmatic builder precisely represents the requested object. It does not insert a placeholder catalog twin.
+
+The sidebar and 3D scene show the asset's build state. **Stop build** cancels the run independently from **Edit while build continues**.
+
+The visible stages are **waiting**, **planning**, **building geometry**, **preparing simulation data**, **checking articulation**, and **validating**. A completed build may continue rendering its preview without blocking environment editing. A workspace accepts at most three active generation runs per user; another request remains unavailable until one finishes or is stopped.
+
+## Revise an asset
+
+Select a twin and describe the desired result, such as changing geometry, adding articulation, or adjusting animation timing. The existing asset remains unchanged while a private candidate is generated and validated. When the preview is ready, accept it to swap the selected twin to the new revision.
+
+Only the newest revision attempt is actionable. Accepting a newer candidate supersedes older failed or stale attempts.
+
+Generated assets start private and scoped to the environment that requested them. Use the existing asset visibility and sharing controls to promote a validated asset to a workspace, organization, link, or public audience; generation does not bypass those permissions.
+
+## Supported representations
+
+Catalog and generated assets are considered visually usable when they provide at least one supported 3D representation: GLB, Gaussian splat, or URDF. An asset without any supported representation appears as a simple proxy and is not treated as a suitable catalog match.
+
+## Coordinate-frame compatibility
+
+Environment poses represent the asset's semantic root frame. URDF visuals are not recentered around their visual bounds in the environment editor. This keeps grounding, docking, transforms, physics, and simulation exports aligned. Assets authored around a visual-center assumption may therefore appear shifted and should be migrated by correcting their URDF root transform or grounding metadata.
+
+The coordinate grid is depth-tested scene decoration: geometry in front of the grid occludes it, and the grid does not participate in pointer picking.
