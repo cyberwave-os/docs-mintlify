@@ -1,0 +1,56 @@
+---
+title: "Simulation View"
+description: "See MuJoCo's own render of your scene, following the camera you are already moving."
+icon: "video"
+---
+
+<Note>This page is a stub. A human will curate and expand it before publishing.</Note>
+
+Both **Simulate** and **Live** start in **Monitor**. Select **Control** explicitly
+to enable control inputs; changing modes returns to **Monitor**.
+
+## One assistant across views
+
+The Environment Assistant keeps the same conversation in Edit, Simulation and
+Live, with labels showing where each request happened. **Monitor** inspects;
+**Control** can plan robot actions or propose a new skill. **Review in
+Simulation/Live** opens the existing execution controls; a plan is not a command.
+Changing views does not stop an already-running robot or training job—use its
+explicit stop/cancel control. Scene and workflow changes belong in Edit; review
+a workflow's runtime target before running it.
+
+While a simulation is running, the right-hand panel shows a **Simulation view**
+tile alongside your robots' camera feeds. It is the simulator's own render of the
+scene — with its lighting, shadows, materials and contact geometry — rather than
+the 3D scene the browser draws.
+
+## It follows your camera
+
+Orbit, pan or zoom the 3D viewport and the simulation view follows. There is
+nothing to aim separately: the tile shows the same viewpoint, rendered by the
+physics engine.
+
+A few things worth knowing:
+
+- **It lags slightly while you move.** The video is encoded and streamed, so it
+  settles a moment after you stop moving. The 3D scene stays immediate.
+- **Everyone shares one camera.** If two people have the environment open, the
+  view follows whoever moved last.
+- **It is never recorded.** Unlike a robot's camera, this view is not saved to
+  your recordings — it exists only while someone is watching.
+
+## When it appears
+
+The tile shows up automatically in the right panel's Simulation tab once a
+simulation is running, whether or not any robot carries a camera. Its stream is
+off by default; use the header button to enable it. The tile disappears when the
+simulation stops.
+
+## Turning it off
+
+The button in the tile's header switches the view off and back on at any point
+during a run — no restart, and nothing to set up beforehand. While it is off,
+the right-hand panel is closed, or you switch to Agent, its camera updates stop
+and the simulator's viewport expires after its idle timeout. Robot-camera
+streams and an already-running simulation are independent of this preference.
+Your choice is remembered per environment.

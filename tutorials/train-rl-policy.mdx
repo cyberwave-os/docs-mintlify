@@ -238,7 +238,10 @@ Because `affect("simulation")` is active, nothing here touches physical hardware
 
 ## Step 5: Deploy to the real robot
 
-The payoff: the code that mirrored the policy into simulation is the code that drives the physical robot. Change one line.
+The SDK uses a shared command interface for simulation and hardware, but changing
+the mode is not sufficient to validate a policy for a real robot. First verify
+the observation/action contract, calibration, timing, limits and stop behavior,
+then obtain explicit approval for a bounded physical trial.
 
 ```python
 cw.affect("live")   # was: cw.affect("simulation")
@@ -252,7 +255,10 @@ Everything below it is unchanged: the same `arm.joints.set({...})` calls now flo
 
 ## Sim-to-real: closing the observation gap
 
-If your deployable policy reads the **wrist camera** (the image policy), it transfers directly. The real robot has a real camera, and you read frames back from the twin:
+If your policy reads the **wrist camera**, the real twin can supply camera frames,
+but transfer is not automatic. Validate camera calibration, image preprocessing,
+viewpoint, latency and robustness to real lighting and appearances before any
+physical trial:
 
 ```python
 frame = arm.get_frame("numpy", sensor_id="wrist_color_camera")   # real camera pixels

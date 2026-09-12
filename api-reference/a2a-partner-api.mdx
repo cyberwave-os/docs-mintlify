@@ -1,0 +1,75 @@
+---
+title: 'A2A partner task API'
+description: 'Submit a natural-language store-operations task and stream live status over the A2A protocol.'
+stub: true
+---
+
+Partners submit a task in plain text and follow it to completion over a live SSE
+stream, using the open [A2A protocol](https://a2a-protocol.org) instead of a
+one-off integration.
+
+## Discovery
+
+`GET /.well-known/agent-card.json` — public, no auth. Declares the endpoint URL
+and the bearer auth scheme a client should use.
+
+## Endpoint
+
+`POST /api/v1/a2a` — single JSON-RPC 2.0 endpoint (`{jsonrpc, id, method, params}`).
+Auth: `Authorization: Bearer <APIToken>`, a workspace-scoped partner token (not a
+user session token). `params.metadata.storeId` selects the target Environment.
+
+| Method (current) | Alias accepted | Description |
+| --- | --- | --- |
+| `SendStreamingMessage` | `message/stream` | Start a task, opens an SSE stream |
+| `SubscribeToTask` | `tasks/resubscribe` | Reattach to an in-progress task's stream |
+| `GetTask` | `tasks/get` | Poll current task state |
+| `CancelTask` | `tasks/cancel` | Cancel an in-progress task |
+
+`SendMessage` (non-streaming) and `GetExtendedAgentCard` are recognized but return
+`UnsupportedOperationError` — not implemented yet.
+
+### Example: start a task
+
+```bash
+curl -N -X POST "https://api.cyberwave.com/api/v1/a2a" \
+  -H "Authorization: Bearer $CYBERWAVE_A2A_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": "1",
+    "method": "message/stream",
+    "params": {
+      "message": { "role": "user", "messageId": "req-001", "parts": [{ "kind": "text", "text": "Check aisle 3 for missing stock, refill it, then verify" }] },
+      "metadata": { "storeId": "aisle-a3" }
+    }
+  }'
+```
+
+The first event is the `task` object (`status.state: "working"`), followed by
+`update` events as robots progress, ending in one `finished` event. The
+transport sends one further transport-level `final` event after `finished` —
+treat `finished` as the authoritative end of the task and ignore `final`.
+
+### Error codes
+
+Standard JSON-RPC (`-32700` parse error, `-32600` invalid request, `-32601`
+method not found, `-32602` invalid params, `-32603` internal error), plus
+`-32001` (task not found), `-32002` (task not cancelable), `-32004`
+(unsupported operation).
+
+### Retries and idempotency
+
+Always send a unique `message.messageId` with every `message/stream` call.
+If a request is retried with the **same** `messageId` (e.g. after a dropped
+SSE connection before a `finished` event arrived), the API returns the
+original task instead of dispatching the same robots again — safe to retry
+freely. A **different** `messageId` is always treated as a new task, even if
+the text is identical to a previous request.
+
+<Warning>
+  `messageId` is optional for backward compatibility, but a request that
+  omits it gets no idempotency protection at all: every such call starts a
+  new task and dispatches robots again, even if it is an exact retry of the
+  previous one. Partners should always set `messageId`.
+</Warning>
