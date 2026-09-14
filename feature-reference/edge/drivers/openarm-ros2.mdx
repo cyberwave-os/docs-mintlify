@@ -202,16 +202,23 @@ The OpenArm driver bridges Cyberwave [operation modes](/feature-reference/edge/d
 
 A twin with **no controller assigned streams telemetry but stays idle** — assigning a controller in Cyberwave activates the matching mode. You can also switch modes by publishing a controller-change command to the twin's command topic:
 
+<Note>
+Set `CYBERWAVE_MQTT_USER` to your Cyberwave username — the `username` field from
+`GET /api/v1/users/@me/status/`, not your email address and not a twin UUID. The
+broker re-checks authorization periodically using only the username, so a value
+that matches no account works until that re-check and then starts failing.
+</Note>
+
 ```bash
 # Switch to remote operation (cloud/teleop)
 mosquitto_pub -h mqtt.cyberwave.com -p 8883 \
-  -u mqttcyb -P "$CYBERWAVE_API_KEY" \
+  -u "$CYBERWAVE_MQTT_USER" -P "$CYBERWAVE_API_KEY" \
   -t "cyberwave/twin/$CYBERWAVE_TWIN_UUID/command" \
   -m '{"command":"controller-changed","controller":{"controller_type":"teleop"}}'
 
 # Switch to local operation (physical leader arm)
 mosquitto_pub -h mqtt.cyberwave.com -p 8883 \
-  -u mqttcyb -P "$CYBERWAVE_API_KEY" \
+  -u "$CYBERWAVE_MQTT_USER" -P "$CYBERWAVE_API_KEY" \
   -t "cyberwave/twin/$CYBERWAVE_TWIN_UUID/command" \
   -m '{"command":"controller-changed","controller":{"controller_type":"localop"}}'
 ```

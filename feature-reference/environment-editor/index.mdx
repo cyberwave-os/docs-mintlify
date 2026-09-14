@@ -57,7 +57,41 @@ The Environment Editor provides a comprehensive set of tools for creating and ma
 
 ---
 
+## Working across tabs and with teammates
+
+stub: The **Environment assistant** keeps its conversation when you switch between
+**Edit** and **Monitor** in Simulation or Live within the same page session.
+Small labels show where each request happened; replies keep their original label
+even if you switch views while waiting. Earlier messages remain visible.
+The selected right-hand tab stays open across mode switches. Select a scene
+object to inspect it, or open **Agent** to return to the conversation.
+
+stub: Returning to **Edit** restores the selected twin’s editable details without
+another click. If **Agent** is open, it stays open.
+Unsent Environment assistant drafts, tagged objects and reference images stay
+available when you visit Control and return. Restoring a draft never sends it;
+the Control planner still has a separate composer.
+Monitor keeps action cards read-only. Switching to Monitor requests a stop to
+unfinished assistant editing, but does not stop running robots or training jobs.
+Conversation history is not yet restored across page reloads or separate browser tabs.
+
+stub: The people icon beside the mode buttons shows open sessions, including your own other tabs. Hover or focus it to see who is editing, viewing, or using Simulation, Live, or Replay. Closed sessions disappear after a short timeout if they cannot disconnect cleanly.
+
+stub: Saved scene-order and group changes update other connected editors. Opening a mode does not lock the scene. If two people change the same hierarchy concurrently, the editor restores the latest saved version instead of silently overwriting someone else's work.
+
 ## Adding Primitives
+
+### Procedural walls and staircases
+
+Select a procedural object to edit its **Template** section in the right inspector. Numeric values commit when you press Enter or leave the field, so you can type a complete decimal without resizing the scene at each keystroke. **Apply a layout preset** provides starting configurations from the catalog.
+
+- **Wall Loop:** set room width/depth, wall height and thickness. Width/depth measure between wall centerlines; clear interior dimensions subtract one wall thickness. Flush corners preserve the existing outer footprint. Choose an **Open side** for a three-sided alcove, or a **Doorway side**, clear width/height and signed offset for a real opening in both rendering and physics. A doorway must fit between the corners and below the wall top, and cannot occupy the omitted side.
+- **Wall Path:** edit numbered X/Y points in meters, inspect the footprint preview, then click **Apply footprint**. Enable **Close loop** for irregular rooms, or leave it off for L/U-shaped partitions. Right-angle joints are flush; angled joints use simple overlapping boxes, not CAD miters. Paths support up to 64 points.
+- **Staircase:** choose a step count, riser height, tread depth, width and optional top landing. Examples include low training steps, indoor stairs and broad outdoor steps. Stairs ascend local +X; rotate the object to change direction. The terrain remains fixed in MuJoCo, with matching visible and collision steps.
+
+Parameter edits preserve the ground anchor. Use position/rotation to place these structures; use their parameters to change dimensions. Terrain creation alone does not train or validate a robot policy.
+
+### Catalog primitives
 
 stub: The **Add** menu (or the **+** button in the editor toolbar) includes a **Primitives** section. Primitives are curated public catalog assets with a short alias — things like cameras, lidars, and common generic objects — that you can drop into any environment in one click.
 
@@ -132,6 +166,31 @@ stub: In the environment editor transform panel, **Center** moves the selected t
 
 ---
 
+## Semantic properties and route policy
+
+Areas, procedural primitives, and twins can carry semantic properties on their
+environment instance. Editing them does not change the source catalog asset.
+
+- **Description for agents** adds bounded scene context. It helps assistants
+  understand intent but is not a deterministic safety rule.
+- **Semantic tags** add structured meaning. `access:no-go` or
+  `access:restricted` on an area or primitive makes its geometry a planning
+  obstacle.
+- Add one or more `asset:vendor/model` tags to scope that access policy to
+  matching assets. Without an `asset:*` tag, it applies to every asset.
+- Semantic tags on a twin are descriptive. Put spatial access policy on an area
+  or primitive so the planner has geometry to constrain.
+
+The editor preserves an unsaved draft if the API rejects a save and offers an
+explicit retry. The Environment Agent and MCP tools update the same
+`metadata.semantic_description` and `metadata.semantic_tags` fields with
+revision checks, so natural-language and manual edits remain consistent.
+
+See [Inspect areas with Move Twin](/feature-reference/workflows/inspect-area)
+for examples, planner behavior, sensor FOV, and runtime safety boundaries.
+
+---
+
 ## Twin override export controls
 
 stub: In the twin editor, **Twin overrides** lets you set per-twin appearance color, opacity, fixed-base behavior, and a total exported MuJoCo mass in kilograms. Cyberwave converts the total mass into proportional per-link scaling during MuJoCo export, and the editor shows an **Export warning** badge when the asset snapshot has incomplete inertial data that makes the export best-effort.
@@ -203,6 +262,8 @@ stub: In **Live** mode, depth-camera point clouds now keep the viewer's existing
 Use **File → Make a copy** to duplicate the current environment.
 
 - The copy includes the environment and all of its twins.
+- The copy is created in the same workspace and project as the original, regardless of which workspace you were last browsing.
+- If the environment was shared with you and you are not a member of its workspace, the copy is created in your own workspace instead, outside any project.
 - Historical telemetry/session data is not copied.
 - Lineage references are stored in metadata for future tracking:
   - environment settings include `cloned_from_environment_uuid`

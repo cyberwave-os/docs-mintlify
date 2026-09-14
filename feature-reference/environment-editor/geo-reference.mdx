@@ -1,0 +1,167 @@
+---
+title: "Geo Reference"
+description: "Place a real site on Earth so a robot's GPS puts it in the right spot in your scan."
+icon: "location-crosshairs"
+---
+
+<Note>This page is a stub. A human will curate and expand it before publishing.</Note>
+
+## What this is for
+
+You have a scan of a real place — a factory, a yard, a warehouse — and a machine
+moving around inside it that reports GPS. The machine knows where it is on Earth.
+Your scan does not. A **geo reference** tells the environment where on Earth its
+origin sits, which lets the two be reconciled: the robot appears in the right aisle,
+in real time, in your point cloud.
+
+**Live mode only.** GPS is not simulated. In Simulate and Edit a GPS-positioned
+twin sits at its saved position.
+
+## Set the geo reference
+
+In **Edit** mode, right panel → **Geo Reference**:
+
+| Field | What it means |
+|-------|---------------|
+| **Latitude / Longitude** | WGS-84 coordinates of the environment's origin — the point where the scene's X and Y are both zero. |
+| **Altitude** | The altitude of the environment's floor (where Z is zero). |
+| **Altitude datum** | Whether that altitude is mean sea level or ellipsoidal height. This is recorded, not converted — match whatever your receiver reports, because the two differ by tens of metres. If you do not know, pin the twin to the reference plane instead (below). |
+| **Heading** | The compass bearing, clockwise from true north, of the scene's +Y axis. `0°` means +Y points true north. If your floor plan is rotated relative to north, this is the field that fixes it. |
+
+Save, and the reference applies to every GPS-positioned twin in the environment —
+they move to the corrected coordinates straight away, without waiting for their next
+fix.
+
+<Note>
+Cloning an environment keeps the numbers but marks the reference as needing
+confirmation, so a copy of a site cannot silently claim the original's
+coordinates. Re-confirm and save before flying in the clone.
+</Note>
+
+## Show the map under your scene
+
+Once the environment has a geo reference, you can put real-world imagery on the
+ground beneath it. **View → GPS map**, or the globe button in the toolbar.
+
+The map is turned to match your **Heading**, so scene north is real north. Twins,
+waypoints and areas sit on top of it, which makes it the quickest way to confirm
+a geo reference is actually right: pick a feature you recognise — a building
+edge, a road, a fence line — and check the scene lines up with it. If the whole
+scene looks rotated against the imagery, the Heading is wrong.
+
+It opens **straight down**, as a plan view. That is the view to place and check
+points in: looking at the map from an angle puts the sides of buildings between
+you and the ground, and a point you click can land metres from where you meant.
+Pan and zoom as much as you like — the view stays flat until you ask for a
+tilted one.
+
+Available in **Edit**, **Simulate** and **Live**. Unlike GPS *positioning*, the
+map needs only the geo reference, not a live fix, so it works in all three.
+
+| Option | What it does |
+|--------|--------------|
+| **Map imagery** | Satellite, satellite with labels, road map, or terrain. |
+| **Opacity** | Fade the imagery back so scene geometry reads more clearly on top of it. |
+
+There is no size or extent to set: pan and zoom the map and it loads the ground
+you are looking at.
+
+Without a geo reference the toggle stays disabled — there is nowhere on Earth to
+put the imagery yet. Set the reference above and it becomes available. If the
+environment was cloned, confirm and re-save the reference first.
+
+### Sat, Map, 3D
+
+The switch at the top right of the viewer picks the view:
+
+| | What you get | Use it for |
+|---|---|---|
+| **Sat** | Satellite imagery, straight down | Checking your scene against what is actually on the ground. |
+| **Map** | Road map, straight down | A clean site plan — roads and names, no photographic clutter. |
+| **3D** | Road map tilted, with Google's 3D buildings | Judging height and getting a feel for the site. |
+
+The scene tilts with the map, so in 3D your twins stand up on the ground next to
+real buildings instead of reading as marks on a floor plan.
+
+**3D uses the road map, not satellite** — and switching to it changes the
+imagery for you. Buildings are geometry in Google's drawn map; satellite is
+photography, so tilting it gives you the same photo at an angle rather than a
+city you can see the height of.
+
+Both flat views are the honest ones for placing and checking a point: straight
+down, one screen pixel to one spot on the ground. Coming back to **3D** returns
+to the tilt you last had, so flattening to check something does not throw away a
+view you set up by hand. **View → Top** and **View → Isometric** move between
+flat and tilted too.
+
+The compass, rotate and pitch buttons underneath handle orientation. While the
+map is flat, dragging cannot tilt it — press **3D** or a pitch button to leave
+the plan view, so an accidental drag never quietly angles a view you are picking
+points in.
+
+How much 3D you get is Google's data, not a setting: buildings show up in
+covered areas at close zoom, and a rural site may stay flat however far you
+tilt. Google also limits the tilt as you zoom out, so zoom in before judging it.
+
+<Note>
+The map is a visual aid, not a survey. It is accurate to roughly the same degree
+as the geo reference itself, and satellite imagery of tall buildings leans a
+little even looking straight down.
+</Note>
+
+## Position a twin from GPS
+
+Select the twin, then in the twin editor turn on **Position from GPS**. It is off by
+default, and it requires two things:
+
+1. The environment has a geo reference.
+2. The twin declares a `gps` sensor — a GNSS receiver it actually has.
+
+Options:
+
+| Option | Use it when |
+|--------|-------------|
+| **Heading** | Turn the twin to the fix's compass heading, or leave heading to whatever the device reports separately. |
+| **Altitude** | Take height from GNSS (aircraft), or pin the twin to the reference plane (ground vehicles, where GNSS height is mostly noise). Pin to the plane if your device does not report altitude — fixes without one are rejected rather than treated as zero, which would put the twin underground. |
+| **Minimum fix / Max error** | Reject fixes below this quality. Devices that do not report quality or accuracy at all are accepted regardless. |
+
+Once on, the twin's own position telemetry is ignored in Live mode — GPS is the
+single source of truth for where it is. Changing the twin's options takes effect
+straight away too.
+
+Those two requirements hold for as long as GPS positioning is on, so while it is on
+you cannot swap the twin to an asset without a `gps` sensor, remove the sensor from
+its schema, or sync it with an asset that has none. Turn **Position from GPS** off
+first. The alternative would be a twin that quietly stops appearing in Live mode
+some time later, with nothing to connect it to the edit that caused it.
+
+## When the twin does not appear
+
+A GPS-positioned twin with no usable position is **hidden**, not drawn at its saved
+spot, because that spot is not georeferenced and showing it would be misleading. An
+alert card explains which case it is. Some of these degrade the twin rather than
+hiding it — the card says which:
+
+| Card | What to do |
+|------|-----------|
+| **No geo reference** | Set it in Edit mode. |
+| **Geo reference needs confirming** | The environment was cloned; re-confirm the values. |
+| **No GNSS fix** | Nothing is arriving. Check the device is online and publishing. |
+| **GNSS fix is stale** | The stream stopped. The twin freezes at its last known position and the card shows the age. |
+| **GNSS fix not usable** | Below your quality threshold, an unrecognized fix type, or no altitude while height comes from GNSS — the card names the reason. |
+| **GNSS fix carries no heading** | The device sent no compass heading. The twin is still placed correctly; only its facing comes from elsewhere. Set heading to "leave to the device" to silence this. |
+| **GNSS fix far from geo reference** | The fix is kilometres away. Either the reference or the device is wrong. |
+
+The twin editor also shows a live readout — latitude, longitude, fix type,
+satellites and the resulting scene position — which is the quickest way to tell
+whether a twin is being placed by GPS or by something else.
+
+## Accuracy
+
+Placement is as accurate as the fix. Consumer GNSS is typically 1.5–5 m; RTK is
+centimetres. The coordinate conversion itself contributes a couple of centimetres at
+a few hundred metres from the reference, so it is never the limiting factor.
+
+Heading is read as degrees from **true** north. If a device reports magnetic north
+without correcting for declination, its heading will be consistently off by the
+local declination angle.

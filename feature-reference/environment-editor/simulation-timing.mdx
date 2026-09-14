@@ -1,0 +1,65 @@
+---
+title: "Advanced Settings"
+description: "Tune how fast a simulation steps, how often it publishes, and how its range sensors behave."
+icon: "gauge"
+---
+
+<Note>This page is a stub. A human will curate and expand it before publishing.</Note>
+
+The Sim tab's **Advanced Settings** section sets how a simulation runs. Every field
+is optional — leave one empty and the server picks, using the value shown in the
+box. If your environment has an RL controller assigned, the blanks are filled
+with the values that policy was trained at.
+
+## The fields
+
+- **Physics timestep (dt)** — how far the simulator advances per step, in
+  seconds. Smaller is more accurate and proportionally more expensive. Match your
+  training dt if you care about matching a policy's behaviour.
+- **Pacing** — whether one second of simulated time takes one second of real
+  time. Leave on *Auto* unless you know you want otherwise; navigation and
+  mapping stacks plan against the clock and need real time. *Custom multiplier*
+  lets a headless run go faster than real time.
+- **Stream frequency (Hz)** — how often the simulation publishes robot state and
+  camera frames to controllers. Keep it at or above your policy's control rate.
+- **Range sensor rate (Hz)** — how often simulated LiDAR, radar and pointcloud
+  sensors scan.
+- **Range self-hit fallback** — what a beam does when the first thing it meets is
+  the robot's own body, or something closer than the sensor's minimum range.
+  **Off by default**: the beam reports no return, which is what a physical
+  scanner does when its own chassis is in the way. Turn it on and the beam
+  continues past the obstruction and reports whatever is behind it — useful if
+  you specifically want the older behaviour, but those are returns a real robot
+  never produces.
+
+## If a simulation runs slow or stutters
+
+Lower the **range sensor rate** first. Simulated range sensors are usually the
+most expensive thing in a scene: every scan traces a ray for each beam, and a
+high-resolution lidar scanning at full rate can consume most of a simulation's
+budget on its own. Dropping it to a few Hz often restores smooth motion with no
+visible change to navigation.
+
+If that isn't enough, in rough order:
+
+1. Check the **range self-hit fallback** is off. It is off by default, and on a
+   robot whose scanner can see its own legs or wheels, resolving those beams
+   costs far more than every other beam combined.
+2. Raise the **physics timestep** — this is the cheapest large gain. Watch for
+   robots jittering against the floor or sinking into it, which means you have
+   gone too far.
+3. Lower the **stream frequency**, as long as it stays at or above your
+   controller's rate.
+4. Reduce the sensor's own resolution on the asset (its points-per-second and
+   update rate), which lowers the cost of every individual scan rather than the
+   number of scans.
+
+Setting the range sensor rate to `0` removes the separate budget and scans on
+every stream pass — the older behaviour, and rarely what you want on a scene with
+a real lidar on it.
+
+## When you can change them
+
+These settings are fixed for the life of a run. Set them before pressing
+**Start**; the fields are disabled while a simulation is active. Values you type
+are kept even if you collapse the section.

@@ -1,0 +1,80 @@
+---
+title: "Generate a Map from the Scene"
+description: "Build a 2D occupancy grid from the geometry you authored, so a robot can navigate before it has ever mapped the site."
+icon: "grid-2"
+---
+
+<Note>This page is a stub. A human will curate and expand it before publishing.</Note>
+
+## What this is for
+
+Normally a map exists because a robot drove around and built one. **Generate from
+scene** goes the other way: it turns the walls, shelves and floors you placed in
+the editor into the same kind of 2D occupancy grid, without a robot and without a
+mapping run.
+
+Use it to plan routes in a site you have modelled but not yet visited, to give a
+robot something to localize against on its first run, or to compare against a
+real SLAM map of the same building.
+
+Find it under **Maps** in the right panel in **Edit**, after laying out the site.
+The **Simulation** panel focuses on simulation settings and sensor previews.
+
+## Step-over height
+
+The most important setting, and the one that makes the map robot-specific.
+
+A 6 cm cable rail across the floor is an obstacle for a wheeled AMR and a
+non-event for a quadruped that simply steps over it. So the map is not a property
+of the environment alone — it depends on which robot is driving.
+
+**Step-over height** is the clearance below which objects are left out of the
+grid. Pick a robot from the dropdown and it fills the field in: from that
+robot's own declared dimensions if it has them, otherwise from a default shared
+by every robot of that type. The field says which, so check it against the real
+machine when it is the shared default. Override it if you want. **Robot height**
+does the same at the top end, so ceilings and overhead gantries the robot passes
+under are left out too. Both fields are under **Advanced**.
+
+Because the map depends on the robot, generating for a second robot with a
+different clearance creates a **second map** rather than replacing the first.
+Regenerating for the *same* robot replaces its map in place.
+
+## Nothing is dropped silently
+
+Objects left out of the grid are still reported. After generating you get a list
+of what was stepped over and what was passed under, with heights — so a clear
+corridor on the map is always explicable.
+
+Anything else worth knowing about the result appears there too: a doorway that
+did not cut through its wall, objects that fell outside the map area, a scene
+mapped without a floor, or a map that was **not** made the environment's
+navigation reference because an existing alignment would have been overwritten.
+
+## Preview before you commit
+
+The preview updates as you change the settings and stores nothing. Lower the
+step-over height and the floor rails reappear; raise it and they vanish. Generate
+only once it looks right.
+
+## What you get
+
+An ordinary occupancy grid, marked **Generated** in the map list so it is never
+mistaken for a surveyed one. It shows in the 3D scene like any other map, and it
+becomes the environment's navigation reference so waypoints line up with it
+without any manual alignment. If you had already aligned a real SLAM map by hand,
+that alignment is left alone and you are told so.
+
+Doors and windows placed as openings are cut out of the walls they sit in, so
+routes can pass through them.
+
+## Requirements
+
+- The environment needs some geometry to rasterize. With nothing to bound a map
+  with, generation is refused.
+- A **floor** (a ground or terrain object) is recommended but not required.
+  Without one the map assumes open ground — the same floor the simulator adds —
+  and says so. That is fine in simulation and optimistic on a real site, which
+  has boundaries the model does not.
+- Aerial robots are not supported: a flat floor slice cannot describe what a
+  drone flies over or under.
