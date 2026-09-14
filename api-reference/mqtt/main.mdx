@@ -198,6 +198,12 @@ Use this when you also want to send velocities, efforts, or telemetry metadata.
 
 Sends a navigation command to the robot. Published by the backend in response to a REST API call.
 
+<Note>
+  The current payload uses Cartesian coordinates. The proposed extension for
+  supporting both Cartesian and GPS-native vehicles is documented in
+  [Navigation Coordinate Convention](/feature-reference/edge/drivers/navigation-coordinate-convention).
+</Note>
+
 ```json
 {
   "action_id": "d0b0e8a7-7d6e-4e73-bf2d-9c420ff14c75",

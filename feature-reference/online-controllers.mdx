@@ -113,6 +113,19 @@ The artifacts reach your code differently per authoring mode:
 Class mode plus named artifacts is the canonical pattern for a trained policy: load the primary checkpoint in `__init__`, then run inference each step in `__call__`.
 </Tip>
 
+## Running a skill from the Control assistant
+
+In **Simulate → Agent**, describe the skill and any run limit, then select
+**Plan**. Check the selected robot, policy and limits before executing; start
+the required simulation first. The assistant follows the controller's current
+run status, and cancelling that action stops only that run. A completed run
+does not prove task success—check its policy evidence and Replay separately.
+
+The assistant keeps a trained skill's saved settings unless it exposes a
+supported command input. Use a **policy-step limit** to bound these runs;
+a duration alone is not currently supported. A robot accepting velocity
+commands does not mean every policy on that robot accepts speed or gait overrides.
+
 ## CPU vs GPU compute
 
 Controller policies that **carry a model** — `mlmodel`/`vla`, `random`, or code-with-weights — accept an inference `device`. This choice selects where the controller host runs inference and is **independent of the simulation's physics device**.

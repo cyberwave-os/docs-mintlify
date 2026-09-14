@@ -4,11 +4,6 @@ sidebarTitle: "Jetson Orin Nano Setup"
 description: "Boot your Jetson Orin Nano from an NVMe SSD, configure headless operation, and set up network failover."
 ---
 
-<Warning>
-  **STUB DOCUMENT:** This page is intentionally minimal and will be expanded
-  with deeper technical details in a future update.
-</Warning>
-
 This guide covers installing JetPack on your Jetson Orin Nano, using an NVMe SSD for reliable storage, and configuring the Jetson for headless operation with WiFi and optional 5G modem failover.
 
 <Info>
@@ -229,10 +224,6 @@ ping 192.168.123.161
 </Note>
 
 ## Step 9: ML worker image (JetPack 7.2+)
-
-<Warning>
-  **STUB:** to be expanded and re-reviewed before publish.
-</Warning>
 
 Cyberwave ships a Jetson-native ML worker image (`cyberwaveos/edge-ml-worker:<channel>-jetson`). On any host where the Cyberwave edge stack detects Jetson hardware, it pulls the `-jetson` tag automatically — no configuration required.
 

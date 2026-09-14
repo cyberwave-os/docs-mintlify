@@ -4,6 +4,71 @@ description: "Product updates and announcements"
 rss: true
 ---
 
+<Update label="September 9, 2026">
+
+## New Features
+
+- **Autonomous robot policy training**: Introduced an end-to-end foundation for training and deploying reinforcement-learning robot policies in Cyberwave Sim — a guided skill-teaching flow, automatic evaluation replays with measured acceptance evidence, and a trained-policy deployment handoff UX. Ships with initial coverage for Kinova arm manipulation, Go2/quadruped locomotion (including stair climbing), Boston Dynamics Spot autonomous mapping and navigation, and command-level drone flight policies (#4007).
+- **Occupancy map generation from authored environments**: New API to generate an occupancy/obstacle map directly from an environment's authored geometry, with a no-store preview option, so robots can be given a navigable map before any physical mapping run (#4084).
+- **Save and replay simulation runs**: Simulation sessions can now be saved as replays with streamlined viewer controls and smooth export, so a run can be reviewed after the fact instead of only watched live (#4066).
+- **Simulation view**: A running simulation now offers a "Simulation view" that streams MuJoCo's own physics-accurate render of the scene into the environment viewer, aimed freely by the browser — useful for seeing what the physics engine actually sees, even for robots with no camera of their own (#3978).
+- **Boston Dynamics Spot in simulation**: Added simulated support for the Boston Dynamics Spot quadruped, including runtime deployment wiring and autonomous mapping/navigation in Cyberwave Sim (#3998).
+- **Cyberwave iOS app with CyberScan**: Launched a new iOS app featuring CyberScan — LiDAR point-cloud capture, LiDAR mesh (GLB) capture, guided Object Capture, spatial capture filters with provenance, and environment-matching styling (#4019).
+- **GPS-referenced camera pose streaming**: DJI drone camera/gimbal pose can now be resolved against GPS and streamed as part of a twin's telemetry, along with a new partner video connector and a twin GPS-binding panel in the editor (#3933).
+- **Scene multiselect, groups, and spatial arrangement**: The environment editor now supports selecting multiple scene objects at once, grouping them, and arranging groups spatially, with a redesigned scene objects panel (#3989).
+- **GPS map waypoint authoring**: Waypoints can now be placed directly on the GPS map overlay in both edit and live mode (#4017).
+- **Move Twin area inspection missions**: Extended the Move Twin workflow node with reusable area-inspection missions, so a single authored area can be reused across multiple mission runs (#3887).
+- **Simulated acoustic sensors**: Added routing for simulated acoustic/audio sensors in Cyberwave Sim, including persisted audio recordings from simulated runs (#3847).
+- **Partner Agent-to-Agent (A2A) task API**: Partners can now submit a natural-language task over a JSON-RPC endpoint and receive a live streaming (SSE) progress feed as Cyberwave dispatches and executes it across one or more robots (#3858).
+- **Microsoft Marketplace billing**: Completed Microsoft Marketplace SaaS purchase validation, fulfillment, and usage metering, enabling customers to purchase and be billed for Cyberwave through Azure Marketplace (#3819).
+
+## Feature Improvements
+
+### Platform
+
+- **Explicit fixed-base control for procedural primitives**: Procedural primitives (spheres, cubes, walls, etc.) now have an explicit, discoverable "fixed base" toggle instead of relying on undocumented internal parameters, matching the control twins already had (#4047).
+- **Simulation view toggle**: Added a toggle, with per-environment persistence, to show or hide the live MuJoCo render during a simulation, independent of the reconstructed 3D scene view (#4032).
+- **Configurable range-sensor self-hit handling**: Range/LiDAR-style sensors can now be configured to re-cast beams that hit the robot's own geometry, so they report what's actually behind the robot instead of a self-hit (#4039).
+- **Dynamic simulation provisioning timeout**: Simulation startup timeout now scales with scene size (twin/camera count) instead of a flat window, so larger scenes get enough time to load instead of being killed by the watchdog prematurely (#3995).
+- **Executions gallery view**: The standalone Captures tab has been folded into Executions as a "Gallery" view, so browsing captures across runs and browsing run history now live in one place (#3953).
+- **Duplicate procedural primitives**: Procedural primitives in the environment editor can now be duplicated directly (#3958).
+- **Telemetry endpoint available outside active missions**: The telemetry streaming endpoint now works even when a robot is not currently running a mission, rather than only during one (#3939).
+- **Removed a duplicate keyboard controller panel**: The environment viewer no longer draws its own floating keyboard-controller overlay on top of the one already shown in the Controllers tab.
+
+### Edge & Drivers
+
+- **Rail bogie controller**: Added a dedicated position-based controller for the rail bogie asset and tuned its control gains for the asset's real operating envelope (#3966, #3970).
+
+### SDK
+
+- **Improved agent tool response serialization**: Fixed the SDK's object-to-JSON conversion so results returned through AI-assistant/agent tool calls carry the real object data instead of silently coming back as empty dictionaries (#4042).
+
+## Bug Fixes
+
+- Restored Go2 mapping controls in Live mode after a regression, and surfaced mapping controls in Simulate mode too (#4088).
+- Fixed the DJI drone QR pairing flow and pairing dialog (#4089, #4085).
+- Fixed Move Twin workflows with "take picture on arrival" sometimes reporting failure even though the robot arrived and the photo was captured and uploaded successfully, affecting navigation-triggered captures on both edge and cloud execution (#4044, #4034, #4031, #4002).
+- Fixed workflow executions getting stuck or timing out because MQTT callback handling could block on the same thread needed to receive the very messages a workflow was waiting for (#4041, #4040).
+- Fixed stationary robotic arms crashing, or being routed to the wrong motion planner, when executing a Move Twin workflow: cloud/simulation inverse kinematics is now correctly scoped to simulation targets, and waypoints are rebased into the correct reference frame for live hardware (#3951, #3990).
+- Fixed Kinova arm waypoint navigation issues in Live mode (#4000).
+- Fixed a small jog command being rejected, and the arm not moving, when a continuous Kinova joint's commanded angle crossed the ±π wrap boundary (#3928).
+- Fixed users getting stuck indefinitely in the "try a real robot" queue in Labs when the associated edge device went offline, with no way for the queue to drain (#3981).
+- Fixed URDF/asset ZIP uploads failing when the archive contained symlinked files (#3722).
+- Raised the URDF ZIP upload size limit so large full-mesh robot assets such as the Unitree G1 are no longer rejected on import (#3721).
+- Fixed large URDF package uploads timing out during catalog sync because the signed-URL upload path allowed less processing time than the multipart path for the same server-side work (#3988).
+- Fixed multi-object OBJ mesh files only rendering their first object/group when exported into a MuJoCo simulation scene (#3977).
+- Fixed a memory leak in the environment viewer where 3D renderers and mesh geometry were not released on unmount, causing heap growth in scenes with many twins and camera views (#3945).
+- Fixed GPS telemetry incorrectly recording a "no fix" GPS reading as zero coordinates instead of null, which could look like a valid position at (0, 0) (#3930).
+- Fixed environment simulation preview thumbnails using an inconsistent zoom factor (#3959).
+- Fixed newly bootstrapped controller policies not getting a default simulation backend assigned to their linked assets, which could leave simulation policy resolution without a route (#4074).
+- Fixed the live camera-frame endpoint for MuJoCo simulations so frames are reliably available in both local and cloud scenarios (#4045).
+- Corrected the IMU driver example so it reports realistic source types instead of an invalid placeholder value (#4022).
+- Corrected the MQTT documentation, which had been recommending a placeholder broker username that could break authentication depending on deployment configuration (#3937).
+- Fixed a crash-on-exit in the Python SDK's Zenoh data bus backend when closing a connection with an in-flight publisher thread (#3984).
+- Fixed simulation recordings dropping or misaligning capture windows and sensor timestamps (#4072).
+
+</Update>
+
 <Update label="July 28, 2026">
 
 ## New Features

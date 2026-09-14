@@ -1,0 +1,40 @@
+---
+title: "Disabling Collision on a Twin"
+description: "Make a twin visible but non-solid, in the editor and in simulation."
+icon: "ghost"
+---
+
+<Note>This page is a stub. A human will curate and expand it before publishing.</Note>
+
+Some twins are there to be seen, not to be hit — a floor marking, a reference
+model, a piece of scenery a robot is meant to drive straight over. **Disable
+collision** makes a twin non-solid while keeping it fully visible.
+
+## Where to set it
+
+Select the twin in the environment editor, open the **Appearance** section, and
+turn on **Disable collision**. The summary chips above the section show
+**Collision off** while it is set.
+
+## What changes
+
+- **The visual mesh still renders.** Disabling collision never hides the twin.
+- **Other twins pass through it** in the editor's physics preview.
+- **Exported simulation scenes agree.** The twin's collision shapes are still
+  exported, but they take part in no contact, so nothing collides with it in
+  MuJoCo either.
+
+## Things worth knowing
+
+- **This is per twin, not per asset.** Two twins of the same asset can differ;
+  the catalog asset is unchanged.
+- **It is not a fix for a bad collision mesh.** If a twin blocks more space than
+  its shape suggests, the cause is usually a coarse collision shape in the
+  asset. Disabling collision hides that rather than correcting it — prefer
+  fixing the asset's collision geometry when other objects need to interact
+  with it at all.
+- **It is independent of Fixed base.** Fixed base decides whether a twin *moves*
+  under physics; disable collision decides whether anything can *touch* it.
+- **A free-base twin with collisions off falls through the floor.** Nothing can
+  stop it, including the ground. Use it on fixed-base twins, or on twins whose
+  pose is driven rather than simulated.

@@ -20,6 +20,35 @@ This matches how researchers actually iterate: the SceneCfg is a moving target, 
 
 ## Lifecycle
 
+You can also describe a robot task from the dashboard or the environment editor's
+**Agent** tab. Type `@` (or choose **Tag asset or scene object**) to select an
+existing scene object or a catalog asset by name/full slug. Tagging adds context;
+it does not create an instance or start training. The assistant can look for a
+compatible policy or prepare a training proposal when the task is supported.
+Review and confirm training separately from binding or running its result.
+The same training card appears in chat and **Policies**, showing reported
+epochs, episodes or transitions as they advance. These counts are progress,
+not a success score. **Scene built on export** means the configured scene
+entities will generate the scene when you export; you do not need to save a
+generated scene file first. **Scene source saved** identifies a saved source,
+not a compilation or evaluation result. If the editor reports **Scene setup
+needed**, add scene entities or use **Scene entities → Regenerate generated
+files**, then prepare a fresh training request when its inputs change.
+Use **Cancel training** on that card to review and cancel only its active
+attempt. Cancellation prevents a new result from registering; worker shutdown
+can still be in progress. Existing policies and recordings remain unchanged.
+After failure or cancellation, **Prepare a new attempt** opens a fresh proposal
+using the previous settings. Review and confirm it before training starts.
+If confirmation reports changed inputs, or the proposal has expired, choose
+**Prepare a fresh proposal**. Review the current task and settings again;
+the rejected or expired proposal does not start training.
+
+In **Live** and **Simulation**, open **Process** from the strip below the scene
+to follow workflow runs and their recorded named steps in the central workspace.
+The right panel stays available for the agent. Process is read-only, works in
+Monitor mode, and does not verify physical task success. It is hidden in Edit
+and Replay.
+
 <Steps>
   <Step title="Create">
     Create an RL task from `/rl-tasks`, or from **File → Export → Create RL task from this environment** in the environment editor.
@@ -55,6 +84,39 @@ The RL task editor is organized into tabs that map onto the export contract:
 | **Files** | The full source tree, including read-only Cyberwave-generated files. |
 | **Runtime** | Runtime target, accelerator, bundle version, and "Train locally" snippets. |
 | **Policies** | Upload trained checkpoints, publish controllers, and run inference. |
+
+For a task configured for **CPU**, scene export preserves authored mesh
+collisions supported by native MuJoCo. **GPU** exports still require primitive
+colliders or an appropriate simplified collision variant. Selecting CPU does
+not make arbitrary training code CPU-compatible; the task must also provide a
+compatible training implementation.
+
+### Reviewing policy evidence
+
+**Training requests** shows the current training phase and reported progress in
+both the task and assistant conversation. When a task reports curriculum stages,
+the same card shows its current stage and recent training-stage success rate.
+That rate is not the final held-out evaluation; missing results remain unreported.
+
+In **Policies**, select a checkpoint and open **Evaluation evidence** to inspect
+episode outcomes and available Replay links. **Deployment reports** separately
+show reported checks from completed simulation deployments, including failures.
+Tasks with confirmed deployment checks can report these automatically; the
+report identifies whether it came from the controller or a task writer.
+Missing recordings or checks are not a successful result.
+Check **Final task outcome maintained** as well as intermediate stages: reaching
+the goal briefly is not sustained success. **Not reported** means that outcome
+is unavailable, not that it passed.
+These reports are not held-out evaluations or hardware approval. Neither viewing
+evidence nor finishing training automatically binds or publishes a policy.
+An evaluated teaching result offers **Use on this robot** directly. It creates a
+private controller if needed and assigns it without starting motion; replacing
+an existing controller requires confirmation. **Publish to catalog** is separate
+and does not require assigning the policy to a robot first.
+Replay displays only recorded channels: object motion appears when the episode
+includes it; older joint-only recordings do not demonstrate object movement.
+Policy evidence Replay links frame the recorded robot on entry. You can still
+orbit, zoom, play and scrub the timeline; this does not start a controller.
 
 ## Author from Python (SDK)
 
@@ -140,6 +202,40 @@ rl.regenerate_scene_cfg(task_uuid)
 For the complete version — scaffolding the workspace, environment, and twins, wiring a wrist depth camera and contact sensors, training, and deploying the policy — follow the [RL task walkthrough](/feature-reference/rl-task-walkthrough).
 
 ## Actions
+
+### Task input is not robot output
+
+A goal or requested walking speed is an **input to a policy**. The policy's
+actions are its **output to the robot or another controller**. These are
+separate contracts: a walking policy can accept speed and produce joint targets;
+a navigation policy can produce body velocities for an onboard controller whose
+actuators are not accessible.
+
+Match both contracts to the selected runtime. Simulation actuators in a robot
+model do not prove that its physical driver exposes them. Cyberwave's shared
+adapter has a simulation-only body-velocity output port. For an explicitly
+authored aerial policy, controller startup checks its frozen interface against
+the lower controller observed in the running simulator. Unsupported or mismatched
+interfaces are rejected. Do not treat an evaluated checkpoint or a URDF as
+hardware readiness.
+
+The **Velocity** preset below means joint velocity, not base/drone velocity.
+Keep incompatible outputs explicit instead of converting them silently.
+
+Authored command-level flight tasks reuse custom action/observation terms and
+the existing asynchronous training adapter. Their lower controller, output
+units, frame, limits and cadence must match the training version. Changing that
+controller requires a fresh task version and evaluation. This adapter support
+does not yet establish a verified end-to-end drone deployment in the dashboard;
+inspect actual deployment acceptance and Replay separately from training results.
+
+Flight checks use measured robot pose and velocity, without requiring a fake
+joint-state stream. They require the goal to remain achieved, not merely be
+crossed once. A missing root feed, a different flight controller or unexplained
+applied forces makes the result fail. These checks are implementation support;
+end-to-end drone dashboard verification is still pending.
+
+### Joint action presets
 
 Action terms are authored from five control-mode presets:
 

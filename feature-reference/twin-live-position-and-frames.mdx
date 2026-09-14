@@ -1,0 +1,88 @@
+---
+title: "Live Position & Camera Frames"
+description: "Read where a GPS-positioned robot is right now, and pull its latest camera frame on demand."
+icon: "satellite-dish"
+---
+
+<Note>This page is a stub. A human will curate and expand it before publishing.</Note>
+
+Two endpoints for reading a robot's current state over plain HTTPS, without
+subscribing to MQTT or opening a video stream. Both are polling endpoints: you ask,
+you get the latest value.
+
+## Where is it now?
+
+```
+GET /api/v1/twins/{twin_uuid}/live-position
+```
+
+Returns the robot's current GNSS position, in both WGS-84 and your environment's
+local frame:
+
+```json
+{
+  "twin_uuid": "…",
+  "source": "gps",
+  "latitude": 48.1490,
+  "longitude": 17.1080,
+  "altitudeM": 164.4,
+  "altitudeReference": "fix",
+  "position": { "x": 3.0, "y": 4.0, "z": 12.0 },
+  "yawDeg": 90.0,
+  "takeoffAltitudeOffsetM": 10.75,
+  "ageSeconds": 0.4,
+  "state": "flying",
+  "fix": { "fix_type": "3d", "satellite_count": 14 },
+  "battery": { "percent": 78.0 }
+}
+```
+
+Requires the twin to be [GPS-positioned](/feature-reference/environment-editor/geo-reference).
+A GNSS fix typically arrives at 1–2 Hz, so polling faster returns the same fix with
+a larger `ageSeconds`.
+
+**A `404` means the position is genuinely unknown** — no recent fix has arrived. It
+deliberately does *not* fall back to the position the twin was placed at in the
+editor: that placement is not georeferenced, so returning it would be a confident
+wrong answer about where a real robot is.
+
+`takeoffAltitudeOffsetM` is the height above the point the aircraft took off from,
+present only once a take-off has been observed. `battery` and `state` are omitted
+when the robot has not reported them, rather than being reported as zero.
+
+<Note>
+`GET /api/v1/twins/{uuid}/telemetry` is a different thing: it queries *historical*
+recorded telemetry and requires a time range. Use `live-position` for the current
+value.
+</Note>
+
+## Give me a picture, now
+
+```
+GET /api/v1/twins/{twin_uuid}/latest-frame?pull=true
+```
+
+Returns `image/jpeg`. Without `pull`, this endpoint serves whatever frame is already
+cached and `404`s if there is none. With `pull=true`, it asks the robot to take a
+photo and waits briefly for the answer, so you get a frame even when nothing is
+streaming.
+
+| Query param | Meaning |
+| --- | --- |
+| `pull=true` | Ask the device for a fresh photo if nothing recent is cached. |
+| `sensor_id` | Which camera, on a robot with more than one. |
+| `mock=true` | Return a fixed test image — handy for wiring up a client. |
+
+The `X-Frame-Pulled` response header tells you whether the frame was freshly
+captured (`true`) or served from cache (`false`).
+
+**Frame rate is set by how often you ask**, capped at roughly 5 frames per second —
+a faster poll returns the cached frame rather than putting another capture request
+on the robot. Requires a driver that supports on-demand photo capture; a `504` means
+no frame could be produced — the robot was asked and did not answer, its driver does
+not support on-demand capture, or it has no camera.
+
+When you pass `sensor_id`, you only ever get a frame from that camera. If a photo
+arrives from a different one — possible on a multi-camera robot when two requests
+overlap — it is cached under its own camera and this request answers `504` rather
+than handing you the wrong picture.

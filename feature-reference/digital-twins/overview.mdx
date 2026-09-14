@@ -106,6 +106,8 @@ Each sensor entry can include:
 |---|---|---|
 | `id` | string | Stable sensor identifier (for example `wrist_camera`). |
 | `type` | enum | Sensor type (`rgb`, `depth`, `lidar`, `lidar_2d`, `lidar_3d`, `lidar_4d`, `radar`, `map`, `audio`, `audio_mono`, `audio_stereo`, `gps`, `compass`, `imu`, `flashlight`). |
+
+Declaring a `gps` sensor is what makes a twin eligible to be positioned from its GNSS fixes in Live mode — see [Geo reference](/feature-reference/environment-editor/geo-reference).
 | `model` | string | Optional hardware/model label. |
 | `offset.position` | object | Position offset from twin origin (`x`, `y`, `z`). |
 | `offset.rotation` | object | Rotation offset quaternion (`x`, `y`, `z`, `w`). |

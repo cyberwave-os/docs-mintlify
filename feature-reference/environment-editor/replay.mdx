@@ -1,9 +1,8 @@
 ---
-title: Recording replay (signed URLs)
-description: stub — How environment recording playback uses signed URLs and client-side media loads.
+title: Replay recordings
+description: Save simulation runs and replay motion, sensor media, and execution evidence.
+status: stub
 ---
-
-{/* stub: curated later */}
 
 Recording playback loads **signed URLs** from the API instead of inlined samples:
 
@@ -13,3 +12,62 @@ Recording playback loads **signed URLs** from the API instead of inlined samples
 - **Point clouds**: FlatBuffer chunk URLs plus coarse timestamp indexes from metadata.
 
 The `GET /api/v1/environments/{uuid}/recordings/{recording_uuid}/data` endpoint returns compact **source descriptors** (URLs + bounds + column hints), not dense per-frame JSON.
+
+
+## Save a simulation run
+
+Start a backend simulation, then select **Record** in the top-right of the 3D view.
+**Stop & save** adds the run to **Replay** and provides a **View recording** link.
+The run groups recorded motion, available sensor media, linked workflow executions,
+and their evidence. Missing or unfinished streams are identified in the run details.
+Sound-emission indicators replay at their recorded timestamps.
+
+Scene labels are off by default. Hover an object or its scene-tree row to reveal
+its name, or enable labels from **View** or the labels toolbar button. Agent overview
+previews include labels by default. Sensor imagery excludes editor labels.
+
+In **Replay**, the left sidebar lists recent saved runs with a compact **Play** icon to open a run
+and a **⋯** menu for **Execution & evidence**. Use the Replays and Scene items icons to switch
+lists; select the active icon again to collapse the sidebar. Long names stay compact
+and reveal their full text on hover. **Advanced: choose streams** opens the date
+and stream picker for manual combinations.
+
+Use **Play / Pause** beside the speed controls. The chevron at the right of the
+timeline minimizes its rows while keeping playback controls available. Select it
+again to expand. Fullscreen hides the workbench bar.
+
+For a local environment without robot driver images, select **Physics only** under
+Simulation → Advanced settings → Robot runtime, and enable assigned controllers
+when needed. The default Auto runtime continues to use the robot's drivers.
+
+## Open a saved run
+
+Select a run's name to load it without playing. Its **Play** icon starts playback.
+**Preparing Replay** stays visible with a spinner while the run is saving and its
+motion and sensor streams are loading.
+A saved-run URL includes `?mode=replay&run=<run-uuid>` and reopens that run for
+users who have access to the environment.
+
+## Playback timing
+
+New simulation recordings retain both acquisition timestamps and simulation time.
+**Smooth simulation** is the default when that clock is available: robot motion,
+camera media, audio, and events follow the same simulation timeline. Slow physics
+or acquisition pauses therefore do not stretch the mission's playback duration.
+Choose **Original recording timing** in timeline settings to inspect acquisition
+pauses. Older recordings without a simulation clock use their original timing.
+Playback can briefly wait for required media to load.
+
+## Export an MP4
+
+In **Replay**, select **Export MP4** in the playback toolbar beneath the 3D view.
+Choose the start and end time, then select **Download MP4**. The export uses the
+current camera angle and playback timing, rendering the 3D scene at a fixed
+**1280 × 720, 30 fps**. Rendering may take longer than the resulting video;
+rendering delays are not included in the file. Progress and cancellation are
+available in the dialog.
+
+Use Chrome or Edge with video encoding support. Each export can contain up to
+two minutes. The MP4 contains the 3D scene without audio; camera videos, microphone
+recordings, and execution evidence remain accessible in Replay. The file metadata
+includes a link back to the run, subject to the environment's normal access rules.
