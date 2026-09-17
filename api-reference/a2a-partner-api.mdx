@@ -1,7 +1,6 @@
 ---
 title: 'A2A partner task API'
 description: 'Submit a natural-language store-operations task and stream live status over the A2A protocol.'
-stub: true
 ---
 
 Partners submit a task in plain text and follow it to completion over a live SSE
@@ -13,11 +12,26 @@ one-off integration.
 `GET /.well-known/agent-card.json` — public, no auth. Declares the endpoint URL
 and the bearer auth scheme a client should use.
 
+## Authentication
+
+Authenticate using a [Cyberwave API Token](/api-reference/overview#authentication)
+from your [profile page](https://cyberwave.com/profile). The token must belong to
+the target workspace and include the `a2a` scope key. Send it on every request:
+
+```http
+Authorization: Bearer <APIToken>
+```
+
+Use a workspace-scoped API token for the full task lifecycle. User session
+tokens are not supported for starting tasks.
+
 ## Endpoint
 
 `POST /api/v1/a2a` — single JSON-RPC 2.0 endpoint (`{jsonrpc, id, method, params}`).
 Auth: `Authorization: Bearer <APIToken>`, a workspace-scoped partner token (not a
-user session token). `params.metadata.storeId` selects the target Environment.
+user session token). `params.metadata.storeId` selects the target Environment
+by the last segment of its slug: for `acme/envs/aisle-a3`, send `aisle-a3`.
+The Environment must belong to the token's workspace.
 
 | Method (current) | Alias accepted | Description |
 | --- | --- | --- |
@@ -29,12 +43,13 @@ user session token). `params.metadata.storeId` selects the target Environment.
 `SendMessage` (non-streaming) and `GetExtendedAgentCard` are recognized but return
 `UnsupportedOperationError` — not implemented yet.
 
-### Example: start a task
+## Start a task and receive updates
 
 ```bash
 curl -N -X POST "https://api.cyberwave.com/api/v1/a2a" \
-  -H "Authorization: Bearer $CYBERWAVE_A2A_TOKEN" \
+  -H "Authorization: Bearer $CYBERWAVE_API_TOKEN" \
   -H "Content-Type: application/json" \
+  -H "Accept: text/event-stream" \
   -d '{
     "jsonrpc": "2.0",
     "id": "1",
@@ -46,26 +61,226 @@ curl -N -X POST "https://api.cyberwave.com/api/v1/a2a" \
   }'
 ```
 
-The first event is the `task` object (`status.state: "working"`), followed by
-`update` events as robots progress, ending in one `finished` event. The
-transport sends one further transport-level `final` event after `finished` —
-treat `finished` as the authoritative end of the task and ignore `final`.
+The response to this POST **is the update stream**; there is no separate GET
+stream URL to open. `curl -N` disables output buffering so events appear as they
+arrive. Keep the connection open until you receive `finished`.
 
-### Error codes
+A successful streaming response has `Content-Type: text/event-stream`. Planning
+and initial dispatch happen before streaming begins, so the first event may take
+time to arrive. Check both the HTTP status and response content type: a rejected
+request can return JSON instead of SSE, including a JSON-RPC `error` with HTTP 200.
+
+### Event format
+
+Each SSE frame contains an `event:` name and a `data:` line containing JSON,
+followed by a blank line. The JSON has its own `type` field; task payloads are
+nested inside `data`.
+
+<Note>
+  These are Cyberwave's current event envelopes. Streaming frames do not wrap
+  their payload in a JSON-RPC `result` object. Parse the shapes below when
+  integrating a client, even if your A2A library expects standard status or
+  artifact update envelopes.
+</Note>
+
+| Event | Payload | Client action |
+| --- | --- | --- |
+| `task` | `data.id`, `data.status`, `data.metadata` | Save the task ID for polling, cancellation, and reconnects. |
+| `update` | `data.taskId`, `data.state`, `data.reasoning` | Replace the displayed progress with this full snapshot. |
+| `finished` | `data.taskId`, `data.state`, `data.summary`, `data.videos` | Record the terminal outcome and stop consuming. |
+| `final` | `payload.partner_task_uuid`, `payload.final_state` | Ignore this transport completion event after `finished`. |
+| `error` | Top-level `message` and error details such as `status` | Handle a streaming error and check the task using `GetTask`. |
+
+For example, a successful task could emit the following frames. The identifiers,
+robot name, and summary are illustrative:
+
+```text
+event: task
+data: {"type":"task","data":{"id":"task_12345678123456789abc123456789abc","status":{"state":"TASK_STATE_WORKING"},"metadata":{"name":"Check aisle 3","robots":[{"robotId":"87654321-4321-6789-abcd-123456789abc","name":"Aisle robot"}]}}}
+
+event: update
+data: {"type":"update","data":{"kind":"update","taskId":"task_12345678123456789abc123456789abc","state":"TASK_STATE_WORKING","reasoning":{"central":[],"robots":[{"robotId":"87654321-4321-6789-abcd-123456789abc","name":"Aisle robot","role":"navigating","status":"running","steps":[]}]}}}
+
+event: finished
+data: {"type":"finished","data":{"kind":"finished","taskId":"task_12345678123456789abc123456789abc","state":"TASK_STATE_COMPLETED","summary":"Aisle check completed.","videos":[]}}
+
+event: final
+data: {"type":"final","payload":{"partner_task_uuid":"12345678-1234-5678-9abc-123456789abc","final_state":"completed"}}
+
+```
+
+The first `task` event contains the current state, which may already be terminal
+for a fast task or a retried request. Do not require an `update` before accepting
+`finished`. Treat `finished` as the authoritative end of the task; `final` is only
+transport bookkeeping and uses the internal lowercase state spelling.
+
+### Progress fields and task states
+
+An `update` is a full current snapshot, not a text delta or a token stream:
+
+- `reasoning.central` contains task-level progress entries.
+- `reasoning.robots` lists robot assignments with `robotId`, `name`, `role`,
+  `status`, and `steps`.
+- Robot `status` values are lowercase: `queued`, `running`, `completed`, `failed`,
+  `cancelled`, or `blocked`. These differ from the task-level state values below.
+
+The current implementation leaves `central` and `steps` empty; clients should
+show task and robot status even when there is no explanatory text. `videos` is
+also currently an empty list; video results are not populated by this API.
+
+| Task state | Meaning |
+| --- | --- |
+| `TASK_STATE_SUBMITTED` | Task accepted. |
+| `TASK_STATE_WORKING` | Task is in progress. |
+| `TASK_STATE_COMPLETED` | Task completed successfully; terminal. |
+| `TASK_STATE_FAILED` | Task failed; terminal. |
+| `TASK_STATE_CANCELED` | Task canceled; terminal. |
+| `TASK_STATE_REJECTED` | Task rejected; terminal. |
+| `TASK_STATE_INPUT_REQUIRED` | Reserved for additional input; not currently produced. |
+| `TASK_STATE_AUTH_REQUIRED` | Reserved for additional authorization; not currently produced. |
+
+A `finished` event can report any terminal outcome, so check `data.state` before
+marking a task successful.
+
+### Stream lifetime and client handling
+
+Progress is checked approximately once a second, and updates are emitted only
+when task state, robot status, or progress-entry counts change. This is a status
+stream, not a continuous telemetry feed. Ignore SSE comment lines such as
+`: keep-alive`; they are not task events.
+
+The current stream loop has a 30-minute limit. If the task is still nonterminal
+at that limit, it is marked failed, in-flight assignments are canceled, and
+`finished` reports `TASK_STATE_FAILED` with a timeout summary.
+
+Use an HTTP client that supports a streaming POST with an Authorization header.
+The browser's native `EventSource` interface does not support this request shape.
+When implementing a reader:
+
+1. Buffer incoming bytes until complete SSE frames are available; network chunks
+   do not necessarily align with frames.
+2. Parse the JSON from each frame's `data:` field and dispatch on `type`.
+3. Save `data.id` from `task` and update progress from subsequent `update` events.
+4. On `finished`, store the state and summary and close the reader.
+5. If the stream errors or closes before `finished`, check the task and reconnect
+   as described below. A disconnected stream does not mean the task completed
+   or was canceled.
+
+## Reconnect to an existing task
+
+Once you have a task ID, POST `SubscribeToTask` (or `tasks/resubscribe`) to the
+same endpoint with `params.id`. Use an API token from the same workspace:
+
+```bash
+curl -N -X POST "https://api.cyberwave.com/api/v1/a2a" \
+  -H "Authorization: Bearer $CYBERWAVE_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "Accept: text/event-stream" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": "2",
+    "method": "tasks/resubscribe",
+    "params": { "id": "task_12345678123456789abc123456789abc" }
+  }'
+```
+
+Replace the example ID with the `data.id` from your initial `task` event. The
+top-level JSON-RPC `id` identifies this request; `params.id` identifies the task.
+
+The reattached stream starts immediately with an `update` containing the current
+snapshot, **not** another `task` event. It then emits changed snapshots and a
+terminal `finished` event using the same shapes as the original stream.
+
+Resubscription does not replay missed events. There are no SSE event IDs or
+`Last-Event-ID` replay support. If the task is already terminal,
+`SubscribeToTask` returns `-32004` (`UnsupportedOperationError`) as JSON; use
+`GetTask` to read its state. A task can finish between polling and reconnecting,
+so handle this error even after a nonterminal poll result.
+
+If the original connection closed before you received a task ID, retry
+`message/stream` with the original `message.messageId` and request payload to
+recover the existing task without dispatching it again.
+
+## Poll or cancel a task
+
+`GetTask` (`tasks/get`) returns a normal JSON response rather than a stream:
+
+```bash
+curl -X POST "https://api.cyberwave.com/api/v1/a2a" \
+  -H "Authorization: Bearer $CYBERWAVE_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": "3",
+    "method": "tasks/get",
+    "params": { "id": "task_12345678123456789abc123456789abc" }
+  }'
+```
+
+Its `result` has the same task envelope as the initial stream event:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "3",
+  "result": {
+    "id": "task_12345678123456789abc123456789abc",
+    "status": { "state": "TASK_STATE_COMPLETED" },
+    "metadata": {
+      "name": "Check aisle 3",
+      "robots": [
+        { "robotId": "87654321-4321-6789-abcd-123456789abc", "name": "Aisle robot" }
+      ]
+    }
+  }
+}
+```
+
+`GetTask` returns task state and robot identities; it does not return the
+`update` reasoning snapshot or the `finished` summary and videos. Persist the
+`finished` payload if your integration needs those results later.
+
+To cancel, send the same request with `method: "tasks/cancel"` (alias
+`CancelTask`). It returns a task envelope with `TASK_STATE_CANCELED`; an attached
+stream reports the terminal outcome through `finished`. Canceling an already
+terminal task returns `-32002` (`TaskNotCancelableError`). Closing your client
+connection is not a cancellation request.
+
+## Error handling
 
 Standard JSON-RPC (`-32700` parse error, `-32600` invalid request, `-32601`
 method not found, `-32602` invalid params, `-32603` internal error), plus
 `-32001` (task not found), `-32002` (task not cancelable), `-32004`
 (unsupported operation).
 
-### Retries and idempotency
+JSON-RPC errors normally return HTTP 200 with an `error` object instead of a
+stream. For example, reconnecting after completion returns:
 
-Always send a unique `message.messageId` with every `message/stream` call.
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "2",
+  "error": {
+    "code": -32004,
+    "message": "UnsupportedOperationError: task already in a terminal state"
+  }
+}
+```
+
+Missing or invalid authentication returns HTTP 401. A token without the `a2a`
+scope returns HTTP 403. Check these HTTP failures as well as JSON-RPC errors.
+An `error` event after the SSE response has started is a transport error, not a
+`finished` task outcome; poll the task to determine its state.
+
+## Retries and idempotency
+
+Always send `message.messageId`, using a unique value for each new logical task.
 If a request is retried with the **same** `messageId` (e.g. after a dropped
 SSE connection before a `finished` event arrived), the API returns the
-original task instead of dispatching the same robots again — safe to retry
-freely. A **different** `messageId` is always treated as a new task, even if
-the text is identical to a previous request.
+original task instead of dispatching the same robots again. Deduplication is
+scoped to the workspace, so keep the same ID for retries of one logical request
+and use a new ID for each new task. A **different** `messageId` is always treated
+as a new task, even if the text is identical to a previous request.
 
 <Warning>
   `messageId` is optional for backward compatibility, but a request that
