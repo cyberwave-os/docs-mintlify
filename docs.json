@@ -182,6 +182,7 @@
                   "feature-reference/workflows/online-controller-lifecycle",
                   "feature-reference/workflows/recorder",
                   "feature-reference/workflows/timer",
+                  "feature-reference/workflows/loop",
                   "feature-reference/workflows/reusing-chains",
                   {
                     "group": "Workers",
