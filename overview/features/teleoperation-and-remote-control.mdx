@@ -6,17 +6,10 @@ icon: "gamepad"
 
 Cyberwave is built for both research projects **and** the moment those projects ship to a real customer. Once a robot is doing real work in a real place, **human override is a requirement, not a feature**, and Cyberwave gives you that override out of the box for every twin in the [catalog](https://cyberwave.com/catalog), with no extra plumbing.
 
-```python
-from cyberwave import Cyberwave
-
-cw = Cyberwave()
-cw.affect("live")
-
-robot = cw.twin("acme/twins/arm-station-1")
-robot.use_controller("keyboard")          # human takes the wheel
-```
-
-The robot was being driven by a model a second ago; now it's being driven by you. Same twin, same environment, same code path.
+To drive a connected robot with your keyboard, open its environment in the
+dashboard, switch to **Live**, click **Assign Controller** on the twin, and select
+**Keyboard**. Use the controller panel's key bindings to move the robot. To try
+this in simulation first, follow [Hello Robot](/overview/hello-robot).
 
 ---
 
@@ -51,16 +44,21 @@ Every twin always has exactly one **controller** driving it. Swapping controller
     motion 1:1 onto the live robot.
   </Card>
   <Card title="Python SDK" icon="python">
-    Script overrides from your own code with
+    Send commands supported by your twin from your own code with
     [`cw.affect("live")`](/tools/python-sdk#affect-simulation-vs-live-environment)
-    and `robot.use_controller(...)`.
+    and the [Python SDK](/tools/python-sdk).
   </Card>
 </CardGroup>
 
-```python
-robot.use_controller("keyboard")          # human override
-robot.use_controller("my-vla-policy")     # hand it back to the AI
-```
+Use **Assign Controller** in the dashboard to choose a controller for the twin.
+For an arm running a trained VLA, follow the
+[SO-101 deployment walkthrough](/tutorials/so101-voice-pick-and-place) to deploy
+and attach its controller policy.
+
+For mobile twins, `robot.navigation.use_controller(policy_uuid)` sets the default
+navigation controller policy UUID for future plans. It does not switch to keyboard
+control or immediately start a policy. This API is only available on twins with
+navigation support; see the [navigation example](/overview/index#controllers).
 
 Telemetry, recording, and the [environment replay](/feature-reference/environment-editor/replay) timeline keep running across the handoff: a single session can start with an AI policy, hand off to a human, and end with a code controller, all on the same twin.
 

@@ -97,13 +97,25 @@ A controller is whatever is driving your twin right now. You can swap them in an
 
 🎮 **AI controllers**: hand the wheel to a trained model (yours or one from the catalog), running on the edge or in the cloud.
 
-Switch from the twin page in the dashboard, or from code:
+For keyboard control, open the environment in the dashboard, select **Simulate**
+or **Live**, then click **Assign Controller** on the twin and select **Keyboard**.
+See [Hello Robot](/overview/hello-robot) for the simulation walkthrough and
+[Live Teleoperation](/feature-reference/environment-editor/teleoperation) for
+connected hardware.
+
+For a mobile twin that supports navigation, the Python SDK can set a default
+controller policy for future navigation plans:
 
 ```python
 robot = cw.twins("unitree/go2")
-robot.use_controller("keyboard")          # hand it back to a human at the dashboard
-robot.use_controller("my-vla-policy")     # let an AI model take over
+policy_uuid = "<navigation-controller-policy-uuid>"  # replace with your policy UUID
+robot.navigation.use_controller(policy_uuid)
 ```
+
+This takes a navigation controller policy UUID, not a keyboard controller name or
+model slug. It configures future plans; it does not start motion or perform a live
+takeover. Arm-only twins do not expose navigation. To deploy an arm policy, follow
+the [SO-101 controller setup](/tutorials/so101-voice-pick-and-place#train-and-deploy-the-vla).
 
 Telemetry and recording keep running across switches, so a session can start with a human, hand off to a model, and end with a code controller, all on the same twin.
 
