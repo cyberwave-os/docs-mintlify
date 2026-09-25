@@ -6,15 +6,17 @@ icon: "brain"
 
 AI models are how your [twins](/overview/features/digital-twin) stop being puppets and start being autonomous. Cyberwave is the substrate that gets them there: a growing [catalog of models](https://cyberwave.com/models), the infrastructure to run them on cloud or edge, and the [datasets](https://cyberwave.com/datasets) you need to train your own.
 
-```python
-from cyberwave import Cyberwave
+To use a trained VLA on an arm, deploy it as a **controller policy**, then attach
+that policy to the arm twin from its settings in the dashboard. Deployment and
+attachment are setup steps; follow the
+[SO-101 voice pick-and-place walkthrough](/tutorials/so101-voice-pick-and-place)
+for training, deployment, and sending an instruction to execute the policy.
 
-cw = Cyberwave()
-arm = cw.twin("acme/twins/arm-station-1")
-arm.use_controller("acme/models/my-pick-and-place-vla")
-```
-
-That's it: the model is now driving the robot. Same call works in [simulation](/overview/features/simulation) (`cw.affect("simulation")`) and against live hardware.
+For mobile twins with navigation support, the SDK's
+`robot.navigation.use_controller(policy_uuid)` sets a default policy UUID for
+future navigation plans. It does not accept a model slug or start inference, and
+arm-only twins do not expose this API. See the
+[controller example](/overview/index#controllers).
 
 ---
 

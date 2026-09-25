@@ -1,0 +1,71 @@
+---
+title: "Loop node"
+description: "Repeat a set of steps once per twin or per waypoint, then continue once every item is done."
+tag: stub
+---
+
+The **Loop** (`loop`) node repeats the steps connected after it, once per item
+in a list. Use it to run the same work across several robots — or to send one
+robot to several places — without copying the steps.
+
+## Two branches
+
+A Loop has two outputs on the canvas:
+
+| Output | When it runs |
+| ------ | ------------ |
+| **For each item** | Once per item, with that item available to the steps on this branch. |
+| **After the loop** | Once, after the last item — and only if every item succeeded. |
+
+Drag from the branch you want. Steps on **For each item** are the loop body;
+steps on **After the loop** run once, so that is where a "report that every
+robot is parked" step belongs.
+
+<Note>
+**After the loop** is a success continuation. If any item fails, or the list is
+empty, that branch is skipped and marked as such in the run history.
+</Note>
+
+## Picking what to repeat over
+
+In **Simple** mode, choose a **Type** and then pick the items:
+
+- **Twin** — "do this to each of these robots."
+- **Waypoint** — "send this robot to each of these places."
+
+**Advanced** mode hands you the raw `array_data` input, so you can fan out over
+a list computed by an upstream node.
+
+## Using the item in a step
+
+A step inside the loop body takes its value from the iteration rather than from
+its own picker. Open the step and set its source to **From loop item**:
+
+| Node | What binds to the item |
+| ---- | ---------------------- |
+| Recorder, Data Source, Create Attachment, Send Pose, Move to GPS | The twin it acts on |
+| Move Twin | The twin it moves, **or** the waypoint it moves to |
+
+The control appears on any step inside the loop body, however many steps down
+the chain it sits.
+
+<Note>
+Send Pose keeps its own twin picker when bound. The pose is authored against
+the twin you pick — its joint names, limits and saved poses — and then sent to
+each item of the loop.
+</Note>
+
+## Nesting loops
+
+A Loop can sit inside another Loop's body: "for each station, for each robot at
+that station." A step inside the inner loop can take its value from *either*
+loop — each is offered by name, so you can address the station and the robot in
+the same step.
+
+## Limits
+
+- **Edge workflows** compile one copy of the body per item, so the list has to
+  be a fixed value. With nested loops the copies multiply, and the total is
+  capped — shorten one of the lists if you hit the limit.
+- A list computed at run time works in the cloud, where the loop iterates as it
+  runs. Set the workflow to run in the cloud for that shape.

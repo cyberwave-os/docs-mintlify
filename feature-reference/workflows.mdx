@@ -283,6 +283,17 @@ This returns `True` when any run has status `running`, `waiting`, or `requested`
 
 In the dashboard, a **Running** indicator appears next to the Active badge in the workflow editor header whenever the workflow has an active execution. It refreshes automatically every 2 seconds.
 
+### Concurrent run controls
+
+Open **Workflow run settings** from the gear icon in the workflow editor header to control overlapping runs:
+
+- **Allow concurrent runs of this workflow** is off by default. While off, a trigger is rejected with HTTP `409` whenever the same workflow already has a `requested`, `running`, or `waiting` execution.
+- **Incompatible workflows** selects other workflows from the same environment. The current workflow cannot start while any selected workflow has an in-flight execution.
+
+The off-by-default setting applies only to workflows created after this feature is deployed. Workflows that already existed are left with **Allow concurrent runs of this workflow** on, so their behavior does not change; their authors must turn it **off** to adopt serialization. Refused automatic triggers are skipped, rather than queued for later execution.
+
+These settings apply to cloud-dispatched manual and REST triggers, schedules, webhooks, inbound email, MQTT and alert triggers, and partner integrations. They do not prevent independently started edge runs; reports from runs already underway are always retained so their progress remains visible. The REST fields are `allow_concurrent_executions` and `concurrency_blocked_by_workflow_uuids` on workflow create, update, and response payloads.
+
 ---
 
 ## Example: Edge Detection Workflow

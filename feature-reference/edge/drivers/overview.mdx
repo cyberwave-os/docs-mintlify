@@ -29,6 +29,56 @@ Example driver metadata (JSON):
 }
 ```
 
+### Pin cameras and microphones by serial number
+
+When an edge host has multiple cameras or USB microphones of the same model,
+set the physical unit's serial at top-level `metadata.serial_number`. Keep it a
+JSON string so leading zeroes are preserved:
+
+```json
+{
+  "serial_number": "046322252081",
+  "drivers": {
+    "default": {
+      "docker_image": "cyberwaveos/camera-driver",
+      "params": ["--device", "/dev/video0:/dev/video0"]
+    }
+  }
+}
+```
+
+`serial_number` names one physical unit. Camera `video_device` and microphone
+`audio_device` fields instead name a capture source or selector. A serial takes
+precedence, and the driver fails rather than silently substituting different
+hardware when the pinned unit is missing.
+
+On Linux, Edge Core automatically bind-mounts `/dev/v4l` into camera-driver
+containers when that host directory exists, allowing UVC serials to resolve
+through `/dev/v4l/by-id`. It similarly exposes `/dev/snd` to the generic audio
+drivers. Custom launchers must provide those mounts themselves.
+
+<Info>
+  **stub** — `cyberwave edge install` does not ask you to pick a `/dev/videoN`
+  for a camera twin that already sets `serial_number`; it matches the serial
+  against the attached cameras and binds them for you. Twins without one are
+  still asked, and the camera you pick is saved back as that twin's
+  `serial_number`, so the question is asked once per camera rather than on
+  every install. When a pinned serial matches no attached camera the installer
+  warns and falls back to asking, because substituting another camera would
+  stream the wrong footage.
+</Info>
+
+<Info>
+  **stub** — Cameras that publish no USB serial (the Logitech C920 is one) can
+  never be pinned with `serial_number`. Set `metadata.video_device` to a udev
+  stable name instead — `/dev/v4l/by-id/...` or `/dev/v4l/by-path/...` — and
+  the installer binds the twin without asking, exactly as it does for a serial.
+  `by-id` follows the camera across ports; `by-path` follows the port. An
+  `rtsp://` or `http://` URL marks a network camera, which is also never asked
+  about and takes no local device. A bare index or `/dev/videoN` is positional,
+  not identity, so those twins are still prompted.
+</Info>
+
 ### GPU passthrough
 
 Drivers can opt-in to GPU acceleration by setting `"prefer_gpu": true` in their metadata. When the host has the NVIDIA container runtime available **and** configured as the default in `/etc/docker/daemon.json`, Edge Core passes `--gpus` to the driver container.
