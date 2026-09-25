@@ -106,15 +106,20 @@ All twins in the environment must be **MuJoCo-compatible** before it can export.
 
 ## Step 2: Export the scene to MuJoCo
 
-Cyberwave exports your environment as a self-contained MuJoCo scene (an `mujoco_scene.xml` plus all meshes) that runs on your laptop, cluster, or CI runner. Download the ZIP from the environment export API:
+Cyberwave exports your environment as a self-contained MuJoCo scene (an `mujoco_scene.xml` plus all meshes) that runs on your laptop, cluster, or CI runner. Export it with the SDK:
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+cw.environments.export_mujoco_scene(environment_id, "scene.zip")
+```
 
 ```bash
-curl -fsSL \
-  -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
-  "https://api.cyberwave.com/api/v1/environments/$CYBERWAVE_ENVIRONMENT_ID/mujoco-scene.zip" \
-  -o scene.zip
 unzip -o scene.zip -d .
 ```
+
+The scene is built in the background the first time you export a given revision of an environment, so the first call can take up to a minute or two on a large environment; later calls are served from cache. Pass `timeout=` if you need to wait longer.
 
 You now have `mujoco_scene.xml` locally. Sanity-check it before writing any RL code:
 

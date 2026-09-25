@@ -166,6 +166,52 @@ When implementing a reader:
    as described below. A disconnected stream does not mean the task completed
    or was canceled.
 
+## Environment control policy
+
+> stub
+
+The selected Environment controls which execution routes A2A may use:
+
+| Environment setting | A2A behavior |
+| --- | --- |
+| Direct twin control only | Plans and dispatches commands to eligible twins. |
+| Workflows only | Matches the request against the Environment's active manual workflows, using each workflow's name and description, and triggers the best match. Direct commands are rejected. |
+| Direct twin control and workflows | Chooses between a matching workflow and direct twin control for each request. |
+
+Every Environment, new or existing, defaults to **Direct twin control and
+workflows** so upgrading never blocks a routine that worked before.
+
+Environment authors configure this under **Environment settings → Advanced →
+Control plane access**. Choosing **Direct twin control only** disables workflow
+execution everywhere for that Environment, not only for A2A — the same manual
+trigger used by the web app's Run button and the SDK is gated too. In
+workflows-only mode, nodes inside an allowed workflow
+may still command twins; the restriction applies to the external A2A request,
+not to the workflow's authored behavior.
+
+Only active, non-deleted workflows attached to the selected Environment, visible
+to the caller, and containing an enabled manual trigger are candidates. If no
+permitted route matches the request, the task finishes in the `rejected` state
+without dispatching a twin command.
+
+When A2A starts a workflow, the task's `metadata.workflow` object identifies the
+selected workflow and execution:
+
+```json
+{
+  "workflow": {
+    "uuid": "workflow-uuid",
+    "name": "Restock aisle",
+    "description": "Restock an aisle and verify shelf inventory.",
+    "execution_uuid": "execution-uuid"
+  }
+}
+```
+
+The A2A task remains `working` while the workflow runs and mirrors its terminal
+state: workflow success becomes `completed`, an execution error becomes
+`failed`, and cancellation becomes `canceled`.
+
 ## Reconnect to an existing task
 
 Once you have a task ID, POST `SubscribeToTask` (or `tasks/resubscribe`) to the
