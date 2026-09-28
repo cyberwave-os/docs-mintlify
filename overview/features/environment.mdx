@@ -16,7 +16,7 @@ arm    = cw.twin("universal_robots/UR7", environment_id=env.uuid)
 camera = cw.twin("camera",               environment_id=env.uuid)
 ```
 
-The same environment is what you see in the [Environment Editor](/feature-reference/environment-editor/index), what you simulate in [MuJoCo](/feature-reference/environment-editor/index#simulate-tab-playground-physics), and what your real edge devices stream into when you flip to **Live** mode.
+The same environment is what you see in the [environment editor](/feature-reference/environment-editor/index), what you simulate in [MuJoCo](/overview/features/simulation), and what your real edge devices stream into when you flip to **Live** mode.
 
 ---
 
@@ -83,10 +83,10 @@ An environment is the same artifact in both worlds: you just switch modes.
   </Card>
 </CardGroup>
 
-Switch programmatically from the [SDK](/tools/python-sdk):
+Switch programmatically from the [SDK](/overview/tools/python-sdk):
 
 ```python
-cw.affect("simulation")   # commands run against the virtual environment
+cw.affect("playground")   # free browser simulation ("simulation" starts billable MuJoCo)
 cw.affect("live")         # same scene, real hardware
 ```
 
@@ -133,7 +133,7 @@ See the [Access Control reference](/feature-reference/access-control) for the fu
 
 <CardGroup cols={3}>
   <Card
-    title="Environment Editor reference"
+    title="Environment editor"
     icon="pen-to-square"
     href="/feature-reference/environment-editor/index"
   >
@@ -146,7 +146,7 @@ See the [Access Control reference](/feature-reference/access-control) for the fu
   >
     Drive the real robots that live in your environment from anywhere.
   </Card>
-  <Card title="Hello Robot" icon="hand-wave" href="/overview/hello-robot">
+  <Card title="Develop in simulation" icon="hand-wave" href="/overview/hello-robot">
     Build your first environment with a twin and a controller in 5 minutes.
   </Card>
 </CardGroup>

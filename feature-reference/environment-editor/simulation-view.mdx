@@ -1,22 +1,27 @@
 ---
-title: "Simulation View"
+title: "Simulation view"
 description: "See MuJoCo's own render of your scene, following the camera you are already moving."
 icon: "video"
 ---
 
-<Note>This page is a stub. A human will curate and expand it before publishing.</Note>
+{/* TODO(docs): This page is a stub. A human will curate and expand it before publishing. */}
 
-Both **Simulate** and **Live** start in **Monitor**. Select **Control** explicitly
-to enable control inputs; changing modes returns to **Monitor**.
+Editors enter **Simulate** and **Live** in **Controlling** by default. Choose
+**View → Monitoring** to watch without sending robot commands, then **Back to
+Controlling** to restore input. The choice is remembered per environment.
+Users without edit access remain in Monitoring and can select Simulate only
+while a simulation is active, or Live while hardware is connected. Editors can
+manage simulation while Monitoring without enabling robot commands.
 
 ## One assistant across views
 
-The Environment Assistant keeps the same conversation in Edit, Simulation and
+The environment assistant keeps the same conversation in Edit, Simulation and
 Live, with labels showing where each request happened. **Monitor** inspects;
 **Control** can plan robot actions or propose a new skill. **Review in
 Simulation/Live** opens the existing execution controls; a plan is not a command.
-Changing views does not stop an already-running robot or training job—use its
-explicit stop/cancel control. Scene and workflow changes belong in Edit; review
+Switching sources while Monitoring leaves their workloads running. Taking
+control of Live performs the controller handover; use explicit stop/cancel
+controls to stop a robot or training job. Scene and workflow changes belong in Edit; review
 a workflow's runtime target before running it.
 
 While a simulation is running, the right-hand panel shows a **Simulation view**

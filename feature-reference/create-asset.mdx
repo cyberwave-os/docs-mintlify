@@ -1,15 +1,39 @@
 ---
-title: "Create an Asset"
-sidebarTitle: "Create an Asset"
-description: "Upload your own URDF to create a custom Cyberwave asset, the 3D and kinematic definition behind every digital twin. Walk through the Package, Details, and Access steps."
+title: "Create an asset"
+sidebarTitle: "Create an asset"
+description: "Upload your own URDF to create a custom asset, the 3D and kinematic definition behind every digital twin, through the Package, Details and Access steps."
 icon: "cube"
 ---
 
-An **asset** is the reusable definition of a piece of hardware: its 3D meshes and its kinematic model (URDF) that Cyberwave uses to spawn [digital twins](/use-cyberwave/architecture/key-concepts). Catalog devices like `the-robot-studio/so101` are assets that already exist. When your hardware **isn't in the [catalog](https://cyberwave.com/catalog)**, you create your own asset by uploading a URDF package.
+An **asset** is the reusable definition of a piece of hardware: its 3D meshes and its kinematic model (URDF) that Cyberwave uses to spawn [digital twins](/feature-reference/architecture/key-concepts). Catalog devices like `the-robot-studio/so101` are assets that already exist. When your hardware **isn't in the [catalog](https://cyberwave.com/catalog)**, you create your own asset by uploading a URDF package.
 
 This page walks through creating an asset from the dashboard. You can also upload programmatically, using the REST API or Python SDK methods described on the [Catalog](/feature-reference/catalog) page.
 
 ---
+
+## Choose how to create it
+
+Open **Add asset** from the catalog or environment editor.
+
+| Choice | Best for | What to check |
+| --- | --- | --- |
+| **Describe the object** | Editable dimensions and supported mechanical parts, with an optional reference picture | Review the proposed design and estimated physics. Detailed organic shapes may need another method. |
+| **Upload a 3D file** | Preserving an existing model's structure and detail | Include referenced files; add the processed asset to your scene from the catalog. |
+| **From a photo** | Recreating appearance for visual props and organic shapes | A photo is required; description is optional. Scale, hidden surfaces, moving parts and physics need review. |
+
+For **Describe the object**, enter your dimensions and intended interaction, then
+follow **Describe → Review → Use** in the modal header. In **Review**, edit the
+name, build description and dimensions, or request a change with **Update design**.
+Review the assumptions, then continue to **Use**. Choose **Private** or **Public**
+and select **Build object**. Public creation requires confirmation and only
+publishes the completed catalog object. Your scene does not become public.
+
+You can close the dialog while it builds. Catalog creation saves the object in
+your workspace; starting from an environment also adds the completed object to
+that scene. The build retains your reviewed design so later revisions have context.
+Review collision geometry, physical properties and robot reach before training.
+
+The following steps cover the **Upload a 3D file** path for a URDF package.
 
 ## Prepare your URDF package
 
@@ -33,8 +57,6 @@ my-robot/
   you create the asset.
 </Info>
 
-> stub
-
 <Info>
   ZIP uploads can be up to 512 MB, enough for large full-mesh assets like
   humanoid robots.
@@ -51,7 +73,7 @@ my-robot/
 
 ## Create the asset
 
-Open the **Upload URDF package** wizard from the dashboard, then complete its three steps.
+Choose **Upload a 3D file** in **Add asset**, then complete the upload steps.
 
 <Steps>
   <Step title="Package: upload your ZIP">
@@ -94,7 +116,7 @@ Open the **Upload URDF package** wizard from the dashboard, then complete its th
 
     Click **Create Asset**. Cyberwave processes the archive, and once it's ready
     the asset is available to spawn twins from, in the dashboard, the
-    [Python SDK](/tools/python-sdk), or the REST API.
+    [Python SDK](/overview/tools/python-sdk), or the REST API.
   </Step>
 </Steps>
 

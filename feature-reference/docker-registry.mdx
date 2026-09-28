@@ -1,8 +1,7 @@
 ---
-title: "Docker Registry"
-description: "Use the Cyberwave Docker Registry to pull and push custom drivers and ML models and re-use them across your robots and automations"
+title: "Docker registry"
+description: "Use the Cyberwave Docker Registry to pull and push custom drivers and AI models and re-use them across your robots and automations"
 icon: "clone"
-stub: true
 ---
 
 ## Overview
@@ -47,24 +46,9 @@ There are no separate registry passwords. The same API key and workspace members
     ```
   </Step>
 
-  <Step title="Configure Docker (automatic)">
-    The CLI configures Docker to use the Cyberwave credential helper for `registry.cyberwave.com`:
-
-    ```bash
-    cyberwave auth configure-docker
-    ```
-
-    This adds the following to `~/.docker/config.json`:
-
-    ```json
-    {
-      "credHelpers": {
-        "registry.cyberwave.com": "cyberwave"
-      }
-    }
-    ```
-
-    After this, `docker pull` and `docker push` authenticate transparently whenever the image name starts with `registry.cyberwave.com`.
+  <Step title="Log in to the registry">
+    {/* TODO(docs): the page previously documented `cyberwave auth configure-docker`, which does not exist in the CLI (cyberwave-cli 0.12.7). Confirm the supported credential flow (credential helper vs. docker login with an API token). */}
+    Authenticate Docker against `registry.cyberwave.com` before pulling private images or pushing.
   </Step>
 </Steps>
 

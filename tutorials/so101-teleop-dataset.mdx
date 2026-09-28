@@ -1,6 +1,6 @@
 ---
 title: "Get started with the SO-101 arm"
-sidebarTitle: "SO-101 Quickstart"
+sidebarTitle: "SO-101 quickstart"
 description: "A friendly walkthrough: unbox an SO-101, pair it, teleop it, record a dataset, and train your first model."
 icon: "microchip"
 ---
@@ -10,7 +10,7 @@ So you've got a fresh pair of SO-101 arms on your desk and you want to actually 
 - The SO-101 mirrored as a digital twin in Cyberwave, with a camera docked to its wrist
 - A live teleoperation session running between the leader and follower arms
 - A small dataset of demonstrations recorded straight from the dashboard
-- A trained ML model deployed back to the same arm as a controller policy
+- A trained AI model deployed back to the same arm as a controller policy
 
 It's the full loop. Let's go.
 
@@ -46,7 +46,7 @@ Before we touch any hardware, let's mock up the setup inside Cyberwave. The idea
 
 Head to the [Cyberwave dashboard](https://cyberwave.com/dashboard) and click **New Environment**. Give it a name like `SO-101 Teleop` and a quick description so future-you knows what this was for.
 
-An [environment](/feature-reference/architecture/key-concepts#environments) is just a 3D space that mirrors the physical setup. Twins, sensors, and controllers all live inside it.
+An [environment](/feature-reference/architecture/key-concepts#environment) is just a 3D space that mirrors the physical setup. Twins, sensors, and controllers all live inside it.
 
 **Drop in the SO-101.** Inside the new environment, click **Add from Catalog** in the left panel, search for `SO-101`, and add it. Position it so it roughly matches where the real arm sits on your desk; it doesn't have to be pixel perfect, just close.
 
@@ -329,7 +329,7 @@ For VLA models especially, _match inference to training_ as closely as you can. 
   <Card
     title="Robotic Arms Overview"
     icon="robot"
-    href="/get-started/robotic-arms"
+    href="/overview/robotic-arms"
   >
     The 4-step pattern for any arm in the catalog.
   </Card>
@@ -343,7 +343,7 @@ For VLA models especially, _match inference to training_ as closely as you can. 
   <Card
     title="Manipulation Capability"
     icon="hand"
-    href="/capabilities/manipulation"
+    href="/overview/robotic-arms"
   >
     The full picture of what arms can do on Cyberwave.
   </Card>

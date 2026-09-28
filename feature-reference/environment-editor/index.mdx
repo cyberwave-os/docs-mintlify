@@ -1,12 +1,12 @@
 ---
-title: "Environment Editor"
+title: "Environment editor"
 description: "Create and customize 3D environments for your robotics simulations and testing scenarios"
 icon: "pen-to-square"
 ---
 
-## What is the Environment Editor?
+## What is the environment editor?
 
-The Environment Editor is a 3D design tool for setting up digital twins and static objects in an environment. You can arrange robots, cameras, sensors, areas, waypoints, and scene geometry before using them in simulation or workflows.
+The environment editor is a 3D design tool for setting up digital twins and static objects in an environment. You can arrange robots, cameras, sensors, areas, waypoints, and scene geometry before using them in simulation or workflows.
 
 <CardGroup cols={3}>
   <Card title="Digital Twins in Env" icon="box">
@@ -14,7 +14,7 @@ The Environment Editor is a 3D design tool for setting up digital twins and stat
   </Card>
 
   <Card title="Env To Simulation" icon="play">
-    One click export to Mujoco. Simulate camera streams and sensor data.
+    One click export to MuJoCo. Simulate camera streams and sensor data.
   </Card>
 
   <Card title="Env From Real" icon="arrows-left-right">
@@ -59,29 +59,39 @@ The Environment Editor provides a comprehensive set of tools for creating and ma
 
 ## Working across tabs and with teammates
 
-stub: The **Environment assistant** keeps its conversation when you switch between
+In **Simulate** and **Live**, choose **Monitor** or **Control** directly beneath the main mode buttons. Open the workbench’s **Activity** tab to follow workflow runs and their steps without sending commands.
+
+File, Edit, View, and other tools appear directly on wider screens and move into **Menu** on compact screens. Mode labels and workbench shortcuts stay visible on wider screens. Below 1024px, the side panels start closed; choose **Panels → Scene tree** or **Inspector** to open one at a time. Widening the window restores your desktop layout. Compact screens move **Share**, **Environment settings**, and **Order hardware** into **Menu → File**. Double-click a side-panel divider or the workbench's top divider to hide that panel; reopen it from the matching left, right, or bottom panel button (or **Panels** on compact screens). Dragging the same divider still resizes it. Click the scene search prompt anywhere to search scene objects and the catalog, including in Simulate or Live. Adding results to the scene still requires Edit mode and permission. Hover a disabled add action to see whether to switch to Edit or request permission. Other compact search controls open from their search icon; **Escape** collapses it without clearing the query; the visible query chip reopens it, and **Clear search** removes the filter. The clear X appears only with text; the scene’s + remains available while searching. Wider workflow panels show short status labels beside their icons. Scene rows keep a stable height, with secondary details on hover or focus and hidden, locked, or failed states kept visible.
+
+The **Environment assistant** keeps its conversation when you switch between
 **Edit** and **Monitor** in Simulation or Live within the same page session.
 Small labels show where each request happened; replies keep their original label
 even if you switch views while waiting. Earlier messages remain visible.
 The selected right-hand tab stays open across mode switches. Select a scene
 object to inspect it, or open **Agent** to return to the conversation.
 
-stub: Returning to **Edit** restores the selected twin’s editable details without
+Returning to **Edit** restores the selected twin’s editable details without
 another click. If **Agent** is open, it stays open.
-Unsent Environment assistant drafts, tagged objects and reference images stay
+Unsent environment assistant drafts, tagged objects and reference images stay
 available when you visit Control and return. Restoring a draft never sends it;
-the Control planner still has a separate composer.
+the control agent still has a separate composer.
 Monitor keeps action cards read-only. Switching to Monitor requests a stop to
 unfinished assistant editing, but does not stop running robots or training jobs.
 Conversation history is not yet restored across page reloads or separate browser tabs.
 
-stub: The people icon beside the mode buttons shows open sessions, including your own other tabs. Hover or focus it to see who is editing, viewing, or using Simulation, Live, or Replay. Closed sessions disappear after a short timeout if they cannot disconnect cleanly.
+**Replay** appears when saved simulation runs or recorded streams are available. It stays reachable while availability is loading or unknown, and remains visible while Replay is the selected mode. Empty environments hide it after the availability check; new recordings restore it automatically.
 
-stub: Saved scene-order and group changes update other connected editors. Opening a mode does not lock the scene. If two people change the same hierarchy concurrently, the editor restores the latest saved version instead of silently overwriting someone else's work.
+**Simulate** shows no dot without a running or initializing simulation, and a green dot when the simulation is ready. Enabling Playground physics alone does not mark a simulation as running. **Live** shows no dot without paired hardware, a gray dot for paired hardware that is disconnected, and a blue dot while hardware is connected. While simulation provisions or loads its physics scene, a spinner replaces its dot and reports **Simulation booting**, even if Playground physics is also enabled. A chevron on the selected mode indicates its status card; click to open it, or hover to preview it. With the mode selected, **Enter** opens and focuses its controls; **Escape** returns focus to the mode button. Without paired hardware, the Live card shows onboarding instead of an empty Edges status. Switch to **Edit**, choose **Add from Catalog** to add a robot or sensor, pair it with an edge device, then return to **Live**. **Ask assistant how to connect** opens the assistant and sends a setup question covering these steps. Boot indicators keep spinning while the status card is open. Idle recording controls are hidden by default. An active recording keeps **Recording · Stop & save** visible across modes, even when recording controls are hidden. In Simulate, choose **View → Show recording** to show or hide a separate recording bar on the right. It moves below the mode toolbar when space is limited, keeping the modes centered and unobstructed. Mode labels collapse to accessible icons when the space between the side panels is limited, and return when there is room. Click inside the card to keep it open while choosing an engine or adjusting settings; click outside or press Escape to close it.
+
+The people icon beside the mode buttons shows open sessions, including your own other tabs. Hover or focus it to see who is editing, viewing, or using Simulation, Live, or Replay. Closed sessions disappear after a short timeout if they cannot disconnect cleanly.
+
+Saved scene-order and group changes update other connected editors. Opening a mode does not lock the scene. If two people change the same hierarchy concurrently, the editor restores the latest saved version instead of silently overwriting someone else's work.
+
+In a narrow workflow workbench, **Switch** opens the workflow list and **Show node library** opens the node picker. Both leave room for the canvas and restore the full sidebars when there is enough space.
 
 ## Adding Primitives
 
-stub: Moving or rotating a primitive keeps its template dimensions unchanged. Use **Scale** or the **Template** fields to resize it.
+Moving or rotating a primitive keeps its template dimensions unchanged. Use **Scale** or the **Template** fields to resize it.
 
 ### Procedural walls and staircases
 
@@ -95,7 +105,7 @@ Parameter edits preserve the ground anchor. Use position/rotation to place these
 
 ### Catalog primitives
 
-stub: The **Add** menu (or the **+** button in the editor toolbar) includes a **Primitives** section. Primitives are curated public catalog assets with a short alias — things like cameras, lidars, and common generic objects — that you can drop into any environment in one click.
+The **Add** menu (or the **+** button in the editor toolbar) includes a **Primitives** section. Primitives are curated public catalog assets with a short alias — things like cameras, lidars, and common generic objects — that you can drop into any environment in one click.
 
 - **Where to find them:** open the 3D editor, click **Add → Primitives** (or the catalog icon in the sidebar) to browse the full list.
 - **Why use them:** primitives are the fastest way to populate an environment. Because each primitive carries a short alias (e.g. `camera`, `lidar`), you can also instantiate them programmatically without knowing the full `vendor/slug` registry ID:
@@ -116,16 +126,32 @@ lidar  = cw.twin("lidar")
 
 ---
 
-## Edge core connection status (Live mode)
+## Deleting scene objects
 
-When you are in **Live** mode, the right-hand panel shows an edge core status indicator:
+Delete the selected object with **Delete** or **Backspace**, from the trash
+button in the right inspector, from **More actions → Delete** in the scene list,
+or by right-clicking it in the 3D view. Selecting several objects and pressing
+**Delete** removes them together after one confirmation.
 
-- **Green dot**: expected edge cores are currently connected.
-- **Gray dot**: one or more expected edge cores are not currently connected.
+**Ctrl/Cmd + Z** undoes the last delete in the same page session; a reload
+clears the history. Deleting a procedural object is undoable from every entry
+point — the shortcut, the inspector's trash button, the scene list and the
+right-click menu — as is any multi-object delete. Restored twins and procedural
+objects come back as new objects, so they do not return to the group they were
+in; restored areas and waypoints do.
+
+---
+
+## Edge Core connection status (Live mode)
+
+When you are in **Live** mode, the right-hand panel shows an Edge Core status indicator:
+
+- **Green dot**: expected Edge Core instances are currently connected.
+- **Gray dot**: one or more expected Edge Core instances are not currently connected.
 
 Hover the dot to see:
 
-- how many edge cores are currently connected, and
+- how many Edge Core instances are currently connected, and
 - how many are expected for the environment.
 
 Expected cores are derived from the unique edge fingerprints configured on twins in that environment.
@@ -156,15 +182,28 @@ Hover (or focus via keyboard) the dot for the tooltip: `Connected`, `Degraded �
 
 ---
 
+## Center the view on a twin
+
+**Double-click a twin's row** in the scene objects panel to bring it into the middle of the view.
+
+- **Single-click still just selects.** The camera only moves on a double-click, so you can click down a list of twins to read their properties without the viewport jumping around.
+- **Your zoom is kept.** The view slides over to the twin at the distance and angle you were already working at, rather than zooming to fit it. Use **View → Center** when you do want the camera refitted.
+- **Map mode pans the map** to the twin's location instead, at the current zoom.
+- Double-clicking a twin's **name** still renames it — double-click anywhere else on the row to center.
+
+Available to anyone who can see the environment, including read-only viewers.
+
+---
+
 ## Twin joint edits in edit mode
 
-stub: In **Edit** mode, changing a twin joint updates the scene immediately, publishes the edit over MQTT for local feedback, and persists the joint pose on the twin so it survives refresh and reload.
+In **Edit** mode, changing a twin joint updates the scene immediately, publishes the edit over MQTT for local feedback, and persists the joint pose on the twin so it survives refresh and reload.
 
 ---
 
 ## Twin position quick actions
 
-stub: In the environment editor transform panel, **Center** moves the selected twin or procedural object to the world origin. **Below**, **Above**, **Left**, and **Right** ask the Environment Editor to place it relative to the nearest suitable object or support using `cw_transform_environment_object`; floor/support placement uses `snap_to_support=true`.
+In the environment editor transform panel, **Center** moves the selected twin or procedural object to the world origin. **Below**, **Above**, **Left**, and **Right** ask the Environment Editor to place it relative to the nearest suitable object or support using `cw_transform_environment_object`; floor/support placement uses `snap_to_support=true`.
 
 ---
 
@@ -195,13 +234,13 @@ for examples, planner behavior, sensor FOV, and runtime safety boundaries.
 
 ## Twin override export controls
 
-stub: In the twin editor, **Twin overrides** lets you set per-twin appearance color, opacity, fixed-base behavior, and a total exported MuJoCo mass in kilograms. Cyberwave converts the total mass into proportional per-link scaling during MuJoCo export, and the editor shows an **Export warning** badge when the asset snapshot has incomplete inertial data that makes the export best-effort.
+In the twin editor, **Twin overrides** lets you set per-twin appearance color, opacity, fixed-base behavior, and a total exported MuJoCo mass in kilograms. Cyberwave converts the total mass into proportional per-link scaling during MuJoCo export, and the editor shows an **Export warning** badge when the asset snapshot has incomplete inertial data that makes the export best-effort.
 
 ---
 
 ## Reorder root twins in Scene Objects
 
-stub: In **Edit** mode, the Scene Objects left pane supports drag-and-drop reordering for root twins using a grip handle. Child twins stay attached to their parent group and move with the parent when reordered.
+In **Edit** mode, the Scene Objects left pane supports drag-and-drop reordering for root twins using a grip handle. Child twins stay attached to their parent group and move with the parent when reordered.
 
 - Reordering is available only when edit controls are enabled and search is not active.
 - Order is saved to environment settings as `twin_order`, so it persists across reloads.
@@ -211,13 +250,13 @@ stub: In **Edit** mode, the Scene Objects left pane supports drag-and-drop reord
 
 ## Simulate tab playground physics
 
-stub: In **Simulate → Playground**, Cyberwave now applies lightweight frontend physics with gravity and basic rigid collisions. URDF twins use their `<collision>` geometry as collision sources when available, and a fallback collider is used when collision metadata is missing.
+In **Simulate → Playground**, Cyberwave now applies lightweight frontend physics with gravity and basic rigid collisions. URDF twins use their `<collision>` geometry as collision sources when available, and a fallback collider is used when collision metadata is missing.
 
 ---
 
 ## Start the agent from the Edit menu
 
-stub: In the 3D editor, open **Edit → Editor Agent** to launch the Environment Agent. It can inspect the current environment and call Cyberwave MCP tools for supported edits.
+In the 3D editor, open **Edit → Editor Agent** to launch the Environment Agent. It can inspect the current environment and call Cyberwave MCP tools for supported edits.
 
 - The agent automatically provisions a workspace-scoped API key for the session so you can start chatting immediately.
 - The agent displays a **Used tools** line for each response so you can verify which MCP tools were invoked.
@@ -226,7 +265,7 @@ stub: In the 3D editor, open **Edit → Editor Agent** to launch the Environment
 
 ## Workflow executions in an environment
 
-stub: In the environment editor, open **Executions → Workflow Executions** to review recent workflow runs bound to the current environment.
+In the environment editor, open **Executions → Workflow Executions** to review recent workflow runs bound to the current environment.
 
 - The list stays compact by default and shows workflow name, status, and run time.
 - Select a run to inspect trigger data, errors, and metadata.
@@ -236,7 +275,7 @@ stub: In the environment editor, open **Executions → Workflow Executions** to 
 
 ## Sensor coverage previews
 
-stub: In **Edit** and **Live** modes, the viewer draws each sensor's coverage envelope, matched to how that sensor actually sees the world:
+In **Edit** and **Live** modes, the viewer draws each sensor's coverage envelope, matched to how that sensor actually sees the world:
 
 | Sensor | Preview |
 |---|---|
@@ -255,7 +294,7 @@ Control them from **View → Show sensor previews**, then **Sensor preview types
 
 ## Live point cloud alignment
 
-stub: In **Live** mode, depth-camera point clouds now keep the viewer's existing camera-local basis (`X` lateral, `Z` depth) while still honoring the sensor pose and offset, so RealSense clouds stay vertically aligned in front of the sensor after refresh and axis migrations.
+In **Live** mode, depth-camera point clouds now keep the viewer's existing camera-local basis (`X` lateral, `Z` depth) while still honoring the sensor pose and offset, so RealSense clouds stay vertically aligned in front of the sensor after refresh and axis migrations.
 
 ---
 
@@ -286,11 +325,11 @@ Start creating immersive environments for your robots and unlock the full potent
     Start building your environment now
   </Card>
 
-  <Card title="Python SDK" icon="code" href="/tools/python-sdk">
+  <Card title="Python SDK" icon="code" href="/overview/tools/python-sdk">
     Control environments programmatically
   </Card>
 
-  <Card title="Digital Twins" icon="robot" href="/use-cyberwave/digital-twins">
+  <Card title="Digital twins" icon="robot" href="/feature-reference/digital-twins">
     Learn about digital twins
   </Card>
 </CardGroup>
@@ -299,14 +338,14 @@ Start creating immersive environments for your robots and unlock the full potent
   <Card
     title="Live Teleoperation"
     icon="gamepad"
-    href="/use-cyberwave/teleoperation"
+    href="/feature-reference/environment-editor/teleoperation"
   >
     Control physical robots in real time from the environment
   </Card>
   <Card
     title="Workflows"
     icon="diagram-project"
-    href="/use-cyberwave/workflows"
+    href="/feature-reference/workflows"
   >
     Automate robot operations with visual workflows
   </Card>

@@ -1,5 +1,5 @@
 ---
-title: "Workflows"
+title: "How workflows work"
 description: "The fastest way to build automations on top of your twins: visual, Python, or agent-built, and runnable in the cloud, on the edge, or both"
 icon: "diagram-project"
 ---
@@ -19,7 +19,7 @@ run.wait(timeout=60)
 print(run.status)
 ```
 
-That same workflow can be opened, edited, and visualised in the [Workflow Editor](/feature-reference/workflows): the graph and the Python are two views of one object.
+That same workflow can be opened, edited, and visualised in the [workflow editor](/feature-reference/workflows): the graph and the Python are two views of one object.
 
 ---
 
@@ -32,15 +32,15 @@ You never have to pick between a low-code graph and "real" code. Cyberwave keeps
     Drag nodes from the palette, wire ports, configure parameters. Great for
     prototyping and for handing flows to non-engineers.
   </Card>
-  <Card title="Python SDK" icon="python" href="/tools/python-sdk#workflows">
+  <Card title="Python SDK" icon="python" href="/overview/tools/python-sdk#workflows">
     Build, list, trigger, and monitor workflows from
-    [`cw.workflows`](/tools/python-sdk#workflows). Anything you can do in the UI
+    [`cw.workflows`](/overview/tools/python-sdk#workflows). Anything you can do in the UI
     you can do in code.
   </Card>
-  <Card title="With an agent" icon="sparkles" href="/tools/mcp-server">
+  <Card title="With an agent" icon="sparkles" href="/overview/tools/mcp-server">
     Describe the automation in plain English to Claude, Cursor, or any MCP
-    client; Cyberwave's [MCP server](/tools/mcp-server) and
-    [Claude skill](/tools/claude-skill) wire up the graph for you.
+    client; Cyberwave's [MCP server](/overview/tools/mcp-server) and
+    [Claude skill](/overview/tools/claude-skill) wire up the graph for you.
   </Card>
 </CardGroup>
 
@@ -50,7 +50,7 @@ Every workflow round-trips between graph and Python, with no lock-in to either f
 
 ## Cloud, edge, or both, in one graph
 
-A workflow can span both sides of your stack. Trigger and ML nodes that run [on the cloud](/tools/cloud-node) coordinate with the same workflow's edge half via the [edge worker runtime](/feature-reference/edge/workers/overview).
+A workflow can span both sides of your stack. Trigger and ML nodes that run [on the cloud](/overview/tools/cloud-node) coordinate with the same workflow's edge half via the [edge worker runtime](/feature-reference/workflows/workers/overview).
 
 A common shape:
 
@@ -63,21 +63,13 @@ flowchart LR
 
 The video frame never leaves the device unanonymized, the VLM runs on a GPU in the cloud, and an email goes out, all from a single workflow definition. The [unified edge compiler](/feature-reference/workflows#environment-bound-workflows) decides what runs where based on the graph itself.
 
-You don't manage model downloads, hardware compatibility, or reconnects. Cyberwave provisions the right model into the right runtime (edge YOLO for [`camera_frame`](/feature-reference/workflows#edge-workflows-camera-frame), cloud VLMs for [`call_model`](/feature-reference/workflows/overview#nodes)) and keeps it healthy when the network blinks.
+You don't manage model downloads, hardware compatibility, or reconnects. Cyberwave provisions the right model into the right runtime (edge YOLO for [`camera_frame`](/feature-reference/workflows#edge-workflows-camera-frame), cloud VLMs for [`call_model`](/feature-reference/workflows#nodes)) and keeps it healthy when the network blinks.
 
 ---
 
 ## Same workflow, sim or real
 
-Workflows run unchanged against [simulation](/overview/features/simulation) or live hardware. Flip the mode on your environment (or the SDK) and the same graph drives a MuJoCo twin in CI, then a real robot in your cell:
-
-```python
-cw.affect("simulation")
-cw.workflows.trigger("acme/workflows/pick-and-place")
-
-cw.affect("live")
-cw.workflows.trigger("acme/workflows/pick-and-place")
-```
+Workflows run unchanged against [simulation](/overview/features/simulation) or live hardware. Set the workflow's execution target to **Simulation** and the same graph drives a MuJoCo twin in CI; set it to **Live** and it drives a real robot in your cell. See [Running a workflow in simulation](/feature-reference/workflows/simulation-execution-target). `cw.affect()` does not change where `cw.workflows.trigger()` runs.
 
 This is the practical version of "test before you deploy"; see the [environment editor](/feature-reference/environment-editor/index#workflow-executions-in-an-environment) for replaying past runs and inspecting per-node executions.
 
@@ -87,9 +79,9 @@ This is the practical version of "test before you deploy"; see the [environment 
 
 {/* stub — this section will be curated by a human before publishing */}
 
-Every workflow compiles to a real Python worker built on the Cyberwave SDK. Open **Code** in the workflow editor to read the exact script your graph generates, then copy or download it.
+Every workflow compiles to a real Python worker built on the Cyberwave SDK. Open **Code** in the workflow editor to read the exact script your graph generates, then copy or download it. This works for every workflow, whichever runtime it uses — cloud workflows run through Cyberwave's own interpreter rather than the script, but the generated Python is still there to read.
 
-Need to go beyond the nodes? **Customize** the script and save it — your edited version is persisted and shipped to the edge in place of the autogenerated one. **Restore** brings the autogenerated script back at any time. If you edit the graph after customizing, the editor flags that your custom script no longer matches the graph so you can regenerate.
+Need to go beyond the nodes? On workflows set to the **edge runtime**, **Customize** the script and save it — your edited version is persisted and shipped to the edge in place of the autogenerated one. **Restore** brings the autogenerated script back at any time. If you edit the graph after customizing, the editor flags that your custom script no longer matches the graph so you can regenerate.
 
 Custom worker code runs only on your own edge runtime.
 
@@ -104,9 +96,9 @@ Custom worker code runs only on your own edge runtime.
     [catalog](https://cyberwave.com/catalog) into the same graph.
   </Card>
   <Card title="Switching between models and code" icon="shuffle">
-    Hand off mid-task; e.g. an [RL policy](/feature-reference/ml-models/index)
+    Hand off mid-task; e.g. an [RL policy](/feature-reference/uploading-policies)
     moves the arm to the box, then a deterministic Python
-    [`code` node](/feature-reference/workflows#code-node-stub) takes over for
+    [`code` node](/feature-reference/workflows#code-node) takes over for
     the pre-canned drop sequence.
   </Card>
   <Card title="Reacting to the real world" icon="bell">

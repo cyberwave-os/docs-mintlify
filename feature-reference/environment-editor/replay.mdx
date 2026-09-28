@@ -1,7 +1,6 @@
 ---
 title: Replay recordings
 description: Save simulation runs and replay motion, sensor media, and execution evidence.
-status: stub
 ---
 
 Recording playback loads **signed URLs** from the API instead of inlined samples:
@@ -50,12 +49,12 @@ users who have access to the environment.
 
 ## Playback timing
 
-New simulation recordings retain both acquisition timestamps and simulation time.
-**Smooth simulation** is the default when that clock is available: robot motion,
-camera media, audio, and events follow the same simulation timeline. Slow physics
-or acquisition pauses therefore do not stretch the mission's playback duration.
-Choose **Original recording timing** in timeline settings to inspect acquisition
-pauses. Older recordings without a simulation clock use their original timing.
+A recording can retain both the wall-clock time each sample arrived and the
+producer's own clock. **Source clock** is the default when the second is
+available: robot motion, camera media, audio, and events follow that one
+timeline, so a slow simulation step or an acquisition pause does not stretch the
+mission's playback duration. Choose **Wall clock** in timeline settings to
+inspect those pauses. Recordings without source-clock anchors use wall timing.
 Playback can briefly wait for required media to load.
 
 ## Export an MP4

@@ -6,7 +6,7 @@ icon: "drone"
 
 import { EdgeSetup } from "/snippets/edge-setup.mdx";
 
-Cyberwave treats every drone the same: drop a digital twin into an [environment](/use-cyberwave/architecture/key-concepts#environments), pair the aircraft, and start sending commands from the dashboard, the [Python SDK](/tools/python-sdk), or an AI controller. The same workflow scales from the low-cost [DJI Mini 3 Pro](https://cyberwave.com/dji/DJI-Mini-3-Pro) and [DJI Mini 4 Pro](https://cyberwave.com/dji/DJI-Mini-4-Pro) up to research platforms like PX4 Vision; [browse the full lineup](https://cyberwave.com/catalog/tag/drone). Each catalog page bundles the **bill of materials**, supported drivers, and **troubleshooting** for that aircraft, so start there whenever you're unboxing new hardware.
+Cyberwave treats every drone the same: drop a digital twin into an [environment](/feature-reference/architecture/key-concepts#environment), pair the aircraft, and start sending commands from the dashboard, the [Python SDK](/overview/tools/python-sdk), or an AI controller. The same workflow scales from the low-cost [DJI Mini 3 Pro](https://cyberwave.com/dji/DJI-Mini-3-Pro) and [DJI Mini 4 Pro](https://cyberwave.com/dji/DJI-Mini-4-Pro) up to research platforms like PX4 Vision; [browse the full lineup](https://cyberwave.com/catalog/tag/drone). Each catalog page bundles the **bill of materials**, supported drivers, and **troubleshooting** for that aircraft, so start there whenever you're unboxing new hardware.
 
 <iframe
   width="100%"
@@ -57,19 +57,19 @@ Cyberwave treats every drone the same: drop a digital twin into an [environment]
 
 ## Control it from Python
 
-Once the twin is paired, the [Python SDK](/tools/python-sdk) gives you the same API for any drone in the catalog. Run this from your laptop or any cloud machine; Cyberwave handles the networking and orchestration end-to-end:
+Once the twin is paired, the [Python SDK](/overview/tools/python-sdk) gives you the same API for any drone in the catalog. Run this from your laptop or any cloud machine; Cyberwave handles the networking and orchestration end-to-end:
 
 ```python
 from cyberwave import Cyberwave
 
 cw = Cyberwave()
-cw.affect("real-world")  # or "simulation" for a dry run
+cw.affect("real-world")  # or "playground" for a free dry run in the browser
 
 drone = cw.twin("SZ-DJI-Technology/DJI-Mini-4-Pro")  # swap for any other drone
 
 drone.takeoff(altitude=2.0)
 drone.gimbal_rotate(pitch=-45.0, duration=1.5)   # tilt camera down
-frame = drone.capture_frame("numpy")             # latest frame from the gimbal cam
+frame = drone.get_frame("numpy")                 # latest frame from the gimbal cam
 drone.land()
 ```
 
@@ -127,7 +127,7 @@ Switching to a different drone is a **one-line change**: change `cw.twin(...)` t
 
 ## Add autonomy with waypoints
 
-Cyberwave ships with **autonomous navigation out of the box**. You don't have to write a planner; drop [waypoints](/use-cyberwave/environment-editor) on the environment map and trigger them from the dashboard, the SDK, or a workflow.
+Cyberwave ships with **autonomous navigation out of the box**. You don't have to write a planner; drop [waypoints](/feature-reference/environment-editor) on the environment map and trigger them from the dashboard, the SDK, or a workflow.
 
 <Steps>
   <Step title="Drop waypoints">
@@ -140,7 +140,7 @@ Cyberwave ships with **autonomous navigation out of the box**. You don't have to
     paired driver.
   </Step>
   <Step title="React on arrival">
-    Wire a [Workflow](/use-cyberwave/workflows) to fire on `waypoint reached`:
+    Wire a [Workflow](/feature-reference/workflows) to fire on `waypoint reached`:
     e.g. capture a frame, send it to a cloud VLM, and log the finding.
   </Step>
 </Steps>
@@ -149,18 +149,18 @@ Cyberwave ships with **autonomous navigation out of the box**. You don't have to
 
 ## Build inspection workflows
 
-Use [Workflows](/use-cyberwave/workflows) to turn waypoints into repeatable inspection missions. A typical pattern:
+Use [Workflows](/feature-reference/workflows) to turn waypoints into repeatable inspection missions. A typical pattern:
 
 `waypoint reached → capture frame → send to a cloud VLM → log finding / raise alert`
 
 See the [edge-to-cloud VLM tutorial](/tutorials/edge-to-cloud-vlm) and the [rover AI mission tutorial](/tutorials/rover-ai-mission) for full walkthroughs of the same pattern on other platforms; the workflow contract is identical.
 
-Because Cyberwave also speaks to [cameras](/get-started/cameras), [robotic dogs](/get-started/robotic-dogs), and [arms](/get-started/robotic-arms), you can mix and match hardware in the same workflow, for example a fixed perimeter camera that **triggers** a drone patrol, or a drone that hands off to a quadruped once it lands at an inspection point.
+Because Cyberwave also speaks to [cameras](/overview/cameras), [robotic dogs](/overview/robotic-dogs), and [arms](/overview/robotic-arms), you can mix and match hardware in the same workflow, for example a fixed perimeter camera that **triggers** a drone patrol, or a drone that hands off to a quadruped once it lands at an inspection point.
 
 <Info>
   Workflows can be authored **low-code** in the dashboard or directly in
   **Python**. Cyberwave decides whether each step runs on the edge device next
-  to the drone, in a [cloud node](/tools/cloud-node), or a mix of both; your
+  to the drone, in a [cloud node](/overview/tools/cloud-node), or a mix of both; your
   automation and your hardware don't change.
 </Info>
 

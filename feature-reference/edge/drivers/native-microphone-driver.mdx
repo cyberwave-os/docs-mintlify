@@ -1,6 +1,6 @@
 ---
-title: "Native Microphone Driver"
-sidebarTitle: "Native Driver"
+title: "Native microphone driver"
+sidebarTitle: "Native microphone driver"
 description: "Set up the native Cyberwave microphone driver for WebRTC audio, MQTT start/stop control, and Zenoh audio worker hooks."
 icon: "microphone-lines"
 ---
@@ -9,9 +9,7 @@ import EarlyAccess from '/snippets/early-access.mdx';
 
 <EarlyAccess />
 
-<Warning>
-**STUB DOCUMENT:** This page captures the current native-driver contract and known edge cases. A human will expand it before publishing.
-</Warning>
+{/* TODO(docs): **STUB DOCUMENT:** This page captures the current native-driver contract and known edge cases. A human will expand it before publishing. */}
 
 ## What It Provides
 
@@ -75,7 +73,7 @@ As a **fallback path** for callers that only know the twin command topic, the mi
 1. Create or select a microphone twin in your Cyberwave environment.
 2. Pair the edge device through Cyberwave Edge so the driver receives `CYBERWAVE_API_KEY` and `CYBERWAVE_TWIN_UUID`.
 3. Attach a USB or built-in microphone to the edge device.
-4. Start the driver with Edge Core (recommended) or Docker. On **macOS**, run `cyberwave edge install` so the CLI starts a host ffmpeg PCM bridge (like the MJPEG camera bridge) and edge-core injects `CYBERWAVE_METADATA_AUDIO_DEVICE=http://host.docker.internal:8101` into the container. On **Linux Docker** hosts, pass the audio device into the container:
+4. Start the driver with Edge Core (recommended) or Docker. On **macOS**, run `cyberwave edge install` so the CLI starts a host ffmpeg PCM bridge (like the MJPEG camera bridge) and Edge Core injects `CYBERWAVE_METADATA_AUDIO_DEVICE=http://host.docker.internal:8101` into the container. On **Linux Docker** hosts, pass the audio device into the container:
 
 ```yaml
 devices:
@@ -88,9 +86,7 @@ Some systems require `--privileged` for ALSA device access. Use the narrower `/d
 
 ## Standard catalog sensor configuration
 
-<Warning>
-**STUB DOCUMENT:** Canonical catalog asset shape; a human will expand before publishing.
-</Warning>
+{/* TODO(docs): **STUB DOCUMENT:** Canonical catalog asset shape; a human will expand before publishing. */}
 
 The standard Cyberwave catalog microphone asset declares one sensor block. Both `id` and `name` are `"audio"`; `type` is `"audio"` (active producer). This is the same routing key the [native speaker driver](/feature-reference/edge/drivers/native-speaker-driver) uses for its `id`/`name` — the modalities are distinguished by `type` / WebRTC `sensor_type`, not by `id`.
 
@@ -178,9 +174,7 @@ For local debugging without Docker, use `./run-local.sh` (direct `sounddevice` /
 
 ## Dual Audio Streaming Paths
 
-<Warning>
-**STUB DOCUMENT:** This section captures the current dual-path contract. A human will expand it before publishing.
-</Warning>
+{/* TODO(docs): **STUB DOCUMENT:** This section captures the current dual-path contract. A human will expand it before publishing. */}
 
 The driver streams captured audio on two independent, parallel paths:
 
@@ -214,9 +208,7 @@ The PortAudio callback places raw audio into a zero-copy swap buffer for Zenoh (
 
 ### Edge health (`edge_health`)
 
-<Warning>
-**STUB DOCUMENT:** CYB-2005 contract summary; a human will expand before publishing.
-</Warning>
+{/* TODO(docs): **STUB DOCUMENT:** CYB-2005 contract summary; a human will expand before publishing. */}
 
 The driver delegates `edge_health` to the SDK's `MicrophoneAudioStreamer`. Once WebRTC is connected, each heartbeat includes `streams.stream.stream_config` with `kind: "audio"`, `sample_rate_hz`, `channels`, and `codec: "opus"`. The block intentionally omits `source` (no host device path on the wire). Liveness uses `mark_alive`, so `fps` and `frames_sent` stay at zero for audio rows. The dashboard renders sample rate and channel layout from this block; workflow triggers still read Zenoh PCM, not MQTT health.
 

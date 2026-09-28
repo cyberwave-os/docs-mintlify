@@ -1,6 +1,6 @@
 ---
 title: "Build a sandwich-making robot"
-sidebarTitle: "Sandwich-Making Robot"
+sidebarTitle: "Sandwich-making robot"
 description: "A step-by-step tutorial on training a Vision-Language-Action model for real-world robotic manipulation using the SO-101 arm and the Cyberwave platform."
 icon: "burger"
 iconType: "solid"
@@ -77,8 +77,8 @@ Before calibrating, you need a Cyberwave environment with the SO-101 arm and cam
 1. In the Cyberwave dashboard, click **New Environment** and give it a name (e.g. _"Sandwich Bot"_).
 2. Click **Add from Catalog**, search for **SO101**, and add it to the environment. Position it to roughly match your physical setup.
 3. Click **Add from Catalog** again, search for **Standard Camera**, and add it.
-4. Open the camera twin in **Edit Mode**, set **Dock to Twin** to the **SO101** twin, and set **Parent Root** to **wrist**. The camera will now follow the arm's end-effector during teleoperation and recording.
-5. Pair the hardware by following the terminal prompts from `cyberwave edge install`: select your environment, select the SO101 twin (the driver auto-installs), then repeat for the camera twin.
+4. Open the camera twin in **Edit Mode**, set **Dock to Twin** to the **SO-101** twin, and set **Parent Root** to **wrist**. The camera will now follow the arm's end-effector during teleoperation and recording.
+5. Pair the hardware by following the terminal prompts from `cyberwave edge install`: select your environment, select the SO-101 twin (the driver auto-installs), then repeat for the camera twin.
 
 <Tip>
   The wrist-mounted camera is the visual input SmolVLA learns from. Lock the
@@ -96,7 +96,7 @@ Calibration teaches the software where each joint's zero position is, what its v
 </Warning>
 
 1. Open the **Cyberwave dashboard** and navigate to your environment.
-2. Select the SO101 twin. You'll see an option to **Calibrate** both arms (leader and follower).
+2. Select the SO-101 twin. You'll see an option to **Calibrate** both arms (leader and follower).
 3. Click **Calibrate** and follow the on-screen prompts.
 4. **Manually move every joint** of the leader arm through its full range when prompted.
 5. Repeat for the **follower arm**.
@@ -128,7 +128,7 @@ docker exec -it $(docker ps -q --filter name=cyberwave-driver) \
 from cyberwave import Cyberwave
 
 cw = Cyberwave(api_key="your_api_key")
-cw.affect("live")  # Essential: starts MQTT connection
+cw.affect("live")  # target the real robot (live is also the default)
 
 robot = cw.twin(
     "the-robot-studio/so101",
@@ -138,9 +138,9 @@ robot = cw.twin(
 ```
 
 <Tip>
-  **Key discovery.** `cw.affect("live")` must be called before any robot
-  interaction. Without it, MQTT never connects and all joint commands silently
-  fail.
+  **Key discovery.** Live is the default mode, and MQTT connects on the first
+  command. If joint commands don't move the arm, check that the twin is paired
+  and that its controller policy is attached (`robot.policy.ensure_attached()`).
 </Tip>
 
 ## Step 2: Understand the Cyberwave SDK
@@ -184,17 +184,17 @@ robot.joints.set("gripper", 10, degrees=True)
 
 ### Capture camera frames
 
-Use `capture_frame()` on the robot twin, with `sensor_id` set to the wrist camera you docked in Step 1. The SDK supports several output formats:
+Use `get_frame()`, with `sensor_id` set to the wrist camera you docked in Step 1. The SDK supports several output formats:
 
 ```python
 import time
 time.sleep(3)  # Let the WebRTC stream warm up on first connect
 
-jpg_bytes = robot.capture_frame("bytes", sensor_id="wrist_cam")
-frame     = robot.capture_frame("numpy", sensor_id="wrist_cam")  # for ML inference
+jpg_bytes = robot.get_frame("bytes", sensor_id="wrist_cam")
+frame     = robot.get_frame("numpy", sensor_id="wrist_cam")  # for ML inference
 ```
 
-See the [Python SDK reference](/tools/python-sdk#frame-capture) for all supported output formats (`"numpy"`, `"pil"`, `"bytes"`, or a temp JPEG file path).
+See the [Python SDK reference](/overview/tools/python-sdk#frame-capture) for all supported output formats (`"numpy"`, `"pil"`, `"bytes"`, or a temp JPEG file path).
 
 ## Step 3: Record demonstrations
 

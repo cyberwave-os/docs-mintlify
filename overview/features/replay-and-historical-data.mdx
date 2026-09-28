@@ -1,5 +1,5 @@
 ---
-title: "Replay & Historical Data"
+title: "Replay & historical data"
 description: "Scrub through everything your robots and sensors have ever recorded (video, joints, point clouds, GPS) straight from your browser"
 icon: "clock-rotate-left"
 ---
@@ -21,7 +21,7 @@ Every [twin](/overview/features/digital-twin) in an [environment](/overview/feat
 - **Audio** from on-device microphones
 - **Workflow runs**: every node execution, input, and output, bound to the same timeline
 
-You don't manage disk space. The [edge core](/feature-reference/edge/overview) buffers locally and uploads to Cyberwave Cloud the moment connectivity returns, so an intermittent network or a 4G hiccup never costs you a recording. See [`record` / `replay` in the SDK data layer](/feature-reference/edge/drivers/data-record-replay) for the underlying mechanics.
+You don't manage disk space. The [Edge Core](/feature-reference/edge/overview) buffers locally and uploads to Cyberwave Cloud the moment connectivity returns, so an intermittent network or a 4G hiccup never costs you a recording. See [`record` / `replay` in the SDK data layer](/feature-reference/edge/drivers/data-record-replay) for the underlying mechanics.
 
 ---
 
@@ -60,7 +60,7 @@ from cyberwave import Cyberwave
 cw = Cyberwave()
 
 dataset = cw.datasets.get("acme/datasets/pick-and-place-runs")
-url = dataset.download(format="lerobot3")     # signed URL: fetch and go
+url = cw.datasets.convert(dataset, "lerobot3")  # signed URL: fetch and go
 ```
 
 ---

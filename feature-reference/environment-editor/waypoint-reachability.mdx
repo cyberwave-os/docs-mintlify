@@ -1,0 +1,68 @@
+---
+title: "Waypoint reachability"
+description: "See at a glance whether a robot arm can actually reach a waypoint you're placing."
+---
+
+<Note>
+{/* TODO(docs): page not yet reviewed */}
+</Note>
+
+When a waypoint is attached to a robot arm, a small badge above it tells you
+whether the arm can actually put its tool there — updating live as you drag.
+Hover the badge to see the reason in full.
+
+## What the badges mean
+
+| Badge | Meaning | What to do |
+| --- | --- | --- |
+| **✓** green | The arm can reach this pose. | Nothing. |
+| **⟳** amber | The arm can reach the *position*, but not at that *orientation*. | Rotate the waypoint. |
+| **✕** red | The arm cannot reach the position at all. | Move the waypoint closer to the arm. |
+| *no badge* | Not checked. | Nothing — see below. |
+
+Each badge carries its own symbol as well as a colour, so it stays readable
+without relying on telling red from green.
+
+No badge is the normal state for any waypoint this doesn't apply to, which is
+most of them: waypoints for mobile robots, waypoints placed in the environment
+rather than attached to an arm, and arms without a robot description to solve
+against. Those waypoints look exactly as they always have. A badge only ever
+appears after a successful check, so a bare waypoint never means "probably
+fine" — and a check that fails removes the badge rather than guessing.
+
+## When it applies
+
+The waypoint has to be attached to an arm's base link — set the waypoint's
+reference frame to the arm. Waypoints attached to *other waypoints* inherit the
+chain, so a waypoint attached to a waypoint attached to an arm is checked
+against that arm. Dragging a parent waypoint re-checks everything attached
+beneath it.
+
+Checks run while you have edit rights on the environment.
+
+## While you drag
+
+Verdicts update continuously as you move a waypoint. Dragging a waypoint far
+outside the arm's reach shows **✕** immediately. Nearer the edge of the
+workspace the badge fades for a moment while the answer is computed — a faded
+badge means "still deciding", not a verdict.
+
+Only the waypoint you're dragging is re-checked, along with anything attached to
+it. The rest keep the verdict they already had.
+
+## Limitations
+
+- **Reach only, not safety.** The check ignores collisions — with the scene and
+  with the arm itself. A green waypoint can still be a pose you don't want the
+  arm to take.
+- **One waypoint at a time.** Each waypoint is judged on its own, starting from
+  the arm's current pose. Running a path visits waypoints in order from wherever
+  the previous one left the arm, so a waypoint that checks out on its own can
+  still fail as part of a longer path.
+- **Green is about the arm, not about the run.** The check works harder to find
+  a solution than running the waypoint does, so a pose near the edge of what the
+  arm can hold — usually an awkward wrist angle rather than a distant position —
+  can show green and still fail to run. Rotating the waypoint slightly is
+  normally enough.
+- **Waypoints attached to a moving link stay blue.** Only the arm's base link is
+  supported as a reference frame.

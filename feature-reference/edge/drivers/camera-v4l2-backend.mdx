@@ -1,11 +1,9 @@
 ---
-title: "Camera Driver: V4L2 Backend Requirement"
+title: "Camera driver: V4L2 backend requirement"
 description: "Why the Linux camera-driver container ships with apt python3-opencv instead of the opencv-python wheel, and what to do if you hit a 5 fps YUYV stream."
 ---
 
-<Warning>
-**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
-</Warning>
+{/* TODO(docs): **STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update. */}
 
 The `cyberwaveos/camera-driver` image installs OpenCV via Debian's `python3-opencv` package, not the `opencv-python` PyPI wheel. The Debian package is built with the native V4L2 backend (`V4L/V4L2: YES` in `cv2.getBuildInformation()`); the manylinux PyPI wheel is not.
 

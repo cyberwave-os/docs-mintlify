@@ -25,7 +25,7 @@ Connect a **simulated Universal Robots arm** to a Cyberwave twin using [`ursim_d
 | Piece | Notes |
 | ----- | ----- |
 | Docker | Mac or Linux host |
-| Cyberwave account | API key + twin for asset **`universal_robots/UR7`** (or change `ASSET_KEY` in the example) |
+| Cyberwave account | API key + twin for asset **`universal_robots/UR7`** (or change `REGISTRY_ID` in the example) |
 | Repo clone | Mounted into the ROS container at `/app` |
 
 ---
@@ -149,11 +149,11 @@ The example subclasses **`BaseROS2Driver`** and declares one `from_ros` publishe
 
 ```python
 class UrSimDriver(BaseROS2Driver):
-    ASSET_KEY = "universal_robots/UR7"
+    REGISTRY_ID = "universal_robots/UR7"
 
     def define_interface(self, iface):
         iface.add_publisher(
-            MqttTopicSpec(
+            TopicSpec(
                 topic_slug="cyberwave/joint/{twin_uuid}/update",
                 payload_schema_ref="JointStatesPayload",
             ),

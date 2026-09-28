@@ -1,15 +1,26 @@
 ---
-title: "Teleoperation & Remote Control"
+title: "Teleoperation & remote control"
 description: "Stay in the loop with your physical AI: watch every twin live, and take over any robot in one click"
 icon: "gamepad"
 ---
 
 Cyberwave is built for both research projects **and** the moment those projects ship to a real customer. Once a robot is doing real work in a real place, **human override is a requirement, not a feature**, and Cyberwave gives you that override out of the box for every twin in the [catalog](https://cyberwave.com/catalog), with no extra plumbing.
 
-To drive a connected robot with your keyboard, open its environment in the
-dashboard, switch to **Live**, click **Assign Controller** on the twin, and select
-**Keyboard**. Use the controller panel's key bindings to move the robot. To try
-this in simulation first, follow [Hello Robot](/overview/hello-robot).
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+cw.affect("live")
+
+robot = cw.twins.get("acme/twins/arm-station-1")
+keyboard = next(
+    p for p in robot.policy.list()
+    if (p.metadata or {}).get("input_device") == "keyboard"
+)
+robot.policy.assign(keyboard)             # human takes the wheel
+```
+
+The robot was being driven by a model a second ago; now it's being driven by you. Same twin, same environment, same code path.
 
 ---
 
@@ -19,10 +30,10 @@ Switch any [environment](/overview/features/environment) into **Live** mode and 
 
 - **Live video** from every paired camera, streamed via WebRTC into the same canvas as the 3D scene.
 - **3D twin context**: robot poses, joint states, and waypoints animate live alongside the video so you always know what's where.
-- **Spatial sensors**: [LiDAR and depth point clouds](/feature-reference/environment-editor/index#live-point-cloud-alignment) overlaid on the scene so you can see what the robot sees.
-- **Health at a glance**: per-twin [presence indicators](/feature-reference/environment-editor/index#twin-presence-indicator-live-mode) and edge-core status make it obvious which robot needs attention.
+- **Spatial sensors**: [LiDAR and depth point clouds](/feature-reference/environment-editor#live-point-cloud-alignment) overlaid on the scene so you can see what the robot sees.
+- **Health at a glance**: per-twin [presence indicators](/feature-reference/environment-editor#twin-presence-indicator-live-mode) and Edge Core status make it obvious which robot needs attention.
 
-See [Environment Editor → Live mode](/feature-reference/environment-editor/index#edge-core-connection-status-live-mode) for the full panel.
+See [Environment editor → Live mode](/feature-reference/environment-editor#edge-core-connection-status-live-mode) for the full panel.
 
 ---
 
@@ -44,21 +55,20 @@ Every twin always has exactly one **controller** driving it. Swapping controller
     motion 1:1 onto the live robot.
   </Card>
   <Card title="Python SDK" icon="python">
-    Send commands supported by your twin from your own code with
-    [`cw.affect("live")`](/tools/python-sdk#affect-simulation-vs-live-environment)
-    and the [Python SDK](/tools/python-sdk).
+    Script overrides from your own code with
+    [`cw.affect("live")`](/overview/tools/python-sdk#affect-simulation-vs-live-environment)
+    and `robot.policy.assign(...)`.
   </Card>
 </CardGroup>
 
-Use **Assign Controller** in the dashboard to choose a controller for the twin.
-For an arm running a trained VLA, follow the
-[SO-101 deployment walkthrough](/tutorials/so101-voice-pick-and-place) to deploy
-and attach its controller policy.
+```python
+policies = {p.name: p for p in robot.policy.list()}
 
-For mobile twins, `robot.navigation.use_controller(policy_uuid)` sets the default
-navigation controller policy UUID for future plans. It does not switch to keyboard
-control or immediately start a policy. This API is only available on twins with
-navigation support; see the [navigation example](/overview/index#controllers).
+robot.policy.assign(keyboard)                     # human override
+robot.policy.assign(policies["my-vla-policy"])    # hand it back to the AI
+```
+
+In the dashboard, the same handover is one click: **Assign Controller** on the twin.
 
 Telemetry, recording, and the [environment replay](/feature-reference/environment-editor/replay) timeline keep running across the handoff: a single session can start with an AI policy, hand off to a human, and end with a code controller, all on the same twin.
 
@@ -92,7 +102,7 @@ Real production deployments need more than "someone is watching the dashboard". 
   </Card>
   <Card title="Workflow-driven escalation" icon="diagram-project" href="/overview/features/workflows">
     Use [workflows](/overview/features/workflows) to fan out alerts to email,
-    [HTTP](/feature-reference/workflows/overview#nodes), or your on-call system
+    [HTTP](/feature-reference/workflows#nodes), or your on-call system
     when a model gets stuck, a confidence drops, or a sensor goes silent.
   </Card>
   <Card title="Role-based access" icon="shield" href="/feature-reference/access-control">

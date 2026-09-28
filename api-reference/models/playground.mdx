@@ -1,7 +1,6 @@
 ---
-title: "Model Playground API"
+title: "Model playground API"
 description: "Run inference, evaluate on benchmarks, and download model weights — endpoint reference with request/response schemas."
-stub: true
 ---
 
 ## Overview
@@ -298,7 +297,7 @@ For edge-only weights, **`load().predict()`** runs on-device; **`playground(...)
 ### Text-only VLM run
 
 ```bash
-curl -X POST "$CYBERWAVE_API_URL/api/v1/mlmodels/$MODEL_UUID/run" \
+curl -X POST "$CYBERWAVE_BASE_URL/api/v1/mlmodels/$MODEL_UUID/run" \
   -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"prompt": "What objects do you see on the workbench?"}'
@@ -307,7 +306,7 @@ curl -X POST "$CYBERWAVE_API_URL/api/v1/mlmodels/$MODEL_UUID/run" \
 ### Vision run with image URL
 
 ```bash
-curl -X POST "$CYBERWAVE_API_URL/api/v1/mlmodels/$MODEL_UUID/run" \
+curl -X POST "$CYBERWAVE_BASE_URL/api/v1/mlmodels/$MODEL_UUID/run" \
   -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -320,7 +319,7 @@ curl -X POST "$CYBERWAVE_API_URL/api/v1/mlmodels/$MODEL_UUID/run" \
 ### Spatial reasoning run (points)
 
 ```bash
-curl -X POST "$CYBERWAVE_API_URL/api/v1/mlmodels/$MODEL_UUID/run" \
+curl -X POST "$CYBERWAVE_BASE_URL/api/v1/mlmodels/$MODEL_UUID/run" \
   -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -335,27 +334,27 @@ curl -X POST "$CYBERWAVE_API_URL/api/v1/mlmodels/$MODEL_UUID/run" \
 ## Related
 
 <CardGroup cols={2}>
-  <Card title="Model Catalog API" icon="list" href="/models/catalog">
+  <Card title="Model Catalog API" icon="list" href="/api-reference/models/catalog">
     Browse and manage model records
   </Card>
   <Card
     title="Python SDK — ML Models"
     icon="python"
-    href="/tools/models/overview"
+    href="/overview/tools/models/overview"
   >
     SDK reference for catalog + runtime
   </Card>
   <Card
     title="Structured Actions"
     icon="code"
-    href="/use-cyberwave/ml-models/structured-actions"
+    href="/feature-reference/ml-models/structured-actions"
   >
     All available structured task IDs
   </Card>
   <Card
     title="Edge Workers"
     icon="microchip"
-    href="/use-cyberwave/ml-models/edge-worker"
+    href="/feature-reference/ml-models/edge-worker"
   >
     Run edge models on hardware
   </Card>

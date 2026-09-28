@@ -1,0 +1,39 @@
+---
+title: "Editing a universal schema"
+description: "Edit an asset's or twin's structure as JSON directly in the app"
+icon: "pencil"
+---
+
+The **universal schema** is what a robot *is* — its links, joints, sensors, actuators and capabilities. Assets and twins each carry one, and both can now be edited as JSON from the app by anyone with write access.
+
+## Where to find it
+
+**Asset** — open the asset, go to the **Files** tab, and choose **Edit JSON** on the Base schema card.
+
+**Twin** — select the twin in the environment editor, open **Advanced**, and choose **Schema JSON**.
+
+## What gets checked before a save lands
+
+The editor checks the JSON parses and is an object, and reports the line and column when it does not. On save, the server validates the whole document — capabilities, and a cross-check that any drive block names joints that actually exist. A schema that fails is refused with the reason, and nothing is written.
+
+Two shapes are always refused: an empty schema, and one that drops `links` when it previously had them. Removing `sensors` or `actuators` is a normal edit and is allowed.
+
+For an asset, some checks report rather than refuse. Your edit is saved and the editor lists what it found, so you can fix it in a follow-up edit instead of being blocked.
+
+<Warning>
+Removing links or joints asks for confirmation first. They are what the 3D viewer and the simulation exporter walk, so removing them changes what every twin of that asset resolves to.
+</Warning>
+
+## If someone else edits at the same time
+
+The editor remembers which version of the schema you opened. If someone saves a change before you do, your save is refused rather than overwriting theirs — close and reopen the editor to load the current schema, then reapply your edit.
+
+## What a rebuild or a sync discards
+
+**Assets** — regenerating the schema from the URDF keeps per-joint home positions, sensors, actuators, capabilities and collision config. Anything else you edit by hand is discarded on the next rebuild.
+
+**Twins** — a twin's schema is its own snapshot of its asset. Running **sync with asset** re-snapshots it and discards edits made here, apart from sensor fields you changed and joint homes you authored. Editing a twin's schema never changes its asset.
+
+## Moved joint zeros
+
+If an edit changes a joint's `pose` or `axis`, it moves that joint's zero. Saved joint positions and home positions are offsets from that zero and are **not** adjusted to match, so they will refer to a different physical pose afterwards. The editor says so when it happens — re-teach those positions rather than assuming they carried over.

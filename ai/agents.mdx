@@ -1,0 +1,58 @@
+---
+title: "AI agents"
+sidebarTitle: "Overview"
+description: "Three agents: the environment assistant builds the world, the control agent drives the robots, the workflow assistant automates work. You approve every plan."
+icon: "comments"
+---
+
+Cyberwave has three agents. They sit on top of everything else: they build the environment, decide what the robots do, and write the automation, all from a plain-language request. Each one shows you what it intends to do and waits for your approval.
+
+<CardGroup cols={3}>
+  <Card title="Environment assistant" icon="cubes" href="/ai/environment-assistant">
+    **Builds the world.** Describe a scene; it places robots, sensors and objects, and generates assets the catalog doesn't have.
+  </Card>
+  <Card title="Control agent" icon="gamepad" href="/ai/control-agent">
+    **Drives the robots.** Describe a task; it plans actions and skills the twin actually supports and runs the one you approve.
+  </Card>
+  <Card title="Workflow assistant" icon="diagram-project" href="/ai/workflow-assistant">
+    **Automates the work.** Describe a recurring job; it drafts or edits the workflow that does it.
+  </Card>
+</CardGroup>
+
+## Which one do I need?
+
+| You say | Agent | Result |
+| --- | --- | --- |
+| "A workbench with an SO-101, a camera above it and two bins" | Environment assistant | A scene you can simulate |
+| "Move the Go2 to waypoint A" · "Run the pick skill" | Control agent | One approved action, executed now |
+| "Inspect every pallet and alert me if one is damaged" | Workflow assistant | A workflow that runs on its own |
+
+A typical session uses all three in order: build the scene, try the task with the control agent in simulation, then turn it into a workflow.
+
+## How approval works
+
+- **Plans come first.** Every agent returns a plan or a proposal before changing anything.
+- **You approve one step at a time.** The control agent dispatches a single action only with explicit confirmation. The workflow assistant applies an edit only after **Review and apply**.
+- **Simulation before hardware.** Plan and test in simulation, then plan again for the real robot.
+- **A person can always take over** from the twin's controller panel. See [Ways to control a robot](/ai/control).
+
+## Where you use them
+
+| | Environment assistant | Control agent | Workflow assistant |
+| --- | --- | --- | --- |
+| **Dashboard** | Environment editor → **Agent** | Simulate → **Agent** | Workflow workbench → **Prompt** or **Assistant** |
+| **Python SDK** | `cw.agents.environment` | `cw.agents.control` | `cw.agents.workflow` |
+| **MCP** | `cw_plan_scene`, `cw_create_environment` | `cw_plan_control_action`, `cw_dispatch_control_action` | `cw_create_workflow_from_prompt` |
+
+To give Claude Code, Cursor or any MCP client these abilities, see the [MCP server](/overview/tools/mcp-server) and the [Claude skill](/overview/tools/claude-skill) under Reference.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Control agent" icon="gamepad" href="/ai/control-agent">
+    The most common starting point: plan, approve and run an action.
+  </Card>
+  <Card title="Control an SO-101 with your voice" icon="microphone" href="/tutorials/so101-natural-language-agent">
+    Voice in, a plan out, the arm moves.
+  </Card>
+</CardGroup>

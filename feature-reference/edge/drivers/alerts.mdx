@@ -3,9 +3,7 @@ title: "Alerts"
 description: "Alerts notify operators that action is needed."
 ---
 
-<Warning>
-**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
-</Warning>
+{/* TODO(docs): **STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update. */}
 
 Alerts notify operators that action is needed. They are displayed prominently in the UI (environment view, twin detail, etc.).
 
@@ -67,9 +65,7 @@ When an alert is attributable to one node, the alert card also shows a `Node: <n
 
 ## Source attribution: `metadata.source_chain`
 
-<Warning>
-**STUB:** Behavior is implemented; this section will be expanded with screenshots and the full kind catalogue.
-</Warning>
+{/* TODO(docs): **STUB:** Behavior is implemented; this section will be expanded with screenshots and the full kind catalogue. */}
 
 Every alert raised by a workflow's `send_alert` node carries an ordered `source_chain` under `metadata` describing each upstream node that fed into the decision. The chain is built generically — any node emitter that opts in by parking a `_source_summary` on its output dict contributes an entry, so the mechanism works equally well for camera-perception, audio-track, alert-triggered, manual, scheduled, or any future trigger source.
 
@@ -120,9 +116,7 @@ Notes:
 
 ## Edge Core system alerts
 
-<Warning>
-**STUB:** This section will be expanded with the full alert type catalogue.
-</Warning>
+{/* TODO(docs): **STUB:** This section will be expanded with the full alert type catalogue. */}
 
 Edge Core automatically raises technical alerts for operational issues. These are `category: technical`, `source_type: edge` unless noted otherwise.
 
@@ -138,7 +132,7 @@ Edge Core automatically raises technical alerts for operational issues. These ar
 | `workflow_sync_failure` | `error` | `edge` | The edge could not download one or more workflow workers from the cloud — affected workflows won't run on that twin until the next successful sync |
 | `worker_load_error` | `error` | `edge` | A workflow worker on the edge failed to load and will not run |
 | `worker_runtime_error` | `error` | `edge` / `cloud` | A workflow node raised an error while running. Attached to the workflow (and twin) so you can find it from the workflow. Appears the same way whether the workflow runs on edge or cloud — only `source_type` differs. |
-| `driver_starting` / `worker_starting` | `info` while starting, `critical` on failure | `edge` | Tracks a driver/worker container's docker pull and startup. A failed pull (including a timed-out download of the driver image, the ML worker image, or any other required image) flips the alert to `critical` before resolving it — never a quiet `warning`. |
+| `driver_starting` / `worker_starting` | `info` while starting, `critical` on failure | `edge` | Tracks a driver/worker container coming up, through three stages: downloading the image, installing (decompressing) it, and starting the container. It clears once the container is running, so a worker whose image is already downloaded still reports that it is starting. A failed pull (including a timed-out download of the driver image, the ML worker image, or any other required image) flips the alert to `critical` before resolving it — never a quiet `warning`. |
 | `edge_core_restart` | `info` | `cloud` | Backend has accepted an edge-core restart request and is tracking the lifecycle (see below) |
 
 ### `edge_core_restart` lifecycle alert
@@ -200,7 +194,7 @@ The workbench renders every alert through a single `AlertCard` ([`cyberwave-fron
 | `description` | Body text. URLs are auto-linked. |
 | `media` | Inline image (`.png`/`.gif`) or autoplaying muted video (`.mp4`). |
 | `created_at` | Relative timestamp with absolute on hover. |
-| `metadata.buttons` | Generic action buttons that publish back on `cyberwave/twin/{twin_uuid}/command` as a `button` command — see [Metadata buttons](#metadata-buttons-cyb-1274). |
+| `metadata.buttons` | Generic action buttons that publish back on `cyberwave/twin/{twin_uuid}/command` as a `button` command. |
 
 The new `edge_core_restart` alert deliberately uses **only** the generic path. The lifecycle is encoded in `metadata.phase`, so any UI that wants to surface "Restart in progress vs. completed vs. failed" can read that field without a dedicated component, and the audit trail (`request_id`, `pre_resolved_alert_uuids`, `previous_phase`, `timed_out_at`) is plain JSON.
 
@@ -221,20 +215,25 @@ Before you introduce a new `alert_type`:
 1. **Check this page.** If an existing type fits — even loosely — extend its `metadata` instead of forking a new code.
 2. **Default to the generic path.** Pick a sensible `severity`, write a clear `name` + `description`, and put any structured state on `metadata`. The generic card will render it correctly.
 3. **Only add a specialised renderer when the interaction itself is novel** (e.g. a calibration step that needs custom MQTT commands). Generic `metadata.buttons` cover most operator-confirms-something flows without new code.
-4. **Document the type in this page** before merging — both the catalogue row above and, if specialised, the table in this section. A new `alert_type` constant that does not have a row here should not pass review.
+4. **Document the type in this page** before merging — both the catalog row above and, if specialised, the table in this section. A new `alert_type` constant that does not have a row here should not pass review.
 
 ### `driver_starting` progress metadata
 
-Edge-core writes byte-aggregated `docker pull` progress directly onto the active `driver_starting` alert's `metadata`, so the workbench renders a live `"Downloading driver image (cyberwaveos/ugv-driver:dev) — 745 MB of 1.55 GB (47%)"` line without any extra round-trip. The fields are:
+Edge-core writes `docker pull` progress directly onto the active `driver_starting` alert's `metadata`, so the workbench renders a live `"Downloading driver image (cyberwaveos/ugv-driver:dev) — 745 MB of 1.55 GB (47%)"` line without any extra round-trip. The fields are:
 
 | Field | Type | Meaning |
 | --- | --- | --- |
-| `phase` | string | Lifecycle marker. Pull walks `pull_started → downloading → installing → pull_complete → pull_stream_finished`, then `container_starting → driver_running` once the container is up. Failure phases are `pull_spawn_failed` / `pull_timed_out` / `pull_exit_error`. |
+| `phase` | string | Lifecycle marker. Pull walks `pull_started → downloading → installing → pull_complete → pull_stream_finished`, then `starting_container → container_created → container_running` once the container is up. Failure phases are `pull_spawn_failed` / `pull_timed_out` / `pull_exit_error`. |
 | `image` | string | The driver image being pulled. |
-| `progress_percent` | int (0–100) | Integer percent of `downloaded_bytes / total_bytes`. `0` until the first `docker pull` byte-bar lands; `100` at `pull_complete`. |
-| `downloaded_bytes` / `total_bytes` | int | Raw byte totals aggregated across all layers. |
-| `downloaded_human` / `total_human` | string \| null | Same values rendered in SI units (`"745 MB"`, `"1.55 GB"`). `null` before docker emits any byte-bar (e.g. when every layer is `Already exists`). |
-| `layers_total` / `layers_complete` | int | Number of layers seen so far and number with `Pull complete`. Only used to caption the brief `installing` phase between the last byte landing and `Status: Downloaded …`. |
+| `progress_percent` | int (0–100) | Integer percent of `layers_fetched / layers_total` — docker declares a layer's size only once it starts fetching it, so a byte ratio has an unknown denominator for most of a pull. Capped at `99` until docker confirms the pull finished; `100` at `pull_complete`. |
+| `overall_progress_percent` | int (0–100) | The whole startup as one number that only moves forward: download, install and container start each get a band of it. This is what a progress bar should read. |
+| `stage_progress_percent` | int (0–100) | The same startup expressed *per stage*, each restarting at 0. Use it only alongside something that names the current stage. |
+| `downloaded_bytes` / `total_bytes` | int | Raw byte totals aggregated across all layers. `total_bytes` is a partial sum while `total_bytes_partial` is `true`. |
+| `total_bytes_partial` | bool | `true` while any announced layer has not yet declared its size, i.e. `total_bytes` is not the image's size. |
+| `layers_fetched` | float | Layers whose bytes are on disk, the layer currently downloading counted as its byte fraction. Numerator of `progress_percent`. |
+| `downloaded_human` / `total_human` | string \| null | Same values rendered in SI units (`"745 MB"`, `"1.55 GB"`). `total_human` is `null` whenever `total_bytes_partial` is `true`, so a partial sum is never rendered as a hard "of Y"; `downloaded_human` is `null` before docker emits any byte-bar. |
+| `layers_total` / `layers_complete` | int | Number of layers seen so far and number with `Pull complete`. Drives the caption and the percentage through the `installing` phase, which on a multi-GB image outlasts the download. |
+| `layers_active` | int | Layers currently in flight (downloading, verifying or extracting). |
 | `last_docker_pull_line` | string | Most recent raw `docker pull` line (truncated to 500 chars), kept for debugging. |
 
 The frontend renderer is in [`cyberwave-frontend/components/alerts/alert.tsx`](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-frontend/components/alerts/alert.tsx) — search for `getDriverStartingDisplayText`.

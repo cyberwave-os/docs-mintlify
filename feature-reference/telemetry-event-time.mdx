@@ -1,0 +1,49 @@
+---
+title: "Telemetry event time"
+description: "What the timestamp field means on a telemetry row, and how it differs from the timestamp on the wire"
+---
+
+Telemetry, driver-log and metrics responses carry **`timestamp`**: when the
+sample was *acquired*, in wall clock, never later than the moment Cyberwave
+received it. It is the field to order, window and plot on.
+
+```json
+{
+  "uuid": "…",
+  "timestamp": "2026-07-31T12:00:00+00:00",
+  "event_type": "twin_position_update",
+  "metadata": { "x": 1.0 }
+}
+```
+
+Endpoints that return it:
+
+| Endpoint | Field |
+| --- | --- |
+| `GET /api/v1/twins/{uuid}/telemetry` | `items[].timestamp` |
+| `GET /api/v1/twins/{uuid}/logs` | `items[].timestamp` |
+| `GET /api/v1/environments/{uuid}/driver-logs` | `items[].timestamp` |
+| `GET /api/v1/twins/{uuid}/connection-events` | `timestamp` |
+| `GET /api/v1/twins/{uuid}/metrics` | `timestamp` |
+| `GET /api/v1/twins/{uuid}/latest-track` | `timestamp` |
+
+## Not the same as the `timestamp` on MQTT
+
+A message you read straight off the broker carries its own `timestamp` — the
+publishing host's wall clock at the moment it published, which includes read,
+serialization and queueing delay. For a camera it also includes exposure and
+transfer.
+
+Publish time and acquisition time differ by that latency, so a live view fed
+from MQTT and a replay fed from the API can disagree by it for the same sample.
+If you need acquisition time on a live subscription, read the source-time fields
+on the payload rather than the wire `timestamp` — once your publisher sends them.
+No publisher emits them yet; until yours does, the API is the only place
+acquisition time is available.
+
+<Note>
+The field name is unchanged, and so is the value for publishers that send no
+source-time envelope: the publisher's own stamp, bounded by receipt. Publishers
+that do send one get their acquisition stamp carried across clock domains
+instead, which is closer to the truth by whatever their publish latency was.
+</Note>

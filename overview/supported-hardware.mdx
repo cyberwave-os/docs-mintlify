@@ -1,5 +1,5 @@
 ---
-title: "Supported Hardware"
+title: "Supported hardware"
 description: "80+ devices supported out of the box, with full ROS compatibility and an extensible driver architecture"
 icon: "microchip"
 ---
@@ -15,10 +15,10 @@ Beyond the catalog, Cyberwave's open driver architecture means **any device with
 Every hardware connection follows the same pattern:
 
 1. **Add a digital twin** from the catalog (or create a custom one)
-2. **Install the Cyberwave edge stack** on a device connected to your hardware
+2. **Install Cyberwave Edge** on a device connected to your hardware
 3. **Pair** — the driver is installed automatically and your hardware starts syncing in real time
 
-The [Edge Core](/edge/overview) orchestrates drivers on the edge device and bridges all communication to the Cyberwave cloud over MQTT.
+The [Edge Core](/feature-reference/edge/overview) orchestrates drivers on the edge device and bridges all communication to the Cyberwave cloud over MQTT.
 
 ---
 
@@ -65,7 +65,7 @@ These platforms have dedicated pages with an overview, hardware docs, and releva
   </Card>
 </CardGroup>
 
-For the full setup walkthrough, see the [Hardware Overview](/overview/connecting-hardware) guide, or browse the [full catalog](https://cyberwave.com/catalog).
+For the full setup walkthrough, see the [Hardware Overview](/overview/supported-hardware) guide, or browse the [full catalog](https://cyberwave.com/catalog).
 
 ---
 
@@ -110,21 +110,21 @@ If your hardware isn't in the catalog, you can write a compatible driver and con
   <Card
     title="Writing Compatible Drivers"
     icon="code"
-    href="/edge/drivers/writing-compatible-drivers"
+    href="/feature-reference/edge/drivers/writing-compatible-drivers"
   >
     Full guide on driver architecture, environment variables, and packaging
   </Card>
   <Card
     title="Driver Overview"
     icon="puzzle-piece"
-    href="/edge/drivers/overview"
+    href="/feature-reference/edge/drivers/overview"
   >
     How drivers are registered and managed by Edge Core
   </Card>
-  <Card title="Python SDK" icon="python" href="/tools/python-sdk">
+  <Card title="Python SDK" icon="python" href="/overview/tools/python-sdk">
     Build drivers and applications with the Cyberwave Python SDK
   </Card>
-  <Card title="C++ SDK" icon="microchip" href="/tools/cpp-sdk">
+  <Card title="C++ SDK" icon="microchip" href="/overview/tools/cpp-sdk">
     High-performance SDK for embedded and latency-sensitive drivers
   </Card>
 </CardGroup>
@@ -149,7 +149,7 @@ Regardless of which hardware you connect, every digital twin on Cyberwave gives 
 - **Real-time teleoperation** — control your hardware from the dashboard, SDK, or API
 - **Live telemetry streaming** — monitor sensor data, joint states, camera feeds, and more
 - **Dataset recording** — capture episodic datasets for training and evaluation
-- **ML model training and deployment** — train models on recorded data and deploy them as autonomous controller policies
+- **AI model training and deployment** — train models on recorded data and deploy them as autonomous controller policies
 - **Simulation** — test in a browser-based 3D environment before deploying to physical hardware
 - **Workflows and automation** — chain actions, models, and logic into repeatable workflows
 

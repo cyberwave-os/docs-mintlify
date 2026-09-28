@@ -1,0 +1,136 @@
+---
+title: "Integration surfaces"
+description: "Every way to connect business systems, agents and devices to Cyberwave, with when to use each, how it authenticates, and its status."
+icon: "plug"
+---
+
+Use this page to choose how each customer system talks to Cyberwave. One table covers every surface. The sections after it cover MQTT connection details and PLC, MES and WMS patterns.
+
+## All surfaces at a glance
+
+| Surface | Use it when | Auth | Reference |
+|---|---|---|---|
+| **REST API** (`https://api.cyberwave.com/api/v1/...`) | Request/response work from any language: create twins and environments, provision organizations, workspaces and members, trigger workflows, read alerts, manage edges | `Authorization: Bearer <token>` (the `Token` prefix is also accepted) | [API overview](/api-reference/overview) · [REST reference](/api-reference/overview) |
+| **Python SDK** (`pip install cyberwave`) | Python services and scripts. Wraps REST and MQTT. | `CYBERWAVE_API_KEY` | [Python SDK](/overview/tools/python-sdk) · [C++ SDK](/overview/tools/cpp-sdk) |
+| **CLI** (`cyberwave`) | Provisioning scripts, edge management, CI | Stored login, `CYBERWAVE_API_KEY`, or `--token` | [CLI](/overview/tools/cli) |
+| **MQTT** (`mqtt.cyberwave.com`) | Real-time telemetry and commands from a non-Python service, or a custom driver | API token as password. See [Connecting to MQTT](#connecting-to-mqtt). | [MQTT reference](/api-reference/mqtt/main) |
+| **Workflow triggers** (`webhook`, `mqtt`, `schedule`, `email`, `event`, `manual`) | Start a no-code automation from an external event | REST or SDK trigger: API token. Webhook: not documented. | [Workflow nodes](/overview/features/workflow-nodes) · [MQTT trigger](/feature-reference/workflows/mqtt-trigger) |
+| **Workflow outputs** (`http_request`, `send_email`, `send_mqtt`, `send_ros2`, `send_alert`) | Push results out of a workflow to an external API, email, a twin topic or ROS 2 | Configured on the node | [Workflow nodes](/overview/features/workflow-nodes) |
+| **Execution ingress** (MQTT) | Report runs of your own external process as workflow executions, so they appear on the Cyberwave timeline | Broker-level (MQTT credentials) | [Execution ingress](/feature-reference/workflows/execution-ingress) |
+| **A2A partner API** (`POST /api/v1/a2a`) | An external agent submits a natural-language task and follows it over SSE | Workspace-scoped API token with the `a2a` scope key | [A2A partner API](/api-reference/a2a-partner-api) |
+| **MCP server** (`https://mcp.cyberwave.com/mcp`, or self-hosted over stdio) | AI agents and IDEs (Claude, Cursor, any MCP client) operate environments, twins and workflows | `Authorization: Bearer <CYBERWAVE_API_KEY>` | [MCP server](/overview/tools/mcp-server) (early access) |
+| **ROS 2** (`BaseROS2Driver`, `send_ros2` node) | The robot already speaks ROS 2. Bridge its topics into a twin, or publish typed messages from a workflow. | Runs as a driver under Edge Core with the driver's API key | [BaseROS2Driver](/feature-reference/edge/drivers/ros2-base-driver) · [UR Sim tutorial](/tutorials/ur-sim-cyberwave-driver) |
+| **Custom driver** (Docker image under Edge Core) | Any device with its own protocol: vendor SDK, serial, CAN, fieldbus gateway | `CYBERWAVE_API_KEY` injected into the container | [Writing compatible drivers](/feature-reference/edge/drivers/writing-compatible-drivers) |
+| **Zenoh–MQTT bridge** (`cyberwave.zenoh_mqtt`) | Forward selected local Zenoh channels to cloud MQTT, with a file-backed queue while offline | MQTT password = API key | [Zenoh–MQTT bridge](/overview/tools/zenoh-mqtt-bridge) |
+| **Cloud nodes** (`cyberwave-cloud-node`) | Run inference, training or simulation on your own GPU machines, commanded by the platform | `CYBERWAVE_API_KEY` | [Cloud node](/overview/tools/cloud-node) (early access) |
+| **Live video** (WebRTC) | Consume a twin's camera in your own app. There is no RTSP, HLS or WHEP output. | API token or user MQTT credentials for signaling | [Consume live video](/overview/tools/custom-webrtc-consumer) |
+| **Docker registry** (`registry.cyberwave.com`) | Distribute private driver and model images | API key via credential helper or `docker login` | [Docker registry](/feature-reference/docker-registry) (Enterprise) |
+
+For long-lived integrations, use a **service token** scoped to the customer's workspace, not a personal token. See [API tokens](/feature-reference/api-tokens).
+
+{/* TODO(docs): /feature-reference/docker-registry tells users to run `cyberwave auth configure-docker`; no such command exists in the CLI source. Fix that page. */}
+{/* TODO(docs): webhook trigger — URL format, authentication, payload shape, response, rate limits. Nothing is documented today. */}
+{/* TODO(docs): http_request node — methods, headers/secrets handling, timeouts, retry semantics. */}
+{/* TODO(docs): the A2A page requires an `a2a` scope key on the token, but /feature-reference/api-tokens does not describe scope keys. Document how to add one. */}
+{/* TODO(docs): the A2A task model is store-operations specific (`storeId`). Clarify whether other task types are planned. */}
+
+## Connecting to MQTT
+
+These values come from the Python SDK (`cyberwave/config.py`, `cyberwave/mqtt/__init__.py`, `cyberwave/mqtt_identity.py`).
+
+| Setting | Value |
+|---|---|
+| Host | `mqtt.cyberwave.com` |
+| Port | `8883`, MQTT over TLS. The SDK turns TLS on automatically for this port and verifies the server certificate. |
+| Browsers | `wss://mqtt.cyberwave.com` (MQTT over secure WebSocket) |
+| Password | Your API token |
+| Username | `cwh_` followed by the SHA-256 hex digest of the token. The SDK derives it for you. The broker refuses a username that does not hash to the token. |
+| Protocol | MQTT 3.1.1 by default. MQTT 5 with `CYBERWAVE_MQTT_PROTOCOL=5`. |
+| Client ID | Must be unique per connection. Keep it within 23 bytes for MQTT 3.1.1. |
+| Topic prefix | None in production. Other deployments may prefix every topic (`CYBERWAVE_MQTT_TOPIC_PREFIX`). |
+| Authorization | Checked per topic against the token's access to the twin or workflow. For WebRTC signaling, subscribing needs read access and publishing needs write access. |
+
+```python
+import hashlib
+import os
+import ssl
+
+import paho.mqtt.client as mqtt
+from paho.mqtt.enums import CallbackAPIVersion
+
+token = os.environ["CYBERWAVE_API_KEY"]
+username = "cwh_" + hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+client = mqtt.Client(callback_api_version=CallbackAPIVersion.VERSION2, client_id="mes_bridge_01")
+client.username_pw_set(username=username, password=token)
+client.tls_set(cert_reqs=ssl.CERT_REQUIRED)
+client.on_message = lambda c, u, msg: print(msg.topic, msg.payload)
+
+client.connect("mqtt.cyberwave.com", 8883)
+client.subscribe("cyberwave/twin/<twin_uuid>/position")
+client.loop_forever()
+```
+
+In Python, the SDK does all of this for you. Use `Cyberwave()` with `CYBERWAVE_API_KEY` set.
+
+{/* TODO(docs): /overview/tools/custom-webrtc-consumer tells browser clients to use their account username (from GET /api/v1/users/@me/status/) with the token as password. The SDK uses the cwh_ hash form. Document which forms the broker accepts. */}
+{/* TODO(docs): per-topic ACL matrix, QoS and retained-message conventions, and session/keepalive guidance. */}
+
+## PLC, MES and WMS
+
+**Status today:** Cyberwave ships **no built-in OPC UA, Modbus or VDA5050 driver**. Some older pages list these protocols as supported. That means you can bridge them with a driver you write, not that a driver exists. The SDK has an AMR edge-node base class (`cyberwave.edge.AMREdgeNode`) with adapter hooks and VDA5050 configuration fields. No VDA5050 adapter ships with it.
+
+These patterns are possible with the pieces that exist:
+
+<AccordionGroup>
+  <Accordion title="MES or WMS starts a robot task">
+    Build a workflow whose actuation nodes move the twin (`twin_control`, `send_joint_commands`, `send_controller_command`). Start it from the business system through REST or the SDK:
+
+    ```python
+    from cyberwave import Cyberwave
+
+    cw = Cyberwave()  # reads CYBERWAVE_API_KEY
+    run = cw.workflows.trigger(
+        "acme/workflows/pick-order",
+        inputs={"order_id": "SO-1042", "bin": "A3"},
+    )
+    run.wait(timeout=300)
+    print(run.status, run.result)
+    ```
+
+    `cw.workflows.trigger` calls `POST /api/v1/workflows/{uuid}/trigger`, so any language can do the same over REST. A `webhook` trigger node is the alternative when the business system can only send an HTTP call. Its URL and authentication are not documented yet.
+  </Accordion>
+  <Accordion title="Report results back to the business system">
+    End the workflow with an `http_request` node that calls the MES or WMS API. Alternatively, have your integration service poll the run (`run.wait()` / `GET /api/v1/workflows/executions/{execution_uuid}`), or subscribe to the twin's MQTT event topics.
+  </Accordion>
+  <Accordion title="Read or write PLC tags">
+    Write a [custom driver](/feature-reference/edge/drivers/writing-compatible-drivers): a Docker image that Edge Core runs next to the cell. Inside it, use an OPC UA or Modbus client library of your choice and map tags to the twin's MQTT topics. For small jobs, a `code` node runs your own Python on the edge worker. Keep the PLC as the source of truth for interlocks.
+  </Accordion>
+  <Accordion title="Robot on ROS 2">
+    Use `BaseROS2Driver` to forward ROS 2 topics into the twin with little code, and the `send_ros2` workflow node to publish typed messages back. Start from the [UR Sim tutorial](/tutorials/ur-sim-cyberwave-driver).
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+Cyberwave does not replace the cell's safety system. Keep e-stops, safety interlocks and safety-rated stops in the PLC and the robot controller. The tutorials say it plainly: software-only stops are for convenience, not safety.
+</Warning>
+
+{/* TODO(docs): add a worked example (WMS order → workflow → pick → result posted back) with measured latency, once webhook auth and http_request semantics are documented. */}
+{/* TODO(docs): hardware support-level matrix (sim only / community driver / official driver) for industrial brands such as KUKA, FANUC, MiR, OTTO. */}
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Cyberwave for integrators" icon="building" href="/enterprise/overview">
+    Architecture, data flows and deployment options.
+  </Card>
+  <Card title="Network and firewall" icon="network-wired" href="/enterprise/network-and-firewall">
+    Hosts and ports for each surface.
+  </Card>
+  <Card title="Writing compatible drivers" icon="microchip" href="/feature-reference/edge/drivers/writing-compatible-drivers">
+    Build a driver for a device Cyberwave doesn't support yet.
+  </Card>
+  <Card title="Workflows" icon="diagram-project" href="/feature-reference/workflows">
+    Triggers, actions, and where each node runs.
+  </Card>
+</CardGroup>

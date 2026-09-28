@@ -4,7 +4,15 @@ description: "Create and revise private URDF assets while continuing to edit an 
 icon: "wand-magic-sparkles"
 ---
 
-The Environment Assistant can create a private URDF asset when catalog search and procedural primitives do not satisfy the request. Asset work runs asynchronously, so you can enter the editor and continue arranging the scene while the asset builds.
+{/* stub: pending documentation review */}
+
+The [environment assistant](/ai/environment-assistant) can create a private URDF asset when catalog search and procedural primitives do not satisfy the request. Asset work runs asynchronously, so you can enter the editor and continue arranging the scene while the asset builds.
+
+In edit mode, **Create an object with the agent** opens an editable assistant
+request. **Prepare a training scene** starts with the robot, task and objects it
+will interact with, then checks placement, collisions, physics and camera framing.
+The shared **Add asset** dialog also offers direct description, file and photo
+creation. [Compare these choices](/feature-reference/create-asset).
 
 ## Create an asset
 
@@ -20,7 +28,7 @@ Select a twin and describe the desired result, such as changing geometry, adding
 
 Only the newest revision attempt is actionable. Accepting a newer candidate supersedes older failed or stale attempts.
 
-Generated assets start private and scoped to the environment that requested them. Use the existing asset visibility and sharing controls to promote a validated asset to a workspace, organization, link, or public audience; generation does not bypass those permissions.
+Assistant-created assets start private and scoped to the environment that requested them. Direct description creation can also save to the catalog without a scene, and offers an explicit Private/Public choice. Use the existing asset visibility and sharing controls to promote a validated asset to a workspace, organization, link, or public audience; generation does not bypass those permissions.
 
 ## Supported representations
 

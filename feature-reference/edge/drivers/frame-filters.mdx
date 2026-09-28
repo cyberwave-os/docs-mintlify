@@ -4,9 +4,7 @@ description: "Substitute a worker-processed frame into a camera driver's WebRTC 
 icon: "user-shield"
 ---
 
-<Warning>
-**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
-</Warning>
+{/* TODO(docs): **STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update. */}
 
 ## Why
 
@@ -15,7 +13,7 @@ By default the camera driver streams **raw** frames over WebRTC. For privacy-sen
 The frame filter contract lets a worker do that without owning the WebRTC stack.
 
 <Note>
-**Substitution vs. overlay.** The flow on this page covers _frame substitution_ — the driver swaps in worker-produced pixels — and is gated on the per-twin `frame_filter_enabled` privacy flag. It applies to the [`anonymize`](/feature-reference/workflows/anonymize-image) workflow node. The `annotate` node uses a separate, additive overlay channel that the driver subscribes to unconditionally, so it does not need this flag — see [Workflows](/feature-reference/workflows/overview) and _Annotation overlays_ below.
+**Substitution vs. overlay.** The flow on this page covers _frame substitution_ — the driver swaps in worker-produced pixels — and is gated on the per-twin `frame_filter_enabled` privacy flag. It applies to the [`anonymize`](/feature-reference/workflows/anonymize-image) workflow node. The `annotate` node uses a separate, additive overlay channel that the driver subscribes to unconditionally, so it does not need this flag — see [Workflows](/feature-reference/workflows) and _Annotation overlays_ below.
 </Note>
 
 ## How it works
@@ -97,7 +95,7 @@ See the [security pipeline example](./edge-workers) for an end-to-end multi-came
 
 ## Annotation overlays
 
-The `annotate` workflow node (see [Workflows](/feature-reference/workflows/overview)) takes a different path from the substitution flow above. Instead of rewriting pixels, it publishes a small JSON overlay spec — boxes, labels, and styling — to `cyberwave.data.FRAME_OVERLAY_CHANNEL` (literal value `"frames/overlay"`). The camera driver subscribes to this channel unconditionally and composites the boxes onto the frame just before WebRTC encoding.
+The `annotate` workflow node (see [Workflows](/feature-reference/workflows)) takes a different path from the substitution flow above. Instead of rewriting pixels, it publishes a small JSON overlay spec — boxes, labels, and styling — to `cyberwave.data.FRAME_OVERLAY_CHANNEL` (literal value `"frames/overlay"`). The camera driver subscribes to this channel unconditionally and composites the boxes onto the frame just before WebRTC encoding.
 
 Two consequences worth knowing:
 
@@ -106,8 +104,5 @@ Two consequences worth knowing:
 
 ### Segmentation overlays
 
-<Info>
-Stub — a human will curate before publishing.
-</Info>
 
 When the upstream `call_model` node runs an instance-segmentation model (e.g. YOLO-seg), each detection in the overlay payload carries an optional `polygon` field (list of `[x, y]` vertices in original-frame coordinates). The driver composites a translucent fill (`style.mask_alpha`, default `0.35`) and an outline (`style.mask_outline`, default `true`) onto the WebRTC frame at encode time — additive to the standard box + caption. The v1 polygon encoding uses each instance's largest external contour and silently drops holes; downstream pipelines that need the raw mask should set the annotate node's `mask_format` to `"polygon+png"` and consume `mask_b64` cloud-side.

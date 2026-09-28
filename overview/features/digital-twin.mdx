@@ -1,12 +1,12 @@
 ---
-title: "Digital Twins"
+title: "What is a digital twin"
 description: "A single, live model of any physical thing (robot, sensor, or fixture) that you can read, control, and simulate from anywhere"
 icon: "clone"
 ---
 
 A **digital twin** is Cyberwave's unit of "physical thing made programmable." It carries everything the platform needs to know about a robot, a sensor, a drone (or even a passive object like a table or a shelf) and keeps it in lockstep with the real world.
 
-One twin gives you a 3D model, [physical properties and capabilities](/feature-reference/digital-twins#capabilities-map), sensor streams, a [live link to hardware](/feature-reference/digital-twins/overview#pairing-a-twin-with-physical-hardware), and a stable identity you can reference from code, MQTT, or the dashboard.
+One twin gives you a 3D model, [physical properties and capabilities](/feature-reference/digital-twins#capabilities-map), sensor streams, a [live link to hardware](/robots/overview#from-twin-to-hardware-one-path), and a stable identity you can reference from code, MQTT, or the dashboard.
 
 ```python
 from cyberwave import Cyberwave
@@ -33,11 +33,11 @@ That's it: the twin is alive in your environment, ready to be simulated, control
   </Card>
   <Card title="Hardware in minutes, not weeks" icon="bolt">
     Pair any device with [`cyberwave
-    pair`](/overview/index#connect-to-a-real-robot); Cyberwave installs the
+    pair`](/overview/tools/cli#pair-a-device); Cyberwave installs the
     matching driver and starts streaming.
   </Card>
   <Card title="Capability-driven UX" icon="wand-magic-sparkles">
-    UI panels, SDK classes, and [controllers](/overview/index#controllers) light
+    UI panels, SDK classes, and [controllers](/ai/control) light
     up automatically based on what the twin can do.
   </Card>
 </CardGroup>
@@ -63,7 +63,7 @@ A twin's [capabilities](/feature-reference/digital-twins#capabilities-map) are c
 
 ## Use a twin from the SDK
 
-Every twin is reachable from the [Python SDK](/tools/python-sdk) with a one-liner. The SDK returns the most specific twin class based on its capabilities: `FlyingTwin` for drones, `GripperTwin` for arms, `CameraTwin` for cameras, and so on.
+Every twin is reachable from the [Python SDK](/overview/tools/python-sdk) with a one-liner. The SDK returns the most specific twin class based on its capabilities: `FlyingTwin` for drones, `GripperTwin` for arms, `CameraTwin` for cameras, and so on.
 
 ```python
 from cyberwave import Cyberwave
@@ -116,11 +116,11 @@ The [Cyberwave catalog](https://cyberwave.com/catalog) ships with **hundreds of 
 Bring a new robot or sensor in minutes. The easiest path is to let an agent do the heavy lifting:
 
 <CardGroup cols={2}>
-  <Card title="Claude Skill" icon="sparkles" href="/tools/claude-skill">
+  <Card title="Claude Skill" icon="sparkles" href="/overview/tools/claude-skill">
     Run `/cyberwave` in Claude Code and describe your hardware; the skill
     scaffolds the URDF, asset metadata, and driver for you.
   </Card>
-  <Card title="MCP Server" icon="plug" href="/tools/mcp-server">
+  <Card title="MCP Server" icon="plug" href="/overview/tools/mcp-server">
     Use Cyberwave's MCP server from Cursor, Claude Desktop, or any MCP client to
     create twins, upload assets, and wire up drivers conversationally.
   </Card>
@@ -133,14 +133,14 @@ You can also upload a URDF ZIP manually; see the [catalog upload guide](/feature
 ## What to read next
 
 <CardGroup cols={3}>
-  <Card title="Hello Robot" icon="hand-wave" href="/overview/hello-robot">
+  <Card title="Develop in simulation" icon="hand-wave" href="/overview/hello-robot">
     Spin up your first twin in the browser in 5 minutes.
   </Card>
   <Card title="Connect real hardware" icon="microchip" href="/overview/supported-hardware">
     Pair a physical robot or sensor with its twin via the edge stack.
   </Card>
   <Card
-    title="Digital Twins reference"
+    title="Work with digital twins"
     icon="clone"
     href="/feature-reference/digital-twins"
   >

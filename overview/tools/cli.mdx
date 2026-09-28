@@ -1,0 +1,455 @@
+---
+title: "CLI reference"
+sidebarTitle: "CLI"
+description: "Install the cyberwave CLI, log in, pair edge devices, and look up every command and option."
+icon: "terminal"
+---
+
+{/* cli-version: generated from cyberwave-cli 0.12.7 */}
+{/* The tables between cli-gen markers are generated from the Click source by scripts/gen_cli_reference.py. Edit prose outside the markers; re-run the script to refresh the tables. */}
+
+The `cyberwave` CLI sets up edge devices and manages twins, workflows, and workers from a terminal. You use it mostly on the machine that is wired to your robot or camera: a laptop, a Raspberry Pi, or a Jetson.
+
+The CLI is not the Python SDK. The SDK (`pip install cyberwave`) is what your scripts import. The two authenticate differently, as [Log in](#log-in) explains.
+
+## Install
+
+<Tabs>
+  <Tab title="Install script">
+    On an edge device, use the install script. `cyberwave pair` then sets the device up as an edge node.
+
+    ```bash
+    curl -fsSL https://cyberwave.com/install.sh | bash
+    ```
+  </Tab>
+  <Tab title="pip">
+    Needs Python 3.10 or newer.
+
+    ```bash
+    pip install cyberwave-cli
+    ```
+  </Tab>
+  <Tab title="From source">
+    ```bash
+    git clone https://github.com/cyberwave-os/cyberwave-cli
+    cd cyberwave-cli
+    pip install -e .
+    ```
+  </Tab>
+</Tabs>
+
+Check the install:
+
+```bash
+cyberwave --version
+```
+
+Every command prints its own help with `--help`, for example `cyberwave edge install --help`.
+
+## Log in
+
+```bash
+cyberwave login
+```
+
+`login` asks for your email and password. If your account has more than one workspace, it also asks which one to use. The CLI then saves an API token and the selected workspace to `credentials.json` in its config directory (`~/.cyberwave` by default; run `cyberwave config-dir` to see it). Every later command acts in that workspace. To switch workspaces, run `cyberwave login` again.
+
+Already have a token from the dashboard? Pass it directly: `cyberwave login --token <token>` or `cyberwave configure --token <token>`. See [API tokens](/feature-reference/api-tokens) to create one.
+
+<Warning>
+  **The Python SDK does not read your CLI login.** `Cyberwave()` looks for an `api_key=` argument or the `CYBERWAVE_API_KEY` environment variable, and raises `No API key found!` otherwise. Export the key in the shell that runs your script:
+
+  ```bash
+  export CYBERWAVE_API_KEY=<your-api-key>
+  ```
+
+  It works the other way round too. Most CLI commands use only the saved login. The one exception is `cyberwave edge install` (and its alias `cyberwave pair`), which falls back to `CYBERWAVE_API_KEY` when no login is saved.
+</Warning>
+
+{/* cli-gen:begin commands login, logout, configure, config-dir */}
+
+| Command | What it does | Options |
+|---|---|---|
+| `cyberwave login` | Authenticate with Cyberwave. | `-e, --email` Email address for login<br/>`-p, --password` Password (will prompt if not provided)<br/>`--token` API token for login |
+| `cyberwave logout` | Log out from Cyberwave. | None |
+| `cyberwave configure` | Configure CLI settings and credentials. | `-t, --token` API token to save<br/>`-u, --base-url` API URL (sets CYBERWAVE\_BASE\_URL env var hint)<br/>`--show` Show current configuration |
+| `cyberwave config-dir` | Print the active configuration directory. | None |
+
+{/* cli-gen:end */}
+
+## Quick start
+
+The four commands the CLI's own help leads with:
+
+```bash
+cyberwave login                          # 1. authenticate, pick a workspace
+cyberwave twin create <asset> --pair     # 2. create a twin and pair this device to it
+sudo cyberwave pair                      # 3. install Edge Core on this device (Linux: sudo)
+cyberwave edge driver list               # 4. check the driver containers are running
+```
+
+## Pair a device
+
+`cyberwave pair` is an alias for `cyberwave edge install`. Both commands take the same options and do the same thing. They log in if needed, let you pick the environment and the twins wired to this device, install `cyberwave-edge-core`, and register it as a boot service.
+
+<Tabs>
+  <Tab title="Linux">
+    Run it with `sudo`. It installs a systemd service, and exits with `This command requires root privileges` without root. On Debian, Ubuntu, and Raspberry Pi OS it installs Docker with `apt-get` if Docker is missing.
+
+    ```bash
+    sudo cyberwave pair
+    ```
+  </Tab>
+  <Tab title="macOS">
+    Run it **without** `sudo`. It installs a LaunchAgent for your user and refuses to run as root. Docker Desktop must be installed and running first.
+
+    ```bash
+    cyberwave pair
+    ```
+  </Tab>
+</Tabs>
+
+On Linux, `cyberwave edge start`, `stop`, and `restart` also need `sudo` once the systemd service is installed. First time on a board? See [Raspberry Pi setup](/feature-reference/edge/raspberry-pi) or [Jetson Orin Nano setup](/feature-reference/edge/jetson-orin-nano).
+
+### Headless and scripted installs
+
+To provision a device with no prompts, pass the token, the environment, and `-y`:
+
+```bash
+sudo cyberwave pair --token <api-token> -e acme/envs/production-floor -y
+```
+
+- `-e, --environment` takes the environment's UUID or its full slug (`workspace/envs/name`). The name alone is not enough. The environment must already exist in the token's workspace. `-e` selects an environment and never creates one.
+- `--token` always wins over a saved login and over `CYBERWAVE_API_KEY`. A rejected token stops the install. Tokens passed this way show up in shell history and in `ps`, so on shared machines prefer exporting `CYBERWAVE_API_KEY`.
+- `-y` skips every prompt. Without `-e`, it attaches to the first environment the API returns. Twin selection still happens under `-y`: it picks the first twin in the environment that has a Docker driver. A fully scripted install is only reliable in an environment with exactly one such twin.
+
+{/* TODO(docs): link a fleet-provisioning guide here once /enterprise/fleet-provisioning covers multi-twin headless installs. */}
+
+{/* cli-gen:begin options pair */}
+
+`cyberwave pair`
+
+| Option | What it does |
+|---|---|
+| `-y, --yes` | Skip confirmation prompts |
+| `-e, --environment` | Existing environment to attach to: UUID or full slug (acme/envs/production-floor) |
+| `--token` | API token to pair with, instead of stored credentials or an interactive login |
+| `--channel` | Which edge-core package channel to install (one of `stable`, `dev`, `staging`; default `stable`) |
+| `--version` | Exact edge-core version to install from the selected channel |
+| `--force-reinstall` | Tear down and reinstall the USB/IP server from scratch (macOS only) |
+| `--reconfigure-camera` | Re-run camera detection and save to cameras.json |
+| `--reconfigure-microphone` | Re-run macOS microphone bridge setup (ffmpeg + audio\_streams.json) |
+| `--reconfigure-speaker` | Re-run macOS speaker playback sink setup (HTTP PCM + audio\_streams.json) |
+| `--microphone-index` | AVFoundation microphone index for `--reconfigure-microphone` (skips prompt) |
+
+{/* cli-gen:end */}
+
+## `cyberwave twin`
+
+Create, pair, and inspect digital twins.
+
+{/* cli-gen:begin group twin */}
+
+| Command | What it does | Options |
+|---|---|---|
+| `cyberwave twin create ASSET` | Create a new digital twin from an asset. | `-n, --name` Twin name<br/>`-e, --environment` Environment UUID to create twin in<br/>`--pick-environment` Interactively pick an environment instead of the default Quickstart Environment<br/>`--pair` Also pair this device to the twin<br/>`-d, --target-dir` Directory to save .env file (when `--pair` is used) (default `.`)<br/>`-y, --yes` Skip confirmation prompts |
+| `cyberwave twin delete UUID` | Delete a digital twin. | `-y, --yes` Skip confirmation |
+| `cyberwave twin list` | List digital twins. | `-e, --environment` Filter by environment UUID<br/>`--json` Output as JSON |
+| `cyberwave twin pair TWIN_UUID` | Pair this device with an existing digital twin. | `-d, --target-dir` Directory to save edge configuration (default: current directory)<br/>`-y, --yes` Skip confirmation prompts |
+| `cyberwave twin show UUID` | Show details of a specific twin. | None |
+
+{/* cli-gen:end */}
+
+### Create and pair in one step
+
+```bash
+cyberwave twin create camera --pair
+cyberwave twin create unitree/go2 --name "Dock robot" -e <environment-uuid> --pair
+```
+
+`ASSET` is a registry ID (`unitree/go2`, `cyberwave/standard-cam`), a short alias (`go2`, `camera`), a local JSON file, or a URL. Without `-e`, the twin goes into a `Quickstart Environment` in your workspace. The CLI reuses that environment or creates it, just like `cw.twin()` does in the SDK.
+
+`--pair` binds this device to the new twin and writes a `.env` file to `--target-dir` (the current directory by default). Start streaming with `cyberwave edge start`. `twin create` and `twin pair` also accept any field from the asset's edge configuration schema as `--field-name value`. Those fields depend on the asset, so they are not listed in the table below.
+
+{/* cli-gen:begin options twin create */}
+
+`cyberwave twin create ASSET`
+
+| Option | What it does |
+|---|---|
+| `-n, --name` | Twin name |
+| `-e, --environment` | Environment UUID to create twin in |
+| `--pick-environment` | Interactively pick an environment instead of the default Quickstart Environment |
+| `--pair` | Also pair this device to the twin |
+| `-d, --target-dir` | Directory to save .env file (when `--pair` is used) (default `.`) |
+| `-y, --yes` | Skip confirmation prompts |
+
+{/* cli-gen:end */}
+
+## `cyberwave edge`
+
+Manage the Edge Core service on this device: lifecycle, logs, cameras, drivers, and workflow sync. See [Edge Core](/feature-reference/edge/overview) for what the service does.
+
+{/* cli-gen:begin group edge */}
+
+| Command | What it does | Options |
+|---|---|---|
+| `cyberwave edge bench` | Benchmark Zenoh SDK hot-path performance and compare to a device baseline. | `-n, --rounds` Number of iterations per timed pass (default `100000`)<br/>`--warmup` Warmup iterations executed before each benchmark (discarded) (default `2000`)<br/>`--repeat` Number of timed passes per benchmark; the median is reported (default `3`)<br/>`--threshold` Regression threshold as a fraction (0.15 = +/-15%) (default `0.15`)<br/>`--baseline` Override the baseline file used for comparison (JSON)<br/>`--save-baseline` Write this run's metrics as a baseline file at the given path<br/>`--output` Write the full run result (fingerprint + metrics + baseline) to this JSON file<br/>`--pin` Pin the benchmark to CPU 0 (Linux only)<br/>`--no-compare` Skip baseline lookup and comparison |
+| `cyberwave edge cameras` | List cameras detected on this edge device. | `--json` Output as JSON<br/>`--save` Save results to cameras.json |
+| `cyberwave edge driver …` | Manage edge driver containers. | Subcommands, see the table below. |
+| `cyberwave edge health` | Deprecated. Edge Core now runs this health check itself. | `-t, --twin-uuid` Twin UUID to check health for (required)<br/>`--timeout` Timeout in seconds to wait for response (default `5`)<br/>`-w, --watch` Continuously watch health status |
+| `cyberwave edge install` | Install cyberwave-edge-core and register it as a boot service. | `-y, --yes` Skip confirmation prompts<br/>`-e, --environment` Existing environment to attach to: UUID or full slug (acme/envs/production-floor)<br/>`--token` API token to pair with, instead of stored credentials or an interactive login<br/>`--channel` Which edge-core package channel to install (one of `stable`, `dev`, `staging`; default `stable`)<br/>`--version` Exact edge-core version to install from the selected channel<br/>`--force-reinstall` Tear down and reinstall the USB/IP server from scratch (macOS only)<br/>`--reconfigure-camera` Re-run camera detection and save to cameras.json<br/>`--reconfigure-microphone` Re-run macOS microphone bridge setup (ffmpeg + audio\_streams.json)<br/>`--reconfigure-speaker` Re-run macOS speaker playback sink setup (HTTP PCM + audio\_streams.json)<br/>`--microphone-index` AVFoundation microphone index for `--reconfigure-microphone` (skips prompt) |
+| `cyberwave edge install-deps` | Install edge ML dependencies. | `-r, --runtime` Specific runtime to install (ultralytics, opencv) (repeatable) |
+| `cyberwave edge list-models` | List model bindings loaded on the edge node. | `--twin-uuid` Twin UUID to query (required) |
+| `cyberwave edge logs` | Show edge node logs. | `-f, --follow` Follow log output<br/>`-n, --lines` Number of lines to show (default `50`) |
+| `cyberwave edge pull` | Pull edge configuration from backend. | `-t, --twin-uuid` Twin UUID to pull config from (legacy)<br/>`-e, --environment-uuid` Environment UUID to pull all twins from (legacy)<br/>`-d, --target-dir` Directory to write .env file (default `.`)<br/>`-y, --yes` Skip confirmation prompts |
+| `cyberwave edge remote-status` | Deprecated. Edge Core now runs this check itself. Reads the last heartbeat stored in twin metadata. | `-t, --twin-uuid` Twin UUID to check status for (required) |
+| `cyberwave edge restart` | Restart the edge node service. | None |
+| `cyberwave edge start` | Start the edge node service. | `-f, --foreground` Run in foreground (don't daemonize) |
+| `cyberwave edge status` | Check edge node status. | None |
+| `cyberwave edge stop` | Stop the edge node service. | None |
+| `cyberwave edge sync-workflows` | Sync workflow workers on the edge node. | `--twin-uuid` Twin UUID to trigger workflow sync for via MQTT |
+| `cyberwave edge uninstall` | Stop and remove the cyberwave-edge-core service. | `-y, --yes` Skip confirmation prompts<br/>`--channel` Release channel the edge was installed from (one of `stable`, `dev`, `staging`) |
+| `cyberwave edge whoami` | Show device fingerprint and info. | None |
+
+{/* cli-gen:end */}
+
+### Logs
+
+```bash
+cyberwave edge logs          # last 50 lines
+cyberwave edge logs -n 200   # last 200 lines
+cyberwave edge logs -f       # follow
+```
+
+On Linux, `edge logs` reads the `cyberwave-edge-core` unit from `journalctl`. If you see no output, run it with `sudo`. On macOS, it reads the LaunchAgent's logs. Worker containers have their own logs: `cyberwave worker logs`.
+
+### Driver containers
+
+{/* cli-gen:begin group edge driver */}
+
+| Command | What it does | Options |
+|---|---|---|
+| `cyberwave edge driver list` | List running driver containers. | `--all` Also show exited driver containers |
+| `cyberwave edge driver start [NAME]` | Start a stopped driver container. | None |
+| `cyberwave edge driver stop [NAME]` | Stop a running driver container. | None |
+
+{/* cli-gen:end */}
+
+`edge driver start` restarts an existing container with a `--restart=on-failure` Docker policy. `edge driver stop` removes that policy first, so the container stays stopped. To launch a new driver, let Edge Core do it by pairing the twin.
+
+## `cyberwave environment`
+
+{/* cli-gen:begin group environment */}
+
+| Command | What it does | Options |
+|---|---|---|
+| `cyberwave environment list` | List environments. | `--json` Output as JSON |
+| `cyberwave environment show UUID` | Show details of an environment. | None |
+
+{/* cli-gen:end */}
+
+## `cyberwave workflow`
+
+Manage [workflows](/feature-reference/workflows) from the terminal. Commands that take a `UUID` show an arrow-key picker when you leave it out.
+
+{/* cli-gen:begin group workflow */}
+
+| Command | What it does | Options |
+|---|---|---|
+| `cyberwave workflow activate [UUID]` | Activate a workflow. | None |
+| `cyberwave workflow compile [UUID]` | Show which edge compiler ran for a workflow, and why. | `--json` Output the raw API response as JSON |
+| `cyberwave workflow compile-source [UUID]` | Download the generated `wf_*.py` worker for a workflow. | `-o, --output` Write the worker source to this path |
+| `cyberwave workflow create` | Create a new workflow. | `-n, --name` Workflow name<br/>`-t, --template` Use a template (one of `motion-detection`, `object-detection`, `person-detection`) |
+| `cyberwave workflow deactivate [UUID]` | Deactivate a workflow. | None |
+| `cyberwave workflow delete [UUID]` | Delete a workflow. | `-y, --yes` Skip confirmation |
+| `cyberwave workflow list` | List workflows. | `--json` Output as JSON |
+| `cyberwave workflow show [UUID]` | Show workflow details. | None |
+| `cyberwave workflow sync [UUID]` | Sync a workflow to its edge node(s). | `--force` Skip the cloud-side preflight check and publish the MQTT sync command anyway<br/>`--dry-run` Run the preflight diagnostic and print what would be synced, but don't publish the MQTT command<br/>`--edge-active` Restrict the interactive selector to workflows that are both active (is\_active=true) and target edge execution (run\_on\_edge=true) — i.e. the only workflows `sync` will actually ship to an edge node |
+| `cyberwave workflow templates` | List available workflow templates. | None |
+
+Every `cyberwave workflow` subcommand except `templates` also accepts `-u, --base-url`: Backend API URL (e.g. http://192.168.10.101:8000). Defaults to CYBERWAVE\_BASE\_URL or https://api.cyberwave.com.
+
+{/* cli-gen:end */}
+
+If an edge workflow never reaches the device, run `cyberwave workflow compile <uuid>` to see whether the backend could compile it, then `cyberwave workflow sync <uuid>`.
+
+## `cyberwave worker`
+
+Manage the Python [edge workers](/feature-reference/workflows/workers/overview) on this device. Worker files live in the `workers/` folder of the config directory. Files named `wf_*.py` are generated from workflows and get replaced on the next sync, so copy one to a new name before you edit it.
+
+{/* cli-gen:begin group worker */}
+
+| Command | What it does | Options |
+|---|---|---|
+| `cyberwave worker add SOURCE` | Add a worker file to the workers directory. | `-n, --name` Override the destination filename (must end with .py)<br/>`-f, --force` Overwrite existing worker without confirmation |
+| `cyberwave worker doctor` | Diagnose why a worker may not receive frames. | `-v, --verbose` Show hints for passing checks too<br/>`--runtime / --no-runtime` Run the live-bus probe: subscribe to Zenoh for a few seconds and compare actual traffic against worker hook key-expressions (default `on`)<br/>`--window` Seconds to listen on the Zenoh bus during the runtime probe (default `3.0`) |
+| `cyberwave worker health` | Show detailed worker health: restart history and circuit-breaker state. | None |
+| `cyberwave worker list` | List installed worker files. | `--json` Output as JSON |
+| `cyberwave worker logs` | Stream worker container logs. | `-f, --follow` Follow log output (default `on`)<br/>`-n, --tail` Number of lines to show from the end of the logs (default `50`)<br/>`-c, --container` Explicit container name (auto-detected if omitted) |
+| `cyberwave worker monitor` | Live dashboard showing worker resource usage and Zenoh throughput. | `-u, --update` Dashboard refresh interval in seconds (default `2.0`)<br/>`-c, --container` Explicit container name (auto-detected if omitted)<br/>`-a, --all-hosts` Show Zenoh stats from every worker discovered on the network instead of filtering to the local container only |
+| `cyberwave worker remove NAME` | Remove an installed worker file. | `-y, --yes` Skip confirmation |
+| `cyberwave worker restart` | Restart the worker container. | None |
+| `cyberwave worker start` | Start the worker container. | `--skip-preflight` Skip the pre-flight sanity checks and start unconditionally |
+| `cyberwave worker status` | Show worker container status and loaded worker files. | `-c, --container` Explicit container name (auto-detected if omitted) |
+| `cyberwave worker stop` | Stop the worker container. | None |
+
+{/* cli-gen:end */}
+
+If a worker reports `frames: 0`, start with `cyberwave worker doctor`. It checks file permissions, the driver containers, and environment variables, then listens on the data bus to compare live traffic with your worker's hooks.
+
+## `cyberwave model`
+
+Bind catalog models to a camera for local inference without building a workflow. For most setups, a workflow's Call Model node is the simpler path.
+
+{/* cli-gen:begin group model */}
+
+| Command | What it does | Options |
+|---|---|---|
+| `cyberwave model bind` | Bind a model to run on a camera and emit events. | `-m, --model` Model ID from 'model list' (required)<br/>`-c, --camera` Camera ID to process (default `default`)<br/>`-t, --twin-uuid` Twin UUID to emit events for (required)<br/>`--confidence` Confidence threshold (0-1) (default `0.5`)<br/>`--fps` Inference FPS (frames per second) (default `2.0`)<br/>`--classes` Comma-separated list of classes to detect |
+| `cyberwave model list` | List available ML models from the catalog. | `-d, --deployment` Filter by deployment type (one of `all`, `edge`, `cloud`, `hybrid`; default `all`) |
+| `cyberwave model remove` | Remove a model binding. | `-m, --model` Model ID to remove (required) |
+| `cyberwave model show` | Show current model configuration. | None |
+
+Every `cyberwave model` subcommand except `list` also accepts `--env-file`: Path to .env file (default `.env`).
+
+{/* cli-gen:end */}
+
+## `cyberwave plugin`
+
+{/* cli-gen:begin group plugin */}
+
+| Command | What it does | Options |
+|---|---|---|
+| `cyberwave plugin info PLUGIN_ID` | Show detailed information about a plugin. | None |
+| `cyberwave plugin install PLUGIN_ID` | Install a plugin and its dependencies. | `--no-deps` Skip dependency installation |
+| `cyberwave plugin list` | List available plugins. | `-i, --installed` Show only installed plugins |
+| `cyberwave plugin uninstall PLUGIN_ID` | Uninstall a plugin. | None |
+
+{/* cli-gen:end */}
+
+## `cyberwave compute`
+
+Run a [cloud node](/overview/tools/cloud-node) on a GPU machine. The commands mirror `cyberwave edge`, and `compute install` has the same `sudo` rule: required on Linux, not allowed on macOS.
+
+{/* cli-gen:begin group compute */}
+
+| Command | What it does | Options |
+|---|---|---|
+| `cyberwave compute install` | Install cyberwave-cloud-node and register it as a boot service. | `-y, --yes` Skip confirmation prompts<br/>`--channel` Which cloud-node package channel to install (one of `stable`, `dev`, `staging`; default `stable`)<br/>`--version` Exact version to install from the selected channel<br/>`--config` Path to cyberwave.yml to use when the service starts |
+| `cyberwave compute logs` | Show cloud node logs. | `-f, --follow` Follow log output<br/>`-n, --lines` Number of lines to show (default `50`) |
+| `cyberwave compute restart` | Restart the cloud node service. | `--config` Path to cyberwave.yml (persisted in the service override) |
+| `cyberwave compute start` | Start the cloud node service. | `--config` Path to cyberwave.yml (persisted in the service override)<br/>`-f, --foreground` Run in foreground (don't daemonize) |
+| `cyberwave compute status` | Check cloud node status. | None |
+| `cyberwave compute stop` | Stop the cloud node service. | None |
+| `cyberwave compute uninstall` | Stop and remove the cyberwave-cloud-node service. | `-y, --yes` Skip confirmation prompts |
+
+{/* cli-gen:end */}
+
+## Cameras, projects, and manifests
+
+{/* cli-gen:begin commands scan, camera, so101 */}
+
+| Command | What it does | Options |
+|---|---|---|
+| `cyberwave scan` | Scan the network for IP cameras and NVRs. | `-s, --subnet` Subnet to scan (e.g., 192.168.1)<br/>`-t, --timeout` Connection timeout in seconds (default: 1.0)<br/>`--no-ports` Disable TCP port scanning<br/>`--no-onvif` Disable ONVIF WS-Discovery<br/>`--no-upnp` Disable UPnP/SSDP discovery<br/>`--json` Output results as JSON |
+| `cyberwave camera [PATH]` | Set up camera edge software for streaming to Cyberwave. | `-e, --environment-uuid` UUID of an existing environment to use<br/>`-n, --environment-name` Name for a new environment (creates one if `--environment-uuid` not provided)<br/>`-t, --twin-uuid` UUID of an existing twin to use (skips twin creation)<br/>`--twin-name` Name for the camera twin (default: prompted or auto-generated)<br/>`-c, --camera-id` Local camera device index (default: 0)<br/>`-f, --camera-fps` Frames per second (default: 10)<br/>`-u, --camera-url` IP camera URL (RTSP/HTTP)<br/>`--camera-user` Username for IP camera authentication<br/>`--camera-pass` Password for IP camera authentication<br/>`--local-edge` Path to local edge code (skips git clone)<br/>`--env-only` Only generate .env file (use with `--local-edge`)<br/>`-y, --yes` Skip confirmation prompts (non-interactive mode) |
+| `cyberwave so101 [PATH]` | Bootstrap a new SO-101 robot arm project. | None |
+
+{/* cli-gen:end */}
+
+`cyberwave so101` clones the [SO-101 starter template](https://github.com/cyberwave-os/so101-starter) into `./so101-project` (or the path you give) and runs its setup script. It needs `git`. To pair a real arm, follow [Get started with the SO-101 arm](/tutorials/so101-teleop-dataset).
+
+{/* cli-gen:begin group manifest */}
+
+| Command | What it does | Options |
+|---|---|---|
+| `cyberwave manifest validate [PATH]` | Validate a cyberwave.yml manifest. | `--lenient` Treat unknown fields as warnings instead of errors (useful during migration) |
+
+{/* cli-gen:end */}
+
+See [cyberwave.yml manifest](/feature-reference/manifest) for the schema that `manifest validate` checks.
+
+## Shell completion
+
+Tab completion is available for `bash` and `zsh`. Install it in one step:
+
+```bash
+cyberwave completion install
+```
+
+This reads your shell from `$SHELL`, adds a completion block to `~/.bashrc` or `~/.zshrc`, and tells you which file to source. Running it twice is safe. It updates the existing block instead of adding a second one.
+
+<AccordionGroup>
+  <Accordion title="Pick the shell explicitly">
+    ```bash
+    cyberwave completion install --shell bash
+    cyberwave completion install --shell zsh
+    ```
+  </Accordion>
+  <Accordion title="Write to a different rc file">
+    ```bash
+    cyberwave completion install --shell zsh --rc-file ~/.config/zsh/.zshrc
+    ```
+  </Accordion>
+  <Accordion title="Generate the script yourself">
+    `generate` prints the completion script to stdout, so you can store it where you like:
+
+    ```bash
+    cyberwave completion generate --shell zsh > ~/.cyberwave-completion.zsh
+    ```
+  </Accordion>
+  <Accordion title="Troubleshooting">
+    - **Shell not detected:** pass `--shell bash` or `--shell zsh`.
+    - **Permission denied on the rc file:** pass a writable `--rc-file` path, then source that file.
+    - **Other shells:** only `bash` and `zsh` are supported.
+  </Accordion>
+</AccordionGroup>
+
+{/* cli-gen:begin group completion */}
+
+| Command | What it does | Options |
+|---|---|---|
+| `cyberwave completion generate` | Print shell completion script to stdout. | `--shell` Shell to generate completion script for (one of `bash`, `zsh`; required)<br/>`--prog-name` CLI executable name used in the completion script (default `cyberwave`) |
+| `cyberwave completion install` | Install persistent shell completion into your shell rc file. | `--shell` Shell to configure (one of `bash`, `zsh`)<br/>`--rc-file` Optional shell rc file path override (for example \~/.bashrc)<br/>`--prog-name` CLI executable name to use in the completion snippet (default `cyberwave`) |
+
+{/* cli-gen:end */}
+
+## Configuration
+
+The CLI and Edge Core share one config directory: `$CYBERWAVE_EDGE_CONFIG_DIR` if set, otherwise `~/.cyberwave`. Installs that used `/etc/cyberwave` are migrated on first run.
+
+| File | Contents |
+|---|---|
+| `credentials.json` | API token, workspace, and saved `CYBERWAVE_*` overrides |
+| `environment.json` | Selected workspace, environment, and twin bindings |
+| `fingerprint.json` | This device's unique ID (`cyberwave edge whoami`) |
+| `edge.json` | Edge record from the backend, including camera-to-twin mapping |
+| `workers/` | Edge worker files |
+
+| Variable | What it does |
+|---|---|
+| `CYBERWAVE_BASE_URL` | API URL. Defaults to `https://api.cyberwave.com`. |
+| `CYBERWAVE_API_KEY` | Token that `edge install` / `pair` falls back to when no login is saved. Also what the Python SDK reads. |
+| `CYBERWAVE_EDGE_CONFIG_DIR` | Overrides the config directory. |
+| `CYBERWAVE_ENVIRONMENT` | Backend stage, such as `dev`. Defaults to production. |
+| `CYBERWAVE_MQTT_HOST` | MQTT broker host. Defaults to `mqtt.cyberwave.com`. |
+
+`cyberwave workflow sync` and other commands that publish over MQTT refuse to run when the saved `CYBERWAVE_ENVIRONMENT` doesn't match the broker host. To fix it, run `cyberwave login` again against the right backend.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Python SDK" icon="python" href="/overview/tools/python-sdk">
+    Script twins, cameras, and models from Python.
+  </Card>
+  <Card title="Edge Core" icon="server" href="/feature-reference/edge/overview">
+    What runs on a paired device, and how drivers start.
+  </Card>
+  <Card title="Get started with the SO-101 arm" icon="microchip" href="/tutorials/so101-teleop-dataset">
+    Use `cyberwave pair` on a real arm, end to end.
+  </Card>
+  <Card title="Tutorials" icon="book-open" href="/tutorials/index">
+    Builds that use the CLI, grouped by the hardware you have.
+  </Card>
+</CardGroup>

@@ -1,0 +1,113 @@
+---
+title: "API tokens"
+description: "Create tokens for programmatic access, scope them to the workspaces they need, and use service tokens for automation that outlives a person"
+icon: "key"
+---
+
+## Overview
+
+An API token authenticates the SDK, the CLI, and anything else that calls
+Cyberwave programmatically.
+
+A token is scoped to the workspaces you choose. It can act in those workspaces
+and no others, and the scope can be changed after the token is created without
+re-issuing it.
+
+## Where to create one
+
+<CardGroup cols={2}>
+  <Card title="Profile → Access" icon="user">
+    Your personal tokens. Lists every token you own or administer, and creates
+    user tokens.
+  </Card>
+  <Card title="Workspace settings → Tokens" icon="building">
+    Tokens that can act in that workspace, including **service tokens**. The
+    workspace you are viewing is always part of the scope.
+  </Card>
+</CardGroup>
+
+Service tokens are created from workspace settings because they belong to the
+workspace rather than to you: they hold a role of their own, keep working after
+you leave, and the workspace's admins can manage them. They still appear under
+**Profile → Access** if you own or administer them.
+
+---
+
+## Token types
+
+<CardGroup cols={2}>
+  <Card title="User token" icon="user">
+    Acts as you, narrowed to its workspace scope. It stops working if your
+    account is removed — use it for scripts you run yourself.
+  </Card>
+  <Card title="Service token" icon="robot">
+    Acts with its own role rather than yours, so it keeps working after you
+    leave the workspace. Use it for anything long-lived: CI, an edge deployment,
+    a scheduled job.
+  </Card>
+</CardGroup>
+
+### Choosing a role for a service token
+
+A service token carries a role you pick — Reader, Developer, Writer or Admin.
+That role is a ceiling: the token can never do more than it allows, **including
+on objects the token itself created**. Lowering it takes effect immediately.
+
+You cannot give a token a role above your own, and you must be an admin of every
+workspace you scope a **service** token to. A plain user token only needs
+membership — it acts as you and can never exceed your own access.
+
+---
+
+## Scoping a token
+
+Select one or more workspaces when you create the token. Creating from a
+workspace's own settings locks that workspace into the scope; you can still add
+others. To change the scope later, use **Edit scope** on the token's row. Removing a workspace takes effect
+immediately. Adding one requires membership there for a user token, or admin for
+a service token.
+
+<Note>
+Creating a new workspace does not extend any existing token to it. A token's
+reach only grows when you explicitly add a workspace to its scope.
+</Note>
+
+---
+
+## Naming a workspace on every request
+
+Requests say which workspace they act in. A token scoped to exactly one
+workspace resolves on its own, so nothing changes for single-workspace tokens.
+With a token scoped to several, a request that does not name one — and cannot
+infer it from the object it references — is rejected with
+`400 workspace_required`, listing the workspaces the token holds.
+
+Set the workspace once on the client rather than per call:
+
+```python
+from cyberwave import Cyberwave
+
+client = Cyberwave(
+    api_key="cw_...",
+    workspace_id="0f6c…",  # or set CYBERWAVE_WORKSPACE_ID
+)
+```
+
+The CLI uses the workspace you logged in with. The web app uses the workspace
+selected in the UI.
+
+---
+
+## Revoking
+
+A token can reach further than the workspace you are looking at. The workspace
+Tokens tab marks those rows, and warns before you revoke one — revoking removes
+its access everywhere, not just here.
+
+Revoking a token stops it authenticating immediately. For a service token it
+also deactivates the token's identity, so nothing is left holding permissions.
+Revoked tokens stay listed for audit; they are never silently deleted.
+
+Workspace admins can see and revoke tokens scoped into their workspaces, even
+ones they did not create — so automation stays manageable after its author
+leaves. The token's secret is hidden from anyone but its owner.

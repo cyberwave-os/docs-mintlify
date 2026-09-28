@@ -1,8 +1,7 @@
 ---
-title: "Workflow Nodes"
+title: "Workflow nodes"
 description: "Every node you can drop on the workflow canvas, grouped by palette category, with what it does and where it runs."
 icon: "shapes"
-tag: stub
 ---
 
 A workflow is a graph of **nodes** wired together. Every node has a job, a set of
@@ -125,6 +124,7 @@ Talk to external systems and run your own logic.
 | Node | What it does | Runs on |
 |------|--------------|---------|
 | `http_request` | Call an external HTTP API. | Either |
+| `run_workflow` | **Run Workflow** — start another workflow in the same workspace, entering through the trigger you pick. No API key on the node. | Either |
 | `send_email` | Send an email. | Cloud |
 | `send_mqtt` | Publish JSON to a twin MQTT topic. | Edge |
 | `send_ros2` | Publish a typed message onto a ROS 2 topic. | Edge |

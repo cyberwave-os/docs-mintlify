@@ -3,9 +3,7 @@ title: "Drivers"
 description: "A Cyberwave driver is a Docker image that interacts with device hardware and the Cyberwave backend."
 ---
 
-<Warning>
-**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
-</Warning>
+{/* TODO(docs): **STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update. */}
 
 A Cyberwave driver is a Docker image that interacts with device hardware and the Cyberwave backend.
 
@@ -141,9 +139,7 @@ Manage edge driver containers:
 
 ## Multi-container drivers
 
-<Warning>
-**STUB DOCUMENT:** This section is intentionally minimal and will be expanded with deeper technical details in a future update.
-</Warning>
+{/* TODO(docs): **STUB DOCUMENT:** This section is intentionally minimal and will be expanded with deeper technical details in a future update. */}
 
 Some robots require multiple cooperating containers — for example a ROS 2 driver, bridge nodes, Nav2, SLAM, and elevation mapping. Use the `services` array in driver metadata to define a multi-container stack that Edge Core launches automatically.
 
@@ -182,9 +178,9 @@ Key points:
 
 ## Data bus
 
-Drivers publish sensor data (frames, depth, joint states) to the **edge data bus** — a Zenoh-backed publish/subscribe system that lets worker containers consume data with zero network overhead (shared memory). See [Writing compatible drivers](/edge/drivers/writing-compatible-drivers) for the channel naming convention and wire format.
+Drivers publish sensor data (frames, depth, joint states) to the **edge data bus** — a Zenoh-backed publish/subscribe system that lets worker containers consume data with zero network overhead (shared memory). See [Writing compatible drivers](/feature-reference/edge/drivers/writing-compatible-drivers) for the channel naming convention and wire format.
 
-## macOS hardware bridge (stub)
+## macOS hardware bridge
 
 When Edge Core runs on macOS, Linux `--device` mappings in Docker params cannot
 directly expose host camera/serial hardware to driver containers. Use a host

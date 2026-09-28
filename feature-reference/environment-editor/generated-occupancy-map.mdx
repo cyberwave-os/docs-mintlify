@@ -1,10 +1,10 @@
 ---
-title: "Generate a Map from the Scene"
+title: "Generate a map from the scene"
 description: "Build a 2D occupancy grid from the geometry you authored, so a robot can navigate before it has ever mapped the site."
 icon: "grid-2"
 ---
 
-<Note>This page is a stub. A human will curate and expand it before publishing.</Note>
+{/* TODO(docs): This page is a stub. A human will curate and expand it before publishing. */}
 
 ## What this is for
 
@@ -64,6 +64,14 @@ mistaken for a surveyed one. It shows in the 3D scene like any other map, and it
 becomes the environment's navigation reference so waypoints line up with it
 without any manual alignment. If you had already aligned a real SLAM map by hand,
 that alignment is left alone and you are told so.
+
+The **Navigation reference** label identifies the environment's saved map.
+**Show in scene** only changes which map you see. A robot may use its own map
+when its navigation configuration specifies one.
+
+A generated map is not enough for a Unitree Go2 to find itself after a restart.
+The Go2 relocalizes from a map it recorded itself, with a printed AprilTag in
+view. See [AprilTag relocalization](/robots/go2-apriltag-relocalization).
 
 Doors and windows placed as openings are cut out of the walls they sit in, so
 routes can pass through them.

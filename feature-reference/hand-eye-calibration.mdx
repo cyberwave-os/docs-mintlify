@@ -1,0 +1,229 @@
+---
+title: "Hand-eye calibration"
+description: "Measure where a camera actually sits on a robot arm, instead of entering the mount offset by eye"
+---
+
+## What it is
+
+When you dock a camera twin to an arm link, the mount offset starts as a value you
+typed in the editor. That is fine for previewing a field of view and not good
+enough for manipulation: every pixel-to-world calculation inherits the error.
+
+Hand-eye calibration measures that offset. You hold a printed board still, reorient
+the wrist a dozen times, and Cyberwave solves for the camera's pose on the link — then
+writes it to the camera twin's docking offset.
+
+Eye-in-hand only: the camera must be mounted on a moving link.
+
+You can run it two ways: from the dashboard on a supported robot, or from the SDK.
+
+## Before you start
+
+- Dock the camera twin to the arm link it is physically mounted on.
+- Print a ChArUco board and **measure the squares with calipers**. Printers rescale,
+  and the square size is the only scale input — a 2% error becomes a 2% range error.
+- Clamp the board so it cannot move for the whole session.
+
+## From the dashboard
+
+Select the docked camera twin in the environment editor and open **Hand-eye
+calibration**. The panel shows the arm and link it will measure against, plus the
+last calibration if there is one. Click **Calibrate hand-eye**.
+
+The robot then guides you through the run in a calibration alert:
+
+1. Hand-guide the wrist to a new orientation and let it settle.
+2. Click **Capture sample**. The alert counts your captures and tells you if the
+   board was not found in one — that capture is not added, so reposition and retake.
+3. After at least three captures, **Solve** appears. Click it when you have a dozen.
+4. Check the stability figure — that is the number the verdict is keyed on —
+   then **Apply to docking offset**, or **Capture more** to tighten it first.
+
+Available on robots whose camera is managed by the same edge driver as the arm —
+the SO-101 today, and any driver whose maintainer has wired up its arm and camera
+for it. For anything else, use the SDK.
+
+<Warning>
+**Reorient, don't just move.** Sliding the wrist around at a fixed orientation
+cannot determine the camera's orientation, no matter how many captures you take.
+Tilt it about several different axes. If the captures don't constrain the answer,
+the solve refuses rather than returning a guess.
+</Warning>
+
+## From the SDK
+
+If you know your camera's intrinsics (`fx`, `fy`, `cx`, `cy`), pass them in. If
+you don't, omit `intrinsics` and they are solved from the same board views you
+capture for the calibration.
+
+```bash
+pip install "cyberwave[calibration]"
+```
+
+## Capturing
+
+```python
+from cyberwave.calibration import CharucoBoard, HandEyeSession
+
+session = HandEyeSession(
+    camera_twin=camera,
+    arm_twin=arm,
+    fk_frame="wrist_link",          # the link the camera is docked to
+    board=CharucoBoard(squares=(5, 7), square_size_m=0.030, marker_size_m=0.022),
+    intrinsics={"fx": 615.0, "fy": 615.0, "cx": 319.5, "cy": 239.5},
+)
+
+for _ in range(12):
+    input("Reorient the arm, let it settle, then press Enter...")
+    session.add_sample(base_to_gripper=gripper_pose_4x4)
+
+result = session.solve()
+```
+
+As above, reorient the wrist rather than sliding it — `solve()` refuses rather than
+returning a guess when the captures don't constrain the answer. Keep the board still
+for the whole session; if you bump it, call `session.clear()` and start over.
+
+`add_sample()` waits for the arm to stop before grabbing a frame, and checks it is
+still in the same place afterwards — an arm that had not settled would otherwise
+pair one position's image with another position's pose, which nothing downstream
+can detect. Captures that fail the check raise `HandEyeSyncError` and are
+discarded rather than stored.
+
+If your arm reports joint states slowly, raise `settle_timeout_s`. Pass
+`settle=False` to turn the check off, and note it is skipped automatically when
+you supply your own `image=`.
+
+## Checking the result
+
+**Start with stability.** It re-solves with each capture dropped in turn and reports
+how far the answer moves — so it asks the question you actually have, "will this
+number hold?", rather than "do my captures agree with each other?".
+
+```python
+print(result.leave_one_out.max_stddev_m)   # under ~4 mm is good, over ~8 mm is not
+```
+
+Measured on an SO-101 wrist camera, runs whose mount position was reproducible
+across independent sessions land at 1.9–3.5 mm; ill-conditioned ones reach 7.7–24 mm,
+almost entirely along the camera's optical axis. The dashboard's good/borderline/not-
+usable verdict is keyed on this number.
+
+```python
+print(result.residual_translation_m, result.residual_rotation_deg)
+```
+
+The residual is a secondary check — how much the captures disagree with each other,
+reported as a standard deviation across them. It is worth reading to catch a
+grossly bad fit, but it tracked working distance more than answer quality on this
+arm, which is why it is not the headline. A large one usually means, in order of
+likelihood: wrong intrinsics, a board that moved, or forward kinematics reported
+about a different link than the camera is docked to.
+
+Because it is a standard deviation, it reports *variability*, not offset: a set of
+captures that are all wrong by the same amount reads low. `max_residual_translation_m`
+and `max_residual_rotation_deg` carry the worst single capture, so a max several
+times the residual points at one capture to retake rather than at a bad fit.
+
+<Warning>
+**Neither number is an error bar.** Both measure internal consistency, not distance
+from the truth, and they come apart in two ways:
+
+- A consistent mistake — poses measured about the wrong link, say — produces a
+  *small* residual and a wrong answer. (Both the dashboard flow and `HandEyeSession`
+  check the link name for you, which is why that particular mistake is hard to make.)
+- If your captures rotate about only slightly different axes, the problem is
+  ill-posed and every statistic flatters it. Tilt the wrist about genuinely
+  different axes between captures rather than sliding it around — rotation variety
+  is what makes the solve possible.
+</Warning>
+
+## Intrinsics
+
+Intrinsics are an input the hand-eye solve cannot recover from: every board pose
+inherits their error, and it shows up only as an inflated residual with nothing
+pointing at the cause. So if you don't pass any, they get solved properly:
+
+```python
+session = HandEyeSession(..., intrinsics=None)   # or just omit it
+```
+
+Every capture is accepted or refused on the spot — finding the board's corners
+needs no camera model, only turning them into a pose does — and the camera model is
+fitted once, at `solve()`, from every view you captured. Nothing is held back and
+nothing is discarded.
+
+```python
+print(result.solved_intrinsics.rms_reprojection_px)      # < 1 px is good
+print(result.solved_intrinsics.principal_point_is_centred)
+```
+
+Check both. A high RMS means redo it with more varied views; a principal point far
+from the image centre usually means the board spec is wrong rather than the sensor
+being genuinely offset.
+
+Vary the board's **angle and distance**, not just its position — views that are all
+face-on leave the focal length poorly constrained however many you take. And
+intrinsics are per-resolution: mixing frame sizes in one session is rejected.
+
+## Cross-checking the solve
+
+`session.solve()` re-solves with each capture dropped in turn and attaches the
+result:
+
+```python
+print(result.leave_one_out.max_stddev_m)        # movement when one capture is dropped
+print(result.leave_one_out.worst_sample_index)  # capture to re-take first
+```
+
+`leave_one_out` answers a question the residual cannot. The residual asks whether
+your captures agree with each other; leave-one-out asks whether the answer holds up
+when the evidence changes. A calibration that moves millimetres when any single
+capture is dropped is not one to trust, however tight its residual.
+
+`leave_one_out` is `None` only when dropping a capture would leave too few to
+solve at all — so with the three captures a solve needs, or when the captures are
+so alike that every reduced set is degenerate. At low capture counts the spread
+says a lot about *which* capture was removed, so read it as weak evidence and
+check `subset_count` for how many re-solves it came from.
+`worst_sample_index` names the capture to re-take first when the spread is wide.
+
+Pass `validate=False` to skip it.
+
+## Saving
+
+```python
+if result.residual_translation_m < 0.005:
+    camera.calibration.set(result, board=session.board)
+```
+
+This updates the camera twin's docking offset, so the 3D view and any exported scene
+both place the camera where it really is. The solve details — residuals, sample
+count, board, and the intrinsics you supplied — are stored alongside it.
+
+Read it back with `camera.calibration.get()`. `camera.calibration.delete()` forgets
+the record but leaves the mount offset in place.
+
+## When the result looks wrong
+
+The SO-101 driver ships `so101-handeye-debug`, which runs the same calibration with
+Cyberwave taken out of the loop — no API key, no twins, no MQTT — and writes every
+frame, joint reading, board pose and solve to a run directory.
+
+```bash
+so101-handeye-debug selftest                              # is the pipeline itself sound?
+so101-handeye-debug board                                 # does the print match the spec?
+so101-handeye-debug capture --fov 60 --fk-frame gripper   # capture, saving everything
+```
+
+Because the frames and poses are all on disk, you can re-solve a run offline with one
+input changed at a time and see exactly what moves:
+
+```bash
+so101-handeye-debug intrinsics --run $RUN   # measure the intrinsics you guessed
+so101-handeye-debug solve --run $RUN --intrinsics-from-fit
+so101-handeye-debug solve --run $RUN --drop 4   # was one capture carrying the residual?
+```
+
+Full options: [SO-101 driver
+README](https://github.com/cyberwave/cyberwave-edge-python-so101#so101-handeye-debug).

@@ -1,7 +1,6 @@
 ---
-title: "Model Catalog API"
+title: "Model catalog API"
 description: "Browse, register, update, and delete ML model records in your workspace."
-stub: true
 ---
 
 ## Overview
@@ -11,7 +10,7 @@ Each record stores metadata about where the model runs (cloud, edge, hybrid), wh
 inputs it accepts, and how to load it via the SDK. Public models are visible without
 authentication; private models are scoped to workspace members.
 
-Browse and load catalog rows from Python with **`cw.models`** — see [ML Models (Python SDK)](/tools/models/overview). Typed **`create`** / **`update`** helpers are not on `cw.models` yet; call `POST` / `PUT` on this API or use generated `cw.api.*` wrappers until SDK methods land.
+Browse and load catalog rows from Python with **`cw.models`** — see [ML Models (Python SDK)](/overview/tools/models/overview). Typed **`create`** / **`update`** helpers are not on `cw.models` yet; call `POST` / `PUT` on this API or use generated `cw.api.*` wrappers until SDK methods land.
 
 | Method   | Endpoint                   | Auth | Description                              |
 | -------- | -------------------------- | :--: | ---------------------------------------- |
@@ -297,27 +296,27 @@ cw_delete_model(model_uuid, execute?)
 ## Related
 
 <CardGroup cols={2}>
-  <Card title="Model Playground API" icon="play" href="/models/playground">
+  <Card title="Model Playground API" icon="play" href="/api-reference/models/playground">
     Run inference, evaluate, download weights
   </Card>
   <Card
     title="Python SDK — ML Models"
     icon="python"
-    href="/tools/models/overview"
+    href="/overview/tools/models/overview"
   >
     SDK reference for catalog + runtime
   </Card>
   <Card
     title="Edge Workers"
     icon="microchip"
-    href="/use-cyberwave/ml-models/edge-worker"
+    href="/feature-reference/ml-models/edge-worker"
   >
     Run edge models on hardware
   </Card>
   <Card
     title="ML Models (UI overview)"
     icon="brain"
-    href="/use-cyberwave/ml-models/overview"
+    href="/feature-reference/ml-models"
   >
     Dashboard walkthrough
   </Card>

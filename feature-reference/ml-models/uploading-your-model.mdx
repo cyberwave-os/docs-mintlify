@@ -1,5 +1,5 @@
 ---
-title: "Uploading Your Model"
+title: "Bring your own model"
 description: "Bring your own model into Cyberwave — call your own API, or hand Cyberwave code to run — and use it in workflows, the Playground, and the SDK."
 icon: "upload"
 ---
@@ -13,7 +13,7 @@ icon: "upload"
 
 ## Concepts
 
-A **custom model** is an [ML Model](/feature-reference/ml-models/index) you register yourself, instead of picking one from the catalog. There are two kinds:
+A **custom model** is an [AI model](/feature-reference/ml-models/index) you register yourself, instead of picking one from the catalog. There are two kinds:
 
 <CardGroup cols={2}>
   <Card title="custom-api" icon="cloud">
@@ -47,6 +47,8 @@ Every custom model declares its inputs and outputs with `metadata.io_schema` —
 
 Supported types: `text`, `image`, `audio`, `video`, `json`, `number`, `boolean`, `array`. `video` is a reference to a stored recording (a whole clip), not a single live frame — see [Passing a recording as input](#passing-a-recording-as-input).
 
+<Note>Custom port contracts can also declare data meaning, such as units, coordinate frame and joint order. Two array outputs are not interchangeable merely because their sizes match. Review the mapping when replacing a model; reload its latest configuration if a contract update reports a conflict. Existing untyped models retain their current behavior.</Note>
+
 <Warning>
   Only upload or point at code and endpoints you trust. Custom models run
   without additional sandboxing today — treat them the same way you'd treat
@@ -69,7 +71,7 @@ Use this when the model already runs somewhere reachable over HTTPS.
 
     cw = Cyberwave(api_key="your_api_key")
 
-    model = cw.api.create_mlmodel({
+    model = cw.api.src_app_api_mlmodels_create_mlmodel(ml_model_create_schema={
         "name": "Warehouse Defect Classifier",
         "description": "Calls our own defect-detection API",
         "model_external_id": "defect-classifier-v1",
@@ -116,7 +118,7 @@ Use this when the model already runs somewhere reachable over HTTPS.
 
     ```bash
     curl -X POST \
-      "$CYBERWAVE_API_URL/api/v1/mlmodels/<model-uuid>/credential" \
+      "$CYBERWAVE_BASE_URL/api/v1/mlmodels/<model-uuid>/credential" \
       -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -134,7 +136,7 @@ Use this when the model already runs somewhere reachable over HTTPS.
 
     ```bash
     curl -X POST \
-      "$CYBERWAVE_API_URL/api/v1/mlmodels/<model-uuid>/test-call" \
+      "$CYBERWAVE_BASE_URL/api/v1/mlmodels/<model-uuid>/test-call" \
       -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{"image_url": "https://example.com/sample.jpg"}'
@@ -148,7 +150,7 @@ Use this when the model already runs somewhere reachable over HTTPS.
     Playground, or from a workflow's **Call Model** node.
 
     ```python
-    result = cw.api.run_mlmodel(model.uuid, image_url="https://example.com/frame.jpg")
+    result = cw.models.run(model.uuid, image_url="https://example.com/frame.jpg")
     ```
   </Step>
 </Steps>
@@ -175,10 +177,20 @@ The base runtime ships with `torch`, `onnxruntime`, `ultralytics`, `opencv`,
 `numpy`, `pillow`, and `transformers` pre-installed — import them directly
 from `run()`. Installing extra packages at run time isn't supported yet.
 
+<Note>
+  All `custom-hosted` models run on GPU-backed compute today, even a small
+  model that would run fine on CPU. You can set `metadata.device` to
+  `"cpu"` or `"gpu"` now to declare which one your model actually needs —
+  it's validated and saved, but **not yet used to choose your compute**:
+  every workload still runs on GPU regardless of this value. Setting it
+  today costs you nothing and means no changes are needed on your side once
+  CPU-tier compute ships.
+</Note>
+
 <Steps>
   <Step title="Register the model with your code">
     ```python
-    model = cw.api.create_mlmodel({
+    model = cw.api.src_app_api_mlmodels_create_mlmodel(ml_model_create_schema={
         "name": "My Detector",
         "description": "Custom ONNX detector, hosted by Cyberwave",
         "model_external_id": "my-detector-v1",
@@ -188,6 +200,7 @@ from `run()`. Installing extra packages at run time isn't supported yet.
         "output_format": "json",
         "metadata": {
             "code": open("run.py").read(),
+            "device": "cpu",
             "io_schema": {
                 "inputs": [{ "name": "frame", "type": "image", "required": True }],
                 "outputs": [{ "name": "detections", "type": "json" }]
@@ -200,6 +213,10 @@ from `run()`. Installing extra packages at run time isn't supported yet.
       Only inline code (`metadata.code`, shown above) is supported today —
       uploading code as a separate file isn't wired up yet.
     </Info>
+
+    `metadata.device` is optional (`"cpu"` or `"gpu"`) — see the note above.
+    It's only valid on `custom-hosted` models; setting it on `custom-api`
+    is rejected, since your own endpoint decides its own compute.
   </Step>
   <Step title="Upload weights (optional)">
     If your `run()` function needs a checkpoint, upload it as a tar archive
@@ -208,14 +225,14 @@ from `run()`. Installing extra packages at run time isn't supported yet.
     ```bash
     # 1. Request a signed URL
     curl -X POST \
-      "$CYBERWAVE_API_URL/api/v1/mlmodels/<model-uuid>/artifacts/upload-urls" \
+      "$CYBERWAVE_BASE_URL/api/v1/mlmodels/<model-uuid>/artifacts/upload-urls" \
       -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{"files": [{"path": "checkpoint.tar"}]}'
 
     # 2. PUT your file to the returned upload_url, then confirm:
     curl -X POST \
-      "$CYBERWAVE_API_URL/api/v1/mlmodels/<model-uuid>/artifacts/complete" \
+      "$CYBERWAVE_BASE_URL/api/v1/mlmodels/<model-uuid>/artifacts/complete" \
       -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{"files": [{"path": "checkpoint.tar"}], "primary_path": "checkpoint.tar"}'
@@ -230,7 +247,7 @@ from `run()`. Installing extra packages at run time isn't supported yet.
     while capacity is provisioned.
 
     ```python
-    result = cw.api.run_mlmodel(model.uuid, image_url="https://example.com/frame.jpg")
+    result = cw.models.run(model.uuid, image_url="https://example.com/frame.jpg")
     ```
   </Step>
 </Steps>
@@ -272,10 +289,10 @@ are extended automatically when a model declares a `video` input.
 ## Where to go next
 
 <CardGroup cols={3}>
-  <Card title="ML Models" icon="brain" href="/feature-reference/ml-models/index">
+  <Card title="Model catalog" icon="brain" href="/feature-reference/ml-models/index">
     Model visibility, capabilities, and the catalog in general.
   </Card>
-  <Card title="Model Playground" icon="flask" href="/feature-reference/ml-models/playground">
+  <Card title="Model playground" icon="flask" href="/feature-reference/ml-models/playground">
     Try any model — including your own — from an interactive UI.
   </Card>
   <Card title="Model Catalog API" icon="book" href="/api-reference/models/catalog">

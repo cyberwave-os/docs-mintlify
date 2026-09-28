@@ -1,7 +1,6 @@
 ---
-title: "Dataset Export & Format Conversion"
+title: "Dataset export & format conversion"
 description: "Download and convert robot datasets to different formats from the UI, SDK, or API."
-stub: true
 ---
 
 <Info>
@@ -99,16 +98,13 @@ from cyberwave import Cyberwave
 cw = Cyberwave(api_key="...")
 ds = cw.datasets.get("dataset-uuid")
 
-# Request a specific output format — triggers conversion if needed
-result = ds.download(format="lerobot3")
+# Request a specific output format — triggers conversion if needed and
+# polls until it is ready. Returns the signed download URL (valid 24 h).
+url = cw.datasets.convert(ds, "lerobot3")
+print(url)
 
-if result["status"] == "ready":
-    print(result["signed_url"])   # valid for 24 hours
-else:
-    while result["status"] != "ready":
-        time.sleep(5)
-        result = ds.download(format="lerobot3", wait=False)
-    print(result["signed_url"])
+# Or convert and save the file in one call:
+path = cw.datasets.download(ds, "lerobot3", dest="./data")
 ```
 
 ## MCP tool

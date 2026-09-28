@@ -1,13 +1,16 @@
 ---
-title: "Model Playground"
-description: "Interactive UI and code snippets for running ML models from the Cyberwave app"
+title: "Model playground"
+description: "Interactive UI and code snippets for running AI models from the Cyberwave app"
+sidebarTitle: "Try models in the Playground"
 ---
 
-## What is the Model Playground?
+{/* stub: pending documentation review */}
 
-The **Model Playground** is the interactive detail page that lives at
+## What is the model playground?
+
+The **model playground** is the interactive detail page that lives at
 `/{workspace-slug}/models/{model-slug}` (or `/models/{uuid}` for models
-without a slug). It lets you explore, test, and integrate any ML Model
+without a slug). It lets you explore, test, and integrate any AI model
 registered in your workspace or visible in the public catalog.
 
 <Info>
@@ -20,22 +23,42 @@ into the `?tab=playground` view.
 
 ## What you can do
 
+Start with a **task**. In the model catalog, **More filters → Tasks** narrows
+models by their declared task contracts. On a model page, **Services** explains
+its tasks, required inputs and output meaning; expand the input/output details
+when configuring a mapping. This lists supported interfaces, not deployed
+integrations or tested robot compatibility.
+
+Models that support several tasks share one task picker. **Plan steps** takes a
+goal and returns a task plan; **Free prompt** leaves the prompt open-ended.
+Task prompts come from the shared task catalog, with model-specific examples
+where available. Image points, local paths, task plans and joint commands
+require different downstream services and adapters.
+
+The workflow node uses the same task contracts: select **Task**, choose a
+compatible **Model**, then provide the required observations. **Use example
+prompt** fills an empty prompt from the selected model's task example. Existing
+input mappings are retained. In an editable environment workflow,
+**Configure with AI** opens the existing workflow assistant for the selected
+node. Edit the request, choose **Plan edit**, then review the proposal before
+**Review and apply**. This does not activate the workflow.
+
+Some models include **recorded examples** showing a previous input and result.
+Their captions identify the checkpoint and whether depth is relative or metric.
+They do not run inference. If weights or an execution adapter are unavailable,
+the page explains the missing setup and keeps its examples readable.
+
 The playground auto-detects the model's capabilities (deployment,
 provider, tags, input modalities, output format) and renders the right
 UI for each kind:
 
 | Playground kind | Typical models | What you can do |
 |-----------------|----------------|------------------|
-| `vlm-spatial-reasoner` | Gemini Robotics-ER 1.5 / 1.6, Molmo pointing, PaliGemma grounding, GPT-5 spatial, any VLM with `metadata.point_format` or a `pointing`/`grounding`/`visual-grounding`/`spatial-reasoning` tag | Upload an image, pick a structured task (detect points, detect boxes, caption, segment), run it, and visualize the JSON output as overlays on the input image. |
+| `vlm-spatial-reasoner` | Models with structured perception or task-planning capabilities | Pick a task, provide its required inputs and inspect the structured output. Image tasks show overlays; task planning accepts a text goal. |
 | `vlm`           | GPT-5, Gemini 2.5 Flash, any text/vision LLM | Send a text prompt (and optionally an image) and see the text response. |
 | `im2mesh`       | Hunyuan3D, TripoSR, single-image-to-3D | Upload an image, submit, and preview the generated GLB inline. |
-| `vla`           | OpenVLA, Pi 0.5 | Read the SDK/CLI recipes for running the model against a live twin. |
+| `vla`           | OpenVLA, Pi 0.5 | Configure robot inputs and inspect predicted actions. Sign in to run a VLA model. |
 | `edge`          | YOLOv8, SAM2, any edge-only model | Read the CLI recipe for binding the model to a workspace edge node. |
-
-The resolver behind this lives at
-`cyberwave-frontend/components/models/resolve-playground-kind.ts` and is
-covered by Vitest fixtures at
-`cyberwave-frontend/__tests__/resolve-playground-kind.test.ts`.
 
 ---
 
@@ -55,15 +78,72 @@ covered by Vitest fixtures at
 
 ---
 
+## When a robot prediction needs setup
+
+### Assisted joint setup for SmolVLA
+
+After choosing a robot, **Assist joint setup** proposes how the policy's output
+columns and units map to that robot. Include details from the checkpoint's
+training configuration, particularly the gripper convention. Review the
+assistant's assumptions and edit the mapping or conversion values as needed.
+Changing an example policy value updates the pose in the 3D viewer immediately.
+
+**Save new binding version** stores the mapping in your workspace. You only need
+read access to the model and robot catalog, plus permission to create in your
+workspace. Select a saved version explicitly; subsequent saves preserve previous
+versions. Controller inference and prediction playback use the same conversion.
+
+If the source contract changes, or the original model is removed, select an
+accessible replacement model and use **Adapt an existing binding**. The assistant
+compares the retained old contract with the selected model and shows changes for
+review. Saving creates a replacement version; it does not restore deleted weights
+or automatically activate a controller. Pin checkpoint revisions for reproducible
+evaluations.
+
+The blue ghost is the reference pose from the robot preview. The solid robot
+shows the converted policy values, with numeric differences displayed per joint.
+
+The preview shows the converted pose; it does not run physics or demonstrate
+task success. This adapter supports absolute joint-position SmolVLA checkpoints
+whose input and output dimensions match the robot. It cannot turn a generic
+32-column base policy into a trained six-joint policy by dropping columns.
+
+### Checkpoint sources
+
+A SmolVLA model can declare a stored checkpoint or a Hugging Face
+`policy_repo_id` with optional `policy_revision`. Stored checkpoints take
+precedence. If a declared artifact is missing, execution reports the missing
+artifact instead of silently running a different base model. Hub checkpoints
+use the same downloaded snapshot for weights, configuration and processors.
+
+**Compatible hardware** lists the robots declared for a model. A prediction
+also needs an output mapping, and pose predictions need the robot's kinematics.
+These checks happen before a trajectory can replay.
+
+- **Model output or joint mapping:** a model editor can choose **Review model
+  setup** to open the existing model settings. Under **Metadata**, compare the
+  output declaration with the checkpoint's training configuration. Joint outputs
+  need their trained joint order; Cartesian outputs need a configured IK service.
+- **Robot kinematics:** choose **Review robot setup** to open that asset's Control
+  section and review its end-effector and IK configuration.
+- **Unreachable pose:** choose another target or initial pose before making a
+  new prediction.
+
+If you cannot edit the model, the result explains that a model editor must
+review the configuration. Saved results retain the configuration used for that
+run. Saving a correction does not approve an old failed result or start a robot.
+
+For robot operation, configure the input and service in **Catalog → Control**,
+then add the asset to an environment. The twin inherits that setup; changes in
+**Workbench → Control** apply to the twin. Connection and runtime readiness are
+checked separately when using a control. **Monitor** lets you inspect the setup
+without changing it.
+
 ## Using a model from your code
 
 Every playground tab also surfaces copy-paste-ready snippets for the
 Python SDK, the `cyberwave` CLI, and `curl`. These snippets are
-generated by `components/models/build-code-snippets.ts` and are covered
-by a "grounded" Vitest test that greps the monorepo to ensure every
-command and method referenced in the snippets actually exists in the
-SDK or CLI. That guarantees the examples do not drift out of sync with
-the real surface.
+specific to the selected model.
 
 ### Cloud model (Python SDK)
 
@@ -72,7 +152,7 @@ from cyberwave import Cyberwave
 
 client = Cyberwave()
 loaded = client.models.load("<workspace>/models/<model-slug>")
-result = loaded.predict(text="Describe this image", image="./photo.png")
+result = loaded.predict("./photo.png", prompt="Describe this image")
 print(result)
 ```
 
@@ -80,13 +160,13 @@ print(result)
 
 ```bash
 cyberwave model list
-cyberwave model bind <model-slug> --twin <twin-slug> --camera front
+cyberwave model bind --model <model-id> --twin-uuid <twin-uuid> --camera front
 ```
 
 ### Direct HTTP (cURL)
 
 ```bash
-curl -X POST "$CYBERWAVE_API_URL/api/v1/mlmodels/<model-uuid>/run" \
+curl -X POST "$CYBERWAVE_BASE_URL/api/v1/mlmodels/<model-uuid>/run" \
   -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"prompt": "hello"}'
@@ -94,18 +174,9 @@ curl -X POST "$CYBERWAVE_API_URL/api/v1/mlmodels/<model-uuid>/run" \
 
 ---
 
-## Deterministic mocks for local dev & tests
-
-Set `MLMODEL_PROVIDER_MOCK=1` in the backend to bypass real provider
-calls and return deterministic fixtures. This keeps the playground,
-Vitest suites, and the Playwright flows in
-`cyberwave-frontend/e2e/model-playground.spec.ts` fully hermetic.
-
----
-
 ## See also
 
-- [ML Models Overview](/use-cyberwave/ml-models/overview)
-- [Edge Worker](/use-cyberwave/ml-models/edge-worker)
-- [Deploying Models](/use-cyberwave/ml-models/deploy)
-- [Playground API reference](/models/playground) — endpoint URLs, request/response schemas, output formats
+- [Model catalog](/feature-reference/ml-models)
+- [Edge Worker](/feature-reference/ml-models/edge-worker)
+- [Deploying Models](/tutorials/train-vla-cyberwave)
+- [Playground API reference](/api-reference/models/playground) — endpoint URLs, request/response schemas, output formats

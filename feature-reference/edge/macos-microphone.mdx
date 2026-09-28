@@ -1,13 +1,11 @@
 ---
-title: "macOS Microphone Bridge"
-sidebarTitle: "macOS Microphone"
+title: "macOS microphone bridge"
+sidebarTitle: "macOS microphone"
 description: "Run the generic microphone driver in Docker on a Mac by bridging host CoreAudio through ffmpeg and HTTP PCM."
 icon: "microphone-lines"
 ---
 
-<Warning>
-**STUB DOCUMENT:** Operational guide for the macOS host PCM bridge. A human will expand it before publishing.
-</Warning>
+{/* TODO(docs): **STUB DOCUMENT:** Operational guide for the macOS host PCM bridge. A human will expand it before publishing. */}
 
 Docker Desktop on macOS runs **Linux** containers. Those containers cannot open CoreAudio or `/dev/snd` the way a Linux edge host can. Cyberwave mirrors the [camera MJPEG bridge](/feature-reference/edge/overview) pattern: **host `ffmpeg` captures AVFoundation audio** and serves **raw PCM over HTTP**; the **microphone driver container** reads that URL via `AudioBridgeCapture` instead of PortAudio.
 
@@ -28,7 +26,7 @@ Mac host (CoreAudio / AVFoundation)
 | Container env | `CYBERWAVE_METADATA_AUDIO_DEVICE=http://host.docker.internal:8101` |
 | Edge-core | Probes ports `8101`–`8110` on Darwin; injects URL when starting the driver |
 
-On **Linux** Docker hosts, skip the bridge: edge-core bind-mounts `/dev/snd` and the driver uses PortAudio/ALSA directly. See [Native microphone driver — Linux](/feature-reference/edge/drivers/native-microphone-driver#linux-audio-notes).
+On **Linux** Docker hosts, skip the bridge: Edge Core bind-mounts `/dev/snd` and the driver uses PortAudio/ALSA directly. See [Native microphone driver — Linux](/feature-reference/edge/drivers/native-microphone-driver#linux-audio-notes).
 
 ## Prerequisites
 
@@ -39,7 +37,7 @@ On **Linux** Docker hosts, skip the bridge: edge-core bind-mounts `/dev/snd` and
 
 ## First-time setup
 
-1. Install the CLI and edge core (pairing flow):
+1. Install the CLI and Edge Core (pairing flow):
 
 ```bash
 curl -fsSL https://cyberwave.com/install.sh | bash
@@ -50,7 +48,7 @@ sudo cyberwave pair
    - Lists AVFoundation input devices and prompts for a microphone (by **index**; stored in `audio_streams.json`).
    - Installs a LaunchAgent (`com.cyberwave.audio-stream`) on port **8101** (additional mic twins use `8102`, …).
    - Writes `~/.cyberwave/audio_streams.json` with `twin_to_stream_url` entries.
-   - Restarts edge-core so driver containers receive `CYBERWAVE_METADATA_AUDIO_DEVICE`.
+   - Restarts Edge Core so driver containers receive `CYBERWAVE_METADATA_AUDIO_DEVICE`.
 
 3. Link your microphone twin to the edge in the Cyberwave UI, then restart if you added the twin after install:
 

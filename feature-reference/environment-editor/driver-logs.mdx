@@ -1,0 +1,55 @@
+---
+title: "Driver logs"
+description: "Read what your drivers are saying, across every robot in the environment, from the Logs tab."
+icon: "scroll-text"
+---
+
+{/* TODO(docs): This page is a stub. A human will curate and expand it before publishing. */}
+
+The **Logs** tab in the environment workbench shows the log lines your edge
+drivers emit, for every robot in the environment at once. It is where you look
+when a driver started but nothing moved, or a camera stream never appeared.
+
+## Reading the tail
+
+Lines arrive **newest first**, so the most recent one stays at the top of the
+list instead of scrolling away as new lines land. Use the sort button in the
+toolbar to flip to oldest-first if you would rather read a startup sequence in
+order.
+
+Each line carries a coloured left edge for its severity — red for errors, amber
+for warnings, green for info, grey for debug — so you can pick the errors out of
+a busy list without reading every message. The level is also named beside the
+robot, so it is there when the colour is not enough and it is matched by
+**Search**.
+
+## Choosing a time range
+
+The **Range** control sets what the tab reads:
+
+- **Last 5 min** (the default) — a live tail of what is happening now.
+- **Last hour** / **Last 24 hours** — for something you have already missed.
+- **Custom…** — a fixed start and end. A fixed range is not a tail, so the tab
+  loads it once and stops refreshing.
+
+A shorter range is faster to load. Start narrow and widen only when you need to
+look further back.
+
+## Knowing when there is more
+
+The counter above the list reads, for example, `40 of 200+ loaded` — how many
+lines are on screen after your search and level filters, and how many have been
+loaded from the range. A trailing `+` means the range holds more lines than are
+loaded. When that happens, **Load older** at the bottom of the list fetches the
+next page.
+
+## Narrowing it down
+
+- **Twin** — read one robot instead of the whole environment.
+- **Level** — show only the severities you care about.
+- **Search** — match on message text, robot name, or anything in the line's
+  details.
+- **Download** — save every loaded line as JSON, filters included or not.
+
+Click the info icon on any line for its full payload: container name, driver
+image, edge-core and SDK versions, and the raw metadata the driver sent.

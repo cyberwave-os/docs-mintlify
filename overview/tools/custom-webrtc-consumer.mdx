@@ -28,6 +28,7 @@ stream = twin.camera.get_video()
 frame = stream.get_frame(format="numpy")
 
 # Or display the ongoing stream until q/Esc is pressed.
+# show() needs a GUI OpenCV build: pip install opencv-python
 stream.show()
 stream.stop()
 ```

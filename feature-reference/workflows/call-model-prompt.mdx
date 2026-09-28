@@ -1,7 +1,6 @@
 ---
 title: "Prompting Call Model"
 description: "Drive open-vocabulary and multimodal models from the Call Model node by setting a text prompt — works the same on cloud and edge."
-tag: stub
 ---
 
 The `prompt` input on a `call_model` node is the steering knob for any
@@ -10,21 +9,29 @@ wire it from an upstream node) and the value flows through to the
 selected model at inference time on every execution path — cloud
 runner, edge mission worker, and edge `camera_frame` worker.
 
-## Where the prompt is stored
+## Choose a task
 
-The inspector persists the value in one of two places, depending on
-the editor row used:
+Choose **Task**, then a compatible model. An unnamed node takes the task name;
+your own names stay unchanged. The task’s observations appear in **Inputs**,
+and its typed result appears in **Outputs**. Connect the required image, prompt or other observations before
+running. Unsupported tasks are unavailable for the workflow's current runtime.
 
-| Storage | When |
-|---|---|
-| `parameters.default_prompt` | Dedicated `Prompt` row in the inspector |
-| `metadata.input_mappings.prompt` (`mode: "value"`) | Generic `InputMappingEditor` row, or set via the API |
+**Model default** retains the existing response behavior. Changing a task saves
+the selection without running the model. If the node or model changed while you
+were editing, reload before saving again.
 
-Both stores are honored at compile time, so a workflow can come back
-from a clone, import, or API edit with the value in either place and
-still work. Pick one and stick with it — the editor populates
-`parameters.default_prompt` by default, so that is the right place
-to author the field if you have the choice.
+Edge workflows can call supported cloud models for structured tasks. Update the
+SDK and republish the workflow after changing the selected model’s configuration.
+An unsupported runtime or invalid response stops the task; it does not silently
+switch to an unstructured answer.
+
+For mapping, keep the steps explicit: camera image → depth estimation → calibrated
+point cloud → map. LiDAR provides geometry directly and still needs frame and time
+alignment. Relative depth is useful for visualization, but cannot replace metric
+depth in a map.
+
+Existing saved prompts remain visible. Editing a legacy prompt moves that value
+to the current input mapping; other settings remain intact.
 
 ## What `prompt` means for each model family
 
@@ -164,7 +171,7 @@ text/visual, YOLO-World, SAM 3 text mode), clear the prompt field,
 or — if the prompt is wired from an upstream node — disconnect that
 input edge.
 
-## Soft breaking change (CYB-2042)
+## Soft breaking change
 
 Before this release, configuring a prompt against a model that
 couldn't consume text compiled silently and the prompt was dropped

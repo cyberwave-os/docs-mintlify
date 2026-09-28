@@ -1,0 +1,205 @@
+---
+title: "Tutorials"
+sidebarTitle: "All tutorials"
+description: "Every Cyberwave tutorial, grouped by the hardware you need, with level, what drives the robot, and whether you write code."
+icon: "book-open"
+mode: "wide"
+---
+
+Each tutorial ends with something running: a model watching a camera, an arm following a spoken command, a policy you trained. They are grouped by the hardware you need and ordered from easiest to hardest within each group.
+
+## Pick by what you have
+
+| You have | Start here |
+|---|---|
+| Nothing but a browser | [Hello Robot in simulation](/overview/hello-robot) (5 min), then [No hardware](#no-hardware) |
+| A laptop with a webcam | [Laptop camera only](#laptop-camera-only) |
+| An SO-101 arm kit | [SO-101 arm](#so-101-arm), starting with the SO-101 quickstart |
+| An AgileX Piper, or a device that isn't in the catalog | [Other arms and your own hardware](#other-arms-and-your-own-hardware) |
+| A UGV Beast rover or a DJI Mini 3 | [Mobile robots and drones](#mobile-robots-and-drones) |
+| Time for a bigger build | [Built by the community](#built-by-the-community) |
+
+**How to read a card.** The line under each title is *hardware · level · what drives the robot · code or no-code*.
+
+- **Level.** *Beginner*: you follow the steps, and there is little or no code. *Intermediate*: you are comfortable in a terminal, in Python, or in the Workflow editor. *Advanced*: you train models, write drivers, or run Docker and ROS.
+- **What drives the robot.** A *perception model*, an *LLM*, a *workflow*, a *VLA* or an *RL policy*: see [AI models](/ai/models) and [Ways to control a robot](/ai/control). *Hardware setup* means the tutorial connects hardware to a twin and uses no model.
+- **Early draft.** The steps are complete enough to follow end to end. Screenshots and final code are still being added.
+
+## No hardware
+
+Everything runs in simulation or in Docker on your computer.
+
+<CardGroup cols={2}>
+  <Card title="UR Sim to Cyberwave with a Python driver" icon="robot" href="/tutorials/ur-sim-cyberwave-driver">
+    **No hardware (Docker) · Intermediate · Hardware setup · Code**
+
+    Run Universal Robots' simulator and ROS 2 in Docker, then stream the simulated arm's joints into your twin with a ~75-line Python driver.
+  </Card>
+  <Card title="Train an RL policy in MuJoCo" icon="graduation-cap" href="/tutorials/train-rl-policy">
+    **No hardware (real arm optional) · Advanced · RL policy · Code**
+
+    Export an environment to MuJoCo, train a policy locally with Gymnasium and Stable-Baselines3, replay it on the twin, then run the same script on the real robot.
+  </Card>
+  <Card title="RL task walkthrough" icon="list-check" href="/feature-reference/rl-task-walkthrough">
+    **No hardware · Advanced · RL policy · Code**
+
+    Script an OpenArm cube-pick RL task in Python: scene, actions, observations, and network. Then export it, train it, upload the policy, and deploy it as a controller.
+  </Card>
+</CardGroup>
+
+## Laptop camera only
+
+Your computer and a camera are the whole edge device.
+
+<CardGroup cols={2}>
+  <Card title="Your first AI loop: see, pick, sort" icon="wand-magic-sparkles" href="/overview/first-ai-loop">
+    **Laptop webcam · Beginner · Perception model · Code**
+
+    A webcam spots a cup or a bottle on your desk. An SO-101 twin in the free Playground aims, grasps and drops it in the right bin. Switch to `live` for a real arm.
+  </Card>
+  <Card title="Monitor a camera feed for safety hazards" icon="helmet-safety" href="/tutorials/edge-to-cloud-vlm">
+    **Laptop or USB webcam · Beginner · Perception model · Code + workflow**
+
+    Stream your webcam to a twin. A scheduled workflow then asks a VLM whether each person is wearing their safety gear and emails you when they aren't.
+  </Card>
+  <Card title="Detect intruders in a zone" icon="user-shield" href="/tutorials/intrusion-detection">
+    **Camera on an Edge Core host · Intermediate · Perception model · No-code**
+
+    Get an alert when a person stays inside a zone you draw. YOLO and pixelation run on the edge, so raw video never leaves the device.
+  </Card>
+</CardGroup>
+
+## SO-101 arm
+
+You need an SO-101 leader and follower, a camera, and a computer to run the edge. Start with **Get started with the SO-101 arm**. The other tutorials in this group assume you have done it.
+
+<CardGroup cols={2}>
+  <Card title="Get started with the SO-101 arm" icon="microchip" href="/tutorials/so101-teleop-dataset">
+    **SO-101 set + camera · Beginner · Teleoperation + recording · No-code**
+
+    Pair the arm, teleoperate it with the leader arm, record a dataset, train a model, and deploy it back to the same arm.
+  </Card>
+  <Card title="Train an AI model on the SO-101" icon="brain" href="/tutorials/train-vla-cyberwave">
+    **SO-101 set + wrist camera · Intermediate · Recording + VLA · No-code**
+
+    Collect demonstrations, build a dataset, train a VLA in the cloud, and control the arm with natural-language prompts.
+  </Card>
+  <Card title="Control an SO-101 arm with your voice" icon="wand-magic-sparkles" href="/tutorials/so101-natural-language-agent">
+    **SO-101 follower + USB webcam + mic · Intermediate · LLM · Code**
+
+    Speak a command. Claude sees the workspace, writes a motion plan, and the SDK runs it. No training data. You need Anthropic and Mistral API keys.
+  </Card>
+  <Card title="Build a voice-controlled SO-101 with Workflows" icon="diagram-project" href="/tutorials/so101-voice-agent-workflows">
+    **SO-101 follower + mic · Intermediate · LLM · No-code · Early draft**
+
+    The same voice agent, built on the Workflow canvas. A model picks from saved poses you taught the arm.
+  </Card>
+  <Card title="Voice-controlled pick and place" icon="microphone-lines" href="/tutorials/so101-voice-pick-and-place">
+    **SO-101 set + wrist and top-down cameras · Advanced · VLA · Code · Early draft**
+
+    Train your own VLA, then send it spoken pick-and-place instructions from a laptop voice layer.
+  </Card>
+</CardGroup>
+
+## Other arms and your own hardware
+
+<CardGroup cols={2}>
+  <Card title="Get started with the AgileX Piper arm" icon="robot" href="/tutorials/agilex-piper-quickstart">
+    **AgileX Piper + USB-to-CAN adapter · Intermediate · Hardware setup · Code**
+
+    Bring the Piper up over CAN, pair it, jog it from the keyboard in the dashboard, then set its joints from the Python SDK.
+  </Card>
+  <Card title="Build a voice-controlled AgileX Piper with Workflows" icon="diagram-project" href="/tutorials/agilex-piper-workflows">
+    **AgileX Piper + mic · Intermediate · LLM · No-code · Early draft**
+
+    Speak a command, and a model sequences the Piper's saved poses. Built on the Workflow canvas.
+  </Card>
+  <Card title="Bring your own hardware" icon="plug" href="/tutorials/bring-your-own-hardware">
+    **Any device + an edge machine · Advanced · Hardware setup · Code**
+
+    Create an asset from your URDF, write a Docker driver and its `cw-driver.yml`, and get telemetry and commands flowing through a twin.
+  </Card>
+</CardGroup>
+
+## Mobile robots and drones
+
+<CardGroup cols={2}>
+  <Card title="Spot left-out equipment with a DJI Mini 3" icon="plane" href="/tutorials/dji-mini-3-site-sweep">
+    **DJI Mini 3 + RC + Android phone · Beginner · Perception model · No-code**
+
+    Pair the drone, and a VLM checks its live feed for equipment left in the open. When it finds some, you get an alert and the drone climbs for a wider view.
+  </Card>
+  <Card title="Log DJI Mini 3 observations by voice" icon="microphone" href="/tutorials/dji-mini-workflows">
+    **DJI Mini 3 + mic · Beginner · Workflow · No-code · Early draft**
+
+    While you fly by hand, spoken observations become structured alerts on the drone twin. The workflow never flies the drone.
+  </Card>
+  <Card title="Build a voice-controlled rover with Workflows" icon="diagram-project" href="/tutorials/ugv-beast-workflows">
+    **Waveshare UGV Beast + mic · Intermediate · LLM · No-code · Early draft**
+
+    Speak a command, and a model plans a short drive. Each step is checked against the commands the rover accepts before it runs.
+  </Card>
+  <Card title="Control a UGV rover with your voice" icon="car-side" href="/tutorials/ugv-voice-controlled">
+    **Waveshare UGV Beast + mic · Intermediate · LLM · Code · Early draft**
+
+    The Python version. Claude reads the rover's camera frame and your command, then returns a driving plan that your validator clamps before the SDK sends it.
+  </Card>
+</CardGroup>
+
+## Built by the community
+
+Projects from the [Cyberwave Builder Program](https://cyberwave.com/builders). Each one links to the author's full source.
+
+<CardGroup cols={2}>
+  <Card title="Build a sandwich-making robot" icon="burger" href="/tutorials/sandwich-robot-smolvla">
+    **SO-101 set + Raspberry Pi 4 + USB webcam · Advanced · VLA · Code**
+
+    Record teleoperated demonstrations, fine-tune SmolVLA on Colab (about 1.5 hours on a T4), and run it closed-loop on the arm.
+  </Card>
+  <Card title="Fold cloth with two SO-101 arms" icon="shirt" href="/tutorials/cloth-folding-so101">
+    **2 × SO-101 sets + RealSense + Jetson · Advanced · Learned policy · Code**
+
+    A bimanual setup that learns to fold cloth with SmolVLA, starting from about 50 human demonstrations.
+  </Card>
+  <Card title="Order-driven zero-shot picking with an SO-101" icon="boxes-packing" href="/tutorials/so101-zero-shot-picking-cell">
+    **SO-101 + overhead USB camera · Advanced · Perception model · Code**
+
+    An HTTP order names an item. A hosted VLM finds it, the arm picks it and drops it in the bin, then a second look confirms it landed.
+  </Card>
+</CardGroup>
+
+## Demos (video)
+
+Recorded walkthroughs with no step-by-step instructions. Watch them to see the end result before you build.
+
+<CardGroup cols={2}>
+  <Card title="Run an autonomous rover inspection" icon="video" href="/tutorials/rover-ai-mission">
+    **Simulation · Video · Perception model + workflow**
+
+    A rover follows inspection waypoints in a simulated environment while a workflow analyzes what its camera sees.
+  </Card>
+  <Card title="Take a Go2 from digital twin to real" icon="dog" href="/tutorials/go2-digital-to-physical">
+    **Unitree Go2 · Video (about 3 min)**
+
+    A Go2 goes from the catalog to a paired robot. Along the way you see occupancy mapping, mission design, and a mission run in the real world.
+  </Card>
+</CardGroup>
+
+{/* TODO(docs): add time-to-complete per tutorial once each page carries an "At a glance" header; only go2-digital-to-physical states a duration today. */}
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Connect AI to robots" icon="wand-magic-sparkles" href="/ai/overview">
+    How AI agents, AI models, controllers and training data fit together.
+  </Card>
+  <Card title="Supported hardware" icon="list-check" href="/overview/supported-hardware">
+    Check what each robot supports before you buy or build.
+  </Card>
+  <Card title="Idea cookbook" icon="lightbulb" href="/overview/idea-cookbook">
+    More project ideas to build on these tutorials.
+  </Card>
+  <Card title="Add your robot" icon="screwdriver-wrench" href="/robots/add-your-robot">
+    Get a device that isn't in the catalog supported.
+  </Card>
+</CardGroup>

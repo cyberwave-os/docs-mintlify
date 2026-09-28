@@ -1,5 +1,5 @@
 ---
-title: "SmolVLA Training"
+title: "SmolVLA training"
 sidebarTitle: "SmolVLA"
 description: "Train SmolVLA models using the LeRobot v3 dataset format"
 icon: "microchip"
@@ -102,5 +102,19 @@ SmolVLA models are optimized for edge inference, making them suitable for real-t
 ## Related
 
 - [Train VLA Models](/tutorials/train-vla-cyberwave) — Complete training tutorial
-- [ML Models Overview](/use-cyberwave/ml-models) — Model capabilities and providers
-- [Deploy Models](/use-cyberwave/ml-models/deploy) — Deployment options
+- [Model catalog](/feature-reference/ml-models) — Model capabilities and providers
+- [Deploy Models](/tutorials/train-vla-cyberwave) — Deployment options
+
+
+## Reuse camera setup
+
+Open **Camera setup** on a model to review its cameras and mounting positions in
+another environment. Saved asset and twin slugs help match resources across
+installations. Resolve missing cameras or changed assets before applying, then
+restart simulation. Model owners can also save an environment setup as a new
+recommendation while retaining the setup recorded with training data.
+
+The same training flow has experimental support for **π0 (LeRobot)** and
+**π0.5 (LeRobot)**. Fine-tune for your robot and review its camera and joint
+requirements; a base policy is not a ready-to-run SO101 controller. Full π-model
+training and task success have not yet been validated in this integration.

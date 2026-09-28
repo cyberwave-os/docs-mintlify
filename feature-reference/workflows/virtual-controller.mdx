@@ -1,7 +1,6 @@
 ---
 title: "Virtual Controller node"
 description: "Dispatch controller actuations to a twin over MQTT from workflow automation."
-tag: stub
 ---
 
 The **Virtual Controller** (`virtual_controller`) resolves a **command** string against the **keyboard controller policy assigned to a digital twin** and publishes the matching actuation on `cyberwave/twin/{uuid}/command`. The MQTT payload matches keyboard teleoperation (`KeyboardTeleoperationController` / `useMQTTTwin.publishCommand`) — nothing is hardcoded per robot; bindings come from the twin's policy at runtime.

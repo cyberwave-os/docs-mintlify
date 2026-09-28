@@ -240,7 +240,7 @@ You don't need to rewrite your agent code or change your Cyberwave setup when yo
 
 Below are two different configurations to show how this works in practice:
 
-#### Example 1: SO101 Robot Arms (Edge on Laptop)
+#### Example 1: SO-101 Robot Arms (Edge on Laptop)
 
 ```mermaid
 graph LR
@@ -250,7 +250,7 @@ graph LR
     EDGE ---|"USB"| CAM["Camera"]
 ```
 
-With SO101, your laptop can be the edge. You install the Cyberwave Edge (Edge Core + Cyberwave SO101 Driver) on your laptop, connect the robot arms via USB-C, and plug in a camera. The Edge Core handles identity and cloud sync, while the SO101 Driver translates Cyberwave commands into hardware control. No separate compute hardware needed — your laptop becomes the bridge between Cyberwave and the physical arms.
+With SO-101, your laptop can be the edge. You install the Cyberwave Edge (Edge Core + Cyberwave SO-101 Driver) on your laptop, connect the robot arms via USB-C, and plug in a camera. The Edge Core handles identity and cloud sync, while the SO-101 Driver translates Cyberwave commands into hardware control. No separate compute hardware needed — your laptop becomes the bridge between Cyberwave and the physical arms.
 
 #### Example 2: UGV Beast Rover (Edge on Raspberry Pi)
 
@@ -272,7 +272,7 @@ This section walks you through the process of going from "I have a robot" to "I 
 
 Start with the robotic hardware you've selected for the cohort. This is your physical platform — the thing that will actually perceive, move, and interact with the real world. Examples:
 
-- **SO101 Robot Arms:** a leader-follower arm pair for manipulation tasks
+- **SO-101 Robot Arms:** a leader-follower arm pair for manipulation tasks
 - **UGV Beast Rover:** a tracked rover for navigation, exploration, and mobile tasks
 
 Your choice of hardware defines what your agent can physically do, so everything else flows from here.
@@ -300,7 +300,7 @@ The better you understand your hardware's capabilities and limits, the more real
 
 Go back to the Perceive → Reason → Act cycle from Section 2 and map each component to your specific hardware. This is where the architecture becomes concrete.
 
-**Example with SO101:**
+**Example with SO-101:**
 
 | Component | What It Is |
 |-----------|------------|
@@ -322,7 +322,7 @@ Do this mapping for your own hardware. If you can't clearly fill in all three ro
 
 Your robot doesn't operate in a vacuum. The environment shapes what's possible and what's hard. Think through:
 
-- **Physical setup:** SO101 arms need to be clamped to a desk with objects within reach. UGV Beast can locomote freely but needs open floor space and a charged battery.
+- **Physical setup:** SO-101 arms need to be clamped to a desk with objects within reach. UGV Beast can locomote freely but needs open floor space and a charged battery.
 - **Environmental factors:** Lighting conditions for camera-based perception, surface types for rover traction, and obstacles that may appear or move.
 - **Workspace boundaries:** Where can the robot safely operate? What's off-limits? What happens if it reaches the edge of its workspace?
 - **Human interaction:** Will people be in the workspace? Does the robot need to operate around them safely?
@@ -380,11 +380,11 @@ Start with the simplest version of your use case that closes the full loop: one 
 ## 6. Pre-Learning Resources
 
 <CardGroup cols={2}>
-  <Card title="SO101 Overview" icon="microchip" href="https://cyberwave.com/the-robot-studio/so101">
-    Learn about the SO101 robot arm platform, architecture, and capabilities.
+  <Card title="SO-101 Overview" icon="microchip" href="https://cyberwave.com/the-robot-studio/so101">
+    Learn about the SO-101 robot arm platform, architecture, and capabilities.
   </Card>
-  <Card title="Get Started with SO101" icon="play" href="https://cyberwave.com/the-robot-studio/so101">
-    Set up the SO101 robot arms and connect them to Cyberwave.
+  <Card title="Get Started with SO-101" icon="play" href="https://cyberwave.com/the-robot-studio/so101">
+    Set up the SO-101 robot arms and connect them to Cyberwave.
   </Card>
   <Card title="UGV Beast Overview" icon="robot" href="https://cyberwave.com/waveshare/ugv-beast">
     Learn about the UGV Beast rover platform, architecture, and capabilities.

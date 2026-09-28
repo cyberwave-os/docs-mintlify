@@ -1,6 +1,6 @@
 ---
-title: "RL Task Walkthrough"
-description: "Build a complete RL task end-to-end in Python — scaffold a workspace, compose an OpenArm pick-up scene, author actions, observations, and a network, export, train, upload the policy, and deploy it as an online controller."
+title: "RL task walkthrough"
+description: "Build an RL task end to end in Python: scaffold, compose an OpenArm pick-up scene, author the MDP, export, train, and deploy as an online controller."
 icon: "list-check"
 ---
 
@@ -45,7 +45,7 @@ The catalog assets (`enactic/openarm`, `cyberwave/generic_cube`, `intel/realsens
 ```bash
 pip install cyberwave
 export CYBERWAVE_BASE_URL=http://localhost:8000
-export CYBERWAVE_API_KEY=<your-api-key>   # or run `cyberwave login`
+export CYBERWAVE_API_KEY=<your-api-key>   # the SDK reads this; `cyberwave login` does not configure the SDK
 ```
 
 ```python
@@ -274,7 +274,7 @@ publish.raise_for_status()
 controller_uuid = publish.json()["controller_policy_uuid"]
 ```
 
-Now assign `controller_uuid` to the `openarm` twin and start a simulation — see [Online Controllers](/feature-reference/online-controllers) for assigning and running it, including the CPU/GPU compute choice.
+Now assign `controller_uuid` to the `openarm` twin and start a simulation — see [Online controllers](/feature-reference/online-controllers) for assigning and running it, including the CPU/GPU compute choice.
 
 Alternatively, run a quick cloud inference loop without publishing a controller:
 

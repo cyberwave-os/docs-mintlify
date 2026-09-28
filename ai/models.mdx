@@ -1,0 +1,85 @@
+---
+title: "AI models"
+sidebarTitle: "Overview"
+description: "What an AI model is on Cyberwave: the task it performs, the modalities it takes and returns, and its role: perceiving, reasoning, or controlling a robot."
+icon: "brain"
+---
+
+An **AI model** on Cyberwave is a catalog entry that says four things: what it takes in (**modalities**), what job it does (**task**), what it returns, and **where it runs**. Once a model is in the catalog, the Playground, workflows, the Python SDK and edge workers all use it the same way.
+
+## Three roles a model can play
+
+<CardGroup cols={3}>
+  <Card title="Perceive" icon="eye">
+    **Sensor data in, facts out.** Detection, segmentation, pose, depth, captioning, speech-to-text. Something else (your code, a workflow, an agent) decides what the robot does with the result.
+  </Card>
+  <Card title="Reason" icon="comments">
+    **Instructions in, plans out.** Language and vision-language models answer prompts and break a goal into steps. They also power the [AI agents](/ai/agents).
+  </Card>
+  <Card title="Act" icon="robot">
+    **Observations in, robot actions out.** VLA models and RL policies produce joint or velocity commands directly, so they run as the robot's [controller](/ai/control).
+  </Card>
+</CardGroup>
+
+The same camera can feed all three: a detector finds the cup, a language model decides which bin it belongs in, and a VLA policy picks it up.
+
+## Modalities: what goes in, what comes out
+
+Each model declares the inputs it accepts. The catalog filters on them.
+
+| Input | Catalog capability | Typical use |
+| --- | --- | --- |
+| Images | `can_take_image_as_input` | Inspection, detection |
+| Video | `can_take_video_as_input` | Monitoring, teleoperation |
+| Audio | `can_take_audio_as_input` | Voice commands, sound events |
+| Text | `can_take_text_as_input` | Prompts, instructions |
+| Robot actions | `can_take_action_as_input` | Behavior cloning, RL policies |
+
+Outputs come back as typed results in the SDK: detections (boxes, masks, keypoints, oriented boxes), classifications, depth maps, semantic masks, embeddings, text, JSON and images.
+
+## Tasks: the job you ask a model to do
+
+A **task** fixes the prompt and the shape of the answer, so every model that supports it returns the same format. Models that support several tasks let you pick one in the Playground and in the workflow **Call Model** node.
+
+| Task | What you get back |
+| --- | --- |
+| Free prompt | The model's text, passed through unchanged |
+| Caption | One sentence describing the image |
+| Detect points | A point per object, for "where is X?" |
+| Detect bounding boxes | A box per object |
+| Segment | A mask per object |
+| Predict image-plane trajectory | Ordered 2D waypoints |
+| Plan steps | A goal broken into ordered sub-tasks |
+| Detect objects in 3D | Label, pose and size in the camera frame |
+| Predict grasps | Ranked parallel-jaw grasps |
+| Detect spatial relations | A scene graph of subject–relation–object triples |
+
+Output schemas and parsing: [Tasks and outputs](/feature-reference/ml-models/structured-actions).
+
+## Where models come from and where they run
+
+- **The catalog:** public models plus your workspace's own, filterable by input, task, vendor, size and edge runtime. See the [model catalog](/feature-reference/ml-models).
+- **Providers:** local or edge runtimes, cloud APIs such as OpenAI and Anthropic, Hugging Face, or your own inference server.
+- **Your own model:** register one behind your API, or upload code for Cyberwave to host. See [Bring your own model](/feature-reference/ml-models/uploading-your-model).
+
+| Runs on | Good for | How |
+| --- | --- | --- |
+| **Edge** | Low latency, privacy, frames never leave the site | [Edge workers](/feature-reference/workflows/workers/overview), with runtimes such as Ultralytics, ONNX Runtime, TensorRT, TFLite, Hailo and Whisper |
+| **Cloud** | Large models, VLMs, LLMs, VLA inference | [Playground](/feature-reference/ml-models/playground), workflows, [cloud nodes](/overview/tools/vla-cloud-node) |
+
+## Use a model
+
+<CardGroup cols={2}>
+  <Card title="Try it in the Playground" icon="flask" href="/feature-reference/ml-models/playground">
+    Run any catalog model on an image, a frame or a recording, no code.
+  </Card>
+  <Card title="Call it from a workflow" icon="diagram-project" href="/feature-reference/workflows">
+    The Call Model node, with the same tasks as the Playground.
+  </Card>
+  <Card title="Load it in Python" icon="code" href="/overview/tools/models/overview">
+    `cw.models.load("yolo26n.pt").predict(frame)`, locally or in the cloud.
+  </Card>
+  <Card title="Make it the controller" icon="gamepad" href="/ai/control">
+    VLA models and RL policies drive the robot directly.
+  </Card>
+</CardGroup>

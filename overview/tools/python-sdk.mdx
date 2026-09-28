@@ -14,7 +14,7 @@ The Cyberwave Python SDK (`cyberwave`) is a unified client that wraps both the C
 
 | Capability                       | Protocol      | Description                                                             |
 | -------------------------------- | ------------- | ----------------------------------------------------------------------- |
-| Digital Twin management          | REST          | Create, query, move, and configure digital twins                        |
+| Digital twin management          | REST          | Create, query, move, and configure digital twins                        |
 | Joint control                    | MQTT          | Send real-time joint position commands (radians by default; optional degrees) |
 | Position, rotation, scale        | MQTT          | Update a twin's 3D pose in the environment                              |
 | Video streaming                  | WebRTC + MQTT | Stream camera feeds (standard + RealSense) to the cloud                 |
@@ -75,8 +75,8 @@ sudo apt-get install ffmpeg
 ```
 
 <Note>
-  **Requirements:** - Python 3.10 or higher - A Cyberwave API key (generate one
-  from your [Profile page](https://cyberwave.com/profile))
+  **Requirements:** Python 3.10 or higher, and a Cyberwave API key. Create one
+  under **Profile → Access** (see [API tokens](/feature-reference/api-tokens)).
 </Note>
 
 ---
@@ -113,17 +113,18 @@ robot.edit_scale(x=1.5, y=1.5, z=1.5)
 robot.joints.set("shoulder_pan", math.pi / 4)
 robot.joints.set("elbow_flex", 45, degrees=True)
 
-angle = robot.joints.get("shoulder_pan")
-all_joints = robot.joints.get_all()
+angle = robot.joints.get(what_joints=["shoulder_pan"])["shoulder_pan"]
+all_joints = robot.joints.get()          # live dict {name: radians}
 print(f"Joint names: {robot.joints.list()}")
 
 # ──────────────────────────────────────────────
 # 4. Capture a camera frame (no streaming setup needed)
 # ──────────────────────────────────────────────
 
-path  = robot.capture_frame()           # save temp JPEG, returns path
-frame = robot.capture_frame("numpy")    # numpy BGR array
-image = robot.capture_frame("pil")      # PIL.Image object
+camera = cw.twin("cyberwave/standard-cam")  # only camera twins have get_frame()
+path  = camera.get_frame("path")        # save temp JPEG, returns path
+frame = camera.get_frame("numpy")       # numpy BGR array
+image = camera.get_frame("pil")         # PIL.Image object
 
 # ──────────────────────────────────────────────
 # 5. Search the asset catalog
@@ -219,7 +220,7 @@ export CYBERWAVE_API_KEY="your_api_key_here"
 export CYBERWAVE_ENVIRONMENT_ID="your_environment_uuid"
 ```
 
-With both set, `cw.twin("the-robot-studio/so101")` will return the first SO101 twin in that environment, or create one if it doesn't exist.
+With both set, `cw.twin("the-robot-studio/so101")` will return the first SO-101 twin in that environment, or create one if it doesn't exist.
 
 <Steps>
   <Step title="Generate an API key">
@@ -246,8 +247,8 @@ from cyberwave import Cyberwave
 
 cw = Cyberwave()
 
-cw.affect("simulation")
-rover = cw.twin("unitree/go2")
+rover = cw.twin("unitree/go2")     # create the twin first: it selects the environment
+cw.affect("playground")            # free browser sim; "simulation" starts a billable MuJoCo run
 rover.move_forward(distance=1.0)   # moves the digital twin
 
 cw.affect("live")
@@ -258,16 +259,17 @@ Accepted values are:
 
 | Value          | Effect                                                                                              |
 | -------------- | --------------------------------------------------------------------------------------------------- |
-| `"simulation"` | Sends high-level actions to the simulator and updates the digital twin in the Cyberwave environment |
+| `"playground"` | Free kinematic browser simulation. Joint, locomotion and flight commands move the digital twin; no simulation instance is started |
+| `"simulation"` | Starts (or reuses) a MuJoCo simulation for the environment, a billable cloud instance, and sends actions to it. Needed for camera frames, depth and point clouds |
 | `"live"`       | Sends high-level actions to the live robot through Cyberwave's live control path                    |
 
 `"real-world"` is also accepted as an alias for `"live"`.
 
-`affect()` is chainable, so you can also write `cw.affect("simulation").twin("unitree/go2")`.
+`affect()` is chainable, so you can also write `cw.affect("playground").twin("unitree/go2")`. For `"simulation"`, create the twin first (or pass `environment_id=`) so `affect()` knows which environment to start.
 
 ---
 
-## Digital Twins
+## Digital twins
 
 ### Create or Retrieve a Twin
 
@@ -283,7 +285,7 @@ This method:
 2. Creates a new twin instance in your environment, or retrieves an existing one
 3. Returns a **capability-specific Twin class** based on the asset's metadata
 
-You can also target a specific environment or retrieve a twin by UUID or [unified slug](/concepts/slug-system):
+You can also target a specific environment or retrieve a twin by UUID or [unified slug](/feature-reference/concepts/slug-system):
 
 ```python
 # By UUID
@@ -305,7 +307,7 @@ Update a twin's 3D pose in the environment:
 
 ```python
 robot.edit_position(x=1.0, y=0.0, z=0.5)
-robot.edit_position([1.0, 0.5, 0.0])
+robot.edit_position(x=1.0, y=0.5)        # omitted axes keep their current value
 
 robot.edit_rotation(yaw=90)
 
@@ -335,46 +337,37 @@ Send real-time joint commands to a robot arm or any articulated twin. Positions 
 ```python
 import math
 
-cw.affect("simulation")
 robot = cw.twin("the-robot-studio/so101")
+cw.affect("playground")   # free; joint commands need no MuJoCo run
 
 robot.joints.list()
 robot.joints.get()
 robot.joints.set("shoulder_pan", math.pi / 4)
 robot.joints.set("elbow_flex", 45, degrees=True)
 
-angle = robot.joints.get("shoulder_pan")
+angle = robot.joints.get(what_joints=["shoulder_pan"])["shoulder_pan"]
 
 joint_names = robot.joints.list()
 
-# Get all joint states as a dict {name: radians}
-all_joints = robot.joints.get_all()
+# Get all joint states as a live dict {name: radians}
+all_joints = robot.joints.get()
 
-# Print a human-readable table of all joint states (radians + degrees)
-robot.joints.print_joint_states()
+# Print all joint states
+print(all_joints)
 ```
 
-`print_joint_states()` fetches the latest state from the server and prints a formatted table:
+`get()` returns a live dict of `{name: radians}` that keeps updating from MQTT joint updates, e.g.:
 
 ```
-Joint states for twin <twin-uuid>:
-------------------------------------------------------
-Joint                       Radians       Degrees
-------------------------------------------------------
-elbow_flex                0.0000 rad       0.00 °
-shoulder_pan              0.7854 rad      45.00 °
-------------------------------------------------------
+{'elbow_flex': 0.0, 'shoulder_pan': 0.7854}
 ```
 
-| Method                                  | Description                                                          |
-| --------------------------------------- | -------------------------------------------------------------------- |
-| `joints.list()` | Controllable joint names from schema |
-| `joints.get(what_joints=..., what_data=[...])` | Read cached joint state (default: all positions in radians) |
-| `joints.set(values, what_data="position", ...)` | Set one joint kind (position, velocity, acceleration) |
-| `joints.get(name)`                      | Get the current position of a specific joint (radians)               |
-| `joints.list()`                         | List all joint names for the twin                                    |
-| `joints.get_all()`                      | Get all joint states as a `dict[name, radians]`                      |
-| `joints.print_joint_states()`           | Print all joint states in a human-readable table (radians + degrees) |
+| Method                                          | Description                                                   |
+| ------------------------------------------------ | --------------------------------------------------------------- |
+| `joints.list()`                                 | Controllable joint names from schema                           |
+| `joints.get(what_joints=..., what_data=[...])`  | Read cached joint state for specific joints (keyword-only)     |
+| `joints.set(values, what_data="position", ...)` | Set one joint kind (position, velocity, acceleration)          |
+| `joints.get_all()`                              | Deprecated. Use `joints.get()`                                 |
 
 ### Velocity- or effort-only targets
 
@@ -394,36 +387,36 @@ supports or executed it.
 
 ## Frame Capture
 
-Capture the latest camera frame from a twin without setting up a full video stream:
+Capture the latest camera frame from a camera twin without setting up a full video stream. Only twins with a camera sensor have `get_frame()`:
 
 ```python
-robot = cw.twin("the-robot-studio/so101")
+camera = cw.twin("cyberwave/standard-cam")
 
-path = robot.capture_frame()                    # temp JPEG file path
-frame = robot.capture_frame("numpy")            # numpy BGR array (requires numpy + opencv-python)
-image = robot.capture_frame("pil")              # PIL.Image (requires Pillow)
-raw = robot.capture_frame("bytes")              # raw JPEG bytes
+path = camera.get_frame("path")                 # temp JPEG file path
+frame = camera.get_frame("numpy")               # numpy BGR array (requires numpy + opencv-python)
+image = camera.get_frame("pil")                 # PIL.Image (requires Pillow)
+raw = camera.get_frame()                        # raw JPEG bytes (the default format)
 ```
 
 Batch capture multiple frames:
 
 ```python
-folder = robot.capture_frames(5, interval_ms=200)            # folder of JPEGs
-frames = robot.capture_frames(5, format="numpy")              # list of numpy arrays
+folder = camera.get_frames(5, interval_ms=200)               # folder of JPEGs
+frames = camera.get_frames(5, format="numpy")                 # list of numpy arrays
 ```
 
 For multi-camera twins, specify a sensor:
 
 ```python
-wrist = robot.capture_frame("numpy", sensor_id="wrist_cam")
+wrist = camera.get_frame("numpy", sensor_id="wrist_cam")
 ```
 
-There's also a `camera` namespace with convenience methods:
+The `camera` family indexes the twin's camera sensors:
 
 ```python
-frame = robot.camera.read()               # numpy array (default)
-path  = robot.camera.snapshot()            # save JPEG to temp file
-path  = robot.camera.snapshot("out.jpg")   # save to a specific path
+frame = camera.camera.get_frame("numpy")               # first camera sensor
+wrist = camera.camera["wrist_cam"].get_frame("numpy")  # a specific sensor
+path  = camera.get_frame("path", path="out.jpg")       # save to a specific path
 ```
 
 ---
@@ -513,18 +506,16 @@ if RealSenseDiscovery.is_available():
 
 ### Streaming from simulation
 
-<Note>stub — pending human curation.</Note>
-
-With `cw.affect("simulation")`, `twin.start_streaming()` starts a simulation for the twin's environment and streams its camera. Switch to `cw.affect("real-world")` and the same code runs against real hardware.
+`cw.affect("simulation")` starts (or reuses) a MuJoCo simulation for the environment; `twin.start_streaming()` then streams its camera. Streaming never starts a simulation itself. Switch to `cw.affect("real-world")` and the same code runs against real hardware.
 
 ```python
-cw.affect("simulation")
-twin = cw.twin("unitree/go2")
+twin = cw.twin("unitree/go2")   # create the twin first so affect() knows the environment
+cw.affect("simulation")         # starts a billable MuJoCo run and waits until it is running
 
 # Blocking — streams the sim camera until Ctrl+C
 twin.start_streaming()
 
-# Non-blocking — starts the simulation in the background
+# Non-blocking — consumes the running simulation's camera in the background
 async def start():
     await twin.stream_video_background()
 
@@ -537,14 +528,18 @@ Once the background stream is running, use `get_video()` to consume frames. It c
 asyncio.run(start())
 
 video = twin.camera.get_video()            # connects to the live WebRTC stream
-video.show()                               # live window; press q/Esc to quit
+video.show()                               # live window, needs GUI OpenCV (pip install opencv-python); q/Esc quits
 frame = video.get_frame(format="numpy")    # or read frames yourself
 ```
 
-Calling `start_streaming()` again while a simulation is already running is safe — it reuses the running simulation. `get_video()` waits for the simulation's camera producer to come online, so no manual sleep is needed.
+To render the same stream in a third-party browser or native application, see
+[Consume live video with WebRTC](/overview/tools/custom-webrtc-consumer) for
+the authenticated MQTT signaling contract and consumer offer flow.
+
+`start_streaming()` always reuses the simulation that is already running. `get_video()` waits for the simulation's camera producer to come online, so no manual sleep is needed.
 
 <Warning>
-`start_streaming()` starts a simulation for the **entire environment**, not just the calling twin. All other twins in that environment that have camera sensors will also begin streaming.
+A simulation runs for the **entire environment**, not just the calling twin. All other twins in that environment that have camera sensors also stream while it runs.
 </Warning>
 
 ---
@@ -706,7 +701,7 @@ if cw.workflows.is_running("workflow-uuid"):
 
 ## Agent SDK
 
-The SDK exposes typed agent namespaces under `cw.agents`. stub: use direct resource APIs for deterministic commands, and agent APIs when you want backend planning, previews, setup guidance, or explicit dispatch.
+The SDK exposes typed agent namespaces under `cw.agents`. use direct resource APIs for deterministic commands, and agent APIs when you want backend planning, previews, setup guidance, or explicit dispatch.
 
 - `cw.agents.environment`: environment editor agent messages and agent-created environments.
 - `cw.agents.workflow`: workflow planning, preview, setup-and-draft, and constrained workflow edits.
@@ -814,6 +809,21 @@ This calls `POST /api/v1/environments/{uuid}/preview` and returns attachment met
 
 ---
 
+
+### Renderer modes
+
+- `renderer=auto` checks the browser-published Redis cache, then uses the
+  screenshot service, then falls back to a schematic preview.
+- `renderer=browser_cache` reads the latest browser-published preview frame and
+  returns a schematic fallback on cache miss.
+- `renderer=schematic` returns a deterministic top/isometric spatial preview
+  without WebGL.
+- `renderer=headless` uses only the screenshot service and preserves capture
+  failures.
+
+Preview metadata includes `renderer`, `renderer_status`, and fallback details
+when applicable.
+
 ## Datasets
 
 Import, manage, and export robotics datasets.
@@ -892,7 +902,7 @@ path = cw.datasets.download(ds, "rlds", dest="./data", on_poll=None)
 | `openvla`   | Cyberwave OpenVLA TFDS bundle                           |
 | `robodm`    | Berkeley `.vla` format                                  |
 
-See [Dataset Export & Format Conversion](/datasets/format-conversion) for the full format matrix and coming-soon targets.
+See [Dataset Export & Format Conversion](/feature-reference/datasets/format-conversion) for the full format matrix and coming-soon targets.
 
 ---
 
@@ -946,7 +956,7 @@ for d in pred:
 cw.models.delete("model-uuid-here")
 ```
 
-For the full reference (catalog methods, runtime API, and the catalog-to-runtime workflow), see [ML Models SDK](/tools/models/overview).
+For the full reference (catalog methods, runtime API, and the catalog-to-runtime workflow), see [cw.models (Python)](/overview/tools/models/overview).
 
 ---
 
@@ -1010,7 +1020,7 @@ flowchart TB
 <Card
   title="Live Teleoperation"
   icon="gamepad"
-  href="/use-cyberwave/teleoperation"
+  href="/feature-reference/environment-editor/teleoperation"
 >
   Control physical robots in real time via the SDK
 </Card>

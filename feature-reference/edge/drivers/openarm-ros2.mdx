@@ -3,9 +3,7 @@ title: "OpenArm (ROS 2)"
 description: "Set up an OpenArm bimanual robot for the first time and connect it to Cyberwave as a ROS 2 edge driver — CAN bus, ROS 2 Humble, Docker, and MQTT mode switching."
 ---
 
-<Warning>
-**STUB DOCUMENT:** First-pass setup guide for the OpenArm ROS 2 driver. A human will curate before publishing.
-</Warning>
+{/* TODO(docs): **STUB DOCUMENT:** First-pass setup guide for the OpenArm ROS 2 driver. A human will curate before publishing. */}
 
 [OpenArm](https://docs.openarm.dev) is an open-source bimanual manipulator. On Cyberwave it runs as a **ROS 2 edge driver** built on [`BaseROS2Driver`](/feature-reference/edge/drivers/ros2-base-driver): the driver forwards joint feedback into Cyberwave over MQTT and accepts teleop/planning commands back from the cloud.
 
@@ -211,13 +209,13 @@ that matches no account works until that re-check and then starts failing.
 
 ```bash
 # Switch to remote operation (cloud/teleop)
-mosquitto_pub -h mqtt.cyberwave.com -p 8883 \
+mosquitto_pub -h mqtt.cyberwave.com -p 8883 --capath /etc/ssl/certs \
   -u "$CYBERWAVE_MQTT_USER" -P "$CYBERWAVE_API_KEY" \
   -t "cyberwave/twin/$CYBERWAVE_TWIN_UUID/command" \
   -m '{"command":"controller-changed","controller":{"controller_type":"teleop"}}'
 
 # Switch to local operation (physical leader arm)
-mosquitto_pub -h mqtt.cyberwave.com -p 8883 \
+mosquitto_pub -h mqtt.cyberwave.com -p 8883 --capath /etc/ssl/certs \
   -u "$CYBERWAVE_MQTT_USER" -P "$CYBERWAVE_API_KEY" \
   -t "cyberwave/twin/$CYBERWAVE_TWIN_UUID/command" \
   -m '{"command":"controller-changed","controller":{"controller_type":"localop"}}'

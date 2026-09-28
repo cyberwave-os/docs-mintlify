@@ -1,6 +1,6 @@
 ---
-title: "Uploading Policies"
-description: "Take a checkpoint you trained locally, upload it back to its RL task, then publish it as an online controller or run cloud inference against your Cyberwave environment."
+title: "Uploading policies"
+description: "Upload a locally trained checkpoint to its RL task, then publish it as an online controller or run cloud inference against your environment."
 icon: "upload"
 ---
 
@@ -17,6 +17,42 @@ Once a checkpoint lives on its RL task you can:
 - **Pull it back into MuJoCo locally** to replay it with the Python SDK.
 
 Everything below happens in the **Policies** tab of the RL task editor (or through the matching REST / Python SDK calls).
+
+## Supported checkpoint contract
+
+Read this section **before training or uploading**. File storage accepts weights;
+successful upload does not establish that the hosted controller can execute them.
+
+The current legacy hosted path loads **skrl agent checkpoints** produced for an
+exported Cyberwave RL task using `cyberwave-rl` or `cyberwave-rl-experimental`.
+Register genuine skrl checkpoints with `metadata={"checkpoint_format": "skrl"}`
+through the MCP checkpoint registration operation. File extensions such as `.pt`
+do not identify the runtime format. Arbitrary PyTorch modules, TorchScript actors,
+and Stable-Baselines3 checkpoints are **not currently supported** by this path;
+renaming files or declaring them as skrl does not convert them.
+
+Follow [RL Tasks](/feature-reference/rl-tasks) for the exported task/source contract
+and [Train an RL Policy](/tutorials/train-rl-policy) for the training workflow.
+Keep the checkpoint paired with its task's observation ordering and history,
+preprocessing, action ordering/scaling and units, control timing, runtime versions
+and dependencies. Custom observation/action logic belongs in the task's supported
+source/configuration interfaces, not just in a weights file or dimension metadata.
+Manifest-based policies retain their separate provenance/evaluation requirements.
+
+With MCP, call `cw_deploy_rl_policy(operation="inspect", rl_task_uuid=...)` before
+training for documentation links and again after registration for compatibility
+blockers. Checks at publication, assignment and start are static checks, not proof
+of successful execution. Validate the complete policy in simulation before live use.
+
+### Resetting a hosted simulation
+
+Use `cw_stop_simulation`, then `cw_start_simulation` to reset. Each start creates a
+fresh simulation workload and worker with new MuJoCo model/data loaded from the
+current scene configuration. Stop also stops the environment's controllers. Wait
+for the new simulation to be running before starting the assigned controller, or
+explicitly request `auto_run_controllers` when starting the simulation. There is
+no separate in-place episode-reset API. Keep scene configuration, initial conditions
+and any randomization consistent when comparing trials.
 
 ## The happy path
 
@@ -72,7 +108,7 @@ Uploading stores the weights and registers the checkpoint against the RL task in
   <Tab title="REST">
     ```bash
     curl -X POST \
-      "$CYBERWAVE_API_URL/api/v1/rl-tasks/<rl-task-uuid>/checkpoints/upload" \
+      "$CYBERWAVE_BASE_URL/api/v1/rl-tasks/<rl-task-uuid>/checkpoints/upload" \
       -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
       -F "file=@logs/openarm-pickup/run-1/checkpoints/best_agent.pt" \
       -F "name=best_agent" \
@@ -104,7 +140,7 @@ If your weights are already hosted elsewhere, register them by URL instead of up
   <Tab title="REST">
     ```bash
     curl -X POST \
-      "$CYBERWAVE_API_URL/api/v1/rl-tasks/<rl-task-uuid>/checkpoints" \
+      "$CYBERWAVE_BASE_URL/api/v1/rl-tasks/<rl-task-uuid>/checkpoints" \
       -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -130,7 +166,7 @@ Publishing a checkpoint creates a **ControllerPolicy** — an `rltask` [online c
   <Tab title="REST">
     ```bash
     curl -X POST \
-      "$CYBERWAVE_API_URL/api/v1/rl-tasks/<rl-task-uuid>/checkpoints/<checkpoint-uuid>/publish-controller" \
+      "$CYBERWAVE_BASE_URL/api/v1/rl-tasks/<rl-task-uuid>/checkpoints/<checkpoint-uuid>/publish-controller" \
       -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -141,7 +177,7 @@ Publishing a checkpoint creates a **ControllerPolicy** — an `rltask` [online c
   </Tab>
 </Tabs>
 
-The response includes the new controller policy's `controller_policy_uuid` and `controller_policy_slug`. From there it behaves like any other online controller — see [Online Controllers](/feature-reference/online-controllers) for assigning and running it.
+The response includes the new controller policy's `controller_policy_uuid` and `controller_policy_slug`. From there it behaves like any other online controller — see [Online controllers](/feature-reference/online-controllers) for assigning and running it.
 
 ## Run inference
 
@@ -177,7 +213,7 @@ Inference dispatches a **cloud workload** that loads the checkpoint, loops Cyber
   <Tab title="REST">
     ```bash
     curl -X POST \
-      "$CYBERWAVE_API_URL/api/v1/rl-tasks/<rl-task-uuid>/inference" \
+      "$CYBERWAVE_BASE_URL/api/v1/rl-tasks/<rl-task-uuid>/inference" \
       -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -248,10 +284,10 @@ print(f"Staged checkpoint at: {staged}")
   <Card title="RL Tasks" icon="graduation-cap" href="/feature-reference/rl-tasks">
     Author, export, and train the RL task a checkpoint belongs to.
   </Card>
-  <Card title="Online Controllers" icon="microchip" href="/feature-reference/online-controllers">
+  <Card title="Online controllers" icon="microchip" href="/feature-reference/online-controllers">
     Run a published policy in its own controller host against a simulated or live robot.
   </Card>
-  <Card title="Models" icon="cube" href="/feature-reference/ml-models/index">
+  <Card title="Model catalog" icon="cube" href="/feature-reference/ml-models/index">
     Explore other model types and training flows on the platform.
   </Card>
 </CardGroup>

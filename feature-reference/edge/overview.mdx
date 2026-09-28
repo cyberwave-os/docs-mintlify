@@ -5,9 +5,7 @@ description: "Cyberwave Edge Core acts as the orchestrator of Cyberwave edge dri
 
 import { EdgeSetup } from "/snippets/edge-setup.mdx";
 
-<Warning>
-**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
-</Warning>
+{/* TODO(docs): **STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update. */}
 
 Cyberwave Edge Core acts as the orchestrator of Cyberwave edge drivers.
 
@@ -24,7 +22,7 @@ SSH to the edge device where you want to install Edge Core, then install the Cyb
 </Note>
 
 <Note>
-**Prerequisites by platform** (stub):
+**Prerequisites by platform**:
 - **Linux**: Docker is auto-installed via `apt-get` when missing (Ubuntu / Debian / Raspbian).
 - **macOS**: Docker Desktop must be installed and running before `cyberwave edge install` (the installer aborts early with a hint if not). The Rust toolchain is auto-installed via `rustup` (with confirmation) when missing — it is needed to compile the USB/IP server used for USB device passthrough.
 </Note>
@@ -50,9 +48,7 @@ Want to check how fast an edge device actually is? Run [`cyberwave edge bench`](
 
 ## Host telemetry
 
-<Warning>
-**STUB:** content below pending human curation.
-</Warning>
+{/* TODO(docs): **STUB:** content below pending human curation. */}
 
 Every `edge_health` heartbeat carries the host's dynamic resource pressure alongside the per-stream health it has always carried:
 
@@ -73,9 +69,7 @@ Static facts work on both Linux and macOS: Linux reads `/proc/{meminfo,cpuinfo}`
 
 ## Per-stream configuration
 
-<Warning>
-**STUB:** content below pending human curation.
-</Warning>
+{/* TODO(docs): **STUB:** content below pending human curation. */}
 
 Each entry under `streams[id]` in an `edge_health` heartbeat carries an optional typed `stream_config` block describing the runtime-negotiated config for that stream. The block is a discriminated union keyed by `kind`:
 
@@ -106,9 +100,7 @@ An idle publisher that has registered no `stream_config` and has never seen a fr
 
 ## Upgrading
 
-<Warning>
-**STUB:** content below pending human curation.
-</Warning>
+{/* TODO(docs): **STUB:** content below pending human curation. */}
 
 Edge Core ships the orchestrator binary and a systemd unit file. From the high-availability watchdog release onward the unit uses `Type=notify` and the binary issues a `READY=1` notification at startup — the two must match.
 
@@ -127,21 +119,21 @@ The Debian package post-install script regenerates the unit automatically, but m
   <Card
     title="Live Teleoperation"
     icon="gamepad"
-    href="/use-cyberwave/teleoperation"
+    href="/feature-reference/environment-editor/teleoperation"
   >
     Control robots in real time through Edge Core
   </Card>
   <Card
-    title="Quick Start"
+    title="How hardware works"
     icon="bolt"
-    href="/overview/develop-remote-hardware"
+    href="/robots/overview"
   >
-    Connect real hardware step by step
+    From a twin to your real hardware
   </Card>
   <Card
     title="Edge Drivers"
     icon="truck-ramp-box"
-    href="/edge/drivers/overview"
+    href="/feature-reference/edge/drivers/overview"
   >
     Write and manage hardware drivers
   </Card>

@@ -1,6 +1,6 @@
 ---
 title: "Control an SO-101 arm with your voice"
-sidebarTitle: "SO-101: Voice Control"
+sidebarTitle: "SO-101: voice control"
 description: "Drive an SO-101 with plain English: voice in, camera frame in, Claude plans a JSON motion plan, the SDK runs it. No training data required."
 icon: "wand-magic-sparkles"
 iconType: "solid"
@@ -105,14 +105,14 @@ Each module is independent; that's why each one has its own smoke test. If a pie
 
 Before you build the agent, you need a working SO-101 twin and a Cyberwave environment with the edge driver running. The full reference is in [SO-101 Get Started](https://cyberwave.com/the-robot-studio/so101). The short version:
 
-1. Create a new environment in the [Cyberwave dashboard](https://cyberwave.com/dashboard) and add an **SO101** twin from the catalog. Position it to roughly match your physical setup.
+1. Create a new environment in the [Cyberwave dashboard](https://cyberwave.com/dashboard) and add an **SO-101** twin from the catalog. Position it to roughly match your physical setup.
 2. Install Cyberwave Edge on the Raspberry Pi paired to the follower:
    ```bash
    ssh your_user@raspberry_pi_ip
    curl -fsSL https://cyberwave.com/install.sh | bash
    sudo cyberwave edge install
    ```
-3. Pair the SO101 twin and calibrate the follower (dashboard or CLI). See [Calibrate the arms](https://cyberwave.com/the-robot-studio/so101#step-3-calibrate-the-arms).
+3. Pair the SO-101 twin and calibrate the follower (dashboard or CLI). See [Calibrate the arms](https://cyberwave.com/the-robot-studio/so101#step-3-calibrate-the-arms).
 4. Note the **environment UUID** and **twin UUID** from the dashboard. You'll paste them into `.env` in [Step 3](#step-3-develop-your-agent).
 
 <Check>
@@ -128,7 +128,7 @@ Before you build the agent, you need a working SO-101 twin and a Cyberwave envir
 The agent needs to send joint commands from your laptop to the follower without a physical leader arm. That means assigning a controller to the twin in the dashboard and verifying the cloud-to-edge path with the keyboard _before_ you wire any LLM.
 
 1. Open your environment and switch to **Live Mode**.
-2. Select the SO101 twin and click **Assign Controller**.
+2. Select the SO-101 twin and click **Assign Controller**.
 3. Pick **Keyboard** from the controller list. The follower arm is now driven by your browser.
 4. Use the on-screen key bindings to nudge each joint. If the physical arm responds, the cloud, MQTT, and edge driver are all healthy.
 

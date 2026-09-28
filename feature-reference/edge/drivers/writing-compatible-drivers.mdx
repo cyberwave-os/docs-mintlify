@@ -60,7 +60,7 @@ twin.driver.set_schema(MyDriver.get_manifest())
 MyDriver.get_manifest(path="cw-driver.yml")
 
 # 3. Run — driver wires MQTT (+ Zenoh when declared)
-MyDriver(twin).run()
+MyDriver(twin=twin).run()
 
 # Introspection vs invocation
 print(twin.commands.get_supported_commands())  # command catalog introspection
@@ -68,7 +68,7 @@ twin.commands.get_schema()                     # MQTT catalog (topics, commands.
 twin.commands.stop()                           # bound methods from commands.supported
 ```
 
-`get_manifest()` builds the compiled **MQTT** catalog from `define_interface()` only — no twin connect, no `run()`. Use `get_manifest_bundles()` when you also declare Zenoh channels (see [Zenoh edge catalog](#zenoh-edge-catalog)).
+`get_manifest()` builds the compiled **MQTT** catalog from `define_interface()` only — no twin connect, no `run()`. Use `get_manifest_bundles()` when you also declare Zenoh channels (see [Zenoh data bus](#option-a-zenoh-data-bus-recommended)).
 
 | Handle | Role |
 | ------ | ---- |
@@ -77,9 +77,9 @@ twin.commands.stop()                           # bound methods from commands.sup
 
 **ROS 2 integrators:** start with the **[UR Sim tutorial](/tutorials/ur-sim-cyberwave-driver)**, then read [Python SDK drivers](#python-sdk-drivers) below for what the SDK handles vs what you implement.
 
-Otherwise see the [fake IMU tutorial](#tutorial-build-your-first-driver-fake-imu), then [reference](#reference) for `cw-driver.yml`, REST/MQTT, and sensor buses.
+Otherwise see the [fake IMU tutorial](#tutorial-build-your-first-driver-fake-imu), then [the `cw-driver.yml` reference](#declare-your-driver-interface-cw-driveryml) for `cw-driver.yml`, REST/MQTT, and sensor buses.
 
-(C++ drivers use the same platform contract via `cw-driver.yml`; see the [C++ SDK](/tools/cpp-sdk).)
+(C++ drivers use the same platform contract via `cw-driver.yml`; see the [C++ SDK](/overview/tools/cpp-sdk).)
 
 ---
 
@@ -96,7 +96,7 @@ The [`cyberwave`](https://pypi.org/project/cyberwave/) package provides **base c
 
 | You provide | SDK provides automatically |
 | ----------- | -------------------------- |
-| **`ASSET_KEY`** on the driver subclass (required) | `Cyberwave(source_type="edge")` — API/MQTT from env / CLI |
+| **`REGISTRY_ID`** on the driver subclass (required) | `Cyberwave(source_type="edge")` — API/MQTT from env / CLI |
 | **`define_interface(iface)`** — topics, commands, `from_ros` | Compiles `metadata["mqtt"]` / optional `metadata["zenoh"]`; `twin.driver.set_schema` |
 | Lifecycle hooks (`on_*` or ROS `configure` / `activate`) | MQTT subscribe/publish wiring, tick publishers, session telemetry |
 | Optional publisher/command callbacks | Default management commands (`stop`, teleop modes), `driver_info` on `twin/telemetry` |
@@ -191,7 +191,7 @@ from cyberwave.driver import CallbackGroup, TopicSpec
 from cyberwave.driver.ros2 import BaseROS2Driver, Ros2TopicSpec
 
 class UrSimDriver(BaseROS2Driver):
-    ASSET_KEY = "universal_robots/UR7"
+    REGISTRY_ID = "universal_robots/UR7"
 
     def define_interface(self, iface):
         iface.add_publisher(
@@ -241,12 +241,12 @@ PYTHONPATH=. python examples/fake_imu_driver.py
 
 ```python
 class FakeImu6dDriver(BaseDriver):
-    ASSET_KEY = "intel/realsensed455"
+    REGISTRY_ID = "intel/realsensed455"
     TICK_RATE_HZ = 50.0
     auto_register_interface = False  # demo calls set_schema() before run()
 ```
 
-`ASSET_KEY` ties the driver to a catalog asset. `TICK_RATE_HZ` drives both `on_tick` and registry publisher scheduling.
+`REGISTRY_ID` ties the driver to a catalog asset. `TICK_RATE_HZ` drives both `on_tick` and registry publisher scheduling.
 
 ### Step 2 — `define_interface` (manifest + runtime contract)
 
@@ -335,7 +335,7 @@ def _on_rotate(self, envelope: dict[str, Any]) -> None:
 from cyberwave.driver import BaseDriver, CallbackGroup, CommandArgs, TopicSpec
 
 class MyDriver(BaseDriver):
-    ASSET_KEY = "acme-corp/my-arm-v1"
+    REGISTRY_ID = "acme-corp/my-arm-v1"
 
     def define_interface(self, iface):
         iface.add_listener(
@@ -399,7 +399,7 @@ Claude will generate the full project tree and walk you through connecting it to
 The fastest way to write a compatible driver is to use one of the official SDKs:
 
 - **Python SDK** — [`cyberwave-sdk`](https://pypi.org/project/cyberwave/)
-- **C++ SDK** — see the [C++ SDK docs](/tools/cpp-sdk)
+- **C++ SDK** — see the [C++ SDK docs](/overview/tools/cpp-sdk)
 
 The SDKs handle twin synchronization, file I/O, reconnection logic, and more, so you can focus on the hardware integration.
 
@@ -460,7 +460,7 @@ Cyberwave’s own edge drivers (Go2, SO-101, DJI Mini, and others) use the same 
 | 1. **Asset** | Create an asset in your workspace for the hardware type you are integrating. Note its `registry_id` (or `slug`) — your manifest must target that id. |
 | 2. **Manifest** | Add `cw-driver.yml` to your driver repo. Declare every topic segment and `commands.supported` entry your code actually handles. |
 | 3. **Implement** | Subscribe/publish on the MQTT topics from your catalog (e.g. `cyberwave/twin/{uuid}/command`); see [Runtime messaging (MQTT)](#runtime-messaging-mqtt) and [MQTT API Reference](/api-reference/mqtt/main). |
-| 4. **Register interface** | `twin.commands.set_schema("./cw-driver.yml")` → `PUT /api/v1/twins/{uuid}` (see [Apply the manifest](#apply-the-manifest-to-your-twin) and [Platform API reference](#platform-api-reference)). |
+| 4. **Register interface** | `twin.driver.set_schema("./cw-driver.yml")` → `POST /api/v1/twins/{uuid}/driver-schema` (see [Apply the manifest](#apply-the-manifest-to-your-twin) and [Platform API reference](#platform-api-reference)). |
 | 5. **Deploy** | Run the image with Edge Core (or locally with the same env vars). New twins spawned from that asset inherit `metadata["mqtt"]`. |
 
 If the manifest and the running driver disagree (undeclared command, wrong topic), teleop, agents, and SDK helpers will not line up with what the hardware actually does.
@@ -550,7 +550,7 @@ On the platform, your asset (and twins created from it) store a JSON bundle at *
 - `schema_version`, `driver_family` — format and implementation hints
 
 <Note>
-stub: expand with a worked example once the description field has shipped
+expand with a worked example once the description field has shipped
 on more than one driver family.
 </Note>
 
@@ -579,10 +579,10 @@ After you author `cw-driver.yml`, register it on a **twin you own** with the Pyt
 from cyberwave import Cyberwave
 
 cw = Cyberwave(api_key="...")
-twin = cw.twin("your-twin-uuid")  # or resolve from environment
+twin = cw.twin(twin_id="your-twin-uuid")  # or resolve from environment
 
 # Compile cw-driver.yml, persist on this twin, re-bind catalog methods
-twin.commands.set_schema("./cw-driver.yml")
+twin.driver.set_schema("./cw-driver.yml")
 
 # Inspect the catalog the UI and SDK now use
 print(twin.commands.get_schema()["commands"]["supported"])
@@ -598,8 +598,8 @@ Set `registry_ids` in the YAML to match the asset your twin was created from. Re
 
 | | |
 | --- | --- |
-| **Python SDK** | `twin.commands.set_schema(path_or_dict, merge=True)` — compiles `cw-driver.yml`, calls the twin update API, re-binds `twin.commands.<name>` |
-| **REST** | `PUT /api/v1/twins/{uuid}` |
+| **Python SDK** | `twin.driver.set_schema(path_or_dict, merge=True)` — compiles `cw-driver.yml`, calls the driver-schema API, re-binds `twin.commands.<name>` |
+| **REST** | `POST /api/v1/twins/{uuid}/driver-schema` |
 | **Auth** | `Authorization: Bearer <token>` (same as `CYBERWAVE_API_KEY`) |
 | **Request body** | `{ "metadata": { "mqtt": { "schema_version": 1, "topics": { ... }, "commands": { "supported": [...], "specs": { ... } }, ... } } }` — only fields you want to change need to be sent; `set_schema` sends the full `metadata` object with `mqtt` set or merged |
 | **Response** | `TwinSchema` including updated `metadata` |
@@ -628,7 +628,7 @@ Use the **Python SDK** for day-to-day driver work; use **REST** when integrating
 | Update asset (optional shared catalog on asset) | `PUT /api/v1/assets/{uuid}` — [Update Asset](/api-reference/rest/DefaultApi#src_app_api_assets_update_asset) — set `metadata.mqtt` on the asset if every new twin should inherit the same manifest | `client.assets.update(asset_uuid, {"metadata": {"mqtt": ...}})` |
 | Create twin | `POST /api/v1/twins` — [Create Twin](/api-reference/rest/DefaultApi#src_app_api_twins_create_twin) | `client.twins.create(...)` |
 | List twins in environment | `GET /api/v1/environments/{uuid}/twins` — [Get Environment Twins](/api-reference/rest/DefaultApi#src_app_api_environments_get_environment_twins) | environment helpers / twin resolution |
-| Register driver manifest on **one twin** | `PUT /api/v1/twins/{uuid}` — [Update Twin](/api-reference/rest/DefaultApi#src_app_api_twins_update_twin) | `twin.commands.set_schema("./cw-driver.yml")` |
+| Register driver manifest on **one twin** | `POST /api/v1/twins/{uuid}/driver-schema` | `twin.driver.set_schema("./cw-driver.yml")` |
 | Read twin + catalog | `GET /api/v1/twins/{uuid}` — [Get Twin](/api-reference/rest/DefaultApi#src_app_api_twins_get_twin) | `twin.commands.get_schema()` or `twin.refresh()` |
 
 #### Runtime state (REST alternatives to MQTT)
@@ -675,7 +675,7 @@ Payload shapes: [MQTT API Reference](/api-reference/mqtt/main).
 | `cw.data.publish("joint_states", {...})` | `cw/{twin_uuid}/data/joint_states` |
 | `cw.data.publish("frames/default", ndarray)` | `cw/{twin_uuid}/data/frames/default` |
 
-See [Data Wire Format](/edge/drivers/data-wire-format) for encoding rules.
+See [Data Wire Format](/feature-reference/edge/drivers/data-wire-format) for encoding rules.
 
 ### Assets, twins, and public catalog entries
 
@@ -689,7 +689,7 @@ First-party Cyberwave drivers ship a `cw-driver.yml` in their repositories for r
 
 ## Sensor data output
 
-If your driver produces sensor data (video frames, depth maps, audio, joint states, etc.), publish it to the **edge data bus** so worker containers and ML models can consume it locally with zero network overhead.
+If your driver produces sensor data (video frames, depth maps, audio, joint states, etc.), publish it to the **edge data bus** so worker containers and AI models can consume it locally with zero network overhead.
 
 There are two options: the **Zenoh data bus** (recommended) and the **filesystem convention** (fallback for constrained environments). Both use the same channel names — a driver can switch between them by changing one env var.
 
@@ -954,7 +954,7 @@ Once you have a working driver, these guides cover the platform features your dr
   <Card
     title="Edge Workers"
     icon="microchip-ai"
-    href="/edge/drivers/edge-workers"
+    href="/feature-reference/edge/drivers/edge-workers"
   >
     Hook-based worker modules for on-device ML inference and event-driven
     processing.
@@ -962,7 +962,7 @@ Once you have a working driver, these guides cover the platform features your dr
   <Card
     title="Data Wire Format"
     icon="binary"
-    href="/edge/drivers/data-wire-format"
+    href="/feature-reference/edge/drivers/data-wire-format"
   >
     SDK header encoding, key expressions, and the on-wire contract for edge data
     channels.
@@ -970,14 +970,14 @@ Once you have a working driver, these guides cover the platform features your dr
   <Card
     title="Data Fusion Primitives"
     icon="merge"
-    href="/edge/drivers/data-fusion"
+    href="/feature-reference/edge/drivers/data-fusion"
   >
     Time-aware sensor fusion: interpolated point reads and time-window queries.
   </Card>
   <Card
     title="Synchronized Multi-Channel Hooks"
     icon="clock"
-    href="/edge/drivers/data-synchronized-hooks"
+    href="/feature-reference/edge/drivers/data-synchronized-hooks"
   >
     Approximate time synchronizer that fires when samples from all listed
     channels arrive within tolerance.
@@ -985,7 +985,7 @@ Once you have a working driver, these guides cover the platform features your dr
   <Card
     title="Record & Replay"
     icon="circle-play"
-    href="/edge/drivers/data-record-replay"
+    href="/feature-reference/edge/drivers/data-record-replay"
   >
     Capture live edge data to disk and replay it for deterministic debugging.
   </Card>
