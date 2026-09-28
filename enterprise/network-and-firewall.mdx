@@ -1,0 +1,177 @@
+---
+title: "Network and firewall requirements"
+sidebarTitle: "Network and firewall"
+description: "Every host, port and protocol Cyberwave uses, per component, plus a copy-paste egress allowlist for SaaS deployments."
+icon: "network-wired"
+---
+
+Use this page to get firewall changes approved for a Cyberwave deployment. Every connection is **opened outbound** by the edge, the browser, or your application. In a SaaS deployment the customer network generally needs no inbound rules.
+
+Values on this page come from the SDK and CLI source and the existing reference pages. Anything not yet documented is called out.
+
+## Summary allowlist (SaaS)
+
+This is the minimum egress for an edge node that streams video and runs edge workflows. Add the operator and developer rows from the tables below as needed.
+
+```text
+# Edge node: runtime (always)
+api.cyberwave.com             TCP 443    HTTPS (REST)
+mqtt.cyberwave.com            TCP 8883   MQTT over TLS
+
+# Edge node: live video and audio
+tls.turn.cyberwave.com        TCP 443    TURN over TLS (default relay)
+turn.cyberwave.com            UDP 3478   STUN
+
+# Edge node: container images (first start, updates, mutable tags)
+registry-1.docker.io          TCP 443    Docker Hub registry
+auth.docker.io                TCP 443    Docker Hub auth
+# Docker Hub also serves image layers from a CDN host. Use Docker's published allowlist.
+
+# Edge node: install and upgrade
+cyberwave.com                 TCP 443    CLI install script
+packages.buildkite.com        TCP 443    edge-core apt repository and signing key
+pypi.org                      TCP 443    pip installs
+files.pythonhosted.org        TCP 443    pip installs
+
+# Edge node: model weights (only when workflows load models that are not pre-staged)
+static.cyberwave.com          TCP 443    Cyberwave-hosted ONNX weights
+```
+
+{/* TODO(docs): add the storage host used for signed URLs (model weights, recording uploads). The edge-core README says a private GCS bucket; confirm the hostname. */}
+{/* TODO(docs): add the host(s) the CLI install script (cyberwave.com/install.sh) and the Linux Docker auto-install contact (Docker's apt repository). */}
+
+## Edge node
+
+### Runtime
+
+| Destination | Port / protocol | Purpose | Required when |
+|---|---|---|---|
+| `api.cyberwave.com` | TCP 443, HTTPS | Registration, keepalive (`POST /api/v1/edges/discover` about every 30 s), environment and twin download, workflow sync, model catalog | Always |
+| `mqtt.cyberwave.com` | TCP 8883, MQTT over TLS | Commands, telemetry, edge health, WebRTC signaling, remote restart and sync commands | Always |
+| `tls.turn.cyberwave.com` | TCP 443, TURN over TLS (`turns:`) | Media relay for live video and audio. This is the SDK default. | Streaming |
+| `turn.cyberwave.com` | UDP 3478, STUN | Discovers the public address for a direct media path. Optional, because the TLS relay connects without it. | Streaming |
+| `turn.cyberwave.com` | UDP/TCP 3478, plus UDP 49152–65535 relay range | TURN over UDP | Only if you opt in with `CYBERWAVE_WEBRTC_TURN_URL=turn:turn.cyberwave.com:3478` |
+| Docker Hub | TCP 443 | Driver and worker images (`cyberwaveos/*`) | First start of each driver, and every worker restart on a mutable tag |
+| `registry.cyberwave.com` | TCP 443 | Private driver and model images | Only if your organization uses the [Cyberwave Docker Registry](/feature-reference/docker-registry) (Enterprise) |
+
+#### Why TLS on 443 for the relay
+
+The SDK uses exactly one TURN server. It picks TLS on port 443 on purpose, because that port gets through corporate and industrial firewalls that block 3478 and outbound high UDP ports. The trade-off is that relayed media runs over TCP, which adds latency under packet loss. If the site allows UDP, set `CYBERWAVE_WEBRTC_TURN_URL=turn:turn.cyberwave.com:3478` on the edge and open the UDP relay range instead.
+
+{/* TODO(docs): CYBERWAVE_WEBRTC_TURN_URL is named in an SDK source comment (sensor/ice.py) that points to edge_driver_env.resolve_ice_servers in Edge Core. Confirm the variable name and where to set it (systemd drop-in or credentials.json envs). */}
+
+{/* TODO(docs): document the SaaS media service (SFU) endpoint and whether edges can reach it directly over UDP, and on which ports. */}
+
+### Model weights
+
+Edge Core fetches weights only for models that edge workflows load. It tries these sources in order and caches the result in `~/.cyberwave/models/`:
+
+1. A Cyberwave-hosted signed URL.
+2. The upstream URL on the catalog entry. Cyberwave's ONNX exports are on `static.cyberwave.com`. Community checkpoints can point to other hosts.
+3. A runtime-managed download. For Ultralytics `.pt` models this means GitHub releases.
+
+To avoid all three, pre-stage the weight files. Edge Core then never contacts the catalog for those models. See [Model cache](/feature-reference/workflows/workers/model-cache).
+
+### Installation and upgrades
+
+| Destination | Port | Purpose |
+|---|---|---|
+| `cyberwave.com` | TCP 443 | `install.sh` for the CLI. `install-cloud-node.sh` for cloud nodes. |
+| `packages.buildkite.com` | TCP 443 | apt repository and GPG key for `cyberwave-edge-core` (and `cyberwave-cloud-node`). Prerelease `dev` and `staging` channels come from the same host. |
+| `pypi.org`, `files.pythonhosted.org` | TCP 443 | `pip install cyberwave-cli`. `cyberwave-edge-core` on platforms without apt. |
+| Docker's package repository and your OS mirrors | TCP 443 / 80 | On Linux, the installer installs Docker through `apt-get` if it is missing. |
+| `static.cyberwave.com` | TCP 443 | Raspberry Pi OS images, if you flash the [Cyberwave Pi image](/feature-reference/edge/raspberry-pi) |
+
+### On the site network
+
+| Traffic | Port / protocol | When |
+|---|---|---|
+| Zenoh peer discovery between containers on one edge | UDP multicast, local subnet | Always, on the host. No firewall change is needed for a single node. |
+| Zenoh router between edge hosts | TCP 7447 | Only if drivers are split across several hosts on the site |
+| Edge to robot or device | Driver-specific (serial, USB, CAN, ROS 2 DDS, or vendor IP ports) | Check the driver's documentation |
+
+## Operator browser
+
+| Destination | Port / protocol | Purpose |
+|---|---|---|
+| `cyberwave.com` | TCP 443 | Web app |
+| `api.cyberwave.com` | TCP 443 | REST |
+| `mqtt.cyberwave.com` | TCP 443, MQTT over secure WebSocket (`wss://`) | Live state and WebRTC signaling |
+| Media service and TURN | WebRTC | Live video |
+
+{/* TODO(docs): the browser's ICE configuration (TURN hosts and ports) is not documented for SaaS. List it here. */}
+
+## Your applications and developer machines
+
+| Destination | Port / protocol | Purpose |
+|---|---|---|
+| `api.cyberwave.com` | TCP 443 | REST, Python SDK, CLI |
+| `mqtt.cyberwave.com` | TCP 8883, MQTT over TLS | SDK real-time calls: joint control, subscriptions |
+| `mcp.cyberwave.com` | TCP 443 | Hosted [MCP server](/overview/tools/mcp-server) (`/mcp`, Streamable HTTP) |
+| TURN hosts, as for the edge | See above | SDK video consumers (`twin.camera.get_video()`) |
+| `stun.l.google.com` | UDP 19302, STUN | The SDK video consumer adds this public STUN server to its ICE configuration |
+
+## Cloud nodes
+
+A [cloud node](/overview/tools/cloud-node) connects outbound to the MQTT broker and needs no inbound ports.
+
+| Destination | Port | Purpose |
+|---|---|---|
+| `mqtt.cyberwave.com` | TCP 8883 (MQTT over TLS) or 1883, see below | Workload commands and status |
+| `api.cyberwave.com` | TCP 443 | Registration and logs |
+| `packages.buildkite.com`, `cyberwave.com`, PyPI | TCP 443 | Install |
+
+The cloud node page lists `1883` as the default MQTT port. The SDK default is `8883` with TLS. Check which port your cloud node version uses (`CYBERWAVE_MQTT_PORT`) before you request firewall changes, and prefer TLS.
+
+{/* TODO(docs): /overview/tools/cloud-node says the default MQTT port is 1883, but the SDK default (config.py) is 8883 with TLS. Confirm the cloud node default and whether mqtt.cyberwave.com accepts plaintext 1883 at all. */}
+{/* TODO(docs): confirm the cloud node calls api.cyberwave.com directly (REST reference has CloudNode register/log endpoints). */}
+
+## Self-hosted server
+
+The self-hosted package exposes these services on the server: web frontend, REST API, MQTT for edges, MQTT over WebSocket for browsers, the media service, and a UDP range for WebRTC media (50000–50100). The reference configuration serves them without TLS. Put a TLS-terminating proxy in front and agree the final port plan with Cyberwave. Keep the task monitor (Celery Flower) off any customer-facing network.
+
+Even when self-hosted, the media service's ICE configuration points at Cyberwave's hosted STUN/TURN (`turn.cyberwave.com`) and a public Google STUN server. A self-hosted server therefore still needs egress for video unless you replace them. It also pulls images from Docker Hub, and syncing the catalog from production needs internet access.
+
+{/* TODO(docs): TLS-first port plan for self-hosted, and how to point edges at it (CYBERWAVE_BASE_URL, CYBERWAVE_MQTT_HOST, CYBERWAVE_MQTT_PORT, CYBERWAVE_MQTT_USE_TLS). */}
+{/* TODO(docs): how to run a self-hosted TURN server so video works without Cyberwave-hosted relays. */}
+
+## Port ranges you may see elsewhere
+
+Two different UDP ranges appear in Cyberwave material. They belong to different components:
+
+| Range | Component |
+|---|---|
+| UDP 49152–65535 | Relay ports of the hosted TURN server (`turn.cyberwave.com`). Used only on the opt-in UDP relay path. |
+| UDP 50000–50100 | Media ports of the self-hosted media service |
+
+TCP 5349 (TURN over TLS) appears only in the self-hosted material. The SaaS SDK default is TURN over TLS on **443** at `tls.turn.cyberwave.com`.
+
+## Proxies and TLS inspection
+
+- **HTTP(S) proxy.** Proxy support for Edge Core, drivers and the MQTT connection is not documented. MQTT on 8883 is a direct TLS connection and does not go through an HTTP proxy. Plan for direct egress from the edge VLAN.
+- **TLS inspection.** The SDK verifies the broker certificate (`CERT_REQUIRED`). If the network re-signs TLS, set `CYBERWAVE_MQTT_TLS_CA_CERT` to your CA bundle for SDK clients. Otherwise, exempt `mqtt.cyberwave.com` from inspection.
+
+{/* TODO(docs): state officially whether HTTPS_PROXY is honoured by the CLI, Edge Core, docker pulls (daemon config) and the SDK, and whether CYBERWAVE_MQTT_TLS_CA_CERT reaches driver containers. */}
+
+## Bandwidth
+
+Per-stream bandwidth is not documented in general. One driver gives a data point: the Go2 [navigation driver](/api-reference/autonomous-navigation-driver) exposes `CYBERWAVE_H264_BITRATE_KBPS`, which defaults to 2500 kbps per H.264 stream. Video goes up only while someone is viewing, recording, or running a cloud consumer. Edge workflows on `camera_frame` process frames locally.
+
+{/* TODO(docs): measured upstream bandwidth per camera stream (resolution/fps/codec), telemetry per twin, and recording upload volume. */}
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Cyberwave for integrators" icon="building" href="/enterprise/overview">
+    Architecture, data flows and deployment options.
+  </Card>
+  <Card title="Fleet provisioning" icon="server" href="/enterprise/fleet-provisioning">
+    Headless installs, naming, monitoring and updates.
+  </Card>
+  <Card title="Integration surfaces" icon="plug" href="/enterprise/integration-surfaces">
+    Which endpoint to use for each business system.
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/feature-reference/architecture/architecture">
+    How WebRTC, MQTT and Zenoh fit together.
+  </Card>
+</CardGroup>

@@ -1,0 +1,63 @@
+---
+title: "Environment assistant"
+sidebarTitle: "Environment assistant"
+description: "Describe a scene in plain language and the environment assistant builds it: robots, sensors, objects and, when the catalog has none, new assets."
+icon: "cubes"
+---
+
+The **environment assistant** builds and edits the world your robots live in. You describe the scene, for example *"a workbench with an SO-101, a camera above it and two bins"*, and it finds the right twins in the catalog, places them and proposes the changes for you to accept. When nothing in the catalog fits, it can generate a new asset.
+
+## What it does
+
+| You ask for | The assistant |
+| --- | --- |
+| A scene or a change to it | Searches the catalog first, places twins, and uses simple procedural primitives for basic geometry |
+| An object the catalog doesn't have | Generates a **private URDF asset** in the background while you keep editing ([Generate assets](/feature-reference/environment-editor/assistant-asset-generation)) |
+| A change to a generated asset | Builds a new candidate revision; the current asset stays unchanged until you accept the preview |
+| Help with a reference | Takes tagged scene objects and reference images alongside your message |
+
+Generated assets start private and scoped to the environment that asked for them. Sharing them further follows the normal asset visibility controls.
+
+## Use it in the editor
+
+1. Open an environment and select **Agent** in the right-hand panel.
+2. Describe what you want. Tag scene objects or attach a reference image if it helps.
+3. Review what the assistant proposes, then accept it.
+
+The conversation stays the same when you switch between **Edit** and **Monitor** in Simulate or Live, within the same page session. Unsent drafts, tagged objects and reference images are kept when you visit **Control** and come back. In **Monitor**, action cards are read-only, and switching to Monitor asks the assistant to stop unfinished edits without stopping running robots or training jobs.
+
+To act on the robots themselves, use the [control agent](/ai/control-agent); it has its own composer. More on the editor: [Environment editor](/feature-reference/environment-editor).
+
+## Use it from Python
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+
+# Create a new environment from a description
+env = cw.agents.environment.create("A workbench with an SO-101 arm, a camera above it and two bins")
+
+# Continue the conversation in an existing environment
+reply = cw.agents.environment.message(environment_uuid, "Add a second camera on the left side")
+
+# Models that can run the assistant
+print(cw.agents.environment.models())
+```
+
+`message()` also accepts the conversation `history`, a `pending_confirmation` to answer, and an image (`image_base64`, `image_mime_type`) as a reference.
+
+## From your AI tools (MCP)
+
+With the [MCP server](/overview/tools/mcp-server), Claude Code, Cursor or any MCP client can plan a scene with `cw_plan_scene` and create environments with `cw_create_environment`. `cw_plan_scene` is advisory: it returns a plan and checks, and changes nothing.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Control agent" icon="gamepad" href="/ai/control-agent">
+    Once the scene is ready, tell the robots what to do.
+  </Card>
+  <Card title="Generate assets with the assistant" icon="wand-magic-sparkles" href="/feature-reference/environment-editor/assistant-asset-generation">
+    Build stages, revisions and limits for generated URDF assets.
+  </Card>
+</CardGroup>

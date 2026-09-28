@@ -1,7 +1,6 @@
 ---
 title: "Execution ingress"
 description: "How edges, workers, and SDKs report workflow execution progress back to Cyberwave over MQTT."
-tag: stub
 ---
 
 Workflows that run outside the backend (on edges, in workers, or via
@@ -11,16 +10,29 @@ SDK reporter and generated edge workers publish to the topics below,
 which the backend consumer funnels into the `WorkflowExecution` +
 `WorkflowNodeExecution` tables.
 
-Currently scoped to **mission** workflows. Vision and general-kind
-workflows keep using the cloud-side task runner.
+Ingress requires an **environment-bound** workflow. Cloud-owned executions
+keep using their existing task runner; selecting a model or a Control service
+does not transfer execution ownership to an edge reporter.
 
 ## MQTT topics
 
 | Topic | Payload |
 |---|---|
 | `cyberwave/workflow/{workflow_uuid}/execution/started` | `{ execution_uuid?, trigger_data?, source_type? }` |
-| `cyberwave/workflow/{workflow_uuid}/execution/{execution_uuid}/node/{node_uuid}` | `{ status, input_data?, output_data?, error_message?, execution_time_ms?, metadata?, source_type? }` |
+| `cyberwave/workflow/{workflow_uuid}/execution/{execution_uuid}/node/{node_uuid}` | `{ status, input_data?, output_data?, error_message?, execution_time_ms?, metadata?, source_type?, started_at?, finished_at? }` |
 | `cyberwave/workflow/{workflow_uuid}/execution/{execution_uuid}/finished` | `{ status, error_message?, source_type? }` |
+
+A publisher that reports a node after the fact should send
+`started_at` / `finished_at` (ISO-8601, or epoch seconds) so the timeline
+shows when the node ran rather than when the event was received. The
+backend ignores a reported time that falls outside the execution's own
+span, so an unsynchronised clock degrades to receipt time instead of
+placing a node in the future. `reporter.node_started(...,
+started_at=...)` and `node_finished(..., finished_at=...)` take a
+`datetime`, epoch seconds, or a formatted string.
+A reported finish before the recorded start also falls back to receipt time.
+Generated workers omit these arguments for an older SDK reporter, preserving
+existing lifecycle events without requiring a coordinated device upgrade.
 
 Publishers should set `source_type` to one of `edge`, `sim`, `tele`,
 or `edit` for lineage. Authentication is broker-level (consistent with
@@ -84,3 +96,8 @@ Each step in `compiled_payload.steps` carries the emitting node's
 `node_uuid` so runners that consume the payload directly (cloud-side
 or custom edge runners) can produce the same events without parsing
 the generated Python source.
+
+The generated worker holds its node events until the end of a tick, so
+that a frame-driven trigger stays quiet on idle frames, and timestamps
+each one as it happens — a run's timeline reflects the node durations,
+not the moment the batch was published.

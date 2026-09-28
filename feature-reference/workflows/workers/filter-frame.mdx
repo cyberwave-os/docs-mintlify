@@ -1,6 +1,6 @@
 ---
 title: "Annotate & anonymize nodes"
-description: "Anonymise or annotate camera frames in a UI-built workflow without writing Python — wire `annotate` / `anonymize` downstream of a Call Model on a camera-frame trigger and the worker either substitutes the result into the camera driver's WebRTC stream (anonymize) or composites overlay metadata onto it (annotate)."
+description: "Anonymize or annotate camera frames in a UI-built workflow, no Python needed: the worker rewrites or overlays the camera driver's WebRTC stream."
 icon: "user-shield"
 ---
 
@@ -32,7 +32,7 @@ the workflow editor in the UI.
   These same node types also run in the cloud workflow runner when wired off a
   non-camera-frame trigger (e.g. a webhook feeding an `image_url`). The cloud
   variant is documented at
-  [`anonymize`](/use-cyberwave/workflows/anonymize-image); both paths share the
+  [`anonymize`](/feature-reference/workflows/anonymize-image); both paths share the
   same pixelation / bbox-drawing algorithms.
 </Note>
 
@@ -84,7 +84,6 @@ Internally this maps onto `cyberwave.vision.blank_persons(frame, results.detecti
 
 #### On Empty Detections fallback
 
-<Info>Stub — a human will curate the wording before publishing.</Info>
 
 `blank_persons` only obscures bbox regions for detections in `target_classes`, so on a frame where the model returns _no_ matching detections (occluded subject, sub-threshold confidence, transient miss) the resulting `_frame` is byte-for-byte identical to the raw capture. Publishing that to `FILTERED_FRAME_CHANNEL` would silently leak un-anonymized pixels through the WebRTC stream, so the edge worker doesn't — instead, the per-node `fallback` parameter says what to publish on the empty-detection branch:
 
@@ -110,7 +109,7 @@ When multiple anonymize nodes are chained on the same frame, the **most-restrict
 On the edge this maps onto `cyberwave.vision.build_overlay_payload(results.detections, labels=target_classes_or_None, line_width=..., font_size=..., mask_alpha=..., mask_outline=..., mask_format=...)`, which the worker publishes on `FRAME_OVERLAY_CHANNEL`. The driver reads the same `font_size` / `line_width` from the payload's `style` block and draws the boxes at WebRTC encode time. (The legacy `cyberwave.vision.annotate_detections` numpy helper is still exported for hand-written workers that draw on a frame buffer directly — the workflow node no longer uses it.)
 
 <Info>
-Stub — segmentation overlay rendering is v1. The polygon path emits each detection's largest external contour (up to ~64 points) and silently drops holes / secondary blobs. Models that need pixel-accurate masks (e.g. dense semantic segmentation, panoptic) should use `mask_format="png"` and post-process cloud-side.
+segmentation overlay rendering is v1. The polygon path emits each detection's largest external contour (up to ~64 points) and silently drops holes / secondary blobs. Models that need pixel-accurate masks (e.g. dense semantic segmentation, panoptic) should use `mask_format="png"` and post-process cloud-side.
 </Info>
 
 ## Wiring rules

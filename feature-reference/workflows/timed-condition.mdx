@@ -1,7 +1,6 @@
 ---
 title: "Timed Condition node"
-description: "Generic time-threshold gate. Fire when a signal stays active for at least N seconds, then re-arm after a cooldown. Works with detection arrays, booleans, and numeric thresholds."
-tag: stub
+description: "Time-threshold gate: fire when a signal stays active for at least N seconds, then re-arm after a cooldown. Works with detections, booleans and numbers."
 ---
 
 `timed_condition` is a stateful conditional node that holds the
@@ -161,7 +160,7 @@ In the workflow editor inspector for the `timed_condition` node:
 to publish anything. The legacy implicit-alert path on `call_model`
 that used to inline a dwell state machine into the generated
 `wf_*.py` worker has been retired — alert emission now lives
-entirely in `send_alert` (see [Raising alerts from detections](/feature-reference/edge/workers/overview#raising-alerts-from-detections)).
+entirely in `send_alert` (see [Raising alerts from detections](/feature-reference/workflows/workers/overview#raising-alerts-from-detections)).
 
 The dispatcher (`EdgeWorkflowCompiler`) routes any `camera_frame`
 workflow that contains a `send_alert` node through

@@ -1,11 +1,9 @@
 ---
-title: "Synchronized Multi-Channel Hooks"
+title: "Synchronized multi-channel hooks"
 description: "Approximate time synchronizer that fires a callback when samples from all listed channels arrive within a configurable tolerance."
 ---
 
-<Warning>
-**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
-</Warning>
+{/* TODO(docs): **STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update. */}
 
 `@cw.on_synchronized` is an approximate time synchronizer for edge workers that need to fuse data from multiple sensors with temporal guarantees.
 
@@ -59,14 +57,14 @@ def on_stereo_pair(samples, ctx):
 
 The single-twin API (`@cw.on_synchronized(twin_uuid, channels)`) continues to work unchanged.
 
-See [Multi-Camera Detection Routing](/edge/drivers/multi-camera-detection-routing) for an end-to-end example.
+See [Multi-Camera Detection Routing](/feature-reference/edge/drivers/multi-camera-detection-routing) for an end-to-end example.
 
 ## Comparison with `latest(max_age_ms=)`
 
 | Approach | Guarantee | Use case |
 | --- | --- | --- |
 | `cw.data.latest(ch, max_age_ms=50)` | Single-channel staleness check | Pull-based fusion inside `@cw.on_frame` |
-| `@cw.on_synchronized(channels, tolerance_ms=50)` | All channels within tolerance | Push-based multi-sensor fusion |
+| `@cw.on_synchronized(twin_uuid, channels, tolerance_ms=50)` | All channels within tolerance | Push-based multi-sensor fusion |
 
 ## Temporal sync roadmap
 

@@ -1,6 +1,6 @@
 ---
 title: 'API Overview'
-description: 'Cyberwave APIs overview'
+description: 'How to authenticate with the Cyberwave REST API and when to use REST or MQTT.'
 ---
 
 ## Introduction
@@ -19,7 +19,7 @@ The REST API is used for **non-real-time communication** with the Cyberwave plat
 
 ### Authentication
 
-All REST endpoints require an API key. Go to the [Cyberwave dashboard](https://cyberwave.com/profile) → **API Tokens** card → **Create Token**, then pass the key in the `Authorization` header on every request.
+All REST endpoints require an API key. Create one under [**Profile → Access**](https://cyberwave.com/profile) (see [API tokens](/feature-reference/api-tokens)), then pass the key in the `Authorization` header on every request.
 
 | Field | Value |
 |---|---|
@@ -28,7 +28,7 @@ All REST endpoints require an API key. Go to the [Cyberwave dashboard](https://c
 | Accepted prefixes | `Bearer` and `Token` (case-insensitive) |
 | OpenAPI security scheme | `CustomTokenAuthentication` (API key, header) |
 | Recommended env var | `CYBERWAVE_API_KEY` |
-| Where to get a key | [`https://cyberwave.com/profile`](https://cyberwave.com/profile) → **API Tokens** card → **Create Token** |
+| Where to get a key | [`https://cyberwave.com/profile`](https://cyberwave.com/profile) → **Access**. See [API tokens](/feature-reference/api-tokens). |
 
 <Tabs>
   <Tab title="curl">

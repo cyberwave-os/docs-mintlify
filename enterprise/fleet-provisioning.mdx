@@ -1,0 +1,213 @@
+---
+title: "Fleet provisioning"
+description: "Install Edge Core on many devices without prompts, name them consistently, monitor them, restart them remotely, and control updates."
+icon: "server"
+---
+
+**At a glance:** 30 min for the first device, then scripted · Advanced · Linux hosts (Ubuntu, Debian or Raspberry Pi OS; amd64 or arm64), root access, a service token, environments and twins created in advance.
+
+This page covers what a system integrator needs to roll out more than a handful of edge devices: a scripted install, golden images, naming, monitoring, remote restart, updates and decommissioning. The limits of scripted installs are listed first, because they shape the design.
+
+<Warning>
+**Limits of a scripted install today:**
+
+- `--yes` binds **only the first edge-compatible twin** in the environment. A fully scripted install is reliable only when the environment has **one** edge-compatible twin. [Pairing more twins](#bind-more-than-one-twin) is a separate step.
+- On Linux, if the host has **more than one camera device** and a bound twin has a camera, the installer asks which camera to use. `--yes` does not skip this question. With exactly one camera, it picks that camera automatically.
+- `-e/--environment` only selects an environment. It never creates one. The environment must already exist in the token's workspace.
+- Without `-e`, `--yes` attaches to an environment the installer picks for you. Always pass `-e` when you provision devices.
+</Warning>
+
+## Plan before you install
+
+<Steps>
+  <Step title="Lay out environments and twins">
+    Create one environment per device, or per cell, with the twins that device drives. Each twin needs a Docker-based driver in its metadata (`docker_image` or `services`). Otherwise the installer does not offer it as an edge twin. You can create environments and twins from the web app, the SDK, or REST.
+  </Step>
+  <Step title="Choose names that become good slugs">
+    Every environment and twin gets a slug in the form `{workspace}/{type}/{name}`, for example `acme/envs/line-3-cell-2`. Slugs are generated from names, and a collision gets a `-2` suffix. Pick a naming scheme such as site, line and cell before you create anything. [Slug system](/feature-reference/concepts/slug-system)
+  </Step>
+  <Step title="Create a service token">
+    In **Workspace settings → Tokens**, create a **service token**. It belongs to the workspace, holds its own role, and keeps working after the person who created it leaves. Use one token per customer workspace, or per site if you want to revoke sites independently. [API tokens](/feature-reference/api-tokens)
+  </Step>
+</Steps>
+
+{/* TODO(docs): state the minimum service-token role for `cyberwave edge install` (the installer updates twin metadata to bind the device, so it needs write access to those twins). */}
+
+## Install one device headlessly
+
+<Steps>
+  <Step title="Prepare the host">
+    Give the device a unique hostname. Edge Core's device fingerprint starts with the hostname. On Linux the installer needs root, and it installs Docker through `apt-get` if Docker is missing.
+  </Step>
+  <Step title="Install the CLI">
+    ```bash
+    curl -fsSL https://cyberwave.com/install.sh | bash
+    ```
+    Or install it from PyPI with `pip install cyberwave-cli`.
+  </Step>
+  <Step title="Run the installer without prompts">
+    <CodeGroup>
+    ```bash Token from environment
+    # Keeps the token out of `ps` output and shell history
+    export CYBERWAVE_API_KEY="cw_..."   # injected by your secrets tooling
+    sudo --preserve-env=CYBERWAVE_API_KEY \
+      cyberwave edge install -e acme/envs/line-3-cell-2 --yes
+    ```
+
+    ```bash Token as a flag
+    # --token always wins over stored credentials and CYBERWAVE_API_KEY
+    sudo cyberwave edge install \
+      --token "$CW_SERVICE_TOKEN" \
+      -e acme/envs/line-3-cell-2 \
+      --channel stable \
+      --yes
+    ```
+    </CodeGroup>
+    `cyberwave pair` is an alias of `cyberwave edge install` and takes the same options.
+  </Step>
+  <Step title="Verify">
+    ```bash
+    cyberwave edge status              # is the service running?
+    cyberwave edge whoami              # device fingerprint and info
+    cyberwave-edge-core status         # credentials and MQTT connectivity (read-only)
+    journalctl -u cyberwave-edge-core -f
+    ```
+    The device then appears under **Workspace settings → Edges**.
+  </Step>
+</Steps>
+
+### Installer options
+
+All options are listed by `cyberwave edge install --help`.
+
+| Option | What it does | Notes for fleets |
+|---|---|---|
+| `-y`, `--yes` | Skips confirmation prompts | Picks the first edge-compatible twin. It does not skip the Linux multi-camera question. |
+| `-e`, `--environment` | Environment to attach to, as a UUID or full slug (`acme/envs/production-floor`) | The name on its own is not enough. An unknown environment, or one in another workspace, stops the install before anything is installed. |
+| `--token` | API token to pair with | Overrides stored credentials and `CYBERWAVE_API_KEY`. An empty value (`--token "$UNSET"`) fails instead of falling back. A rejected token stops the install. |
+| `--channel` | `stable` (default), `dev` or `staging` | Selects the edge-core package channel |
+| `--version` | Exact edge-core version from the selected channel | Use it to pin a fleet to one tested version |
+| `--reconfigure-camera` | Re-runs camera detection only | Cannot be combined with `-e` or `--token` |
+| `--reconfigure-microphone`, `--reconfigure-speaker`, `--microphone-index` | Re-run macOS audio bridge setup | macOS only |
+| `--force-reinstall` | Rebuilds the USB/IP server | macOS only |
+
+Useful environment variables:
+
+| Variable | Effect |
+|---|---|
+| `CYBERWAVE_API_KEY` | Token used when no valid credentials are stored yet |
+| `CYBERWAVE_BASE_URL`, `CYBERWAVE_MQTT_HOST` | Point the device at a non-SaaS backend, such as a self-hosted server |
+| `CYBERWAVE_WORKSPACE_SLUG` | If it names a workspace other than the token's, a first install stops |
+| `CYBERWAVE_EDGE_CONFIG_DIR` | Config directory. Defaults to `~/.cyberwave/`. |
+
+### Bind more than one twin
+
+A scripted install binds one twin. To bind more, you have two options. You can run the installer interactively once on that device. Or you can pair each extra twin through the REST API, then restart Edge Core so it starts the new drivers:
+
+```bash
+curl -X POST "https://api.cyberwave.com/api/v1/edges/$EDGE_UUID/pair" \
+  -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"twin_uuid": "'"$TWIN_UUID"'"}'
+```
+
+Edge Core starts drivers for every twin linked to its fingerprint. Edge **workflow** sync, however, covers only the twins recorded in `environment.json` at install time. A twin paired later gets its driver but not its edge workflows.
+
+{/* TODO(docs): document an officially supported way to bind several twins non-interactively (e.g. a --twin flag) and to add paired twins to environment.json. */}
+
+## Golden images
+
+The installer and Edge Core write the device's identity and credentials to `~/.cyberwave/`:
+
+| File | Contents |
+|---|---|
+| `credentials.json` | API token and workspace. Mode `0600`. |
+| `fingerprint.json` | Device fingerprint, derived from hostname, MAC address and platform |
+| `environment.json` | Selected environment and twin UUIDs |
+| `edge.json` | Cached edge record, including camera mapping |
+
+If you clone an image that already contains these files, every clone shares one identity and one token. Build the golden image with the OS, Docker and the CLI, but **don't pair it**. Pair on first boot from your provisioning tool (cloud-init, Ansible, or a first-boot unit) after you set a unique hostname:
+
+```bash
+#!/usr/bin/env bash
+# First-boot provisioning. Runs as root. Values come from your provisioning system.
+set -euo pipefail
+hostnamectl set-hostname "$DEVICE_HOSTNAME"
+cyberwave edge install \
+  --token "$CW_SERVICE_TOKEN" \
+  -e "$ENV_SLUG" \
+  --channel stable \
+  --version "$EDGE_CORE_VERSION" \
+  --yes
+```
+
+If you use the [Cyberwave Raspberry Pi image](/feature-reference/edge/raspberry-pi), change the default SSH password and hostname it ships with before the devices leave your bench.
+
+## Name and inventory devices
+
+- **Twins and environments** carry the slugs you planned, and those slugs appear in URLs, the SDK, the CLI and MCP tools.
+- **Edge records** have a `name` and `metadata` (`GET /api/v1/edges`, `PUT /api/v1/edges/{uuid}`). In the SDK, `cw.edges.list()` returns every edge the token can see.
+- **Host facts.** Every edge uploads host facts about every 30 s: CPU model, RAM, kernel, network interfaces, primary MAC address, board serial (Raspberry Pi, Jetson), active watchdogs, and the running Edge Core and SDK versions. Use the primary MAC for DHCP reservations and the serial for asset tracking.
+
+{/* TODO(docs): document renaming an edge from the web app; the PUT schema also requires `fingerprint`. */}
+
+## Monitor the fleet
+
+**Liveness.** Each edge shows one of three states:
+
+| State | Meaning |
+|---|---|
+| **Online** | A bound twin published an MQTT `edge_health` heartbeat within 60 s |
+| **Standby** | Edge Core posted a REST keepalive within 90 s, but no twin is publishing |
+| **Offline** | Neither signal arrived within its window |
+
+**Alerts raised by Edge Core.** `driver_starting` and `worker_starting` track startup and report image-pull progress. `driver_start_failure`, `driver_restart_loop`, `model_download_failure` and `worker_start_failure` report failures. List them with `GET /api/v1/alerts` and filter by `twin_uuid`, `environment_uuid`, `status` or `severity`. See [Alerts](/feature-reference/edge/drivers/alerts).
+
+**Routing alerts out.** Built-in routing to email, Slack or PagerDuty is not documented. One pattern to test: a workflow with an `alert` trigger, followed by `send_email` or an `http_request` to the tool's incoming webhook. Validate it in a test workspace before you rely on it.
+
+**Logs.** Driver container logs, including image-pull progress, are forwarded over MQTT to the twin's Logs tab ([driver logs](/feature-reference/environment-editor/driver-logs)). On the device, use `cyberwave edge logs -f` or `journalctl -u cyberwave-edge-core`.
+
+**Self-healing on the device.** The systemd unit runs with `Restart=always` and `WatchdogSec=60`. On boards with `/dev/watchdog`, such as every Raspberry Pi, Edge Core also drives the hardware watchdog. Edge Core protects itself from the OOM killer, and on hosts with 4 GB of RAM or less it caps worker memory.
+
+{/* TODO(docs): confirm cloud vs edge execution for alert-triggered workflows and document alert routing end to end (payload, retries). */}
+
+## Restart an edge remotely
+
+```bash
+curl -X POST "https://api.cyberwave.com/api/v1/edges/$EDGE_UUID/restart-core" \
+  -H "Authorization: Bearer $CYBERWAVE_API_KEY"
+```
+
+The API publishes `{"command": "restart_edge_core"}` on the MQTT topic `edges/{edge_uuid}/command` and returns `success`, `edge_uuid`, `request_id`, `command` and `topic`. Edge Core then stops the worker, removes driver containers and cached twin files, downloads the environment again, and restarts drivers and the worker. The device must be connected to the broker to receive the command. On the device itself, `cyberwave edge restart` does the same through systemd.
+
+## Updates and version pinning
+
+- **Channels.** `stable` installs tagged releases. `dev` and `staging` install separate prerelease packages (`cyberwave-edge-core-dev`, `cyberwave-edge-core-staging`) that conflict with each other. Use `stable` for customer sites.
+- **Pinning.** `--version` installs an exact version from the channel. Running the installer again with a new `--version` installs or upgrades to that version. Check the running version with `cyberwave-edge-core --version`, or read it from host facts.
+- **Rollout.** Automatic Edge Core updates, fleet-wide staged rollouts and rollback are not documented. Drive upgrades from your own configuration management, canary first.
+- **Worker image.** Mutable tags (`latest`, `dev`, `staging`, `nightly` and similar) are pulled on every worker restart. Immutable tags (versions, digests) are pulled only when missing. To pin one, set `CYBERWAVE_WORKER_IMAGE` in a systemd drop-in (`sudo systemctl edit cyberwave-edge-core`) and restart the service.
+
+{/* TODO(docs): document how to pin driver image versions per twin, and the SDK/CLI/edge-core compatibility policy. */}
+
+## Decommission a device
+
+1. On the device, run `sudo cyberwave edge uninstall --yes`. This stops the service, removes the unit, and releases the twins the device was paired to, so they can pair elsewhere.
+2. If the device had its own token, revoke it in **Workspace settings → Tokens**. Revoking a service token stops it at once and deactivates its identity. Revoked tokens stay listed for audit.
+3. Delete the edge record if you no longer need it (`DELETE /api/v1/edges/{uuid}`).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Network and firewall" icon="network-wired" href="/enterprise/network-and-firewall">
+    What each device must reach, including install and update hosts.
+  </Card>
+  <Card title="Integration surfaces" icon="plug" href="/enterprise/integration-surfaces">
+    Connect fleet events to your MES, WMS or ticketing tools.
+  </Card>
+  <Card title="API tokens" icon="key" href="/feature-reference/api-tokens">
+    Service tokens, roles, scoping and revocation.
+  </Card>
+  <Card title="Edge overview" icon="microchip" href="/feature-reference/edge/overview">
+    Edge Core and the full `cyberwave edge` command set.
+  </Card>
+</CardGroup>

@@ -1,5 +1,5 @@
 ---
-title: "MCP Server"
+title: "MCP server"
 description: "Let AI agents manage your robotics infrastructure through the Model Context Protocol"
 icon: "plug"
 ---
@@ -43,9 +43,17 @@ flowchart TB
 
 ---
 
+## Slug-first entity references
+
+MCP tool schemas advertise canonical slugs for durable Cyberwave resources — for example `environment_slug`, `twin_slug`, `workflow_slug`, and `asset_slug` — instead of opaque UUIDs. Carry the full slug returned by a list, read, or create tool into later calls rather than resolving it back to a UUID.
+
+This is not a UUID deprecation: UUID values are still accepted in every slug-first field, and legacy `*_uuid` argument names remain accepted as unadvertised compatibility aliases. Execution-local records without canonical slugs — workflow runs, teaching requests, checkpoints, attachments, workloads, and generation jobs — continue to use UUID-named arguments.
+
+---
+
 ## Available Tools
 
-The MCP server exposes environment, catalog, workflow, ML model, dataset, control-planning, and scene-planning tools.
+The MCP server exposes environment, catalog, workflow, AI model, dataset, control-planning, and scene-planning tools.
 
 ### Discovery
 
@@ -56,12 +64,14 @@ The MCP server exposes environment, catalog, workflow, ML model, dataset, contro
 | `cw_list_environments` | List environments, optionally filtered by project |
 | `cw_list_twins` | List digital twins, optionally filtered by environment |
 | `cw_search_catalog` | Search asset catalog and procedural primitive templates by text query |
-| `cw_plan_scene` | stub: Plan a semantic scene without mutation, returning Scene DSL, catalog candidates, advisory tool steps, validation checks, and warnings |
-| `cw_list_control_surfaces` | stub: List twins and available controls before planning a control intent |
-| `cw_plan_control_action` | stub: Plan movement, stop, observation, or controller-policy intents without MCP execution |
-| `cw_resolve_control_route` | stub: Resolve a backend route into a plan without execution |
-| `cw_dispatch_control_action` | stub: Dispatch one explicit action returned by planning or route resolution |
-| legacy execute tools | stub: `cw_set_joint`, `cw_motion_pose`, `cw_navigation_goto`, and `cw_navigation_stop` auto-dispatch only when backend route resolution returns exactly one dispatchable action |
+| `cw_plan_scene` | Plan a semantic scene without mutation, returning Scene DSL, catalog candidates, advisory tool steps, validation checks, and warnings |
+| `cw_list_control_surfaces` | List twins and available controls before planning a control intent |
+| `cw_get_control_setup` | Inspect an asset or twin’s saved control configuration and compatible input/policy choices |
+| `cw_save_control_setup` | Save requested control changes using the inspected revision; this does not start a robot |
+| `cw_plan_control_action` | Plan movement, stop, observation, or controller-policy intents without MCP execution |
+| `cw_resolve_control_route` | Resolve a backend route into a plan without execution |
+| `cw_dispatch_control_action` | Dispatch one explicit action returned by planning or route resolution |
+| legacy execute tools | `cw_set_joint`, `cw_motion_pose`, `cw_navigation_goto`, and `cw_navigation_stop` auto-dispatch only when backend route resolution returns exactly one dispatchable action |
 | `cw_list_areas` | List areas (zones/regions) in an environment |
 
 ### Inspect
@@ -83,7 +93,7 @@ The MCP server exposes environment, catalog, workflow, ML model, dataset, contro
 
 ### Twin Actions
 
-stub: Prefer `cw_list_control_surfaces` and `cw_plan_control_action` for assistant-driven twin control. Older twin action tools still expose `execute` for hardware/simulation safety, but Environment Assistant handoff should plan only and let the Cyberwave UI/API confirmation path dispatch supported actions. Environment object creation and transform tools apply direct edits; ask before destructive deletes.
+Prefer `cw_list_control_surfaces` and `cw_plan_control_action` for assistant-driven twin control. Older twin action tools still expose `execute` for hardware/simulation safety, but environment assistant handoff should plan only and let the Cyberwave UI/API confirmation path dispatch supported actions. Environment object creation and transform tools apply direct edits; ask before destructive deletes.
 
 | Tool | Description |
 |---|---|
@@ -108,18 +118,18 @@ stub: Prefer `cw_list_control_surfaces` and `cw_plan_control_action` for assista
 
 ### Scene Planning
 
-stub: Use `cw_plan_scene(prompt, environment_uuid?, scenario_type?)` as an advisory planning aid before broad scene-generation prompts. It does not mutate the environment, auto-apply templates, or return executable mutation batches. The plan uses Scene DSL version `0.1`: zones map to areas, structures/static objects map to template-backed procedural primitives, route points map to waypoints, and catalog assets map to catalog search/add-twin hints.
+Use `cw_plan_scene(prompt, environment_slug?, scenario_type?)` as an advisory planning aid before broad scene-generation prompts. It does not mutate the environment, auto-apply templates, or return executable mutation batches. The plan uses Scene DSL version `0.1`: zones map to areas, structures/static objects map to template-backed procedural primitives, route points map to waypoints, and catalog assets map to catalog search/add-twin hints.
 
 ### Procedural Primitives
 
-stub: Discover procedural primitive templates with `cw_search_catalog`. Results include canonical slugs, `template_key`, `template_version`, parameter schemas/defaults, examples, and `cw_create_procedural_primitive` hints. Created instances persist in environment settings and include compiled bounding/collision summaries plus validation warnings.
+Discover procedural primitive templates with `cw_search_catalog`. Results include canonical slugs, `template_key`, `template_version`, parameter schemas/defaults, examples, and `cw_create_procedural_primitive` hints. Created instances persist in environment settings and include compiled bounding/collision summaries plus validation warnings.
 
 ### Workflows
 
 | Tool | Description |
 |---|---|
 | `cw_list_workflows` | List workflows for the current or provided environment |
-| `cw_create_workflow_from_prompt` | Preview or draft a workflow from a prompt via the Workflow Agent; accepts optional `node_hints` |
+| `cw_create_workflow_from_prompt` | Preview or draft a workflow from a prompt via the workflow assistant; accepts optional `node_hints` |
 | `cw_list_node_schemas` | List registered node schemas. Optional `query` is a ranked keyword search (space-separated terms, OR-matched, best-first), not a literal phrase |
 | `cw_get_node_schema` | Get the typed parameter contract for one `(node_type, node_subtype)` |
 | `cw_get_workflow` | Get a workflow by UUID (nodes, connections, config) |
@@ -129,15 +139,15 @@ stub: Discover procedural primitive templates with `cw_search_catalog`. Results 
 | `cw_cancel_workflow_run` | Cancel an active workflow run |
 
 <Note>
-stub: `cw_list_node_schemas` is an **optional** discovery aid; the Workflow Agent already knows the full node catalog. Use it to confirm exact `(node_type, node_subtype)` identifiers, then pass them to `cw_create_workflow_from_prompt` via `node_hints` to bias the composed graph. Hints support a single fork to multiple alert/notify effects; they are advisory and unresolved hints come back as `dropped_node_hints`.
+`cw_list_node_schemas` is an **optional** discovery aid; the workflow assistant already knows the full node catalog. Use it to confirm exact `(node_type, node_subtype)` identifiers, then pass them to `cw_create_workflow_from_prompt` via `node_hints` to bias the composed graph. Hints support a single fork to multiple alert/notify effects; they are advisory and unresolved hints come back as `dropped_node_hints`.
 </Note>
 
 ### ML Models
 
 | Tool | Description |
 |---|---|
-| `cw_list_models` | List ML model catalog records visible to the user; optional `workspace_uuid` (client-side filter: that workspace plus `public` rows); optional `deployment` (`"cloud"`, `"edge"`, or `"hybrid"`) |
-| `cw_get_model` | Get full details for a single model record by UUID |
+| `cw_list_models` | List ML model catalog records visible to the user; optional `workspace_slug` (client-side filter: that workspace plus `public` rows); optional `deployment` (`"cloud"`, `"edge"`, or `"hybrid"`) |
+| `cw_get_model` | Get full details for a single model record by slug |
 | `cw_delete_model` | Delete a model catalog record; call with `execute=false` to preview, then `execute=true` to confirm |
 
 ### Datasets
@@ -154,7 +164,7 @@ stub: `cw_list_node_schemas` is an **optional** discovery aid; the Workflow Agen
 
 ## Safety Pattern
 
-stub: Environment object mutation tools rely on the calling agent/client for confirmation policy. Use read/list tools first, ask before destructive deletes, then call the delete tool once with normal target arguments after confirmation.
+Environment object mutation tools rely on the calling agent/client for confirmation policy. Use read/list tools first, ask before destructive deletes, then call the delete tool once with normal target arguments after confirmation.
 
 **Recommended sequence for environment edits:**
 
@@ -178,11 +188,10 @@ Action tools enforce safety guardrails before executing. These limits can be con
 
 | Limit | Default | Env var |
 |---|---|---|
-| Max position delta | 2.0 m | `CYBERWAVE_MCP_MAX_POSITION_DELTA_M` |
 | Max navigation distance | 5.0 m | `CYBERWAVE_MCP_MAX_NAV_DISTANCE_M` |
 | Max joint delta | 0.7 rad | `CYBERWAVE_MCP_MAX_JOINT_DELTA_RAD` |
 
-If a tool call exceeds these limits, the server returns an error with code `POSITION_DELTA_TOO_LARGE`, `NAV_DISTANCE_TOO_LARGE`, or `JOINT_DELTA_TOO_LARGE` instead of executing the action.
+If a tool call exceeds these limits, the server returns an error with code `NAV_DISTANCE_TOO_LARGE` or `JOINT_DELTA_TOO_LARGE` instead of executing the action.
 
 ---
 
@@ -190,9 +199,9 @@ If a tool call exceeds these limits, the server returns an error with code `POSI
 
 The MCP server maintains session context to reduce verbosity. When you interact with a workspace, environment, or twin, the server remembers your last selection.
 
-- **Twins:** If `twin_uuid` is omitted, the server uses the last twin from session context set by a previous `cw_get_twin` or any action tool call. If no twin has been used yet, the tool returns an `AMBIGUOUS_TARGET` error prompting the agent to resolve the twin first.
-- **Environments:** If `environment_uuid` is omitted, it falls back to session context or the `CYBERWAVE_ENVIRONMENT_ID` env var. Some tools (like `cw_list_areas` and `cw_render_environment_preview`) additionally auto-resolve when only one environment is visible to the user.
-- **Workspaces:** If `workspace_uuid` is omitted, it falls back to session context or `CYBERWAVE_WORKSPACE_ID`. Tools that require a workspace auto-resolve when only one workspace is visible.
+- **Twins:** If `twin_slug` is omitted, the server uses the last twin from session context set by a previous `cw_get_twin` or any action tool call. If no twin has been used yet, the tool returns an `AMBIGUOUS_TARGET` error prompting the agent to resolve the twin first.
+- **Environments:** If `environment_slug` is omitted, it falls back to session context or the `CYBERWAVE_ENVIRONMENT_ID` env var. Some tools (like `cw_list_areas` and `cw_render_environment_preview`) additionally auto-resolve when only one environment is visible to the user.
+- **Workspaces:** If `workspace_slug` is omitted, it falls back to session context or `CYBERWAVE_WORKSPACE_ID`. Tools that require a workspace auto-resolve when only one workspace is visible.
 
 This means agents can say "capture a frame" without specifying UUIDs after they've already inspected a twin with `cw_get_twin`.
 
@@ -205,14 +214,16 @@ MCP resources provide read-only data URIs that agents can fetch directly without
 | URI | MIME Type | Description |
 |---|---|---|
 | `cyberwave://environment/current/context` | `application/json` | Compact context for the current environment resolved from request headers, session, defaults, or the only visible environment |
-| `cyberwave://environments/{environment_uuid}/context` | `application/json` | Compact environment awareness context |
-| `cyberwave://environments/{environment_uuid}/areas` | `application/json` | All areas defined in an environment |
-| `cyberwave://environments/{environment_uuid}/twins` | `application/json` | Compact twin summaries for an environment |
-| `cyberwave://environments/{environment_uuid}/workflows` | `application/json` | Compact workflow summaries related to an environment |
-| `cyberwave://env/{environment_uuid}/areas` | `application/json` | All areas defined in an environment |
-| `cyberwave://env/{environment_uuid}/twins` | `application/json` | All twins in an environment |
-| `cyberwave://twin/{twin_uuid}/schema` | `application/json` | Twin universal schema (URDF-derived structure) |
-| `cyberwave://twin/{twin_uuid}/state` | `application/json` | Twin state plus current joint states |
+| `cyberwave://environments/{environment_slug}/context` | `application/json` | Compact environment awareness context |
+| `cyberwave://environments/{environment_slug}/areas` | `application/json` | All areas defined in an environment |
+| `cyberwave://environments/{environment_slug}/twins` | `application/json` | Compact twin summaries for an environment |
+| `cyberwave://environments/{environment_slug}/workflows` | `application/json` | Compact workflow summaries related to an environment |
+| `cyberwave://env/{environment_slug}/areas` | `application/json` | All areas defined in an environment |
+| `cyberwave://env/{environment_slug}/twins` | `application/json` | All twins in an environment |
+| `cyberwave://twin/{twin_slug}/schema` | `application/json` | Twin universal schema (URDF-derived structure) |
+| `cyberwave://twin/{twin_slug}/state` | `application/json` | Twin state plus current joint states |
+
+Canonical slugs contain `/`, which cannot span a URI-template slot; percent-encode the slug when expanding one of these URIs (for example `acme%2Fenvs%2Ffactory`). A UUID also works in the same slot.
 
 Resources are useful when agents need to read structured data without triggering tool calls, for example, fetching environment awareness before deciding which twins or workflows are relevant. Visual previews remain exposed through `cw_render_environment_preview` so clients opt into the larger Base64 PNG payload.
 
@@ -416,8 +427,8 @@ print(result.final_output)
 
 | Tool | Parameters |
 |---|---|
-| `cw_capture_frame` | `twin_uuid?`, `sensor_id?`, `mock?` (default `false`) |
-| `cw_capture_frames` | `twin_uuid?`, `count` (1–10, default 1), `interval_ms` (0–5000, default 0), `sensor_id?`, `mock?` |
+| `cw_capture_frame` | `twin_slug?`, `sensor_id?`, `mock?` (default `false`) |
+| `cw_capture_frames` | `twin_slug?`, `count` (1–10, default 1), `interval_ms` (0–5000, default 0), `sensor_id?`, `mock?` |
 
 Frame data is returned as Base64-encoded JPEG. Multimodal models can inspect it directly. When `mock=true`, a placeholder frame is returned for testing.
 
@@ -425,32 +436,32 @@ Frame data is returned as Base64-encoded JPEG. Multimodal models can inspect it 
 
 | Tool | Parameters |
 |---|---|
-| `cw_edit_position` | `twin_uuid?`, `x?`, `y?`, `z?` (at least one required), `execute=false` |
-| `cw_edit_rotation` | `twin_uuid?`, `yaw?`, `pitch?`, `roll?`, `quaternion?` (Euler or quaternion, not both), `execute=false` |
-| `cw_set_joint` | `twin_uuid?`, `joint_name` (required), `position`, `degrees` (default `true`), `execute=false` |
-| `cw_motion_pose` | `twin_uuid?`, `name?`, `joints?` (name or joints required), `scope` (`asset`/`twin`/`environment`), `environment_uuid?`, `sync`, `transition_ms?`, `hold_ms?`, `execute=false` |
-| `cw_navigation_goto` | `twin_uuid?`, `position` (required, `[x, y, z]`), `yaw?`, `rotation?` (`[w, x, y, z]`, mutually exclusive with yaw), `environment_uuid?`, `execute=false` |
-| `cw_navigation_stop` | `twin_uuid?`, `environment_uuid?`, `execute=false` |
+| `cw_edit_position` | `twin_slug?`, `x?`, `y?`, `z?` (at least one required), `execute=false` |
+| `cw_edit_rotation` | `twin_slug?`, `yaw?`, `pitch?`, `roll?`, `quaternion?` (Euler or quaternion, not both), `execute=false` |
+| `cw_set_joint` | `twin_slug?`, `joint_name` (required), `position`, `degrees` (default `true`), `execute=false` |
+| `cw_motion_pose` | `twin_slug?`, `name?`, `joints?` (name or joints required), `scope` (`asset`/`twin`/`environment`), `environment_slug?`, `sync`, `transition_ms?`, `hold_ms?`, `execute=false` |
+| `cw_navigation_goto` | `twin_slug?`, `position` (required, `[x, y, z]`), `yaw?`, `rotation?` (`[w, x, y, z]`, mutually exclusive with yaw), `environment_slug?`, `execute=false` |
+| `cw_navigation_stop` | `twin_slug?`, `environment_slug?`, `execute=false` |
 
 ### Environment & Twin Creation
 
 | Tool | Parameters |
 |---|---|
-| `cw_create_environment` | `name` (required), `workspace_uuid?`, `project_uuid?`, `description?`, `execute=false` |
-| `cw_add_twin_to_environment` | `registry_id` (required), `environment_uuid?` |
-| `cw_create_urdf_asset_from_zip` | `name` (required), `zip_file_base64` (required), `zip_file_name` (default `asset.zip`), `workspace_uuid?`, `description?`, `visibility` (default `private`), `main_file_path?`, `metadata?` |
-| `cw_set_asset_capabilities` | `asset_uuid_or_registry_id` (required), `capabilities` (required object), `execute=false` |
+| `cw_create_environment` | `name` (required), `workspace_slug?`, `project_uuid?`, `description?`, `execute=false` |
+| `cw_add_twin_to_environment` | `registry_id` (required), `environment_slug?` |
+| `cw_create_urdf_asset_from_zip` | `name` (required), `zip_file_base64` (required), `zip_file_name` (default `asset.zip`), `workspace_slug?`, `description?`, `visibility` (default `private`), `main_file_path?`, `metadata?` |
+| `cw_set_asset_capabilities` | `asset_slug` (required), `capabilities` (required object), `execute=false` |
 
-> stub: After calling `cw_create_urdf_asset_from_zip`, immediately call `cw_set_asset_capabilities` to define capabilities for the newly created asset. Use capability semantics from the Digital Twins documentation (`/use-cyberwave/digital-twins/overview`).
+After calling `cw_create_urdf_asset_from_zip`, immediately call `cw_set_asset_capabilities` to define capabilities for the newly created asset. Use capability semantics from [Work with digital twins](/feature-reference/digital-twins#capabilities-map).
 
 ### Area Tools
 
 | Tool | Parameters |
 |---|---|
-| `cw_list_areas` | `environment_uuid?` |
-| `cw_create_area` | `name`, `environment_uuid?`, `area_id?`, `position?` (`[x,y,z]`), `size?` (`[x,y,z]`), `rotation?`, `image_url?`, `image_base64?`, `image_mime_type`, `keep_proportions`, `opacity`, `color`, `locked`, `visible` |
-| `cw_resize_area` | `area_id` (required), `environment_uuid?`, `x?`, `y?`, `z?` (at least one, must be > 0) |
-| `cw_set_area_image` | `area_id` (required), `environment_uuid?`, `image_url?`, `image_base64?`, `image_mime_type`, `keep_proportions?`, `remove_image?` (exactly one of remove/url/base64), `execute=false` |
+| `cw_list_areas` | `environment_slug?` |
+| `cw_create_area` | `name`, `environment_slug?`, `area_id?`, `position?` (`[x,y,z]`), `size?` (`[x,y,z]`), `rotation?`, `image_url?`, `image_base64?`, `image_mime_type`, `keep_proportions`, `opacity`, `color`, `locked`, `visible` |
+| `cw_resize_area` | `area_id` (required), `environment_slug?`, `x?`, `y?`, `z?` (at least one, must be > 0) |
+| `cw_set_area_image` | `area_id` (required), `environment_slug?`, `image_url?`, `image_base64?`, `image_mime_type`, `keep_proportions?`, `remove_image?` (exactly one of remove/url/base64), `execute=false` |
 
 Area images can be attached via a direct `image_url` (recommended for large images) or inline as `image_base64` bytes with `image_mime_type`. Images are stored in environment settings.
 
@@ -461,9 +472,9 @@ Area images can be attached via a direct `image_url` (recommended for large imag
 | `cw_list_workflows` | *(none)* |
 | `cw_list_node_schemas` | `query?` (ranked keyword search), `limit=100` |
 | `cw_get_node_schema` | `node_type` (required), `node_subtype?` |
-| `cw_get_workflow` | `workflow_uuid` (required) |
-| `cw_trigger_workflow` | `workflow_uuid` (required), `inputs?` (dict), `execute=false` |
-| `cw_list_workflow_runs` | `workflow_uuid?`, `status?` |
+| `cw_get_workflow` | `workflow_slug` (required) |
+| `cw_trigger_workflow` | `workflow_slug` (required), `inputs?` (dict), `execute=false` |
+| `cw_list_workflow_runs` | `workflow_slug?`, `status?` |
 | `cw_get_workflow_run` | `run_uuid` (required) |
 | `cw_cancel_workflow_run` | `run_uuid` (required), `execute=false` |
 
@@ -471,11 +482,11 @@ Area images can be attached via a direct `image_url` (recommended for large imag
 
 | Tool | Parameters |
 |---|---|
-| `cw_list_datasets` | `workspace_uuid?` |
-| `cw_get_dataset` | `dataset_uuid` (required) |
-| `cw_wait_until_ready` | `dataset_uuid` (required), `poll_interval?` (default 5 s), `timeout?` (default 1800 s) |
-| `cw_download_dataset` | `dataset_uuid` (required), `format` (required, e.g. `parquet`, `lerobot3`, `rlds`, `openvla`) |
-| `cw_delete_dataset` | `dataset_uuid` (required) |
+| `cw_list_datasets` | `workspace_slug?` |
+| `cw_get_dataset` | `dataset_slug` (required) |
+| `cw_wait_until_ready` | `dataset_slug` (required), `poll_interval?` (default 5 s), `timeout?` (default 1800 s) |
+| `cw_download_dataset` | `dataset_slug` (required), `format` (required, e.g. `parquet`, `lerobot3`, `rlds`, `openvla`) |
+| `cw_delete_dataset` | `dataset_slug` (required) |
 
 `cw_download_dataset` mirrors the REST endpoint: returns `{ status: "ready", signed_url, expires_at }` on HTTP 200, or `{ status: "queued" | "processing", poll_url }` on HTTP 202 when conversion is running.
 
@@ -483,11 +494,46 @@ Area images can be attached via a direct `image_url` (recommended for large imag
 
 ### Environment Preview
 
-`cw_render_environment_preview(environment_uuid?)` renders a static PNG snapshot of the environment.
+`cw_render_environment_preview(environment_slug?)` renders a static PNG snapshot of the environment.
 
 - Calls the same backend endpoint as the web app: `POST /api/v1/environments/{uuid}/preview`
 - Returns attachment metadata (`type=environment_preview`) and a Base64 PNG payload that multimodal models can inspect directly
-- If `environment_uuid` is omitted and only one environment is visible, it resolves automatically
+- If `environment_slug` is omitted and only one environment is visible, it resolves automatically
+
+### RL task authoring
+
+The MCP keeps platform-managed RL authoring and deployment behind three compact tools:
+
+- `cw_inspect_rl_tasks` lists tasks, returns one task's source manifest, scene
+  entities, orchestration hints and training options, or reads one exact source
+  file.
+- `cw_author_rl_task` selects an authoring operation: create/update, task-local
+  source-file upsert, scene-entity replacement, strict Python scene-spec
+  validation/application, or generated scene-config regeneration.
+- `cw_deploy_rl_policy` handles the trained checkpoint lifecycle: inspect,
+  prepare/complete a signed `.pt`, `.pth`, or `.zip` upload, register an uploaded
+  attachment or HTTPS weights URL, publish a controller, and assign it to a twin
+  with explicit replacement protection. It also previews and applies exact
+  controller start/stop operations.
+- `cw_manage_remote_lab` reads shared-lab availability and the caller's current
+  reservation, or previews/applies access requests and session release.
+
+Authoring previews by default. Reward, reset and termination code is uploaded as
+task-local source files. Applying an authoring change never starts training;
+inspect the result, then use `cw_request_skill_teaching` to prepare the existing
+human-confirmed training flow.
+
+Checkpoint bytes do not travel inside MCP JSON. Upload them directly with HTTP
+PUT to the signed URL returned by `prepare_upload`, then pass its handle to
+`complete_upload`. Once the published controller is assigned, call
+`cw_start_simulation(auto_run_controllers=true)` to start the simulated plant and
+its assigned controllers together. For physical remote-lab execution, first
+obtain an active reservation for the target environment with
+`cw_manage_remote_lab`; then preview and apply
+`cw_deploy_rl_policy(operation="start_controller", mode="live")` with the exact
+twin/controller UUIDs and `confirm_live=true`. Stopping or ending the session is
+explicit, and session release stops active controllers before handing the lab
+to the next user.
 
 ---
 
@@ -509,3 +555,17 @@ Area images can be attached via a direct `image_url` (recommended for large imag
     Test and debug MCP servers
   </Card>
 </CardGroup>
+
+## Local custom-reward training
+
+{/* TODO(docs): This section is a stub pending documentation review. */}
+
+Use `cw_export_mujoco_scene` with an environment UUID to obtain a MuJoCo ZIP
+including scene assets. Set `wait_seconds=30` for bounded polling; repeat when
+`data.status` is `pending`. Download `data.url` only when `data.ready` is true,
+extract the whole archive, and load `mujoco_scene.xml` in MuJoCo to author and
+train your reward locally. Failures return `status=error` and `details`.
+
+Export requires environment read access and never starts training or robot
+motion. `cw_request_skill_teaching` remains a proposal requiring confirmation in
+Cyberwave. A successful export is not evidence of a trained policy's success.

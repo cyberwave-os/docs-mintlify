@@ -1,29 +1,27 @@
 ---
-title: "Environment Templates"
-description: "Clone a pre-configured environment to skip setup"
+title: "Environment templates"
+description: "Discover reusable setups by use case and create your own environment"
 icon: "copy"
-tag: "stub"
 ---
 
-## What is a Template?
+## Explore a use-case template
 
-An **Environment Template** is a pre-configured robot environment that any signed-in user can clone with one click. Templates include the scene, assets, twins, controller policies, and tags — everything needed to start working immediately.
+Template cards show the saved environment, included twins and workflows. Use the use-case filter and search to find a relevant setup. Public pages show public templates; signed-in users can also discover templates available through their existing access.
 
-## Cloning a Template
+Open a card to inspect its contents. **Play tour** highlights twins at their saved positions in a lightweight schematic; **Next twin** steps through them manually. The tour is a visual preview, not a simulation result or a hardware command.
 
-There are three entry points, all landing on the same gallery at **/templates**:
+## Start using a template
 
-1. **Public gallery** — visit `/templates` without signing in, click **Clone**, and (after login) the clone lands in your default workspace.
-2. **Sidebar** — once signed in, click **Templates** in the main navbar. Same gallery, same flow.
-3. **Create Environment modal** — click **New Environment** anywhere in the dashboard, then **Start from a template**. The modal closes and the gallery opens with a "Cloning into {folder}" banner, so the cloned environment lands in your current project/folder.
+Select **Use template**, sign in if needed, and choose the destination workspace or project in the existing creation dialog. Confirm the template to create your own environment. The source remains unchanged.
 
-Cloned environments are private to you and copy the template's name, description, twins, and controller policies. The original template is unaffected.
+Cloning a setup does not provision physical hardware, establish edge connections or run its workflows. Review the copied configuration and connect the intended devices before operating the physical use case.
 
-## Publishing a Template
+## Organize templates
 
-Users with write access can publish templates in two ways:
+With write access to an environment, open **Environment settings**:
 
-- **At creation time** — check **Publish as template** in the Create Environment form.
-- **Post-creation** — open workspace template management and click **Publish as template**.
+1. Enable **Reusable environment template**.
+2. Enter comma-separated **Use cases**, such as `material-handling, inspection`.
+3. Save the settings.
 
-When publishing from workspace template management, choose **Share with everyone** for a public template or **Share with your workspace** for a workspace-only template. Publishing sets `is_template=True` and applies the selected visibility.
+Other tags you have added are preserved. The existing sharing controls determine who can discover and clone the template; marking an environment as a template does not make it public.

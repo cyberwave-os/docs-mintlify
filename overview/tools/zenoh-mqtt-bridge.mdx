@@ -1,5 +1,5 @@
 ---
-title: "Zenoh-MQTT Bridge"
+title: "Zenoh-MQTT bridge"
 description: "Bidirectional forwarder between local Zenoh data bus and cloud MQTT broker"
 icon: "bridge"
 ---
@@ -29,6 +29,7 @@ bridge = ZenohMqttBridge(
     ),
     mqtt_host="<mqtt_host>",
     mqtt_port=8883,
+    mqtt_use_tls=True,
     mqtt_password="<api_key>",
 )
 bridge.start()

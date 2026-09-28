@@ -1,7 +1,6 @@
 ---
 title: "Running a workflow in simulation"
 description: "Set a workflow's execution target to Simulation to run it against a cloud physics simulation instead of real hardware"
-tag: "stub"
 ---
 
 Every workflow has an execution target:
@@ -26,6 +25,33 @@ You need write access to the environment to trigger a Simulation workflow.
 A Simulation run needs simulation capacity in your workspace. If none is
 available the run fails with the reason instead of hanging.
 </Note>
+
+## Edge workflows can run against the simulation
+
+Perception nodes and pose models only run on an edge, so a workflow using them
+needed a robot before it could run at all. It no longer does: a simulation can
+host the workflow itself, reading the simulated cameras.
+
+This needs **both** settings, and there is no default for the second:
+
+1. Turn on **Run on edge** for the workflow.
+2. Set its execution target to **Simulation**.
+
+Then start the environment's simulation. The workflow runs against the
+simulated camera and depth streams exactly as it would beside a real camera —
+the same graph, unchanged, on either.
+
+<Note>
+Activate the workflow **before** starting the simulation. A simulation that
+started with no Edge + Simulation workflow in its environment is not hosting a
+workflow, and activating one afterwards will not reach it — stop the simulation
+and start it again. Once a simulation is hosting one, activating a further
+workflow takes effect within about 15 seconds, and deactivating one within
+about half a minute.
+</Note>
+
+A workflow left on the **Live** target is untouched by this: it stays on your
+real hardware and is never duplicated into the simulation.
 
 ## Robot arms follow waypoints through IK
 

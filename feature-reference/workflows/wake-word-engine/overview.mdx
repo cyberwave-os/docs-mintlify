@@ -2,10 +2,9 @@
 title: "Wake Word Engine"
 description: "OpenWakeWord on/off switch for voice-activated edge workflows"
 icon: "microphone"
-stub: true
 ---
 
-The **Wake Word Engine** is an edge-only voice trigger. It sleeps until it hears the wake word, then streams **PCM int16 @ 16 kHz mono** downstream (typically to [Call Model / Whisper](/use-cyberwave/ml-models/speech-to-text)) until you stop speaking. Internally uses [OpenWakeWord](https://github.com/dscripka/openWakeWord).
+The **Wake Word Engine** is an edge-only voice trigger. It sleeps until it hears the wake word, then streams **PCM int16 @ 16 kHz mono** downstream (typically to [Call Model / Whisper](/feature-reference/ml-models/speech-to-text)) until you stop speaking. Internally uses [OpenWakeWord](https://github.com/dscripka/openWakeWord).
 
 ## Typical pipeline
 

@@ -1,24 +1,28 @@
 ---
-title: "ML Models"
-description: "Register and deploy AI models for robotics workflows"
+title: "Model catalog"
+description: "Browse, filter and register the AI models your workspace can use, and see where each one runs."
 icon: "brain"
 ---
 
-## What are ML Models?
+## What are AI models?
 
-ML Models in Cyberwave are AI models registered in your workspace that can process various inputs — video, images, audio, text, or robot actions. They integrate with workflows and can run in the cloud or on edge devices.
+AI models registered in your Cyberwave workspace can process various inputs — video, images, audio, text, or robot actions. They integrate with workflows and can run in the cloud or on edge devices.
 
 <Info>
-  ML Models define **what the model can do** (input types) and **where it runs**
+  AI models define **what the model can do** (input types) and **where it runs**
   (provider). The actual inference happens through the model provider's API or
   on your edge device.
 </Info>
 
 ---
 
+## Browsing the model catalog
+
+Search **AI models** by name or provider. Model cards use compact rectangular styling and short workspace/model identifiers; asset cards retain rounded image previews. Browse public models and a single row of your matching workspace models together. Empty personal sections are hidden; **All models / Yours / Public** changes the scope. The left sidebar filters input type, deployment, declared task, vendor, size and edge runtime. On small screens, **Filters** opens a scrollable sheet; **Show results** returns to the catalog. Search, filters, and scope stay in the URL, so returning from a model detail restores your selection. Models must support every selected input; vendor and task selections match any selected value. Selected filters can be removed above the results.
+
 ## Model Capabilities
 
-Each ML Model specifies what inputs it can process:
+Each AI model specifies what inputs it can process:
 
 | Capability                 | Description           | Example Use Cases                    |
 | -------------------------- | --------------------- | ------------------------------------ |
@@ -57,10 +61,10 @@ Models can run through different providers:
   <Tab title="Dashboard">
     <Steps>
       <Step title="Navigate">
-        Go to **ML Models** in your workspace.
+        Go to **AI models** in your workspace.
       </Step>
       <Step title="Add model">
-        Click **Add Model**.
+        Click **Add model**.
       </Step>
       <Step title="Configure">
         Fill in the model details: name, description, external ID (model identifier for the provider), provider name (e.g. `openai`, `local`, `huggingface`), and input capabilities.
@@ -76,7 +80,7 @@ Models can run through different providers:
 
     cw = Cyberwave(api_key="your_api_key")
 
-    model = cw.api.create_mlmodel({
+    model = cw.api.src_app_api_mlmodels_create_mlmodel(ml_model_create_schema={
         "name": "Object Detector",
         "description": "YOLOv8 model for detecting warehouse items",
         "model_external_id": "yolov8n",
@@ -107,11 +111,11 @@ Models can run through different providers:
 
 ## Using Models in Workflows
 
-ML Models integrate with workflow nodes for automated processing:
+AI models integrate with workflow nodes for automated processing:
 
 ```mermaid
 flowchart LR
-    A[Capture Image] --> B[ML Model: Detect Objects]
+    A[Capture Image] --> B[AI model: Detect Objects]
     B --> C{Found?}
     C -->|Yes| D[Pick Object]
     C -->|No| E[Alert Operator]
@@ -126,7 +130,7 @@ Every model detail page (`/{workspace-slug}/models/{model-slug}` or
 **Playground** tab. Gemini Robotics-ER renders detected points as an
 overlay on your image, VLMs stream back text, `im2mesh` models preview
 the generated GLB inline, and edge/VLA models surface the exact CLI +
-SDK commands needed to run them locally. See [Model Playground](/use-cyberwave/ml-models/playground).
+SDK commands needed to run them locally. See [Model playground](/feature-reference/ml-models/playground).
 
 ---
 
@@ -137,11 +141,11 @@ SDK commands needed to run them locally. See [Model Playground](/use-cyberwave/m
     For cloud-based models, Cyberwave routes requests to the provider:
 
     ```python
-    response = cw.api.vlm_generation({
-        "model_uuid": model.uuid,
-        "prompt": "What objects do you see? How should the robot pick them up?",
-        "image_url": "https://..."
-    })
+    response = cw.models.run(
+        model.uuid,
+        prompt="What objects do you see? How should the robot pick them up?",
+        image_url="https://...",
+    )
     ```
 
   </Tab>
@@ -159,7 +163,7 @@ from cyberwave import Cyberwave
 
 cw = Cyberwave(api_key="your_api_key")
 
-models = cw.api.list_mlmodels()
+models = cw.models.list()
 
 for model in models:
     print(f"{model.name} ({model.model_provider_name})")
@@ -203,6 +207,6 @@ VLA inference runs on Cloud Nodes using the `CwProcessor` orchestrator:
 3. **Control Loop** - Observe → Predict → Execute cycle
 4. **Action Publishing** - Predicted actions sent to robot via MQTT
 
-<Card title="VLA Cloud Node Guide" icon="brain" href="/tools/vla-cloud-node">
+<Card title="VLA Cloud Node Guide" icon="brain" href="/overview/tools/vla-cloud-node">
   Learn how to build and deploy VLA models on Cyberwave Cloud Nodes
 </Card>

@@ -1,6 +1,6 @@
 ---
-title: "RL Tasks"
-description: "Package a Cyberwave environment plus your MDP and RL code as a runnable mjlab/skrl plugin: author actions, observations, and a graph-based network in the dashboard, then export a ZIP that drops into cyberwave-rl/tasks/."
+title: "RL tasks"
+description: "Package a Cyberwave environment plus your MDP and RL code as an mjlab/skrl task: author actions, observations and a network, then export a ZIP."
 icon: "graduation-cap"
 ---
 
@@ -346,7 +346,97 @@ Both runtimes consume the same exported plugin contract, and the runtime spec (t
 
 The **Policies** tab is the post-training counterpart to the Runtime tab's "Train locally" snippets: upload a trained checkpoint, publish it as a controller, and run inference. Inference deliberately does **not** run MuJoCo — the worker loops Cyberwave joint state through the policy and publishes commands over MQTT.
 
-See the dedicated [Uploading Policies](/feature-reference/uploading-policies) page for the full checkpoint upload, publish, and inference flow, and [Online Controllers](/feature-reference/online-controllers) for serving a published policy.
+See the dedicated [Uploading policies](/feature-reference/uploading-policies) page for the full checkpoint upload, publish, and inference flow, and [Online controllers](/feature-reference/online-controllers) for serving a published policy.
+
+## Managed training: `training_options.json` {#managed-training-training-options-json}
+
+A task's async adapter declares which training strategies `cw_request_skill_teaching` (or `POST /api/v1/skill-teaching-requests`) can dispatch by shipping `training_options.json` next to `training.py`. This file is the contract between your adapter and the platform: it names each supported strategy, the JSON-Schema-constrained hyperparameters it accepts, and the defaults applied when a caller doesn't override them.
+
+<Info>
+Fetch the resolved options directly instead of guessing the shape: `GET /api/v1/rl-tasks/{uuid}/training-options`, `cw_inspect_rl_tasks(operation="get")`, or the `proposal.training.options` field on a teaching-request proposal all return the current, validated `training_options.json` for a task.
+</Info>
+
+### Shape
+
+```json
+{
+  "schema_version": 1,
+  "strategies": {
+    "<strategy_key>": {
+      "parameters": { "...": "a bounded JSON Schema object" },
+      "defaults": { "...": "values that satisfy 'parameters'" }
+    }
+  }
+}
+```
+
+| Field | Requirement |
+| --- | --- |
+| `schema_version` | Must be the integer `1`. |
+| `strategies` | An **object** keyed by strategy key (not a list) — 1 to 16 entries. Each key matches `^[a-z][a-z0-9_.:-]{0,63}$` (for example `rl:ppo`, `imitation:behavior_cloning`). |
+| `strategies[key].parameters` | A JSON Schema object (`type: "object"`, `additionalProperties: false`, at most 64 properties, nested at most 8 levels). Only `type`, `properties`, `additionalProperties`, `required`, `items`, `minimum`, `maximum`, `exclusiveMinimum`, `exclusiveMaximum`, `minItems`, `maxItems`, `minLength`, `maxLength`, `enum`, `title`, `description` are accepted — no `$ref`, `pattern`, or schema-composition keywords, so the descriptor can't fetch remote refs or blow up validation. |
+| `strategies[key].defaults` | An object satisfying `parameters`; frozen into the job when a caller doesn't override a field. |
+
+The whole file is capped at 32 KiB and never executed — it's parsed as data, so authoring it requires no backend source access.
+
+### Worked example
+
+This is the real `training_options.json` for the `imitation:behavior_cloning` strategy shipped with the in-tree `cyberwave-rl/examples/kinova_gen3_pick_place` example task:
+
+```json
+{
+  "schema_version": 1,
+  "strategies": {
+    "imitation:behavior_cloning": {
+      "defaults": {
+        "hidden_sizes": [128, 128],
+        "epochs": 300,
+        "batch_size": 256,
+        "learning_rate": 0.0003,
+        "weight_decay": 0.000001,
+        "validation_fraction": 0.1,
+        "seed": 0,
+        "augmentation": {"replicas": 4, "seed": 73}
+      },
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "hidden_sizes": {"type": "array", "minItems": 1, "maxItems": 4, "items": {"type": "integer", "minimum": 1, "maximum": 1024}},
+          "epochs": {"type": "integer", "minimum": 1, "maximum": 10000},
+          "batch_size": {"type": "integer", "minimum": 1, "maximum": 8192},
+          "learning_rate": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+          "weight_decay": {"type": "number", "minimum": 0, "maximum": 1},
+          "validation_fraction": {"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1},
+          "seed": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+          "augmentation": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["replicas", "seed"],
+            "properties": {
+              "replicas": {"type": "integer", "minimum": 0, "maximum": 32},
+              "seed": {"type": "integer", "minimum": 0, "maximum": 4294967295}
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+A caller then requests this strategy with a partial `strategy_config`, for example `{"epochs": 10}`; the backend merges it onto `defaults` (nested objects like `augmentation` are replaced as a whole, not deep-merged) and validates the result against `parameters` before freezing it into the job.
+
+### Validation errors are field-specific
+
+Every check names the offending path instead of stopping at the first top-level shape mismatch, so you can iterate directly against the error:
+
+- `training_options.json.strategies must be an object keyed by strategy key (e.g. {"rl:ppo": {...}}), got array` — a common first guess is authoring `strategies` as a list of strategy objects instead of a dict keyed by strategy key.
+- `strategies['rl:ppo'] is missing required field(s): defaults` — a strategy entry must declare exactly `parameters` and `defaults`, nothing else.
+- `strategies['rl:ppo'].parameters.properties.epochs.type must be one of [...]` — nested schema problems point at the exact property.
+- `strategies['rl:ppo'].defaults.epochs: 0 is less than the minimum of 1` — invalid defaults report the dotted field path and the underlying JSON Schema message.
+
+A `missing_training_input` requirement reported by `cw_request_skill_teaching` or a teaching-request proposal carries this same message, so the specific field is visible without backend source access.
 
 ## What's in the exported ZIP?
 
@@ -401,6 +491,7 @@ All endpoints are under `/api/v1/rl-tasks` and require authentication.
 | `GET/PUT /api/v1/rl-tasks/{uuid}/observations` | Read / write the observation spec. |
 | `GET/PUT /api/v1/rl-tasks/{uuid}/rl-config` | Read / write the RL config spec. |
 | `GET /api/v1/rl-tasks/{uuid}/orchestration-hints` | Scene-derived dropdown data: articulation entities, actuator groups and types per entity, declared joint/body names, actuated vs passive joint lists, and configured camera / contact sensors. |
+| `GET /api/v1/rl-tasks/{uuid}/training-options` | Read the task's validated `training_options.json` (see [Managed training](#managed-training-training-options-json)). |
 | `GET/POST/PUT /api/v1/rl-tasks/{uuid}/scene-entities` | List, create, and update scene entities. |
 | `PATCH/DELETE /api/v1/rl-tasks/{uuid}/scene-entities/{entity_uuid}` | Partially update or delete a single scene entity. |
 
@@ -410,7 +501,7 @@ The `RLTask` response surfaces the action, observation, and RL-config specs as `
 The spec GET, the regenerate endpoints, and the export ZIP all produce byte-identical output for the same scene-entity rows, so re-reading and re-exporting are always consistent. If a body can't be resolved while splitting the MuJoCo scene, the request fails with **HTTP 400** naming the failing entity and the selectors that were tried — check the twin selectors and re-export.
 </Note>
 
-## Inference Commands (stub)
+## Inference Commands
 
 RL tasks can declare **inference commands** that define a live control surface for deployed policies. Each command declares:
 
@@ -436,7 +527,7 @@ The Commands tab has two explicit lifecycle switches — **Training command setu
   <Card title="Uploading Policies" icon="upload" href="/feature-reference/uploading-policies">
     Upload trained checkpoints, publish them as controllers, and run inference.
   </Card>
-  <Card title="Online Controllers" icon="tower-broadcast" href="/feature-reference/online-controllers">
+  <Card title="Online controllers" icon="tower-broadcast" href="/feature-reference/online-controllers">
     Serve a published policy as a live controller.
   </Card>
   <Card title="RL Task Scene Sensors" icon="camera" href="/feature-reference/rl-task-scene-sensors">

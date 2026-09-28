@@ -1,7 +1,6 @@
 ---
 title: "Send Pose node"
 description: "Move a twin into a saved or custom joint pose by publishing a joint command."
-tag: stub
 ---
 
 The **Send Pose** (`send_joint_commands`) node commands a robot into a **joint pose** — a set of per-joint target angles. When the node runs it publishes a multi-joint message to the twin's joint topic; the driver moves the robot to those positions.
@@ -13,22 +12,19 @@ The **Send Pose** (`send_joint_commands`) node commands a robot into a **joint p
 
 ## Requirements
 
-When you pick a target twin that has no **controller policy** associated, Cyberwave tries to attach a sensible default automatically at setup time. If no suitable controller policy is available to attach, the inspector shows an error (and raises an alert on the twin) so you can create or share one. A controller policy is not required for the pose to reach the simulator.
+The twin must expose independently commandable joints and have a runtime that accepts joint commands. Selecting a target preserves its existing control configuration; it does not assign a controller policy. Live execution checks edge health before publishing. Publishing a command does not prove that the robot reached its target.
 
 ## Configuration flow
 
-1. **Target Twin** — pick the twin to control. Only **joint-controllable** twins (robots with movable joints) appear in the list. **Required.**
-2. **Twin Poses** — pick a **saved pose** for that twin, or **Custom Pose** to author a new one. **Required.**
+1. **Target Twin** — pick the twin to control. Joint data from another robot does not change this selection. Only **joint-controllable** twins (robots with movable joints) appear in the list. **Required.**
+2. Choose a command source: **Twin Poses** for a saved/custom pose, or **Connected joint values** to map positions, velocities or efforts from another workflow node. Use **Clear pose** to use connected values alone.
 
 <Note>
-Both **Target Twin** and **Twin Poses** are mandatory (`*`). A workflow with a
-Send Pose that is missing either can't be activated — the editor flags it and
-activation returns an error. Positions/velocities/efforts maps refine a pose;
-they don't replace picking one.
+A target and at least one enabled command source are required. A manual trigger alone does not supply joint values. Connected values override matching joints in a selected pose; they can also be used without a pose. Runtime validation rejects an empty command after filtering invalid values and unsupported joints.
 </Note>
 3. **Advanced** (optional) — under **Control Settings**, choose which channels to send with the **Positions / Velocities / Efforts** checkboxes (and set per-joint velocity/effort values); under **Explicit Joint Update**, restrict the message to specific joints.
 
-A live **Message Preview** shows the exact topic and payload that will be sent.
+The **Message Preview** shows the configured static values. Connected values are resolved when the workflow runs.
 
 ## Poses
 
@@ -51,7 +47,7 @@ By default the node sends a **full joint update** — every joint of the pose is
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `twin_uuid` | string | Yes | Target twin (inspector picker, joint-controllable only). |
-| `pose_name` | string | Yes | Saved (or custom) pose to send. Set by the Twin Poses picker. |
+| `pose_name` | string | No | Saved/custom pose, as an alternative to joint values. |
 | `positions` | object | No | Per-joint target positions (radians/metres). Set by the pose/custom editor or wired from upstream. |
 | `velocities` | object | No | Per-joint target velocities. Sent only when **Send velocities** is enabled; unset joints are omitted, not `0`. |
 | `efforts` | object | No | Per-joint target efforts. Sent only when **Send efforts** is enabled; unset joints are omitted, not `0`. |

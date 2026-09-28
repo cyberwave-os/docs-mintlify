@@ -2,7 +2,6 @@
 title: "Call Model — STT on edge"
 description: "Whisper.cpp and Faster Whisper catalog models, dependencies, and compile checks"
 icon: "microphone-lines"
-stub: true
 ---
 
 **Call Model** (`call_model`) nodes that select an **edge** or **hybrid** speech-to-text catalog model run inference on-device via `cw.models.load(...).predict(...)`. Cloud-only STT uses `client.mlmodels.run(...)` and does not require edge STT packages.

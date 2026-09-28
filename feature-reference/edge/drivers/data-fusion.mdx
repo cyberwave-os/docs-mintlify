@@ -1,22 +1,24 @@
 ---
-title: "Data Fusion Primitives"
+title: "Data fusion primitives"
 description: "Time-aware sensor fusion: interpolated point reads and time-window queries for multi-sensor edge workers."
 ---
 
-<Warning>
-**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
-</Warning>
+{/* TODO(docs): **STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update. */}
 
-The `cw.data` module provides time-aware fusion primitives for edge workers that fuse multiple sensor streams.
+`cyberwave.data.FusionLayer` provides time-aware fusion primitives for edge workers that fuse multiple sensor streams. `cw.data` (the data bus) does not expose them yet: create a `FusionLayer` and feed it with `ingest()`.
 
 ## `data.at()` — Interpolated point read
 
 Query a channel at an arbitrary timestamp. The SDK interpolates between the two nearest buffered samples. Returns `None` for unknown channels. When `t` falls outside the buffered range, the nearest boundary sample is returned (constant extrapolation).
 
 ```python
+from cyberwave.data import FusionLayer
+
+fusion = FusionLayer()   # feed it: fusion.ingest("joint_states", ts, sample)
+
 @cw.on_frame(twin_uuid)
 def servoing(frame, ctx):
-    joints = cw.data.at("joint_states", t=ctx.timestamp, interpolation="linear")
+    joints = fusion.at("joint_states", t=ctx.timestamp, interpolation="linear")
 ```
 
 ### Interpolation strategies
@@ -37,8 +39,8 @@ SLERP only triggers when values are wrapped in `Quaternion`. Plain `list[float]`
 ```python
 from cyberwave.data import Quaternion
 
-cw.data.ingest("orientation", ts, Quaternion(x=0, y=0, z=0.707, w=0.707))
-pose = cw.data.at("orientation", t=ctx.timestamp, interpolation="slerp")
+fusion.ingest("orientation", ts, Quaternion(x=0, y=0, z=0.707, w=0.707))
+pose = fusion.at("orientation", t=ctx.timestamp, interpolation="slerp")
 # pose is a Quaternion instance
 ```
 
@@ -49,8 +51,8 @@ Convention: Hamilton `(x, y, z, w)` — the same as ROS, MuJoCo, and the Cyberwa
 Return all buffered samples within a time range. The returned `WindowResult` is iterable.
 
 ```python
-imu_samples = cw.data.window("imu", from_t=prev_frame_ts, to_t=ctx.timestamp)
-recent_ft = cw.data.window("force_torque", duration_ms=100)
+imu_samples = fusion.window("imu", from_t=prev_frame_ts, to_t=ctx.timestamp)
+recent_ft = fusion.window("force_torque", duration_ms=100)
 
 for sample in recent_ft:
     process(sample.ts, sample.value)
@@ -73,7 +75,7 @@ Returns an empty `WindowResult` for unknown channels.
 Each channel gets a `deque`-backed ring buffer (default: 1000 samples, O(1) eviction). Configure per-channel depth before the first `ingest()`:
 
 ```python
-cw.data.configure_channel("imu", capacity=5000)
+fusion.configure_channel("imu", capacity=5000)
 ```
 
 Calling `configure_channel` after samples have already been ingested raises `ValueError`.

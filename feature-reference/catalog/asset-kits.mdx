@@ -1,0 +1,37 @@
+---
+title: "Asset kits"
+description: "Reuse robots and accessories as a docked assembly"
+---
+
+
+In **Catalog**, choose **Create kit**, name the kit, and select its workspace and
+visibility. Choose a base asset, add accessories, and set each accessory's parent,
+attachment link, offset in metres, and rotation. Save the kit.
+
+Kits appear alongside assets with a **Kit** badge. Their detail pages link to each
+component and show its usual detail tabs. Purchase and monthly prices total the
+component prices; an unknown component price leaves the total unavailable.
+
+**Use in environment** adds the components together with the saved docking layout.
+You need access to every component and permission to add twins to the environment.
+Editing a kit affects future deployments, not existing twins. Kits contain 2–50
+individual assets and one base; nested kits are not supported.
+
+```python
+kit = client.assets.create_kit(
+    "Robot with camera",
+    [
+        {"key": "robot", "asset_uuid": robot_uuid},
+        {"key": "camera", "asset_uuid": camera_uuid,
+         "parent_key": "robot", "position": [0, 0, 0.25]},
+    ],
+    workspace_uuid=workspace_uuid,
+)
+twins = client.assets.instantiate_kit(kit["asset"]["uuid"], environment_uuid)
+```
+
+List parents before children. Omit the attachment link to use the parent's root.
+Rotations use quaternions in `[w,x,y,z]` order. Use `client.assets.get_kit(uuid)`
+and `client.assets.update_kit(...)` to inspect or replace a saved kit.
+An update preserves the existing description and visibility when those arguments
+are omitted.

@@ -1,10 +1,8 @@
 ---
-title: "Speech to Text"
-description: "Transcribe robot audio with Whisper MLModels in workflows, REST calls, or edge workers"
+title: "Speech-to-text models"
+description: "Transcribe robot audio with Whisper models in workflows, REST calls, or edge workers"
 icon: "microphone"
 ---
-
-stub
 
 Cyberwave exposes speech-to-text as an `MLModel`, not as a ROS intelligence layer. Audio goes in, a JSON transcript comes out, and the same model can be called from `POST /api/v1/mlmodels/{uuid}/run` or a workflow `CALL_MODEL` node.
 

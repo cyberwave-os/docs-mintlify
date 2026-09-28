@@ -47,7 +47,7 @@ The Environment must belong to the token's workspace.
 
 ```bash
 curl -N -X POST "https://api.cyberwave.com/api/v1/a2a" \
-  -H "Authorization: Bearer $CYBERWAVE_API_TOKEN" \
+  -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
   -H "Content-Type: application/json" \
   -H "Accept: text/event-stream" \
   -d '{
@@ -168,8 +168,6 @@ When implementing a reader:
 
 ## Environment control policy
 
-> stub
-
 The selected Environment controls which execution routes A2A may use:
 
 | Environment setting | A2A behavior |
@@ -219,7 +217,7 @@ same endpoint with `params.id`. Use an API token from the same workspace:
 
 ```bash
 curl -N -X POST "https://api.cyberwave.com/api/v1/a2a" \
-  -H "Authorization: Bearer $CYBERWAVE_API_TOKEN" \
+  -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
   -H "Content-Type: application/json" \
   -H "Accept: text/event-stream" \
   -d '{
@@ -253,7 +251,7 @@ recover the existing task without dispatching it again.
 
 ```bash
 curl -X POST "https://api.cyberwave.com/api/v1/a2a" \
-  -H "Authorization: Bearer $CYBERWAVE_API_TOKEN" \
+  -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",

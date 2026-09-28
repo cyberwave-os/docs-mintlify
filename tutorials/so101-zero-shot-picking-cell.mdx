@@ -1,6 +1,6 @@
 ---
 title: "Order-driven zero-shot picking with an SO-101"
-sidebarTitle: "SO-101: Zero-Shot Picking Cell"
+sidebarTitle: "SO-101: zero-shot picking cell"
 description: "Take a warehouse order over HTTP, find the named item with a hosted VLM, pick it, and verify with a second look before reporting the order fulfilled."
 icon: "boxes-packing"
 iconType: "solid"
@@ -75,8 +75,8 @@ from cyberwave import Cyberwave
 from cyberwave.twin.capabilities import controllable_joint_names
 
 cw = Cyberwave()
-cw.affect("simulation")
 robot = cw.twin(twin_id="<YOUR_TWIN_UUID>")
+cw.affect("simulation")   # after cw.twin(): it starts MuJoCo for this twin's environment (billable)
 
 CANONICAL = ("1", "2", "3", "4", "5", "6")
 actual = controllable_joint_names(robot)     # e.g. ['_1', '_2', '_3', '_4', '_5', '_6']
@@ -195,8 +195,8 @@ This is the zero-shot part: the order's item string is the prompt, nothing is pr
 `mlmodels` is a property on the client instance, not a module-level function.
 
 ```python
-result = cw.mlmodels.run(
-    model="gemini-robotics-er",
+result = cw.models.run(
+    "gemini-robotics-er",
     image="frame.jpg",
     prompt="red marker",             # the order's item name, verbatim
     structured_task="detect_points",

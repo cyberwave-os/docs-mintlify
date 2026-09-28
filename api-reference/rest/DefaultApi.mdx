@@ -144,9 +144,7 @@ All URIs are relative to _http://localhost_
 | [**src_app_api_keybindings_get_keybinding**](#src_app_api_keybindings_get_keybinding)                                                     | **GET** `/api/v1/keybindings/{uuid}`                                                  | Get Keybinding                          |
 | [**src_app_api_keybindings_list_keybindings**](#src_app_api_keybindings_list_keybindings)                                                 | **GET** /api/v1/keybindings                                                         | List Keybindings                        |
 | [**src_app_api_keybindings_update_keybinding**](#src_app_api_keybindings_update_keybinding)                                               | **PUT** `/api/v1/keybindings/{uuid}`                                                  | Update Keybinding                       |
-| [**src_app_api_labs_admin_force_end_session**](#src_app_api_labs_admin_force_end_session)                                                 | **DELETE** `/api/v1/labs/milan-so101/admin/sessions/{session_uuid}`                   | Admin Force End Session                 |
 | [**src_app_api_labs_end_milan_lab_session**](#src_app_api_labs_end_milan_lab_session)                                                     | **DELETE** /api/v1/labs/milan-so101/end-session                                     | End Milan Lab Session                   |
-| [**src_app_api_labs_get_admin_lab_overview**](#src_app_api_labs_get_admin_lab_overview)                                                   | **GET** /api/v1/labs/milan-so101/admin/sessions                                     | Get Admin Lab Overview                  |
 | [**src_app_api_labs_get_milan_lab_status**](#src_app_api_labs_get_milan_lab_status)                                                       | **GET** /api/v1/labs/milan-so101/status                                             | Get Milan Lab Status                    |
 | [**src_app_api_labs_request_milan_lab_access**](#src_app_api_labs_request_milan_lab_access)                                               | **POST** /api/v1/labs/milan-so101/request-access                                    | Request Milan Lab Access                |
 | [**src_app_api_maps_create_map**](#src_app_api_maps_create_map)                                                                           | **POST** /api/v1/maps                                                               | Create Map                              |
@@ -10952,82 +10950,6 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-# **src_app_api_labs_admin_force_end_session**
-
-> EndSessionResponseSchema src_app_api_labs_admin_force_end_session(session_uuid)
-
-Admin Force End Session
-
-Staff-only: force-end any session or remove a user from the queue.
-
-### Example
-
-- Api Key Authentication (CustomTokenAuthentication):
-
-```python
-import cyberwave.rest
-from cyberwave.rest.models.end_session_response_schema import EndSessionResponseSchema
-from cyberwave.rest.rest import ApiException
-from pprint import pprint
-
-# Defining the host is optional and defaults to http://localhost
-# See configuration.py for a list of all supported configuration parameters.
-configuration = cyberwave.rest.Configuration(
-    host = "http://localhost"
-)
-
-# The client must configure the authentication and authorization parameters
-# in accordance with the API server security policy.
-# Examples for each auth method are provided below, use the example that
-# satisfies your auth use case.
-
-# Configure API key authorization: CustomTokenAuthentication
-configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
-
-# Enter a context with an instance of the API client
-with cyberwave.rest.ApiClient(configuration) as api_client:
-    # Create an instance of the API class
-    api_instance = cyberwave.rest.DefaultApi(api_client)
-    session_uuid = 'session_uuid_example' # str |
-
-    try:
-        # Admin Force End Session
-        api_response = api_instance.src_app_api_labs_admin_force_end_session(session_uuid)
-        print("The response of DefaultApi->src_app_api_labs_admin_force_end_session:\n")
-        pprint(api_response)
-    except Exception as e:
-        print("Exception when calling DefaultApi->src_app_api_labs_admin_force_end_session: %s\n" % e)
-```
-
-### Parameters
-
-| Name             | Type    | Description | Notes |
-| ---------------- | ------- | ----------- | ----- |
-| **session_uuid** | **str** |             |
-
-### Return type
-
-[**EndSessionResponseSchema**](/api-reference/rest/EndSessionResponseSchema)
-
-### Authorization
-
-CustomTokenAuthentication
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: application/json
-
-### HTTP response details
-
-| Status code | Description | Response headers |
-| ----------- | ----------- | ---------------- |
-| **200**     | OK          | -                |
-
-
 # **src_app_api_labs_end_milan_lab_session**
 
 > EndSessionResponseSchema src_app_api_labs_end_milan_lab_session()
@@ -11087,79 +11009,6 @@ This endpoint does not need any parameter.
 ### Return type
 
 [**EndSessionResponseSchema**](/api-reference/rest/EndSessionResponseSchema)
-
-### Authorization
-
-CustomTokenAuthentication
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: application/json
-
-### HTTP response details
-
-| Status code | Description | Response headers |
-| ----------- | ----------- | ---------------- |
-| **200**     | OK          | -                |
-
-
-# **src_app_api_labs_get_admin_lab_overview**
-
-> AdminLabOverviewSchema src_app_api_labs_get_admin_lab_overview()
-
-Get Admin Lab Overview
-
-Staff-only: overview of active session, queue, and recent history.
-
-### Example
-
-- Api Key Authentication (CustomTokenAuthentication):
-
-```python
-import cyberwave.rest
-from cyberwave.rest.models.admin_lab_overview_schema import AdminLabOverviewSchema
-from cyberwave.rest.rest import ApiException
-from pprint import pprint
-
-# Defining the host is optional and defaults to http://localhost
-# See configuration.py for a list of all supported configuration parameters.
-configuration = cyberwave.rest.Configuration(
-    host = "http://localhost"
-)
-
-# The client must configure the authentication and authorization parameters
-# in accordance with the API server security policy.
-# Examples for each auth method are provided below, use the example that
-# satisfies your auth use case.
-
-# Configure API key authorization: CustomTokenAuthentication
-configuration.api_key['CustomTokenAuthentication'] = os.environ["API_KEY"]
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['CustomTokenAuthentication'] = 'Bearer'
-
-# Enter a context with an instance of the API client
-with cyberwave.rest.ApiClient(configuration) as api_client:
-    # Create an instance of the API class
-    api_instance = cyberwave.rest.DefaultApi(api_client)
-
-    try:
-        # Get Admin Lab Overview
-        api_response = api_instance.src_app_api_labs_get_admin_lab_overview()
-        print("The response of DefaultApi->src_app_api_labs_get_admin_lab_overview:\n")
-        pprint(api_response)
-    except Exception as e:
-        print("Exception when calling DefaultApi->src_app_api_labs_get_admin_lab_overview: %s\n" % e)
-```
-
-### Parameters
-
-This endpoint does not need any parameter.
-
-### Return type
-
-[**AdminLabOverviewSchema**](/api-reference/rest/AdminLabOverviewSchema)
 
 ### Authorization
 

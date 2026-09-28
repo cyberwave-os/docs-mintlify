@@ -2,7 +2,6 @@
 title: "Sound Security Guard (SSG)"
 description: "AST-based acoustic event detection for security and safety monitoring."
 icon: "siren-on"
-stub: true
 ---
 
 **Sound Security Guard** monitors audio for a **single active scenario** at a time using the pretrained [Audio Spectrogram Transformer](https://huggingface.co/MIT/ast-finetuned-audioset-10-10-0.4593) (`MIT/ast-finetuned-audioset-10-10-0.4593`). The model outputs 527 AudioSet class probabilities (multi-label sigmoid). No fine-tuning is required—scenarios map to existing AudioSet label strings.

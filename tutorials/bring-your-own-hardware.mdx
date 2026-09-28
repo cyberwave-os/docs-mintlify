@@ -1,7 +1,7 @@
 ---
 title: "Bring your own hardware"
-sidebarTitle: "Bring Your Own Hardware"
-description: "Integrate a custom hardware device with Cyberwave: create an asset from its URDF, write a driver, declare the cw-driver.yml interface, and run it as a digital twin."
+sidebarTitle: "Bring your own hardware"
+description: "Integrate a custom device with Cyberwave: create an asset from its URDF, write a driver, declare its cw-driver.yml interface, and run it as a twin."
 icon: "plug"
 ---
 
@@ -34,7 +34,7 @@ You build two things: an **asset** (the 3D and kinematic definition of the hardw
 
   <Tab title="Cyberwave account">
     - A Cyberwave account ([request access](https://cyberwave.com/request-early-access) if you don't have one)
-    - An API token from your dashboard (**Profile → API Keys**)
+    - An API token from your dashboard (**Profile → Access**, see [API tokens](/feature-reference/api-tokens))
   </Tab>
 
   <Tab title="Dev tools">
@@ -361,10 +361,10 @@ Once `cw-driver.yml` is written, register it on **your** twin with the Python SD
 from cyberwave import Cyberwave
 
 cw = Cyberwave(api_key="...")
-twin = cw.twin("your-twin-uuid")   # the twin from Step 3
+twin = cw.twin(twin_id="your-twin-uuid")   # the twin from Step 3
 
 # Compile cw-driver.yml, persist on this twin, re-bind catalog methods
-twin.commands.set_schema("./cw-driver.yml")
+twin.driver.set_schema("./cw-driver.yml")
 
 # Inspect the catalog the UI and SDK now use
 print(twin.commands.get_schema()["commands"]["supported"])

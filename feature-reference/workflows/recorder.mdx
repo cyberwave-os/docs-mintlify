@@ -1,7 +1,6 @@
 ---
 title: "Recorder node"
 description: "Start or stop audio/video recording on a twin via the media service from a workflow."
-tag: stub
 ---
 
 The **Recorder** (`recorder`) node publishes `start_recording` / `stop_recording` to a twin's `webrtc-command` MQTT topic so the media service persists the **already-running** WebRTC stream to its configured bucket. The node never carries the media itself — the camera or microphone must already be streaming.

@@ -1,6 +1,6 @@
 ---
 title: "Fold cloth with two SO-101 arms"
-sidebarTitle: "Cloth Folding (Dual SO-101)"
+sidebarTitle: "Cloth folding (dual SO-101)"
 description: "A bimanual SO-101 setup that learns to fold cloth from human demonstrations using SmolVLA, the Cyberwave platform, and an Intel RealSense camera."
 icon: "shirt"
 iconType: "solid"
@@ -89,9 +89,9 @@ You need one Cyberwave environment that contains **both** SO-101 arm pairs and t
 
 1. In the Cyberwave dashboard, click **New Environment** and give it a name (e.g. _"Cloth Folding"_).
 2. Click **Add from Catalog**, search for **SO101**, and add the **left** arm pair to the environment.
-3. Click **Add from Catalog** again and add the **right** arm pair as a second SO101 twin. Position both twins to mirror your physical layout.
+3. Click **Add from Catalog** again and add the **right** arm pair as a second SO-101 twin. Position both twins to mirror your physical layout.
 4. Click **Add from Catalog** again, search for **Standard Camera** (or your specific RealSense entry if available), and add it as a top-level twin. **Do not dock it under either arm** — it must stay overhead.
-5. Pair the hardware by following the terminal prompts from `cyberwave edge install`: select your environment, then pair each SO101 twin and the camera twin in turn. The drivers auto-install per twin.
+5. Pair the hardware by following the terminal prompts from `cyberwave edge install`: select your environment, then pair each SO-101 twin and the camera twin in turn. The drivers auto-install per twin.
 
 <Tip>
   **Lock the camera and table.** SmolVLA learns the visual task from this exact
@@ -110,9 +110,9 @@ Calibration teaches the software where each joint's zero position is, what its v
 </Warning>
 
 1. Open the **Cyberwave dashboard** and navigate to your environment.
-2. Select the **left** SO101 twin. You'll see an option to **Calibrate** both arms (leader and follower).
+2. Select the **left** SO-101 twin. You'll see an option to **Calibrate** both arms (leader and follower).
 3. Click **Calibrate** and follow the on-screen prompts: manually move every joint of the leader arm through its full range, then repeat for the follower.
-4. Repeat the entire flow for the **right** SO101 twin.
+4. Repeat the entire flow for the **right** SO-101 twin.
 5. Once all four arms are calibrated, the platform confirms calibration is complete.
 
 <Tip>
@@ -147,7 +147,7 @@ Once both pairs are paired and calibrated, you can register the twins in code fo
 from cyberwave import Cyberwave
 
 cw = Cyberwave(api_key="your_api_key")
-cw.affect("live")  # Essential: starts MQTT connection
+cw.affect("live")  # target the real robots (live is also the default)
 
 left = cw.twin(
     "the-robot-studio/so101",

@@ -8,24 +8,24 @@ import EarlyAccess from "/snippets/early-access.mdx";
 
 <EarlyAccess />
 
-The Cyberwave Python SDK (`cyberwave`) lets you control robots, manage digital twins, and stream sensor data with a few lines of Python. This guide takes you from an empty terminal to a moving robot in simulation, no hardware required.
+The Cyberwave Python SDK (`cyberwave`) lets you control robots, manage digital twins, and stream sensor data with a few lines of Python. This guide takes you from an empty terminal to a moving robot in the free Playground simulation, no hardware required.
 
 <Note>
-  Already comfortable with the basics? The [full Python SDK reference](/overview/tools/python-sdk) covers joint control, video streaming, workflows, datasets, ML models, and more.
+  Already comfortable with the basics? The [full Python SDK reference](/overview/tools/python-sdk) covers joint control, video streaming, workflows, datasets, AI models, and more.
 </Note>
 
 ## Prerequisites
 
 - **Python 3.10 or higher** installed on your machine
-- A **Cyberwave account** ([signup now](https://cyberwave.com/signup) if you don't have one)
+- A **Cyberwave account** ([request early access](https://cyberwave.com/request-early-access) if you don't have one)
 - A **Cyberwave API key** (we'll generate one in Step 2)
 
 ## Step 1: Install the SDK
 
-Install `cyberwave` from PyPI:
+Install the SDK and CLI from PyPI:
 
 ```bash
-pip install cyberwave
+pip install cyberwave cyberwave-cli
 ```
 
 Verify the install:
@@ -38,10 +38,10 @@ cyberwave --help
 
 <Steps>
   <Step title="Open your profile">
-    Go to the [Cyberwave dashboard](https://cyberwave.com/profile) and open the **API Tokens** section of your Profile page.
+    Go to your [Cyberwave profile](https://cyberwave.com/profile) and open **Profile → Access**.
   </Step>
   <Step title="Create a new key">
-    Click **Create Token**, give it a name (e.g. "Quickstart"), and copy the key. You won't be able to see it again, so store it somewhere safe.
+    Create a user token, give it a name (e.g. "Quickstart"), choose the workspaces it can act in, and copy the key. You won't be able to see it again, so store it somewhere safe. See [API tokens](/feature-reference/api-tokens) for scopes and service tokens.
   </Step>
 </Steps>
 
@@ -51,6 +51,12 @@ The SDK reads your API key from the `CYBERWAVE_API_KEY` environment variable. Th
 
 ```bash
 export CYBERWAVE_API_KEY="your_api_key_here"
+```
+
+If your token is scoped to more than one workspace, also tell the SDK which one to use. Otherwise requests fail with `400 workspace_required`:
+
+```bash
+export CYBERWAVE_WORKSPACE_ID="your_workspace_uuid"   # or Cyberwave(workspace_id=...)
 ```
 
 Then initialize the client with no arguments:
@@ -67,28 +73,36 @@ cw = Cyberwave()  # picks up CYBERWAVE_API_KEY automatically
 
 ## Step 4: Control your first robot
 
-The snippet below creates a digital twin of an [SO101 robot arm](https://cyberwave.com/catalog), runs it **in simulation**, and moves one of its joints. Nothing here touches physical hardware, so it's safe to run as-is.
+The snippet below creates a digital twin of an [SO-101 robot arm](https://cyberwave.com/catalog), runs it in the free **Playground** simulation, and moves one of its joints. Nothing here touches physical hardware, so it's safe to run as-is.
 
 ```python
-import math
+import time
 from cyberwave import Cyberwave
 
 # 1. Connect (reads CYBERWAVE_API_KEY from your environment)
 cw = Cyberwave()
 
-# 2. Run against the simulation, not a physical robot
-cw.affect("simulation")
-
-# 3. Create (or fetch) a digital twin from the asset catalog
+# 2. Create (or fetch) a digital twin from the asset catalog
 robot = cw.twin("the-robot-studio/so101")
 
-# 4. Move a joint — 45 degrees on the shoulder
+# 3. Run against the free Playground simulation, not a physical robot
+cw.affect("playground")
+
+# 4. Take control of the twin before the first command
+robot.policy.ensure_attached()
+time.sleep(2)
+
+# 5. Move a joint — 45 degrees on the shoulder
 robot.joints.set("shoulder_pan", 45, degrees=True)
 
-# 5. Read it back
+# 6. Read it back (positions are in radians)
 print("Joints:", robot.joints.list())
-robot.joints.print_joint_states()
+print("States:", robot.joints.get())
 ```
+
+<Note>
+  `cw.affect("simulation")` is different: it starts a MuJoCo physics simulation, a billable cloud instance that uses [credits](/billing/credits) (about 0.6 credits per hour). Use it when you need physics or rendered camera frames. `"playground"` is free.
+</Note>
 
 Run it:
 
@@ -96,8 +110,21 @@ Run it:
 python quickstart.py
 ```
 
+You should see output like this (UUIDs, URLs and joint lists will differ):
+
+```text
+[Cyberwave] No environment specified — created a new 'Quickstart Environment'.
+  View it at: https://cyberwave.com/...
+  Tip: set environment_id= (or CYBERWAVE_ENVIRONMENT_ID) to skip this step.
+Twin <uuid>: controller policy was just attached. This command may have been lost while the robot was still setting up; retry in a few seconds.
+Joints: ['shoulder_pan', ...]
+States: JointStateView({'shoulder_pan': 0.785..., ...})
+```
+
+The "may have been lost" warning appears only on the first run, when the controller is attached. The `time.sleep(2)` covers it.
+
 <Check>
-  If you see a table of joint states printed to your terminal, it worked. Open the twin's environment in the [dashboard](https://cyberwave.com) to watch the arm move in the 3D viewport.
+  If you see the joint names and their positions, it worked. `joints.get()` returns a live dict that keeps updating. Open the link the SDK printed to watch the arm move in the 3D viewport.
 </Check>
 
 ## What just happened
@@ -106,11 +133,14 @@ python quickstart.py
   <Accordion title="cw = Cyberwave()">
     Creates the SDK client and authenticates using your API key. It establishes connections to both the REST API (for twins, catalog, workflows) and the MQTT API (for real-time control).
   </Accordion>
-  <Accordion title='cw.affect("simulation")'>
-    Tells the SDK that your commands should drive the **digital twin in simulation** rather than a physical robot. Switch to `cw.affect("live")` later to run the exact same code against real hardware.
-  </Accordion>
   <Accordion title='cw.twin("the-robot-studio/so101")'>
-    Resolves the `vendor/model` asset from the catalog and returns a twin. If you don't have an environment yet, the SDK auto-creates a "Quickstart Environment" and places the twin there.
+    Resolves the `vendor/model` asset from the catalog and returns a twin. If you don't have an environment yet, the SDK auto-creates a "Quickstart Environment", places the twin there, and prints its URL. Create the twin before calling `cw.affect(...)`, so the client knows which environment to use.
+  </Accordion>
+  <Accordion title='cw.affect("playground")'>
+    Tells the SDK that your commands should drive the **digital twin in the Playground**, a free kinematic simulation, rather than a physical robot. Switch to `cw.affect("live")` later to run the exact same code against real hardware.
+  </Accordion>
+  <Accordion title="robot.policy.ensure_attached()">
+    Exactly one controller drives a twin at a time. This attaches a teleop controller policy so the SDK can send joint commands. The first command would do it anyway, but that command can be lost while the controller starts, so attach first and wait a moment.
   </Accordion>
   <Accordion title='robot.joints.set("shoulder_pan", 45, degrees=True)'>
     Sends a real-time joint command. Positions default to **radians** — pass `degrees=True` to use degrees instead.
@@ -128,12 +158,14 @@ Once the quickstart runs, swap in these snippets to explore other capabilities:
     robot.edit_rotation(yaw=90)
     ```
   </Tab>
-  <Tab title="Capture a frame">
+  <Tab title="Get a camera frame">
     ```python
-    # Grab the latest camera frame — no streaming setup needed
-    path = robot.capture_frame()          # saves a JPEG, returns the path
-    frame = robot.capture_frame("numpy")  # numpy BGR array
+    # Only camera twins have get_frame(); the SO-101 arm does not
+    camera = cw.twin("cyberwave/standard-cam")
+    path = camera.get_frame("path")       # saves a JPEG, returns the path (or None)
+    frame = camera.get_frame("numpy")     # numpy BGR array (or None)
     ```
+    Frames come from a paired camera in live mode, or from a running MuJoCo simulation. In the Playground, `get_frame()` raises `SimulationNotRunningError`.
   </Tab>
   <Tab title="Search the catalog">
     ```python
@@ -144,7 +176,7 @@ Once the quickstart runs, swap in these snippets to explore other capabilities:
   <Tab title="Drive a different robot">
     ```python
     dog = cw.twin("unitree/go2")
-    dog.move_forward(distance=1.0)
+    dog.move_forward(0.5)   # speed in m/s for 1 s, then stop
     ```
   </Tab>
 </Tabs>
@@ -158,13 +190,16 @@ cw.affect("live")   # commands now go to the real robot
 robot.joints.set("shoulder_pan", 45, degrees=True)
 ```
 
-To connect real hardware, pair a device running the Cyberwave Edge Core. See [Connecting to hardware](/overview/connecting-hardware/index) for the full walkthrough.
+To connect real hardware, pair a device running the Cyberwave Edge Core (`sudo cyberwave pair` on Linux). See [Connecting to hardware](/overview/supported-hardware) for the full walkthrough. Without a paired device, live commands are sent but nothing moves.
 
 ## Troubleshooting
 
 <AccordionGroup>
   <Accordion title="Authentication error / no API key found">
     Make sure `CYBERWAVE_API_KEY` is exported in the **same terminal session** where you run your script. Verify with `echo $CYBERWAVE_API_KEY`. If you opened a new terminal, re-export it or add it to your shell profile / a `.env` file.
+  </Accordion>
+  <Accordion title="400 workspace_required">
+    Your token covers several workspaces. Set `CYBERWAVE_WORKSPACE_ID` to the workspace you want (the error lists them), or pass `Cyberwave(workspace_id=...)`.
   </Accordion>
   <Accordion title="Asset not found">
     Confirm the `vendor/model` identifier exists in the [catalog](https://cyberwave.com/catalog). You can also search programmatically with `cw.assets.search("so101")`.
@@ -174,19 +209,21 @@ To connect real hardware, pair a device running the Cyberwave Edge Core. See [Co
   </Accordion>
 </AccordionGroup>
 
+More errors, with exact messages and fixes: [Troubleshooting](/support/troubleshooting).
+
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Full Python SDK reference" icon="python" href="/overview/tools/python-sdk">
-    Joint control, video streaming, workflows, alerts, datasets, and ML models
+    Joint control, video streaming, workflows, alerts, datasets, and AI models
   </Card>
-  <Card title="Develop in simulation" icon="hand-wave" href="/overview/hello-robot">
-    Control a robot from the browser with no code
+  <Card title="Your first AI loop" icon="wand-magic-sparkles" href="/overview/first-ai-loop">
+    A webcam spots a cup or bottle; an SO-101 twin picks and sorts it
   </Card>
-  <Card title="Connect hardware" icon="plug" href="/overview/connecting-hardware/index">
+  <Card title="Connect hardware" icon="plug" href="/overview/supported-hardware">
     Pair a real robot with your digital twin
   </Card>
-  <Card title="Browse the catalog" icon="book-open" href="https://cyberwave.com/catalog">
-    Explore 90+ supported robots, cameras, and sensors
+  <Card title="Troubleshooting" icon="screwdriver-wrench" href="/support/troubleshooting">
+    Exact error messages, causes, and fixes
   </Card>
 </CardGroup>

@@ -1,11 +1,10 @@
 ---
 title: "Audio Assistant"
-description: "Voice Activity Detection (VA) and acoustic event detection (SSG) for edge audio workflows."
+description: "Speech segmentation with Voice Assistant (VA) and acoustic event detection with Sound Security Guard (SSG) for edge audio workflows."
 icon: "volume-high"
-stub: true
 ---
 
-The **Audio Assistant** node sits between an [Audio Track](/use-cyberwave/workflows/audio-track/overview) trigger and downstream nodes (STT, alerts, models). It normalizes all input to **PCM S16LE int16 @ 16 kHz mono** via the shared audio ingress layer—the same contract as the rest of the audio pipeline.
+The **Audio Assistant** node sits between an [Audio Track](/feature-reference/workflows/audio-track/overview) trigger and downstream nodes (STT, alerts, models). It normalizes all input to **PCM S16LE int16 @ 16 kHz mono** via the shared audio ingress layer—the same contract as the rest of the audio pipeline.
 
 ## Pipeline position
 
@@ -47,7 +46,7 @@ Audio Assistant nodes are **edge-only**. Workflows compile to a `wf_*.py` worker
 
 ```bash
 cyberwave workflow compile <workflow-uuid>    # inspect emitted source + warnings
-cyberwave workflow sync --twin-uuid <twin>  # deploy to edge
+cyberwave workflow sync <workflow-uuid>      # deploy to edge
 ```
 
 Typical chain:
@@ -76,6 +75,6 @@ SSG on bare-metal edges downloads `MIT/ast-finetuned-audioset-10-10-0.4593` on f
 
 ## Pages
 
-- [Voice Assistant (VAD)](/use-cyberwave/workflows/audio-assistant/voice-assistant)
-- [Sound Security Guard (AED)](/use-cyberwave/workflows/audio-assistant/sound-security-guard)
-- [Technical reference](/use-cyberwave/workflows/audio-assistant/technical-reference)
+- [Voice Assistant (VAD)](/feature-reference/workflows/audio-assistant/voice-assistant)
+- [Sound Security Guard (AED)](/feature-reference/workflows/audio-assistant/sound-security-guard)
+- [Technical reference](/feature-reference/workflows/audio-assistant/technical-reference)

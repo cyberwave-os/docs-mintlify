@@ -1,12 +1,12 @@
 ---
-title: "Workflows"
+title: "Build and run workflows"
 description: "Automate robot operations with visual workflow orchestration"
 icon: "diagram-project"
 ---
 
 ## What are Workflows?
 
-stub: Failed simulation runs show their runtime alerts in **Simulate**. Open the execution details to inspect the failure.
+Failed simulation runs show their runtime alerts in **Simulate**. Open the execution details to inspect the failure.
 
 Workflows in Cyberwave let you create automated sequences of robot operations. Connect nodes visually to build complex behaviors without writing procedural code.
 
@@ -20,7 +20,7 @@ Workflows can run **on the cloud** (Celery tasks) or **on the edge device** depe
 
 Nodes are the building blocks of workflows. Each node performs a specific action.
 
-> stub: Nodes are organised into a hybrid robotics + automation taxonomy. The same categories show up in the editor palette and on `GET /api/v1/workflows/config` (`node_categories`), so the docs, the API, and the UI all read from the same `WorkflowNodeCategory` enum (see `cyberwave-backend/src/lib/node_categories.py`). Categories with no nodes today (Perception) are reserved — they appear in the API response but are hidden in the palette until they ship.
+Nodes are organised into a hybrid robotics + automation taxonomy. The same categories show up in the editor palette and on `GET /api/v1/workflows/config` (`node_categories`), so the docs, the API, and the UI all read from the same `WorkflowNodeCategory` enum (see `cyberwave-backend/src/lib/node_categories.py`). Categories with no nodes today (Perception) are reserved — they appear in the API response but are hidden in the palette until they ship.
 
 <CardGroup cols={2}>
   <Card title="Triggers" icon="bolt">
@@ -101,7 +101,7 @@ Connection validation prevents invalid graphs: trigger nodes cannot accept incom
         Configure each node's parameters (twin UUID, model, confidence threshold, send-alert metadata, etc.).
       </Step>
       <Step title="Activate">
-        Click **Activate**. Edge workflows (`run_on_edge: true`) automatically publish a `sync_workflows` MQTT command to each referenced twin's edge-core, which immediately pulls and reloads the freshly compiled worker — no CLI step needed. The editor locks the graph while active, so the natural edit flow (Deactivate → edit → Activate) republishes through the same signal. {/* stub */}
+        Click **Activate**. Edge workflows (`run_on_edge: true`) automatically publish a `sync_workflows` MQTT command to each referenced twin's Edge Core, which immediately pulls and reloads the freshly compiled worker — no CLI step needed. The editor locks the graph while active, so the natural edit flow (Deactivate → edit → Activate) republishes through the same signal. {/* stub */}
       </Step>
     </Steps>
   </Tab>
@@ -167,6 +167,13 @@ Connection validation prevents invalid graphs: trigger nodes cannot accept incom
 
 The `camera_frame` trigger is designed for on-device ML inference. The backend generates a Python worker file that runs directly on the edge — raw video frames never leave the device.
 
+{/* stub: Camera Frame source selection — pending editorial review */}
+Choose a **Source Twin** with a declared camera, then select **Source Sensor**.
+A twin with one camera fills the sensor automatically. Older saved camera values
+remain visible until you choose a declared camera. Source selection does not
+activate the workflow.
+
+
 ### How it works
 
 ```mermaid
@@ -216,7 +223,7 @@ Existing workflows continue to load and run inference, but **stop emitting alert
 
 Activating a `run_on_edge` workflow auto-publishes the `sync_workflows` MQTT command for each referenced twin, so the edge picks up the worker within seconds — no manual step. The editor locks the graph while active, so the natural edit flow (Deactivate → edit → Activate) republishes through the same signal. {/* stub */}
 
-Reach for a manual sync only when the activation cycle can't fix it — e.g. a broker outage or edge-core restart swallowed the original nudge.
+Reach for a manual sync only when the activation cycle can't fix it — e.g. a broker outage or Edge Core restart swallowed the original nudge.
 
 ```bash
 # Interactive: picks the workflow, discovers target twins, sends sync via MQTT
@@ -234,9 +241,9 @@ For programmatic recovery, two HTTP endpoints publish the same MQTT command:
 - `POST /api/v1/workflows/{uuid}/sync-edge` — per-workflow fan-out across all referenced twins. Returns `{success, workflow_uuid, command, twin_uuids[], request_ids, skipped_reason}`. `200` covers both the success case and declarative no-ops (cloud-only workflows, workflows without a twin-bound node, references that have all gone stale or cross-workspace) — `skipped_reason` pins the case. Partial broker failures also stay on `200` with `skipped_reason: "MQTT publish failed for N of M twins"`. Total broker failure surfaces as `500` so retry/back-off logic can branch on status code rather than parsing the body.
 - `POST /api/v1/twins/{uuid}/sync-workflows` — twin-wide republish covering every active workflow on that twin's edge. Surfaced in the dashboard as the twin editor's **Force-sync all workflows** menu item.
 
-All five entry points (CLI workflow sync, CLI edge sync-workflows, `/workflows/{uuid}/sync-edge`, `/twins/{uuid}/sync-workflows`, twin editor menu) publish the identical MQTT command on `cyberwave/twin/{twin_uuid}/command`, which makes the edge-core run `reconcile_worker_sync` immediately instead of waiting for the next periodic cycle.
+All five entry points (CLI workflow sync, CLI edge sync-workflows, `/workflows/{uuid}/sync-edge`, `/twins/{uuid}/sync-workflows`, twin editor menu) publish the identical MQTT command on `cyberwave/twin/{twin_uuid}/command`, which makes Edge Core run `reconcile_worker_sync` immediately instead of waiting for the next periodic cycle.
 
-> stub: The CLI derives the MQTT topic prefix (`dev`, `staging`, empty for production) from `CYBERWAVE_ENVIRONMENT`/credentials and cross-checks it against the broker host before publishing. A mismatch (e.g. dev broker with production prefix) aborts with a clear error instead of silently shipping the command into a topic edge-core never subscribed to. Override with `CYBERWAVE_MQTT_TOPIC_PREFIX` if you really need to.
+The CLI derives the MQTT topic prefix (`dev`, `staging`, empty for production) from `CYBERWAVE_ENVIRONMENT`/credentials and cross-checks it against the broker host before publishing. A mismatch (e.g. dev broker with production prefix) aborts with a clear error instead of silently shipping the command into a topic Edge Core never subscribed to. Override with `CYBERWAVE_MQTT_TOPIC_PREFIX` if you really need to.
 
 The edge device also syncs automatically on boot and periodically (default ~5 min, configurable via `CYBERWAVE_WORKER_SYNC_INTERVAL_LOOPS`).
 
@@ -261,7 +268,7 @@ Workflows can be triggered by:
 Track workflow execution status and results:
 
 ```python
-runs = cw.workflow_runs.list(workflow_uuid="workflow-uuid")
+runs = cw.workflow_runs.list(workflow_id="workflow-uuid")
 
 for run in runs:
     print(f"Status: {run.status}, Started: {run.started_at}")
@@ -282,6 +289,25 @@ if wf.is_running():
 This returns `True` when any run has status `running`, `waiting`, or `requested`.
 
 In the dashboard, a **Running** indicator appears next to the Active badge in the workflow editor header whenever the workflow has an active execution. It refreshes automatically every 2 seconds.
+
+### Why a run is queued
+
+A run on an edge workflow starts as `requested` (shown as **Requested**) and becomes `running` only once the edge acknowledges it. If the edge is still bringing its worker up — downloading the worker image, installing it, then loading and warming up models — the run carries a `pending_reason` explaining what it is waiting for, with a percentage where one is available:
+
+```json
+{
+  "status": "requested",
+  "pending_reason": {
+    "reason": "worker_starting",
+    "message": "Downloading the worker image",
+    "progress_percent": 43
+  }
+}
+```
+
+`reason` is `worker_starting` when the edge is bringing the worker up, or `awaiting_edge` when the run has been sent but nothing has picked it up yet. The field is `null` on runs that are not waiting on an edge.
+
+The reason covers the worker's whole startup, including the models loading and warming up inside an already-started container — on a cold device the longest part of the wait. A run is not failed while the device is still reporting progress, and a run that the device picks up late is returned to **Running** rather than left marked failed. {/* stub */}
 
 ### Concurrent run controls
 
@@ -329,7 +355,7 @@ Compiler dispatch keys off the graph itself: a `twin_control` node renders throu
 
 ---
 
-## Code node (stub)
+## Code node
 
 The **Code** action node runs a user-supplied Python function on the edge. It is only valid on workflows with `run_on_edge: true` — Cyberwave never executes user-authored code on its own infrastructure.
 
@@ -338,3 +364,23 @@ The **Code** action node runs a user-supplied Python function on the edge. It is
 - **Validation**: The API parses the body with `ast.parse` on create/update and rejects syntax errors or missing `run` functions inline, before activation.
 - **Activation guards**: Activating a workflow is blocked if it contains a Code node and either (a) `run_on_edge` is false, or (b) the workflow uses a `camera_frame` trigger (not yet supported by the perception path of the edge compiler).
 - **Availability**: The node is always visible in the palette; it is disabled with an "Available only on run_on_edge workflows" tooltip when the workflow is not edge-bound.
+
+## Workflow assistant
+
+Select a workflow in the workbench, then use **Prompt** or the right-hand **Assistant** tab to edit it with the assistant. Click the assistant title in **Assistant** to switch between **Environment assistant** and **Workflow assistant**. When the workbench is closed, the workflow option is disabled and reads **Open the workbench**. The workbench shows node details only while a node inspector is open. Close it or clear the node selection to reclaim that space.
+
+## Edge voice workflows (audio + STT + control)
+
+Voice pipelines chain **Audio Track**, **Audio Assistant**, **Wake Word Engine**, **Call Model** (STT), **Fuzzy Matcher**, **Twin**, and **Virtual Controller**. Each node declares a minimal Python/SDK extra; the compile server validates imports before shipping `wf_*.py`.
+
+See **[Edge workflow dependencies](/feature-reference/workflows/edge-dependencies)** for the full matrix (compile server `base.txt`, edge worker extras, catalog STT models).
+
+| Doc                                                                        | Topic                                |
+| -------------------------------------------------------------------------- | ------------------------------------ |
+| [Audio in Workflows](/feature-reference/workflows/audio-in-workflows)      | PCM format, pipeline, compile checks |
+| [Call Model STT on edge](/feature-reference/workflows/call-model-stt-edge) | Whisper.cpp vs Faster Whisper        |
+| [Fuzzy Matcher](/feature-reference/workflows/fuzzy-matcher)                | Command matching after STT           |
+| [Twin](/feature-reference/workflows/twin)                                  | Twin + policy outputs → candidates   |
+| [Virtual Controller](/feature-reference/workflows/virtual-controller)      | MQTT dispatch                        |
+
+---

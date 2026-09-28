@@ -1,12 +1,10 @@
 ---
-title: "Security Pipeline (Multi-camera, Anonymising)"
+title: "Security pipeline (multi-camera, anonymising)"
 description: "Two cameras, one worker, zero raw video off the edge. End-to-end privacy-preserving detection pipeline."
 icon: "user-shield"
 ---
 
-<Warning>
-**STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update.
-</Warning>
+{/* TODO(docs): **STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update. */}
 
 A two-camera privacy-preserving worker. YOLOv8 detects each person, the worker pixelates their bbox, and the driver substitutes the anonymised frame into the WebRTC stream **before** the bytes leave the edge.
 
@@ -123,8 +121,8 @@ Pixelation is reversible by public depixelation models. It is *deliberate visual
 For deployments where the pixelation is just the privacy scaffold and
 the *actual* alert is "person loitering inside a restricted polygon",
 combine this driver setup with a workflow that wires
-[`spatial_filter`](/use-cyberwave/workflows/spatial-filter) and
-[`timed_condition`](/use-cyberwave/workflows/timed-condition) downstream of
+[`spatial_filter`](/feature-reference/workflows/spatial-filter) and
+[`timed_condition`](/feature-reference/workflows/timed-condition) downstream of
 `call_model` + `anonymize`. The polygon also renders as a read-only
 overlay on the twin's WebRTC stream so operators can see which zones
 are armed without opening every workflow.

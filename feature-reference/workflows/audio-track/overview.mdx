@@ -2,7 +2,6 @@
 title: "Audio Track"
 description: "Edge microphone trigger — stream PCM chunks into workflows via Zenoh."
 icon: "microphone"
-stub: true
 ---
 
 The **Audio Track** trigger fires for every buffered chunk from a twin's edge microphone. Audio is delivered over the Zenoh data bus and handled by `@cw.on_audio` in the compiled worker.
@@ -27,7 +26,7 @@ The compiler rejects incompatible pairings (e.g. 4 s chunks into Wake Word witho
 
 ```bash
 cyberwave workflow compile <uuid>
-cyberwave workflow sync --twin-uuid <twin>
+cyberwave workflow sync <uuid>
 ```
 
 ## Dependencies

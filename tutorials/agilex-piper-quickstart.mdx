@@ -1,6 +1,6 @@
 ---
 title: "Get started with the AgileX Piper arm"
-sidebarTitle: "AgileX Piper Quickstart"
+sidebarTitle: "AgileX Piper quickstart"
 description: "Bring up an AgileX Piper over CAN, pair it to Cyberwave, drive it from the keyboard, then control the same arm from the Python SDK."
 icon: "microchip"
 ---
@@ -76,7 +76,7 @@ Prove the arm is alive over CAN before involving Cyberwave. The canonical proced
 
 The catalog twin ships with the Piper's joint schema and capability metadata, so the Keyboard controller and the SDK both already know the joint names and per-joint limits.
 
-An [environment](/feature-reference/architecture/key-concepts#environments) is the 3D space that holds twins, sensors, and controllers.
+An [environment](/feature-reference/architecture/key-concepts#environment) is the 3D space that holds twins, sensors, and controllers.
 
 ---
 
@@ -116,7 +116,7 @@ Follow the prompts and select the Piper twin when asked.
 
 Pairing authenticated the edge host. To drive the arm from the SDK in Step 7, the machine running your Python also needs an API key and a target environment.
 
-1. In the dashboard, go to **Profile → API Tokens** and create a key. Copy it; it is shown once.
+1. In the dashboard, go to **Profile → Access** and create a token. Copy it; it is shown once.
 2. Grab the **environment UUID** from the environment's URL or settings panel.
 3. Export both in the shell that will run your script:
 
@@ -199,14 +199,13 @@ arm = cw.twin("agilex/piper")
 print(f"Joints: {arm.joints.list()}")
 
 # Positions are radians by default; pass degrees=True for degrees.
-with cw.affect("live"):
-    arm.joints.set("joint1", 30, degrees=True)   # base rotation
-    arm.joints.set("joint2", math.pi / 6)         # radians
-    arm.joints.set("gripper", 0, degrees=True)    # close the gripper
+cw.affect("live")                             # commands go to the real arm
+arm.joints.set("joint1", 30, degrees=True)    # base rotation
+arm.joints.set("joint2", math.pi / 6)         # radians
+arm.joints.set("gripper", 0, degrees=True)    # close the gripper
 
 # Read state back
-print(arm.joints.get_all())          # {name: radians}
-arm.joints.print_joint_states()      # formatted radians + degrees table
+print(arm.joints.get())              # live dict {name: radians}
 ```
 
 When the SDK session connects as a controller, the platform automatically swaps out the Keyboard controller from Step 6, so there is nothing to unassign by hand.
@@ -214,7 +213,7 @@ When the SDK session connects as a controller, the platform automatically swaps 
 `cw.affect()` selects the target. The same code drives the digital twin or the physical arm:
 
 ```python
-cw.affect("simulation")               # updates the twin only
+cw.affect("playground")               # moves the twin only (free)
 arm.joints.set("joint1", math.pi / 4)
 
 cw.affect("live")                     # drives the physical Piper
@@ -240,7 +239,7 @@ Validate a motion in `"simulation"` first, then flip to `"live"` once it looks r
 
 ## Reference
 
-- **SDK calls used**: `Cyberwave()`, `cw.twin()`, `cw.affect()`, `arm.joints.list()`, `arm.joints.set()`, `arm.joints.get_all()`, `arm.joints.print_joint_states()`. See [Python SDK](/overview/tools/python-sdk).
+- **SDK calls used**: `Cyberwave()`, `cw.twin()`, `cw.affect()`, `arm.joints.list()`, `arm.joints.set()`, `arm.joints.get()`. See [Python SDK](/overview/tools/python-sdk).
 - **MQTT topic**: `cyberwave/twin/{uuid}/joint_states`. See [MQTT API](/api-reference/mqtt/main).
 - **CAN transport**: Piper bus runs at 1 Mbps; bring `can0` up before pairing on Linux hosts.
 - **Cross-links**: [Robotic Arms overview](/overview/robotic-arms), [Piper catalog page](https://cyberwave.com/agilex/piper), [SO-101 Quickstart](/tutorials/so101-teleop-dataset) (record + train loop), [Key Concepts](/feature-reference/architecture/key-concepts), [Teleoperation](/feature-reference/environment-editor/teleoperation).

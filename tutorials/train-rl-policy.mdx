@@ -1,7 +1,7 @@
 ---
 title: "Train an RL policy in MuJoCo"
-sidebarTitle: "Train an RL Policy"
-description: "Export any Cyberwave environment to MuJoCo, train a reinforcement-learning policy locally with your own stack, mirror it into simulation over the SDK, then deploy it to the real robot. Same code, no re-modeling."
+sidebarTitle: "Train an RL policy"
+description: "Export a Cyberwave environment to MuJoCo, train an RL policy locally with your own stack, mirror it in simulation over the SDK, then deploy to the robot."
 icon: "graduation-cap"
 ---
 
@@ -66,7 +66,7 @@ The pipeline is five steps. You only ever build the scene once, and everything d
 
 - **Python 3.12** (via conda is easiest, since ML wheels lag the newest system Python)
 - A **Cyberwave environment** with your robot twin ([build one in the editor](/overview/features/environment) or [with the SDK](/overview/tools/python-sdk))
-- A **Cyberwave API key** ([Profile → API Tokens](https://cyberwave.com/profile))
+- A **Cyberwave API key** (**Profile → Access**, see [API tokens](/feature-reference/api-tokens))
 
 ```bash
 # Dedicated env
@@ -216,8 +216,8 @@ from cyberwave import Cyberwave
 from stable_baselines3 import PPO
 
 cw = Cyberwave()
-cw.affect("simulation")                 # commands drive the digital twin, not hardware
 arm = cw.twin("kinova-robotics/kortex-gen3-7dof-vision-robotiq2f85")
+cw.affect("playground")                 # free: commands drive the digital twin, not hardware
 
 JOINTS = [f"joint_{i}" for i in range(1, 8)]
 model = PPO.load("checkpoints/privileged")
@@ -235,7 +235,7 @@ for _ in range(500):
         obs, _ = env.reset()
 ```
 
-Because `affect("simulation")` is active, nothing here touches physical hardware, so it's safe to run while you iterate. Watch the twin move in the [dashboard](https://cyberwave.com) viewport to confirm the policy behaves the way it did in MuJoCo.
+Because `affect("playground")` is active, nothing here touches physical hardware, so it's safe to run while you iterate. Watch the twin move in the [dashboard](https://cyberwave.com) viewport to confirm the policy behaves the way it did in MuJoCo.
 
 <Note>
   `arm.joints.set({...})` publishes joint positions in **radians** by default (pass `degrees=True` for degrees). See the [Python SDK reference](/overview/tools/python-sdk#joint-control) for the full joint API.
@@ -249,10 +249,10 @@ the observation/action contract, calibration, timing, limits and stop behavior,
 then obtain explicit approval for a bounded physical trial.
 
 ```python
-cw.affect("live")   # was: cw.affect("simulation")
+cw.affect("live")   # was: cw.affect("playground")
 ```
 
-Everything below it is unchanged: the same `arm.joints.set({...})` calls now flow through Cyberwave's live-control path to the real robot (via the [Edge Core](/overview/connecting-hardware/index) paired with your twin).
+Everything below it is unchanged: the same `arm.joints.set({...})` calls now flow through Cyberwave's live-control path to the real robot (via the [Edge Core](/overview/supported-hardware) paired with your twin).
 
 <Warning>
   Test in `affect("simulation")` until you trust the policy. When you switch to `affect("live")`, start with a clear workspace, a hand on the e-stop, and conservative action limits.
@@ -298,7 +298,7 @@ If you deployed the **privileged baseline**, remember its observation included t
   <Card title="Train a VLA" icon="robot" href="/tutorials/train-vla-cyberwave">
     The imitation-learning counterpart to this tutorial.
   </Card>
-  <Card title="Connect hardware" icon="plug" href="/overview/connecting-hardware/index">
+  <Card title="Connect hardware" icon="plug" href="/overview/supported-hardware">
     Pair the Edge Core so `affect('live')` reaches your robot.
   </Card>
 </CardGroup>

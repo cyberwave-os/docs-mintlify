@@ -1,22 +1,25 @@
 ---
-title: "Models & Datasets"
+title: "Models & datasets"
 description: "Run any AI model (open-source, proprietary, your own) on any twin, with the data plumbing already taken care of"
 icon: "brain"
 ---
 
 AI models are how your [twins](/overview/features/digital-twin) stop being puppets and start being autonomous. Cyberwave is the substrate that gets them there: a growing [catalog of models](https://cyberwave.com/models), the infrastructure to run them on cloud or edge, and the [datasets](https://cyberwave.com/datasets) you need to train your own.
 
-To use a trained VLA on an arm, deploy it as a **controller policy**, then attach
-that policy to the arm twin from its settings in the dashboard. Deployment and
-attachment are setup steps; follow the
-[SO-101 voice pick-and-place walkthrough](/tutorials/so101-voice-pick-and-place)
-for training, deployment, and sending an instruction to execute the policy.
+```python
+from cyberwave import Cyberwave
 
-For mobile twins with navigation support, the SDK's
-`robot.navigation.use_controller(policy_uuid)` sets a default policy UUID for
-future navigation plans. It does not accept a model slug or start inference, and
-arm-only twins do not expose this API. See the
-[controller example](/overview/index#controllers).
+cw = Cyberwave()
+arm = cw.twins.get("acme/twins/arm-station-1")
+
+# Controller policies available for this twin, including models you published as controllers
+policies = arm.policy.list()
+vla = next(p for p in policies if p.name == "my-pick-and-place-vla")
+arm.policy.assign(vla)
+print(arm.policy.attached)
+```
+
+That's it: the model is now the twin's controller. The same assignment works in [simulation](/overview/features/simulation) and against live hardware. `cw.affect("simulation")` starts a MuJoCo instance, which uses [credits](/billing/credits). To publish a trained model as a controller, see [Uploading policies](/feature-reference/uploading-policies). No code? Use **Assign Controller** in the twin panel.
 
 ---
 
@@ -33,13 +36,13 @@ arm-only twins do not expose this API. See the
     [OpenVLA](/feature-reference/ml-models/openvla-oft-training) on the data
     you collected with your own robots, with no separate training stack.
   </Card>
-  <Card title="Register a custom model" icon="code" href="/feature-reference/ml-models/index#registering-a-model">
+  <Card title="Register a custom model" icon="code" href="/feature-reference/ml-models#registering-a-model">
     Bring your own weights or endpoint: Hugging Face, an internal inference
     server, a custom ONNX file. Cyberwave treats it as a first-class model.
   </Card>
 </CardGroup>
 
-Every registered model gets a [Model Playground](/feature-reference/ml-models/playground) page where you can try it on an image, see overlays, copy CLI/SDK snippets, and wire it into a workflow, so experimenting with a new model is genuinely one click.
+Every registered model gets a [model playground](/feature-reference/ml-models/playground) page where you can try it on an image, see overlays, copy CLI/SDK snippets, and wire it into a workflow, so experimenting with a new model is genuinely one click.
 
 ---
 
@@ -49,10 +52,10 @@ Cyberwave models compose with the rest of the platform. Same model, different ro
 
 | Where the model runs    | What it does                                                          | Reference                                                                              |
 | ----------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| **As a twin controller**| Drive a robot end-to-end (a VLA picks-and-places, an RL policy walks) | [Controllers](/overview/index#controllers)                                             |
+| **As a twin controller**| Drive a robot end-to-end (a VLA picks-and-places, an RL policy walks) | [Controllers](/feature-reference/online-controllers)                                             |
 | **Inside a workflow**   | One `call_model` node, runs cloud VLM or edge ML transparently        | [Workflow nodes](/feature-reference/workflows#workflow-components)                     |
-| **From the SDK**        | Async cloud calls for VLM / LLM tasks                                 | [`vlm_generation` / `llm_generation`](/tools/python-sdk#workflows)                     |
-| **In simulation**       | The same code drives a [MuJoCo twin](/overview/features/simulation)   | [`cw.affect("simulation")`](/tools/python-sdk#affect-simulation-vs-live-environment)   |
+| **From the SDK**        | Async cloud calls for VLM / LLM tasks                                 | [`vlm_generation` / `llm_generation`](/overview/tools/python-sdk#workflows)                     |
+| **In simulation**       | The same code drives a [MuJoCo twin](/overview/features/simulation)   | [`cw.affect("simulation")`](/overview/tools/python-sdk#affect-simulation-vs-live-environment)   |
 
 The best automations usually combine more than one: an edge YOLO that's cheap to run on every frame **and** a cloud VLM that reasons about the rare interesting frame. See the [edge-to-cloud VLM tutorial](/tutorials/edge-to-cloud-vlm) for that pattern end-to-end.
 
@@ -63,21 +66,21 @@ The best automations usually combine more than one: an edge YOLO that's cheap to
 Cyberwave runs models in both places, on purpose.
 
 <CardGroup cols={2}>
-  <Card title="Edge models" icon="microchip" href="/feature-reference/edge/workers/overview">
+  <Card title="Edge models" icon="microchip" href="/feature-reference/workflows/workers/overview">
     Local inference on your own hardware: fast, private, offline-capable.
     YOLO, SAM2, ONNX/TensorRT detectors all run inside the
-    [edge worker](/feature-reference/edge/workers/overview) generated from
+    [edge worker](/feature-reference/workflows/workers/overview) generated from
     your workflow.
   </Card>
-  <Card title="Cloud models" icon="cloud" href="/tools/cloud-node">
+  <Card title="Cloud models" icon="cloud" href="/overview/tools/cloud-node">
     Heavy-weight VLMs and VLAs (Gemini Robotics, GPT-5, OpenVLA) run on a
-    [Cloud Node](/tools/cloud-node) or
-    [VLA Cloud Node](/tools/vla-cloud-node) with a GPU attached; Cyberwave
+    [Cloud Node](/overview/tools/cloud-node) or
+    [VLA Cloud Node](/overview/tools/vla-cloud-node) with a GPU attached; Cyberwave
     handles the provisioning.
   </Card>
 </CardGroup>
 
-You don't manage any of the boring parts: weight downloads, GPU provisioning, picking the right edge-compatible variant, network reconnects, version pinning. Cyberwave routes the right model to the right runtime; see the [model deployment reference](/feature-reference/ml-models/deploy) for the wire-level details.
+You don't manage any of the boring parts: weight downloads, GPU provisioning, picking the right edge-compatible variant, network reconnects, version pinning. Cyberwave routes the right model to the right runtime; see the [model deployment reference](/tutorials/train-vla-cyberwave) for the wire-level details.
 
 ---
 
@@ -109,10 +112,10 @@ Browse the [public dataset catalog](https://cyberwave.com/datasets), pick one, a
 ## What to read next
 
 <CardGroup cols={3}>
-  <Card title="ML Models reference" icon="brain" href="/feature-reference/ml-models/index">
+  <Card title="Model catalog" icon="brain" href="/feature-reference/ml-models">
     Capabilities, providers, registration, inference, and the full VLA stack.
   </Card>
-  <Card title="Model Playground" icon="play" href="/feature-reference/ml-models/playground">
+  <Card title="Model playground" icon="play" href="/feature-reference/ml-models/playground">
     The interactive page behind every model in the catalog.
   </Card>
   <Card title="Sandwich robot (SmolVLA)" icon="bread-slice" href="/tutorials/sandwich-robot-smolvla">

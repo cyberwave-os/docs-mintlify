@@ -148,7 +148,7 @@ All settings can also be provided via environment variables. They override `cybe
 | ------------------------- | -------------------- | ---------------------------------- |
 | `CYBERWAVE_MQTT_HOST`     | `mqtt.cyberwave.com` | MQTT broker host                   |
 | `CYBERWAVE_MQTT_PORT`     | `1883`               | MQTT broker port                   |
-| `CYBERWAVE_MQTT_USERNAME` | —                    | MQTT username if required          |
+| `CYBERWAVE_MQTT_USERNAME` | —                    | Leave unset: the SDK derives one from your API key so the broker can identify the session. Set it only for legacy broker accounts. |
 | `CYBERWAVE_MQTT_PASSWORD` | —                    | MQTT password if required          |
 | `CYBERWAVE_ENVIRONMENT`   | —                    | Environment prefix for MQTT topics |
 
@@ -165,7 +165,7 @@ All settings can also be provided via environment variables. They override `cybe
 
 ---
 
-## Reserving a node for one environment (stub)
+## Reserving a node for one environment
 
 Reserve a self-hosted node for a single environment so only that environment's
 workloads run on it:
@@ -401,10 +401,10 @@ Supported signals:
   <Card title="API Key" icon="key" href="https://cyberwave.com/profile">
     Generate your API key
   </Card>
-  <Card title="Python SDK" icon="python" href="/tools/python-sdk">
+  <Card title="Python SDK" icon="python" href="/overview/tools/python-sdk">
     Control twins and robots from Python
   </Card>
-  <Card title="Edge Overview" icon="microchip" href="/edge/overview">
+  <Card title="Edge Overview" icon="microchip" href="/feature-reference/edge/overview">
     Run Cyberwave on edge devices
   </Card>
 </CardGroup>

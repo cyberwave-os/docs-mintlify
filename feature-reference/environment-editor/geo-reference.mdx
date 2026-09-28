@@ -1,10 +1,10 @@
 ---
-title: "Geo Reference"
+title: "Geo reference"
 description: "Place a real site on Earth so a robot's GPS puts it in the right spot in your scan."
 icon: "location-crosshairs"
 ---
 
-<Note>This page is a stub. A human will curate and expand it before publishing.</Note>
+{/* TODO(docs): This page is a stub. A human will curate and expand it before publishing. */}
 
 ## What this is for
 
@@ -99,6 +99,33 @@ map is flat, dragging cannot tilt it — press **3D** or a pitch button to leave
 the plan view, so an accidental drag never quietly angles a view you are picking
 points in.
 
+Each of those buttons works two ways. A click steps: 30° of rotation, 15° of
+pitch. **Holding** the button — or holding its keys — turns the map continuously
+until you let go, which is how you line the view up with something rather than
+counting presses. A hold starts slow and eases up to full speed over about half
+a second, so a tap nudges and a hold sweeps.
+
+| Keys | Does |
+| ---- | ---- |
+| `Ctrl`+`Shift`+`←` / `→` | Rotate anticlockwise / clockwise |
+| `Ctrl`+`Shift`+`↑` / `↓` | Pitch towards the horizon / towards top-down |
+
+Letting go of either modifier stops the movement, as does releasing the arrow.
+The keys stand down while a robot is under keyboard control, so a keypress never
+both drives a robot and moves the camera. The buttons keep working either way.
+
+Google's imagery runs out before the view does: satellite stops at about 5 cm
+per screen pixel, the road map one level closer, and a robot tens of centimetres
+across is only a few pixels there. So zoom carries on past that point — twins,
+waypoints and areas keep being redrawn sharp while the imagery beneath them is
+enlarged and goes soft, up to 16× closer than Google's own limit.
+
+The **microscope** button at the bottom of the control cluster switches that on
+and off, and shows how far past the limit you currently are. Turn it off when
+the imagery is what you are looking at — lining the environment up against a
+building edge, or taking a screenshot — and the view stops where Google's sharp
+imagery stops. Leave it on to inspect a twin.
+
 How much 3D you get is Google's data, not a setting: buildings show up in
 covered areas at close zoom, and a rural site may stay flat however far you
 tilt. Google also limits the tilt as you zoom out, so zoom in before judging it.
@@ -107,6 +134,34 @@ tilt. Google also limits the tilt as you zoom out, so zoom in before judging it.
 The map is a visual aid, not a survey. It is accurate to roughly the same degree
 as the geo reference itself, and satellite imagery of tall buildings leans a
 little even looking straight down.
+</Note>
+
+## Type a position as latitude and longitude
+
+Anything you can place — a twin, a waypoint, an area, a shape — has an **XYZ /
+GPS** switch on its Transform section once the environment has a geo reference.
+**GPS** swaps the position fields for **Lat**, **Lon** and **Alt**, so you can
+type a coordinate off a site plan or a survey instead of working out how many
+metres east of the origin it is.
+
+It is the same position either way: the scene still stores metres from the
+origin, and the switch only changes how you read and type it. Turning it on and
+off does not move anything.
+
+The fields open on **GPS** while the map is showing and on **XYZ** otherwise,
+which is usually what you want — once you pick one, it stays picked.
+
+Altitude is absolute, in the datum your geo reference is set to, not height
+above the floor. The line under the fields says which.
+
+A value is applied when you leave the field or press Enter, not as you type —
+every part of a coordinate is a valid coordinate somewhere else, and `4` on the
+way to `48.1496` is several kilometres away.
+
+<Note>
+Twins docked to another twin, and waypoints placed relative to something else,
+keep metre fields only. Their position is an offset from whatever they are
+attached to rather than a spot on Earth, so there is no coordinate to show.
 </Note>
 
 ## Position a twin from GPS

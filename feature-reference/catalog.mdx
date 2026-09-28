@@ -14,6 +14,14 @@ Assets in the catalog are identified by a **registry ID** in the format `vendor/
 
 ---
 
+## Browsing and adding assets
+
+The catalog shows one row of your matching assets above public assets. **All** also includes workspace and privately shared assets in **Shared with you**, with a first-row preview and **Show more shared assets**. Empty personal and shared sections are hidden. Use **Yours** beside sorting to browse all your assets. Desktop filters sit on the left; **Filters** reveals them on smaller screens. Selected filters remain visible above results and can be removed individually.
+
+**Add asset** combines file upload and image/prompt generation. Choose files with the keyboard or pointer. At the Access step, **Create workspace** opens a modal and selects the new workspace without losing your file, prompt, or asset details. On an asset page, editors can use the right-hand onboarding checklist to configure missing capabilities and controllers. These shortcuts disappear once the corresponding tabs are available. Viewers see completed attributes only. Editors see unfinished checks first; expand **Reviewed** to inspect or update completed and not-applicable assessments.
+
+Empty filtered results offer **Clear search and filters** to restore results without changing the All/Yours/Public scope.
+
 ## Using Catalog Assets
 
 ### Create a Twin from an Asset
@@ -47,9 +55,12 @@ for asset in cw.assets.search("unitree"):
 ### Browse the Web Interface
 
 Browse assets at [cyberwave.com/catalog](https://cyberwave.com/catalog):
-- Filter by category (arms, mobile robots, quadrupeds, drones)
+- Browse hardware categories, including arms, rovers, quadrupeds, and drones
+- Combine vendor, sensor, and capability filters; use **Filters** on smaller screens
 - Search by manufacturer or model name
 - View 3D previews and specifications
+- Choose **Add asset** to upload a robot package, model, or scan, or generate a mesh from an image or prompt
+- Follow the same Source → Details → Access steps, with private visibility by default
 
 ---
 
@@ -130,8 +141,6 @@ my-robot/
 Use relative paths inside the URDF that match your ZIP structure. If the URDF references `meshes/arm_visual.obj`, that file must exist at that path in the ZIP.
 </Info>
 
-> stub
-
 <Info>
 ZIP uploads can be up to 512 MB, enough for large full-mesh assets like humanoid robots.
 </Info>
@@ -139,7 +148,7 @@ ZIP uploads can be up to 512 MB, enough for large full-mesh assets like humanoid
 ### Upload from the UI
 
 <Tip>
-  For a step-by-step walkthrough of the dashboard upload wizard (Package →
+  For a step-by-step walkthrough of the dashboard upload wizard (Source →
   Details → Access), see [Create an Asset](/feature-reference/create-asset).
 </Tip>
 
@@ -148,7 +157,7 @@ ZIP uploads can be up to 512 MB, enough for large full-mesh assets like humanoid
     Sign in to [cyberwave.com](https://cyberwave.com) (or sign up).
   </Step>
   <Step title="Open the catalog">
-    Navigate to [cyberwave.com/catalog](https://cyberwave.com/catalog) and click **Upload Asset**.
+    Navigate to [cyberwave.com/catalog](https://cyberwave.com/catalog) and click **Add asset**.
   </Step>
   <Step title="Fill in details">
     Enter the required fields and upload your URDF ZIP file.
@@ -185,5 +194,6 @@ curl -X POST "https://api.cyberwave.com/api/v1/assets/create-with-urdf" \
 ### Upload via Python SDK
 
 ```python
-cw.assets.upload_glb("path/to/model.glb", name="My Robot", description="Custom robot model")
+asset = cw.assets.create(name="My Robot", description="Custom robot model")
+cw.assets.upload_glb(asset.uuid, "path/to/model.glb")
 ```

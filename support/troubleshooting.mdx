@@ -1,0 +1,282 @@
+---
+title: "Troubleshooting"
+description: "The errors developers hit most with the Cyberwave SDK and CLI: the exact message, why it happens, and how to fix it."
+icon: "screwdriver-wrench"
+---
+
+Search this page for the text of your error. Each entry gives the message as the SDK or CLI prints it, the cause, and the fix. Parts in `<angle brackets>` vary.
+
+## Install and authentication
+
+<AccordionGroup>
+  <Accordion title="ValueError: No API key found!">
+    **Message**
+
+    ```text
+    ValueError: No API key found! Set CYBERWAVE_API_KEY. Get yours at https://cyberwave.com/profile
+    ```
+
+    **Cause.** `Cyberwave()` was created without `api_key=` and `CYBERWAVE_API_KEY` is not set in this process. The SDK does not read the credentials that `cyberwave login` stores for the CLI.
+
+    **Fix.** Create a token under **Profile → Access** ([API tokens](/feature-reference/api-tokens)) and export it in the same shell that runs your script:
+
+    ```bash
+    export CYBERWAVE_API_KEY="your_api_key_here"
+    echo $CYBERWAVE_API_KEY    # check it is set
+    ```
+
+    IDEs and notebooks often start with a different environment. Pass the key explicitly there with `Cyberwave(api_key=...)`, and keep it out of committed code.
+  </Accordion>
+  <Accordion title="CyberwaveAPIError: Authentication failed (HTTP 401)">
+    **Message**
+
+    ```text
+    cyberwave.exceptions.CyberwaveAPIError: Failed to <operation>: Authentication failed: Invalid or missing credentials.
+
+    Your API key appears to be invalid or expired.
+      1. Add an API key at https://cyberwave.com/profile
+      ...
+     (HTTP 401)
+    ```
+
+    **Cause.** The server rejected the key. It was revoked, mistyped, belongs to another Cyberwave instance, or `CYBERWAVE_BASE_URL` points at a different server.
+
+    **Fix.** Create a new token under **Profile → Access** and export it again. Check for stray quotes or spaces. Unset `CYBERWAVE_BASE_URL` unless you run your own instance.
+  </Accordion>
+  <Accordion title="400 workspace_required">
+    **Message.** A `CyberwaveAPIError` with `(HTTP 400)` whose response body contains `workspace_required` and lists the workspaces your token can reach.
+
+    **Cause.** Your token is scoped to more than one workspace and the request doesn't say which one it means. Tokens scoped to exactly one workspace never hit this.
+
+    **Fix.** Pick a workspace UUID from the list in the error and set it once:
+
+    ```bash
+    export CYBERWAVE_WORKSPACE_ID="your_workspace_uuid"
+    ```
+
+    Or pass it in code: `Cyberwave(workspace_id="...")`. You can also narrow the token's scope to one workspace with **Edit scope**. See [API tokens](/feature-reference/api-tokens).
+  </Accordion>
+  <Accordion title="ModuleNotFoundError: No module named 'cv2' (or other missing extras)">
+    **Messages**
+
+    ```text
+    ModuleNotFoundError: No module named 'cv2'
+    ImportError: Camera streaming requires additional dependencies. Install them with: pip install cyberwave[camera]
+    ImportError: Runtime 'ultralytics' is registered but its dependencies are not installed. Install with: pip install cyberwave[ml]
+    ```
+
+    **Cause.** `pip install cyberwave` installs the core SDK only. Cameras, video and local models need optional extras.
+
+    **Fix.** Install the extra you need. Quote it, because zsh expands square brackets:
+
+    ```bash
+    pip install "cyberwave[camera]"   # OpenCV (headless), aiortc, av: webcams and video streaming
+    pip install "cyberwave[ml]"       # Ultralytics: YOLO and other local vision models
+    ```
+
+    The `camera` extra installs `opencv-python-headless`, which has no GUI support. If your own code opens windows with `cv2.imshow`, install `opencv-python` as well.
+  </Accordion>
+  <Accordion title="cyberwave: command not found">
+    **Cause.** The `cyberwave` command ships in a separate package. `pip install cyberwave` installs only the Python SDK.
+
+    **Fix.**
+
+    ```bash
+    pip install cyberwave-cli
+    cyberwave --help
+    ```
+  </Accordion>
+  <Accordion title="CyberwaveError: Asset '<key>' not found">
+    **Cause.** `cw.twin("<vendor>/<model>")` could not find that catalog entry.
+
+    **Fix.** Check the exact identifier in the [catalog](https://cyberwave.com/catalog), or search from Python with `cw.assets.search("so101")`. To open a twin that already exists, use `cw.twins.get("<workspace>/twins/<name>")` or its UUID instead.
+  </Accordion>
+</AccordionGroup>
+
+## Simulation and runtime mode
+
+<AccordionGroup>
+  <Accordion title="WARNING: affect('mujoco') selected a MuJoCo simulation runtime, but no environment is set">
+    **Message**
+
+    ```text
+    affect('mujoco') selected a MuJoCo simulation runtime, but no environment is set — no simulation was started. Pass environment_id=... to affect(), set CYBERWAVE_ENVIRONMENT_ID, or start one explicitly with cw.environments.simulations.start(environment_id, backend='mujoco').
+    ```
+
+    **Cause.** `cw.affect("simulation")` (or `"sim"`, `"mujoco"`) was called before the client knew its environment. Usually `affect()` ran before the first `cw.twin(...)`, which is what picks or creates the environment. The runtime mode is still set, but no simulation is running.
+
+    **Fix.** Create the twin first, then call `affect()`:
+
+    ```python
+    arm = cw.twin("the-robot-studio/so101")
+    cw.affect("simulation")
+    ```
+
+    Or pass `environment_id=` to `affect()`, or set `CYBERWAVE_ENVIRONMENT_ID`. If you only need to move joints, use `cw.affect("playground")`: it is free and needs no simulation instance. MuJoCo simulations use [credits](/billing/credits).
+  </Accordion>
+  <Accordion title="SimulationNotRunningError: No running simulation for environment <id>">
+    **Message**
+
+    ```text
+    cyberwave.exceptions.SimulationNotRunningError: No running simulation for environment <id>.
+    Start one, either:
+
+        cw.environments.simulations.start("<id>", backend="mujoco", duration=300)
+
+    or select a simulation runtime (which auto-starts one for the client's environment):
+    ...
+    ```
+
+    A variant ends with `(currently 'loading' — not ready yet; wait for it with sim.wait_until_active())`.
+
+    **Cause.** You are in a simulation runtime (`"playground"` counts) and called a method that needs a running MuJoCo simulation: camera frames (`get_frame`, `get_frames`, `get_video`, streaming), depth, or point clouds. The Playground does not render sensors. Getters never start a simulation on their own.
+
+    **Fix.** Pick one:
+
+    - Start MuJoCo (billable): `cw.affect("simulation")` after creating your twins, or `cw.environments.simulations.start(...)`. If it reports `loading`, call `sim.wait_until_active()`.
+    - Read a real camera instead: `cw.affect("live")` with a paired camera, or OpenCV on a local webcam as in [Your first AI loop](/overview/first-ai-loop).
+
+    `get_frame(mock=True)` does not avoid this error in simulation mode, because the check runs first.
+
+    If a Playground simulation is running instead of MuJoCo, you get `SimulationLevelError: <method> requires a MuJoCo simulation; the running backend is 'playground'.` The fix is the same.
+  </Accordion>
+  <Accordion title="NotSimulatedError: <method> is not supported in simulation mode.">
+    **Example**
+
+    ```text
+    cyberwave.exceptions.NotSimulatedError: ImuSensorHandle.get is not supported in simulation mode.
+    ```
+
+    **Cause.** No simulation backend produces this data or accepts this command yet. That covers IMU, GPS and compass reads, and driver-only catalog commands (`twin.commands.<name>()`) that neither the SDK nor the twin's controller marks as Playground-capable.
+
+    **Fix.** Run that part against the real robot with `cw.affect("live")` and a paired edge device. Keep simulation for joints, motion and camera frames.
+  </Accordion>
+  <Accordion title="ValueError: Frame source 'local' is not available in simulation runtime mode">
+    **Message**
+
+    ```text
+    ValueError: Frame source 'local' is not available in simulation runtime mode; use source='cloud'.
+    ```
+
+    **Cause.** In a simulation runtime, `get_frame()` only reads frames from the cloud (the running simulation). `local`, `zenoh` and `remote_edge` are live-only sources.
+
+    **Fix.** Drop the `source=` argument in simulation, or switch to `cw.affect("live")` to read a local or edge camera.
+  </Accordion>
+</AccordionGroup>
+
+## Controlling robots
+
+<AccordionGroup>
+  <Accordion title="WARNING: controller policy was just attached. This command may have been lost">
+    **Message**
+
+    ```text
+    Twin <uuid>: controller policy was just attached. This command may have been lost while the robot was still setting up; retry in a few seconds.
+    ```
+
+    **Cause.** Motion commands need a teleop controller policy on the twin. Your first joint or motion command attached one automatically, and that first command may have arrived before the controller was ready.
+
+    **Fix.** Attach the controller once, before the first command, and give it a moment:
+
+    ```python
+    import time
+
+    robot.policy.ensure_attached()
+    time.sleep(2)
+    robot.joints.set("shoulder_pan", 45, degrees=True)
+    ```
+
+    On later runs the policy is already attached and the warning does not appear.
+  </Accordion>
+  <Accordion title="CyberwaveError: Cannot send motion commands without an attached teleop controller policy.">
+    **Cause.** The twin has no teleop controller policy, and the SDK could not attach one. Either auto-attach is turned off (`CYBERWAVE_SDK_AUTO_ATTACH_CONTROLLER=0`), or the workspace has no suitable policy. In the second case you first see:
+
+    ```text
+    CyberwaveError: No controller policy suitable for SDK joint commands was found (need a teleop policy with input_device in ['keyboard', 'sdk']).
+    ```
+
+    **Fix.** Assign a teleop controller in the twin panel (**Assign Controller**), or from code:
+
+    ```python
+    for policy in robot.policy.list():
+        print(policy.name, policy.controller_type)
+    robot.policy.assign(chosen_policy)   # one of the policies listed above
+    ```
+
+    Unset `CYBERWAVE_SDK_AUTO_ATTACH_CONTROLLER` if you did not mean to disable auto-attach. See [Controllers](/feature-reference/online-controllers).
+  </Accordion>
+  <Accordion title="Commands succeed but nothing moves">
+    **Cause.** No error, no motion. The usual reasons, in order:
+
+    1. **You are in live mode with no robot connected.** Live is the default when you never call `cw.affect(...)`. Commands go out to the real robot's edge device. If nothing is paired, nothing receives them. The SDK doesn't check for a paired edge before sending live commands, so it won't tell you.
+    2. **Wrong units.** Joint positions are radians by default. `joints.set("shoulder_pan", 30)` asks for 30 rad. Pass `degrees=True` for degrees.
+    3. **You are watching another environment.** With no environment set, `cw.twin(...)` uses the "Quickstart Environment" and prints its link. Open that link.
+
+    **Fix.** For simulation, call `cw.affect("playground")` after `cw.twin(...)`. For hardware, pair the robot first (`sudo cyberwave pair`, see [Connect hardware](/overview/supported-hardware)) and check the twin shows as connected in the environment editor.
+  </Accordion>
+  <Accordion title="ValueError: Unknown joint name(s)">
+    **Message**
+
+    ```text
+    ValueError: Unknown joint name(s): ['<name>']. Controllable: [<the twin's joint names>]
+    ```
+
+    **Cause.** The joint name is not in this twin's schema. Joint names differ between robots.
+
+    **Fix.** Use a name from the `Controllable` list, or print them with `robot.joints.list()`.
+  </Accordion>
+  <Accordion title="DeprecationWarning: joints.get_all() / capture_frame() is deprecated">
+    **Messages**
+
+    ```text
+    DeprecationWarning: joints.get_all() is deprecated; use joints.get()
+    DeprecationWarning: twin.capture_frame() is deprecated; use twin.get_frame()
+    ```
+
+    **Fix.** Use `robot.joints.get()`, which returns a live dict of joint positions in radians. Use `camera.get_frame()` or `get_frames()`. Only twins with a camera have these methods.
+  </Accordion>
+</AccordionGroup>
+
+## CLI and edge devices
+
+<AccordionGroup>
+  <Accordion title="This command requires root privileges (cyberwave pair on Linux)">
+    **Message**
+
+    ```text
+    This command requires root privileges.
+    Re-run with sudo: sudo cyberwave edge install
+    ```
+
+    **Cause.** On Linux, `cyberwave pair` (an alias for `cyberwave edge install`) installs the edge runtime and registers a systemd service, which needs root.
+
+    **Fix.**
+
+    ```bash
+    sudo cyberwave pair
+    ```
+
+    See [Connect hardware](/overview/supported-hardware) for the full pairing flow.
+  </Accordion>
+</AccordionGroup>
+
+## Still stuck?
+
+Ask in the community or open an issue from the [Support](/support) page. Include the full error, your SDK version (`pip show cyberwave`), and the smallest script that reproduces it. Remove your API key first.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Python SDK quickstart" icon="python" href="/overview/python-sdk-quickstart">
+    Install, authenticate and move a twin in the free Playground.
+  </Card>
+  <Card title="API tokens" icon="key" href="/feature-reference/api-tokens">
+    Create tokens, scope them to workspaces, and use service tokens.
+  </Card>
+  <Card title="Connect hardware" icon="plug" href="/overview/supported-hardware">
+    Pair a real robot with its digital twin.
+  </Card>
+  <Card title="Support" icon="life-ring" href="/support">
+    Discord, GitHub issues and direct contact.
+  </Card>
+</CardGroup>

@@ -6,7 +6,7 @@ icon: "dog"
 
 import { EdgeSetup } from "/snippets/edge-setup.mdx";
 
-Cyberwave treats every quadruped the same: drop a digital twin into an [environment](/get-started/key-concepts#environments), pair the hardware, and start sending commands from the dashboard, the [Python SDK](/tools/python-sdk), or an AI controller. The same workflow scales from the affordable [Unitree Go2](https://cyberwave.com/unitree/go2) all the way up to industrial platforms like the [Boston Dynamics Spot](https://cyberwave.com/boston-dynamics/spot).
+Cyberwave treats every quadruped the same: drop a digital twin into an [environment](/feature-reference/architecture/key-concepts#environment), pair the hardware, and start sending commands from the dashboard, the [Python SDK](/overview/tools/python-sdk), or an AI controller. The same workflow scales from the affordable [Unitree Go2](https://cyberwave.com/unitree/go2) all the way up to industrial platforms like the [Boston Dynamics Spot](https://cyberwave.com/boston-dynamics/spot).
 
 <iframe
   width="100%"
@@ -59,7 +59,7 @@ Every catalog page bundles the **bill of materials**, supported drivers, and **t
 
 ## Control it from Python
 
-Once the twin is paired, the [Python SDK](/tools/python-sdk) gives you the same API for any dog in the catalog. Run this from your laptop or any cloud machine; Cyberwave handles the networking and orchestration end-to-end:
+Once the twin is paired, the [Python SDK](/overview/tools/python-sdk) gives you the same API for any dog in the catalog. Run this from your laptop or any cloud machine; Cyberwave handles the networking and orchestration end-to-end:
 
 ```python
 from cyberwave import Cyberwave
@@ -67,9 +67,9 @@ from cyberwave import Cyberwave
 cw = Cyberwave()
 dog = cw.twin("unitree/go2")          # swap for "boston-dynamics/spot" or any other quadruped
 
-with cw.affect("live"):
-    dog.move_forward(distance=1.0)    # meters
-    frame = dog.capture_frame("numpy")  # latest frame from the dog's camera
+cw.affect("live")                     # commands go to the real dog
+dog.move_forward(distance=1.0)        # 1.0 m/s for 1 s, then stop
+frame = dog.get_frame("numpy")        # latest frame from the dog's camera
 ```
 
 Switching to a different dog is a **one-line change**; the rest of your automation stays exactly the same.
@@ -78,7 +78,7 @@ Switching to a different dog is a **one-line change**; the rest of your automati
 
 ## Add autonomy with waypoints
 
-Cyberwave ships with **autonomous navigation out of the box**. You don't have to write a planner; just let the dog explore the environment, place [waypoints](/use-cyberwave/environment-editor) on the resulting map, and ask the dog to drive between them.
+Cyberwave ships with **autonomous navigation out of the box**. You don't have to write a planner; just let the dog explore the environment, place [waypoints](/feature-reference/environment-editor) on the resulting map, and ask the dog to drive between them.
 
 <Steps>
   <Step title="Explore">
@@ -95,22 +95,30 @@ Cyberwave ships with **autonomous navigation out of the box**. You don't have to
   </Step>
 </Steps>
 
+<Tip>
+  On a **Unitree Go2**, put up a printed AprilTag before you explore. Keep its white
+  margin and mount it on a light surface: a tag on a dark stand is not detected. The dog
+  saves it with the map, and the next time it powers up in view of the tag it
+  finds itself on that map, so you don't have to map again. See
+  [AprilTag relocalization](/robots/go2-apriltag-relocalization).
+</Tip>
+
 ---
 
 ## Build inspection workflows
 
-Use [Workflows](/use-cyberwave/workflows) to turn waypoints into repeatable inspection missions. A typical pattern:
+Use [Workflows](/feature-reference/workflows) to turn waypoints into repeatable inspection missions. A typical pattern:
 
 `waypoint reached → capture frame → send to a cloud VLM → log finding / raise alert`
 
 See the [Go2 end-to-end tutorial](/tutorials/go2-digital-to-physical), the [rover AI mission tutorial](/tutorials/rover-ai-mission), and the [edge-to-cloud VLM tutorial](/tutorials/edge-to-cloud-vlm) for full walkthroughs.
 
-Because Cyberwave also speaks to [cameras](/get-started/cameras), [drones](/get-started/drones), and [arms](/get-started/robotic-arms), you can mix and match hardware in the same workflow, for example a fixed ceiling camera that **triggers** the dog patrol, or a Spot that hands off to a UGV when it can't fit through a doorway.
+Because Cyberwave also speaks to [cameras](/overview/cameras), [drones](/overview/drones), and [arms](/overview/robotic-arms), you can mix and match hardware in the same workflow, for example a fixed ceiling camera that **triggers** the dog patrol, or a Spot that hands off to a UGV when it can't fit through a doorway.
 
 <Info>
   Workflows can be authored **low-code** in the dashboard or directly in
   **Python**. Cyberwave decides whether each step runs on the edge device next
-  to the dog, in a [cloud node](/tools/cloud-node), or a mix of both; your
+  to the dog, in a [cloud node](/overview/tools/cloud-node), or a mix of both; your
   automation and your hardware don't change.
 </Info>
 

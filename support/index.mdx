@@ -47,7 +47,7 @@ Cyberwave is built in the open with a small, responsive team and a growing commu
   <Card
     title="Changelog"
     icon="clock-rotate-left"
-    href="https://docs.cyberwave.com/changelog"
+    href="/changelog"
   >
     Check what shipped recently and whether a recent change might explain what
     you're seeing.
@@ -86,14 +86,14 @@ Start there before opening a general issue:
     Per-robot setup, supported features, calibration tips, and known issues for
     each supported arm, mobile base, quadruped, and drone.
   </Card>
-  <Card title="ML models" icon="brain" href="/use-cyberwave/ml-models">
+  <Card title="Model catalog" icon="brain" href="/feature-reference/ml-models">
     Per-model usage, supported inputs/outputs, training notes, and gotchas for
     each model in the catalog.
   </Card>
   <Card
     title="Asset catalog"
     icon="book-bookmark"
-    href="/use-cyberwave/catalog"
+    href="/feature-reference/catalog"
   >
     How catalog assets, registry IDs, and slugs work — and how to upload your
     own.
@@ -101,7 +101,7 @@ Start there before opening a general issue:
   <Card
     title="Datasets & recordings"
     icon="database"
-    href="/use-cyberwave/recording-replay"
+    href="/feature-reference/environment-editor/replay"
   >
     How datasets are generated from recordings, supported formats, and
     import/export options.
@@ -124,21 +124,21 @@ A growing list of frequently asked questions about the platform as a whole. For 
 
 <AccordionGroup>
   <Accordion title="What is Cyberwave?">
-    _Placeholder._ A short overview of the Cyberwave platform, what it's for, and who it's for.
+    Cyberwave turns every robot and sensor into a digital twin that your code, your models and your agents can drive, with the same API in simulation and on real hardware. See [Connect AI to robots](/ai/overview).
   </Accordion>
 
 <Accordion title="How does Cyberwave compare to a traditional simulator?">
-  _Placeholder._ Differences between Cyberwave's digital twins and pure
-  simulators, and when to use each.
+  A simulator models a robot. A Cyberwave twin is the same object in simulation and on the real robot: `cw.affect("simulation")` or `cw.affect("live")` switches
+  which one your code drives. See [What is a digital twin](/overview/features/digital-twin) and [Simulation](/overview/features/simulation).
 </Accordion>
 
 <Accordion title="Do I need hardware to get started?">
-  _Placeholder._ How to evaluate Cyberwave entirely in simulation before
-  connecting real devices. See [Getting started](/get-started/index).
+  No. [Develop in simulation](/overview/hello-robot) runs in the browser with no code, and [Your first AI loop](/overview/first-ai-loop) needs only a
+  laptop webcam. To drive a real arm without owning one, see [Develop with remote hardware](/overview/develop-remote-hardware).
 </Accordion>
 
   <Accordion title="Is there a free tier?">
-    _Placeholder._ Free tier scope, limits, and how to upgrade.
+    Playground simulation is free. MuJoCo simulations, AI usage, platform events and storage use credits. See [Credits & Billing](/billing/credits).
   </Accordion>
 </AccordionGroup>
 
@@ -146,20 +146,19 @@ A growing list of frequently asked questions about the platform as a whole. For 
 
 <AccordionGroup>
   <Accordion title="What is a workspace?">
-    _Placeholder._ Workspaces, projects, and how isolation works across teams.
+    A workspace is your team's container for environments, workflows and resources, with its own members, permissions and billing. See [Data model](/feature-reference/architecture/core-data-hierarchy).
   </Accordion>
 
 <Accordion title="How do I invite teammates?">
-  _Placeholder._ Inviting users, managing roles, and [access
-  control](/use-cyberwave/access-control).
+  Share a project from its settings: click **Share**, add people by email and pick a role. See [Access control](/feature-reference/access-control).
 </Accordion>
 
 <Accordion title="How is usage billed?">
-  _Placeholder._ Pricing model, metered resources, and how to monitor usage.
+  In credits. Platform events, AI usage and storage are metered, and a MuJoCo simulation costs about 0.6 credits per hour. The Usage page in your organization settings shows rates and charges. See [Credits & Billing](/billing/credits).
 </Accordion>
 
   <Accordion title="Can I use Cyberwave on-premises?">
-    _Placeholder._ Self-hosted and air-gapped deployment options.
+    A self-hosted package exists; contact Cyberwave. Air-gapped deployment is not available as a packaged option. See [Cyberwave for integrators](/enterprise/overview#deployment-options).
   </Accordion>
 </AccordionGroup>
 
@@ -167,22 +166,22 @@ A growing list of frequently asked questions about the platform as a whole. For 
 
 <AccordionGroup>
   <Accordion title="Which robots are officially supported?">
-    _Placeholder._ Current list of officially supported platforms. See [Robotic hardware](/overview/supported-hardware) for per-item setup and troubleshooting.
+    See [Supported hardware](/overview/supported-hardware) for the compatibility table and the [catalog](https://cyberwave.com/catalog) for every device.
   </Accordion>
 
 <Accordion title="Can I integrate a custom robot?">
-  _Placeholder._ Bringing your own hardware via [custom
+  Yes. Create an asset from its URDF and write a driver. See [Add your robot](/robots/add-your-robot), [custom
   hardware](/overview/connecting-hardware/custom-hardware) and [writing compatible
-  drivers](/edge/drivers/writing-compatible-drivers).
+  drivers](/feature-reference/edge/drivers/writing-compatible-drivers).
 </Accordion>
 
 <Accordion title="Which cameras and sensors are supported?">
-  _Placeholder._ Supported [cameras](https://cyberwave.com/cyberwave/standard-cam),
+  USB, RTSP, GigE and RealSense cameras, plus [cameras](https://cyberwave.com/cyberwave/standard-cam),
   [microphones](https://cyberwave.com/catalog/tag/microphone), and other sensors.
 </Accordion>
 
   <Accordion title="Does Cyberwave support ROS 2?">
-    _Placeholder._ ROS 2 interoperability today and roadmap.
+    Yes. Drivers can be ROS 2 nodes built on [BaseROS2Driver](/feature-reference/edge/drivers/ros2-base-driver). See [Supported hardware](/overview/supported-hardware).
   </Accordion>
 </AccordionGroup>
 
@@ -190,21 +189,21 @@ A growing list of frequently asked questions about the platform as a whole. For 
 
 <AccordionGroup>
   <Accordion title="Which SDKs are available?">
-    _Placeholder._ Overview of the [Python SDK](/tools/python-sdk), [C++ SDK](/tools/cpp-sdk), [MCP server](/tools/mcp-server), and [Claude Skill](/tools/claude-skill).
+    The [Python SDK](/overview/tools/python-sdk), [C++ SDK](/overview/tools/cpp-sdk), [MCP server](/overview/tools/mcp-server), and [Claude Skill](/overview/tools/claude-skill).
   </Accordion>
 
 <Accordion title="How do I authenticate the SDK?">
-  _Placeholder._ Setting up tokens. See [Setup
-  Cyberwave](/use-cyberwave/setup-cyberwave).
+  Create a token under **Profile → Access** and export it as `CYBERWAVE_API_KEY`. See [API tokens](/feature-reference/api-tokens) and
+  [Authentication](/feature-reference/setup-cyberwave).
 </Accordion>
 
 <Accordion title="Can I use Cyberwave from Cursor or Claude?">
-  _Placeholder._ Connecting agentic IDEs through the [MCP
-  server](/tools/mcp-server).
+  Yes. Point your client at the hosted MCP server, `https://mcp.cyberwave.com/mcp`, with your API key as a Bearer token. See the [MCP
+  server](/overview/tools/mcp-server).
 </Accordion>
 
   <Accordion title="What languages does the REST API support?">
-    _Placeholder._ Any HTTP client works; see the [API reference](/api-reference/overview).
+    Any language with an HTTP client. Send `Authorization: Bearer <api-key>` to `https://api.cyberwave.com`. See the [API overview](/api-reference/overview).
   </Accordion>
 </AccordionGroup>
 
@@ -212,41 +211,41 @@ A growing list of frequently asked questions about the platform as a whole. For 
 
 <AccordionGroup>
   <Accordion title="What is Cyberwave Edge?">
-    _Placeholder._ Overview of the [Edge runtime](/edge/overview) and where it runs.
+    Edge Core runs on the computer next to your robot. It registers the device and runs drivers and workers as Docker containers. See [Edge runtime](/feature-reference/edge/overview).
   </Accordion>
 
 <Accordion title="What hardware can run an Edge node?">
-  _Placeholder._ From a [Raspberry Pi](/edge/raspberry-pi) and
-  [bench](/feature-reference/workflows/workers/bench) to industrial gateways.
+  Raspberry Pi, Jetson, x86 Linux machines and macOS. See [Raspberry Pi](/feature-reference/edge/raspberry-pi) and
+  [Jetson Orin Nano](/feature-reference/edge/jetson-orin-nano).
 </Accordion>
 
 <Accordion title="Can Edge nodes run offline?">
-  _Placeholder._ Offline / intermittent connectivity behaviour and buffering.
+  Offline behaviour is not documented yet. Edge nodes need outbound access to `api.cyberwave.com` and `mqtt.cyberwave.com`; see [Network and firewall requirements](/enterprise/network-and-firewall), and ask on [Discord](https://discord.gg/dfGhNrawyF) for details.
 </Accordion>
 
   <Accordion title="How do I write a custom driver?">
-    _Placeholder._ See [Writing compatible drivers](/edge/drivers/writing-compatible-drivers).
+    Subclass the SDK's driver base class and declare its interface. See [Writing compatible drivers](/feature-reference/edge/drivers/writing-compatible-drivers).
   </Accordion>
 </AccordionGroup>
 
-### ML models, workflows & datasets
+### AI models, workflows & datasets
 
 <AccordionGroup>
   <Accordion title="Can I bring my own model?">
-    _Placeholder._ Uploading and serving custom [ML models](/use-cyberwave/ml-models).
+    Yes, in early access: call your own API or hand Cyberwave code to run. See [Bring your own model](/feature-reference/ml-models/uploading-your-model).
   </Accordion>
 
 <Accordion title="What model formats are supported?">
-  _Placeholder._ Supported formats and runtimes (PyTorch, ONNX, etc.).
+  On the edge, workers run Ultralytics (`.pt`), ONNX Runtime, TFLite and OpenCV models, each behind an SDK extra (`ml`, `ml-onnx`, `ml-tflite`, `ml-opencv`). See [Model cache](/feature-reference/workflows/workers/model-cache).
 </Accordion>
 
 <Accordion title="How do I build a workflow?">
-  _Placeholder._ Authoring [workflows](/use-cyberwave/workflows) and chaining
-  nodes.
+  Wire triggers, models, conditions and robot commands on the visual canvas, or ask the [workflow assistant](/ai/workflow-assistant). See [Build and run
+  workflows](/feature-reference/workflows).
 </Accordion>
 
   <Accordion title="How are datasets generated?">
-    _Placeholder._ Generating datasets from [recordings](/use-cyberwave/recording-replay).
+    From [recordings](/feature-reference/environment-editor/replay) of your twins, or by [importing](/feature-reference/datasets/import) from Hugging Face Hub or a zip file.
   </Accordion>
 </AccordionGroup>
 
@@ -254,15 +253,15 @@ A growing list of frequently asked questions about the platform as a whole. For 
 
 <AccordionGroup>
   <Accordion title="What latency can I expect?">
-    _Placeholder._ Typical latency and how to optimize. See [Live Teleoperation](/feature-reference/environment-editor/teleoperation).
+    Latency figures are not published yet. See [Live Teleoperation](/feature-reference/environment-editor/teleoperation).
   </Accordion>
 
 <Accordion title="Does teleoperation work behind a corporate firewall?">
-  _Placeholder._ NAT traversal, TURN servers, and required ports.
+  Usually, yes. Every connection is outbound, and video relays over TLS on port 443. See [Network and firewall requirements](/enterprise/network-and-firewall).
 </Accordion>
 
   <Accordion title="Which browsers are supported?">
-    _Placeholder._ Tested browsers and known limitations.
+    Not documented yet. [Contact us](https://cyberwave.com/contact-us) if you need a specific browser.
   </Accordion>
 </AccordionGroup>
 
@@ -270,20 +269,20 @@ A growing list of frequently asked questions about the platform as a whole. For 
 
 <AccordionGroup>
   <Accordion title="Where is my data stored?">
-    _Placeholder._ Data residency, hosting regions, and retention.
+    Hosting regions and retention are not documented yet. [Contact us](https://cyberwave.com/contact-us).
   </Accordion>
 
 <Accordion title="How is data encrypted?">
-  _Placeholder._ Encryption in transit and at rest.
+  In transit, REST uses HTTPS, MQTT uses TLS on port 8883, and the video relay uses TLS on port 443. For encryption at rest, [contact us](https://cyberwave.com/contact-us).
 </Accordion>
 
 <Accordion title="Who can access my workspace data?">
-  _Placeholder._ Roles, sharing, and [access
-  control](/use-cyberwave/access-control).
+  Workspace members, according to their roles, people you share a project with, and anyone with a project's public link. See [access
+  control](/feature-reference/access-control).
 </Accordion>
 
   <Accordion title="Is Cyberwave compliant with SOC 2 / GDPR / HIPAA?">
-    _Placeholder._ Current and planned certifications.
+    Ask us. [Contact us](https://cyberwave.com/contact-us) for current certifications.
   </Accordion>
 </AccordionGroup>
 

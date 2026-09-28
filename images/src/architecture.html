@@ -1,0 +1,110 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="_base.css">
+<style>
+#canvas{width:1200px;border-radius:24px;overflow:hidden;background:linear-gradient(135deg,#07131a 0%,#0c2029 100%);
+  display:grid;grid-template-columns:1fr 232px;gap:28px;padding:36px 40px 40px}
+.col{display:flex;flex-direction:column}
+.label{margin:0 0 10px 2px}
+.band{border-radius:18px;padding:16px}
+.row{display:grid;gap:12px}
+.box{border-radius:12px;padding:14px 16px}
+.box h3{font-size:16px;font-weight:700;margin-bottom:4px}
+.box p{font-size:13px;line-height:1.45;color:var(--muted)}
+/* agents */
+.agents{background:linear-gradient(90deg,#00b5dd 0%,#33cfef 100%);color:var(--ink);display:grid;grid-template-columns:230px 1fr;gap:16px;align-items:center}
+.agents h2{font-size:22px;font-weight:800;letter-spacing:-.01em}
+.agents .tag{font-size:13px;color:#063646;margin-top:4px}
+.agents .row{grid-template-columns:repeat(3,1fr)}
+.agents .box{background:rgba(4,33,43,.12);border:1px solid rgba(4,33,43,.25)}
+.agents .box h3{color:var(--ink);font-size:15px}
+.agents .box p{color:#063646}
+/* your AI */
+.ai{background:#0e2a35;border:1px solid #1d4a5a}
+.ai .row{grid-template-columns:repeat(3,1fr)}
+.ai .box{background:rgba(0,181,221,.14);border:1px solid rgba(95,218,243,.4)}
+.ai .box h3{color:#fff}
+/* platform */
+.plat{background:var(--panel);border:1px solid var(--line)}
+.plat .row{grid-template-columns:1.1fr 1fr 1fr}
+.plat .box{background:var(--card);border:1px solid var(--card-line)}
+.plat .tall{grid-row:span 2}
+.edge{background:var(--panel);border:1px solid var(--line)}
+.edge .row{grid-template-columns:repeat(4,1fr)}
+.edge .box{padding:6px 8px}
+.hw{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.pill{border-radius:999px;background:var(--card);border:1px solid var(--card-line);text-align:center;padding:14px 8px;font-size:14px;font-weight:600}
+.flow{display:flex;justify-content:center;gap:120px;padding:8px 0 10px;font-size:12px;color:#8fb3bf}
+.flow span{display:flex;align-items:center;gap:8px}
+.flow i{font-style:normal;color:var(--cyan-3);font-size:18px;line-height:1}
+/* ways in */
+.ways{border:1px dashed var(--card-line);border-radius:18px;padding:6px 18px;height:100%}
+.way{padding:16px 0;border-bottom:1px solid var(--line)}
+.way:last-child{border-bottom:0}
+.way h4{font-size:15px;font-weight:700;color:#fff;margin-bottom:4px}
+.way p{font-size:13px;line-height:1.45;color:var(--muted)}
+</style></head>
+<body><div id="canvas">
+  <div class="col">
+    <div class="label">AI agents</div>
+    <div class="band agents">
+      <div><h2>AI agents</h2><div class="tag">Describe what you want. Agents plan it; you approve.</div></div>
+      <div class="row">
+        <div class="box"><h3>Build the environment</h3><p>Scenes, twins and assets from a sentence</p></div>
+        <div class="box"><h3>Control robots</h3><p>Plan and run actions and skills</p></div>
+        <div class="box"><h3>Define workflows</h3><p>Draft and edit automations</p></div>
+      </div>
+    </div>
+    <div class="flow"><span><i>↓</i> plan · configure · operate</span></div>
+
+    <div class="label">Your AI</div>
+    <div class="band ai">
+      <div class="row">
+        <div class="box"><h3>AI models</h3><p>Perceive, reason or act: any task, any modality, edge or cloud</p></div>
+        <div class="box"><h3>Control</h3><p>Manual · skills · workflows · VLA · RL policies, one per twin at a time</p></div>
+        <div class="box"><h3>Learn</h3><p>Recordings → datasets → training → deploy</p></div>
+      </div>
+    </div>
+    <div class="flow"><span><i>↓</i> decisions, actions</span><span><i>↑</i> frames, state, data</span></div>
+
+    <div class="label">Cyberwave platform</div>
+    <div class="band plat">
+      <div class="row">
+        <div class="box tall"><h3>Digital twins &amp; environments</h3><p>One twin per robot or sensor. The same API in simulation and on real hardware.</p></div>
+        <div class="box"><h3>Simulation</h3><p>Browser Playground · MuJoCo</p></div>
+        <div class="box"><h3>Catalog</h3><p>Robots, sensors, AI models</p></div>
+        <div class="box"><h3>Controllers &amp; handover</h3><p>One controller at a time</p></div>
+        <div class="box"><h3>Data &amp; training</h3><p>Episodes, datasets, GPU jobs</p></div>
+      </div>
+    </div>
+    <div class="flow"><span><i>↓</i> commands</span><span><i>↑</i> telemetry, video</span></div>
+
+    <div class="label">Cyberwave Edge</div>
+    <div class="band edge">
+      <div class="row">
+        <div class="box"><h3>Edge Core</h3><p>Pairs devices, runs containers</p></div>
+        <div class="box"><h3>Drivers</h3><p>One per robot or sensor</p></div>
+        <div class="box"><h3>Workers</h3><p>Models next to the sensor</p></div>
+        <div class="box"><h3>Runs on</h3><p>Raspberry Pi · Jetson · x86 · macOS</p></div>
+      </div>
+    </div>
+    <div class="flow"><span><i>↕</i></span></div>
+
+    <div class="label">Your hardware</div>
+    <div class="hw">
+      <div class="pill">Arms</div><div class="pill">Quadrupeds</div><div class="pill">Rovers</div><div class="pill">Drones</div><div class="pill">Cameras &amp; sensors</div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="label">Ways in</div>
+    <div class="ways">
+      <div class="way"><h4>Dashboard</h4><p>Build, simulate and operate in the browser</p></div>
+      <div class="way"><h4>Python SDK</h4><p>Same code for simulated and real robots</p></div>
+      <div class="way"><h4>CLI</h4><p>Pair devices, run the edge, manage workers</p></div>
+      <div class="way"><h4>REST · MQTT</h4><p>Connect MES, WMS and your own apps</p></div>
+      <div class="way"><h4>MCP</h4><p>Let Claude, Cursor or any agent operate your robots</p></div>
+    </div>
+  </div>
+</div></body></html>

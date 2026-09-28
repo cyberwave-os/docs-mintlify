@@ -1,0 +1,308 @@
+---
+title: "Add your robot to Cyberwave"
+sidebarTitle: "Add your robot"
+description: "Take your robot from a URDF to a simulated, live, controllable and trainable twin. Five support levels, each with a pass test."
+icon: "screwdriver-wrench"
+---
+
+This page is for hardware makers and for teams with custom hardware. When you finish, anyone with access to your asset can spawn a twin of your robot, simulate it, drive the real machine from the browser or the SDK, record data, and put a trained policy in control. That holds whether the hardware is on the same desk or on the other side of the world.
+
+**At a glance:** stages 0–10 · advanced · you need a URDF (or MJCF) with meshes, a Linux edge device, Docker, and a working driver or vendor SDK for your robot.
+
+## Support levels
+
+Pick a target level before you start. Each level builds on the one before it and has a test you can run yourself.
+
+| Level | What works | Pass test |
+|---|---|---|
+| **L0 Model** | Kinematics and meshes render; the twin moves in the free browser Playground | `arm.joints.set(...)` in `cw.affect("playground")` moves the right link, in the right direction, within limits |
+| **L1 Sim** | Physics is complete enough for MuJoCo (inertials, collisions, actuators) | A MuJoCo simulation starts with your twin in the scene, and the twin holds its pose without exploding or drifting |
+| **L2 Telemetry** | The live twin mirrors the real robot | Move the robot by hand (or with its vendor tool). The twin follows, and `arm.joints.get()` in `cw.affect("live")` returns the real values |
+| **L3 Control** | Declared commands, teleop, safe failure | Teleop from the browser moves the robot. The teleop overlay lists only commands the driver handles. Cutting the network mid-teleop leaves the robot in a safe state, and an alert appears on the twin |
+| **L4 Learn** | Record, train, deploy | Record episodes, export them as a dataset, fine-tune a policy, assign it as the twin's controller, and watch it run on the robot |
+
+**Time budget.** These are planning ranges for a team that already has a clean URDF and a working ROS 2 driver: L0 in about an hour, L2 in 1–2 days, L3 in 3–5 days, L4 in 1–2 weeks. Without a ROS 2 driver, add the time it takes you to write one against your vendor SDK.
+
+{/* TODO(docs): replace these planning ranges with measured numbers from partner onboardings once available. */}
+
+## The config files, and who reads them
+
+Four files come up when you integrate a robot. They do different jobs.
+
+| Artifact | What it declares | Who writes it | Who reads it | Required? |
+|---|---|---|---|---|
+| Asset `metadata.drivers` (JSON on the asset or twin) | **Which Docker image(s) run** for this robot, per platform, with Docker params, GPU and multi-container `services` | You, on the asset | **Edge Core**, when it starts drivers for linked twins | Yes, from L2 |
+| `cw-driver.yml` | **The driver's interface**: MQTT topics, Zenoh channels, supported commands | You, or exported from your `BaseDriver` subclass | The platform compiles it into the twin's `metadata.mqtt` / `metadata.zenoh` when you call `twin.driver.set_schema(...)`. The UI teleop overlay and `twin.commands.*` read the result | Yes, from L2 |
+| `manifest.yaml` (ROS 2 drivers) | ROS node parameters, topics and `managed_launch`, **merged with** the `cw-driver` catalog | Exported by `BaseROS2Driver.write_manifest()`; don't hand-edit it | `BaseROS2Driver` at runtime (`CW_DRIVER_MANIFEST`), and `set_schema`, which extracts the `cw-driver` keys | Only for ROS 2 drivers, instead of a separate `cw-driver.yml` |
+| `cyberwave.yml` | Cloud nodes and edge ML workers: install, inference, training, models | You, for cloud nodes and workers | Cloud nodes, Edge Core's worker container | **Not for drivers** |
+
+<Note>
+Two corrections to older pages. The image that runs for your robot is set in the asset's `metadata.drivers`, not in a `cyberwave.yml` `driver:` block. The method that registers a driver interface is `twin.driver.set_schema(...)`. `twin.commands` only invokes and lists commands.
+</Note>
+
+Where each is documented: [Drivers (metadata.drivers)](/feature-reference/edge/drivers/overview) · [Writing compatible drivers (cw-driver.yml)](/feature-reference/edge/drivers/writing-compatible-drivers) · [BaseROS2Driver (combined manifest)](/feature-reference/edge/drivers/ros2-base-driver) · [cyberwave.yml](/feature-reference/manifest).
+
+## Stages
+
+<Steps>
+  <Step title="0. Plan">
+    **Artifact:** a one-paragraph plan: target level, who maintains the driver (you, Cyberwave, or the community), and whether the driver is open or closed source.
+
+    Decide early whether the asset will be private to your workspace, shared with your organization, or public. Start private and change it later. For closed-source drivers, see [Licensing your driver](/feature-reference/edge/drivers/writing-compatible-drivers).
+
+    **Done when:** the target level is written down and you know who owns the driver image.
+  </Step>
+
+  <Step title="1. Describe the robot">
+    **Artifact:** a ZIP with one main `.urdf` (or `.xacro`) and every mesh and texture it references, using relative paths that match the ZIP layout. Include inertials and joint limits now; L1 needs them.
+
+    Validate locally before you upload. The same parser library the platform uses is on PyPI. It has a Python API, not a CLI:
+
+    ```bash
+    pip install cyberwave-robot-format
+    ```
+
+    ```python
+    from cyberwave_robot_format.urdf import URDFParser
+
+    schema = URDFParser().parse("my-arm/urdf/robot.urdf")
+    print(schema.validate())                       # validation issues
+    ctx = schema.extensions.get("parse_context", {})
+    print(ctx.get("warnings"), ctx.get("errors"))  # recovered quirks
+    ```
+
+    The parser tolerates common URDF quirks (a missing `type` on a joint, say) and records each one in `parse_context`. Anything under `errors` means something in your file was discarded. Starting from MuJoCo? `cyberwave_robot_format.mjcf.MJCFParser` parses MJCF the same way.
+
+    {/* TODO(docs): state which source formats the upload wizard and create-with-urdf accept besides URDF/xacro ZIPs (MJCF, USD, .cbw), and what is lost in each. */}
+
+    **Done when:** `validate()` returns no issues and `parse_context["errors"]` is empty.
+  </Step>
+
+  <Step title="2. Create the asset">
+    **Artifact:** a private asset in your workspace, with a slug such as `acme/catalog/my-arm`.
+
+    Upload from the dashboard ([Create an asset](/feature-reference/create-asset)) or with `POST /api/v1/assets/create-with-urdf` ([API upload](/feature-reference/catalog/upload-asset)). ZIPs up to 512 MB are accepted.
+
+    Then run the L0 test in the free Playground:
+
+    ```python
+    from cyberwave import Cyberwave
+
+    cw = Cyberwave()                         # reads CYBERWAVE_API_KEY
+    arm = cw.twin("acme/catalog/my-arm")     # prints the environment URL
+    cw.affect("playground")                  # free browser simulation
+    print(arm.joints.list())
+    arm.joints.set("joint_1", 30, degrees=True)
+    ```
+
+    **Done when:** every joint moves the right link in the right direction and stops at its limits. **You are at L0.**
+  </Step>
+
+  <Step title="3. Declare capabilities and sensors">
+    **Artifact:** the asset's universal schema, with correct `extensions.cyberwave.capabilities` and a `sensors` list.
+
+    Capabilities decide which UI panels and SDK classes your twin gets. `can_actuate` enables joint control and the re-calibrate action, `can_locomote` enables Missions, `can_grip` and `has_joints` enable the controller UI, and a non-empty `sensors` list enables sensor windows. The full table is in the [feature-to-capability matrix](/feature-reference/digital-twins).
+
+    Fix them on the asset page's onboarding checklist, in the JSON editor ([Editing a universal schema](/feature-reference/edit-universal-schema)), or from the SDK:
+
+    ```python
+    asset = cw.assets.get("acme/catalog/my-arm")
+    cw.assets.patch_universal_schema(
+        asset.uuid,
+        path="/extensions/cyberwave/capabilities/can_grip",
+        value=True,
+        op="add",
+    )
+    ```
+
+    For each sensor, set its `id`, `type` (`rgb`, `depth`, `lidar_3d`, `imu`, …), mount offset, and, for cameras, `width`, `height` and FOV. **The declared resolution must match the frames your driver actually publishes.** If the aspect ratio differs, the `object_pose` workflow node refuses to deproject (`aspect_mismatch`). Mimic joints are covered in [Mimic joints](/feature-reference/digital-twins/mimic-joints).
+
+    {/* TODO(docs): confirm the single authoritative place to author sensor width/height (universal schema `sensors[].parameters` vs cw-driver.yml), then document it here. */}
+
+    **Done when:** the twin shows the panels you expect (joint sliders, gripper, sensor windows) and nothing else.
+  </Step>
+
+  <Step title="4. Make it simulate">
+    **Artifact:** physics on the asset and MuJoCo enabled under **Simulator compatibility**.
+
+    Set world physics with `cw.assets.set_physics(asset.uuid, timestep=0.002, ...)` ([physics reference](/feature-reference/catalog/upload-asset)). Enable MuJoCo on the asset. New twins inherit it; existing twins keep their own setting. MuJoCo won't start if **any** twin in the environment isn't marked compatible. In the environment editor, **Simulation readiness → Prepare simulation** lists missing data and proposes fixes ([Simulator compatibility](/feature-reference/catalog/simulation-support)).
+
+    `cw.affect("simulation")` starts a MuJoCo instance, which is billable ([credits](/billing/credits)).
+
+    **Done when:** MuJoCo starts with your twin and it holds a commanded pose. **You are at L1.**
+  </Step>
+
+  <Step title="5. Write the driver">
+    **Artifact:** a driver process that bridges your hardware to the twin.
+
+    If your robot already has a ROS 2 driver, subclass `BaseROS2Driver` and forward topics with `from_ros`. You don't write MQTT code or message conversion:
+
+    ```python
+    from cyberwave.driver import CallbackGroup, DriverOperationMode, TopicSpec
+    from cyberwave.driver.ros2 import BaseROS2Driver, Ros2TopicSpec, run_driver_main
+
+
+    class MyArmDriver(BaseROS2Driver):
+        REGISTRY_ID = "acme/my-arm"        # your asset's registry ID
+        DEFAULT_NODE_NAME = "my_arm_driver"
+
+        def define_interface(self, iface) -> None:
+            iface.add_publisher(
+                TopicSpec(
+                    topic_slug="cyberwave/joint/{twin_uuid}/update",
+                    payload_schema_ref="JointStatesPayload",
+                    description="Forward /joint_states to the twin",
+                ),
+                CallbackGroup(),
+                from_ros=Ros2TopicSpec(topic="/joint_states"),
+                operation_modes=frozenset(DriverOperationMode),
+            )
+
+
+    if __name__ == "__main__":
+        run_driver_main(MyArmDriver, anchor=__file__)
+    ```
+
+    Run it with `CYBERWAVE_API_KEY` and `CYBERWAVE_TWIN_UUID` set (Edge Core injects both in production). `CW_ROS2_AUTO_ACTIVATE=true` is recommended during development. The SDK stamps `source_type=edge` on everything `from_ros` publishes. If you write listeners, never act on inbound `edge*` messages; that's your own feedback ([source-type convention](/feature-reference/edge/drivers/base-driver-class)).
+
+    For arms and grippers, compose the [driver mixins](/feature-reference/edge/drivers/driver-mixins) rather than writing joint-command plumbing yourself. No ROS? Subclass [`BaseDriver`](/feature-reference/edge/drivers/base-driver-class) and call your vendor SDK. Full reference: [BaseROS2Driver](/feature-reference/edge/drivers/ros2-base-driver).
+
+    {/* TODO(docs): confirm whether REGISTRY_ID accepts the unified asset slug (registry_id is deprecated in favour of slug). */}
+
+    **Done when:** the twin mirrors the robot in Live mode. **You are at L2.**
+  </Step>
+
+  <Step title="6. Declare the interface">
+    **Artifact:** a `cw-driver.yml` (or, for ROS 2, the exported `manifest.yaml`) that lists only the topics and commands your driver handles.
+
+    By default the driver registers its own interface when it starts (`auto_register_interface = True` calls `twin.driver.set_schema(...)`). To register it without running the driver, or from CI:
+
+    ```python
+    twin = cw.twin(twin_id="acme/twins/my-arm")
+    twin.driver.set_schema(MyArmDriver.get_manifest())   # or a path: "./cw-driver.yml"
+    print(twin.driver.get_supported_commands())
+    ```
+
+    For ROS 2 drivers, export the combined manifest at build time with `python main.py write-manifest`. `set_schema` compiles the file on the platform (`POST /api/v1/twins/{uuid}/driver-schema`), writes `metadata.mqtt`, and re-binds `twin.commands.<name>`. Details: [Writing compatible drivers](/feature-reference/edge/drivers/writing-compatible-drivers).
+
+    {/* TODO(docs): document how to promote a twin's compiled driver catalog to the asset so every new twin inherits it (SDK has no asset-level set_schema). */}
+
+    **Done when:** the teleop overlay and `get_supported_commands()` list exactly the commands your driver implements.
+  </Step>
+
+  <Step title="7. Package and bind">
+    **Artifact:** a Docker image, pushed to a registry, and bound to the asset in `metadata.drivers`.
+
+    Build for every edge platform you support. Push to Docker Hub or to the Cyberwave registry `registry.cyberwave.com` (Enterprise; authenticate with `docker login registry.cyberwave.com` using your API key, see [Docker registry](/feature-reference/docker-registry)). Version tags are immutable there.
+
+    Bind the image to the asset. Edge Core reads this block and starts one container per linked twin:
+
+    ```json
+    {
+      "drivers": {
+        "default": {
+          "docker_image": "registry.cyberwave.com/acme/my-arm-driver:v0.1.0",
+          "params": ["--network", "host"]
+        },
+        "linux-aarch64-jetson": {
+          "docker_image": "registry.cyberwave.com/acme/my-arm-driver:jetson-v0.1.0",
+          "prefer_gpu": true
+        }
+      }
+    }
+    ```
+
+    Edge Core uses the most specific key for the host (for example `linux-aarch64-jetson` or `darwin-arm64`) and falls back to `default`. On a Jetson with no Jetson key, it tries a `jetson-`-prefixed tag first. Use `services` instead of `docker_image` for multi-container stacks (driver + Nav2 + SLAM), and pass env vars as `-e KEY=value` pairs in `params`. Reference: [Drivers](/feature-reference/edge/drivers/overview).
+
+    Set it on the asset from the SDK (read, merge, write), or edit a twin's metadata in the environment editor under **Advanced editing**. Changing the asset affects twins created afterwards.
+
+    ```python
+    asset = cw.assets.get("acme/catalog/my-arm")
+    metadata = dict(asset.metadata or {})
+    metadata["drivers"] = {"default": {"docker_image": "registry.cyberwave.com/acme/my-arm-driver:v0.1.0"}}
+    cw.assets.update(asset.uuid, {"metadata": metadata})
+    ```
+
+    {/* TODO(docs): document how Edge Core authenticates pulls of private images on Docker Hub and on registry.cyberwave.com. */}
+
+    **Done when:** on a clean device, `sudo cyberwave pair` followed by selecting your twin pulls the image, the container starts, and the twin goes online. Watch it with `cyberwave edge status` and `cyberwave edge logs -f`.
+  </Step>
+
+  <Step title="8. Safety and operations">
+    **Artifact:** a driver that fails loudly and stops safely.
+
+    - **Exit non-zero** when required hardware is missing, so Edge Core raises `driver_start_failure` and applies its restart policy. `run_driver_main` exits with code 1 when the driver raises.
+    - **Stop on silence.** If commands stop arriving mid-teleop, bring the robot to a safe state. Zenoh command channels support `watchdog_ms` with an `on_command_timeout` hook. For MQTT, implement the timeout in your driver.
+    - **Raise alerts** operators can see: `create_twin_alert(...)` or `AlertManager` from the SDK ([Alerts](/feature-reference/edge/drivers/alerts)).
+    - **Calibration:** a twin with `can_actuate` shows a **Re-calibrate driver** action in Live mode. Test it against your robot, and document any vendor calibration steps on the asset.
+
+    {/* TODO(docs): link a documented driver-side watchdog pattern for MQTT teleop once one exists. */}
+    {/* TODO(docs): document the driver-side contract for the Re-calibrate driver action. */}
+
+    **Done when:** you cut the edge device's network during teleop, the robot stops safely, and an alert appears on the twin. **You are at L3.**
+  </Step>
+
+  <Step title="9. Learn">
+    **Artifact:** a kit (robot + camera), a recorded dataset, and a policy running as the twin's controller.
+
+    Dock your cameras to the robot as child twins with an [asset kit](/feature-reference/catalog/asset-kits). Edge Core passes child camera twins to the parent driver in `CYBERWAVE_CHILD_TWIN_UUIDS`. Then record teleop episodes, export them (LeRobot is one of the export formats), fine-tune a VLA, and assign it with `twin.policy.assign(...)`. Worked example: [SO-101 teleop dataset](/tutorials/so101-teleop-dataset) → [Train a VLA](/tutorials/train-vla-cyberwave).
+
+    **Done when:** a policy trained on your robot's data drives the robot. **You are at L4.**
+  </Step>
+
+  <Step title="10. Publish">
+    **Artifact:** a public asset (and kit) with a clear description, bill of materials and troubleshooting notes.
+
+    Switch the asset's visibility to **Public** when it's ready. Public assets are visible to anyone on the platform. To be listed with a support level, or for closed-source driver distribution, [contact Cyberwave](https://cyberwave.com/contact-us) or email [info@cyberwave.com](mailto:info@cyberwave.com) with your target level and the pass-test results.
+
+    {/* TODO(docs): hardware partner program: review process, "Verified" badge, SLA, co-marketing, and where the supported-hardware matrix row comes from. */}
+
+    **Done when:** the asset is public and you've sent your level evidence to Cyberwave.
+  </Step>
+</Steps>
+
+## Checklist
+
+Copy this into your tracker.
+
+```markdown
+- [ ] Target level, maintainer and licence decided
+- [ ] URDF/xacro ZIP with meshes and relative paths; inertials and joint limits present
+- [ ] cyberwave-robot-format: validate() clean, parse_context errors empty
+- [ ] Asset created (private); slug noted
+- [ ] L0: every joint moves correctly in the Playground
+- [ ] Capabilities correct; UI shows the expected panels only
+- [ ] Sensors declared; width/height match what the driver publishes
+- [ ] Physics set; MuJoCo enabled on the asset
+- [ ] L1: MuJoCo starts with the twin; pose holds
+- [ ] Driver subclasses BaseROS2Driver or BaseDriver; publishes source_type=edge; ignores inbound edge*
+- [ ] L2: live twin mirrors the robot
+- [ ] cw-driver.yml / manifest.yaml lists only handled commands; set_schema applied
+- [ ] Image built for every target platform and pushed
+- [ ] metadata.drivers set on the asset (default + platform keys)
+- [ ] Clean-device test: cyberwave pair -> image pulled -> twin online
+- [ ] Non-zero exit on missing hardware
+- [ ] Command-loss watchdog stops the robot; alert raised
+- [ ] L3: network cut mid-teleop leaves the robot safe
+- [ ] Kit with cameras docked
+- [ ] L4: dataset recorded, policy trained and running as controller
+- [ ] Visibility Public; description, BOM, troubleshooting
+- [ ] Level evidence sent to Cyberwave
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Bring your own hardware" icon="plug" href="/tutorials/bring-your-own-hardware">
+    End-to-end tutorial for a first custom device.
+  </Card>
+  <Card title="Writing compatible drivers" icon="code" href="/feature-reference/edge/drivers/writing-compatible-drivers">
+    Container contract, cw-driver.yml, MQTT catalog and sensor output.
+  </Card>
+  <Card title="UR Sim with a ROS 2 driver" icon="robot" href="/tutorials/ur-sim-cyberwave-driver">
+    A working BaseROS2Driver against a simulated UR arm.
+  </Card>
+  <Card title="Supported hardware" icon="list-check" href="/overview/supported-hardware">
+    Robots that already have a driver.
+  </Card>
+</CardGroup>

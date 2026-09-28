@@ -1,10 +1,62 @@
 ---
-title: "Online Controllers"
-description: "Run custom code, random policies, and trained RL checkpoints in their own controller-host cloud node that drives a simulated or live robot plant over MQTT and WebRTC."
+title: "Online controllers"
+description: "Run custom code, random policies and trained RL checkpoints in a cloud controller node that drives a simulated or live robot over MQTT and WebRTC."
 icon: "microchip"
 ---
 
 {/* stub — pending human review */}
+
+## Find controls in the Workbench
+
+{/* stub — Control navigation update, pending human review */}
+
+Open **Workbench → Control** and select a twin to see its actions, control methods, controller settings and related workflows. **Manual inputs** lists saved input mappings and opens the existing keyboard or leader-arm editor. **Workflows & shortcuts** lists environment tasks; it is grey when no workflows exist. Shortcuts run only in their matching Simulation or Live mode.
+
+The detailed controller settings remain available, including model/camera configuration, code and motion sequences. Adding a different input may replace the twin’s primary controller; review that change before assigning it. A saved mapping does not confirm that its device is connected.
+
+Select an action to focus its controls. In catalog Control and Workbench, **Other controls** keeps existing **Manual inputs** and **Autonomy and logic** settings together when they are shared across actions. In Edit, expand **Controller & runtime settings** for the full controller detail; operating controls stay visible in Simulation and Live. Opening or switching actions does not change a saved assignment.
+
+{/* stub — Tool-frame configuration, pending release and human review */}
+
+For a configured IK service, open **End-effector → Autonomy and logic → Tool frame**. Select the tool's robot link and choose **Place working point** to show the 3D handles. **Finish placement** hides them. Expand **Exact offset** to enter position and rotation; position is in metres relative to the link. **Save** on the asset sets the default for newly added twins; Save in Workbench changes only that twin. The configured solver is retained. Saving does not move the robot or confirm collision-free operation.
+
+{/* stub — Pinned layouts, pending human review */}
+
+Use **Overview** to see the twin’s mappings, policies and related workflows together. SDK examples are available in the asset’s **Code** tab.
+
+Pin control guides, cameras or microphones to the **Overview** panel. Choose **Arrange** to show the handles and reorder them, save personal layouts, or—if you can edit the environment—save an environment default. Your personal layout takes precedence. A command-connection warning describes the connection used to send commands; it does not mean your keyboard is disconnected.
+
+{/* stub — Keyboard focus recovery, pending release and human review */}
+
+Robot keys pause while you use the Overview toolbar. After closing **+ Pin** or the layout menu with the keyboard, Tab to **Resume keyboard controls** and press Enter or Space to return to robot input. Clicking outside either menu restores robot input unless you move into a text field or dialog.
+
+Changing a key or gamepad button preserves that command’s saved values. Review its parameters separately to change the amount or behavior; catalog defaults initialize new bindings.
+
+Commands such as adjustable lights need a value before saving. The mapping editor shows the configured parameter and its range; expand **Other parameters** to use a supported alternative.
+
+{/* stub — Shared operator panels, pending release and human review */}
+
+For **Navigate**, **End-effector** or **Joint targets**, choose **Open control panel** to pin the supported operator control. In Simulation or Live, switch to **Control**. Choose a target, or expand **Enter coordinates** / **Enter joint values**; checks run automatically and **Move** or **Go to point** remains unavailable until the target can run. Live movement may require confirmation.
+
+{/* stub — Control availability guidance, pending human review */}
+
+Expand **Live unavailable** to see why a control works in Simulation but needs driver support for Live. The same limitation appears once for controls grouped under a twin. A hardware limitation remains unavailable in both modes; unverified support must be checked in the catalog. Switching modes or opening this guidance does not send a command.
+
+{/* stub — Navigation localization checks, pending human review */}
+
+Navigation needs a current localized pose. If localization is unavailable or stale, restore the selected mapping/localization service and its sensor input before retrying. A saved map with no observed free space cannot be used for localization: capture a new map with free-space tracing or choose another map. The map remains available for inspection.
+
+Saved poses, **Drive to home pose**, and workflow joint movements require declared controllable joints. Complete gripper poses may include coupled fingers when they agree with the driver joint. If an imported robot is rejected, review its actuation setup and joint limits in the catalog; movable geometry alone does not establish command support.
+
+For a spatial target, choose **Place target**, right-click a scene point and select **Set control target here**. Drag the marker to adjust its position, then choose **Done** to hide the handles. Expand **Enter coordinates** for world coordinates in metres. **Describe target** opens the [control agent](/ai/control-agent) for the selected twin; review its result before running it. Placing a target does not move the robot. Use **Arrange** to reorder pinned panels. A saved layout remembers the panel, not a destination or joint command. Missing robot capabilities remain unavailable even when a 3D model has movable joints.
+
+{/* stub — Evidence selection, pending human review */}
+
+In **Attach target evidence**, saved task and model choices stay selected when the catalog refreshes. If one is unavailable, choose its replacement explicitly. Attaching a result does not run a model.
+
+{/* stub — Reusable perception workflows, pending release and human review */}
+
+For a perception action, **Workflow task** lists compatible environment workflows and available templates. Select a template, then choose **Use template in this environment** to create an inactive copy linked to the twin. This also works for an inherited template. Open **Edit model & inputs** to select its camera or other sensor sources; the catalog template stays unchanged. Missing setup appears beside the selected task. Saving the setup does not activate the workflow or confirm sensor availability. In Workbench, **Enable** starts the linked workflow’s triggers once its checks pass; **Pause** disables them. A blocker appears beside the task with **Edit model & inputs**. Cloud or Edge beside the model describes inference placement; Enabled does not confirm that results are arriving.
 
 ## What is an online controller?
 
@@ -113,7 +165,7 @@ The artifacts reach your code differently per authoring mode:
 Class mode plus named artifacts is the canonical pattern for a trained policy: load the primary checkpoint in `__init__`, then run inference each step in `__call__`.
 </Tip>
 
-## Running a skill from the Control assistant
+## Running a skill from the control agent
 
 In **Simulate → Agent**, describe the skill and any run limit, then select
 **Plan**. Check the selected robot, policy and limits before executing; start
@@ -235,6 +287,62 @@ Then **start a simulation** from the environment's **Simulate** tab in the dashb
 | `POST` | `/api/v1/controller-policies/{uuid}/clone` | Duplicate a controller policy. |
 | `GET` | `/api/v1/controller-policies/{uuid}/rl-task-provenance` | Get RL-task provenance for a policy. |
 
+## Control setup
+
+{/* stub — shared Control setup, pending human review */}
+
+In **Workbench / Control**, select a twin. **Overview** shows its configured inputs, policies and workflow-backed services together. Each saved service links to its action setup, including any missing inputs or changed references. Select an action to review **Autonomy and logic**, its input, and **Advanced settings**. **Other controls** retains the original shared settings. Related workflows appear in **Overview**.
+
+The selected model shows the kind of output it produces. **Relative depth** has no metric distances; **Metric depth** still needs camera calibration and a suitable mapping pipeline. A path predicted in an image is not a robot navigation route. Catalog services identify reusable **Workflow templates**; Workbench shows the state of the environment workflow.
+
+If a required workflow input comes from a disabled or removed node, Control shows the missing input. Use **Edit model & inputs** to restore or replace its source. Restoring the configuration does not start the workflow.
+
+In **Maps**, **Point projection** identifies a grid made from point-cloud observations. Unobserved cells remain unknown. **Legacy grid** preserves an older grid for inspection; review its source and calibration before navigation. Viewing these maps keeps their original downloads. **Waiting for first map** means the stream has not supplied a map image yet.
+
+{/* stub — Declared mapping service, pending release and human review */}
+
+**Maps** remains available in the right panel in Edit, Simulate and Live, including
+when no robot is selected. Select a robot to use its declared mapping service.
+Monitor keeps mapping controls read-only. Control requires edit access; in
+Simulate, start a simulation before starting a map. Saved maps remain viewable
+when the run stops. Generating a map from authored geometry remains in Edit.
+
+For a configured mapping service, **Maps** shows the robot’s service under **Autonomy and logic** and offers its supported map types. Missing sensor setup blocks **Start mapping**. **Legacy sensor mapping** retains an older configuration for review. Requesting mapping does not confirm that its runtime is connected or that a map has arrived.
+
+**Map details** shows the source robot, status, resolution and recorded service.
+Expand **Technical details** to inspect or copy the complete record. If a simulation
+ends before mapping finishes, the map is marked **Interrupted** and received
+snapshots are retained. A saved map still needs coverage and alignment checks
+before use for navigation.
+
+
+Catalog **Control** has three sections: **Control services**, **Hardware drivers** and **Catalog preview**. Control services uses the same action organization as Workbench. Editors can change setup rules under an action’s **Advanced settings**; hardware capabilities remain in **Capabilities**.
+
+Adding a twin copies saved asset action settings into that twin. Workbench edits stay local to it; the reusable input preset and asset defaults are unchanged. **From asset defaults** and **Customized for this twin** identify the saved scope. These action settings do not activate inputs yet.
+
+Use **Add input** to select an existing preset. Supported joint keys appear **From preset**. **Edit keys** customizes the action; **Reset to preset** removes that customization. Clearing every key keeps the action empty until you reset or map new keys. The reusable preset is unchanged. During editing, expand **Current input setup** to inspect the existing controls.
+
+From **Overview**, **Edit mapping** opens that action’s input settings directly. You can collapse the settings without losing unsaved changes. Read-only users can **View mapping**.
+
+For a standard command keyboard, **Use standard keys** fills supported keys for the selected action. Review them, then **Save**. The same keyboard can serve Drive, Camera and Lights with separate mappings. Existing custom keys are retained; use **Edit keys** to add commands that need your own values or choices.
+
+**Save** stores your action settings without starting a robot. The selected service appears under **Autonomy and logic**; its configuration details stay beside the selector. Use the operating panels in Workbench to control a robot. Saving does not activate inputs; pairing, calibration and runtime readiness are checked on the twin.
+
+**Direct control** means the action uses its configured manual inputs without an action policy. When compatible policies exist, you can select one or return to Direct control while retaining your input mappings. Actions that require a policy still show **Not configured** until one is selected. This choice does not certify that the simulator or hardware is ready.
+
+The operating panels can list supported joints even before the 3D model loads. Enter targets in the displayed units and review them before moving. Changing a target requires a new review; motion requires a ready execution route. Control setup remains configuration only.
+
+For an immediate simulation move, **Queued** means the command was sent, not that the robot reached its target. Updated simulators report progress while running and confirm completion from measured joint positions. Older simulators may report only when the simulation ends. A pending status alone is not a reason to repeat the move. Publishing failures are reported as errors.
+
+{/* stub — command parameters, pending human review */}
+
+When a keyboard command needs values, its mapping editor shows a **Parameters** step after you choose a key. For example, a configured gripper can offer **grip**, **release** or **reset**. Complete required values before saving. Reopening the same preset in Catalog or Workbench preserves the saved parameters. Editing parameters requires saving them; **Assign as-is** uses only an unchanged, complete preset. Saving a mapping does not verify a connected device or execute its command.
+
+{/* stub — shared action discovery, pending human review */}
+
+In **Workbench / Control**, **Add action** opens the same picker as the catalog. Choose a declared action to configure its manual inputs and logic inline. Configuration pages do not start a robot or embed a test panel. Additional legacy setup paths remain under **More actions**. Opening setup does not start control.
+
+
 ## Where to go next
 
 <CardGroup cols={3}>
@@ -248,3 +356,30 @@ Then **start a simulation** from the environment's **Simulate** tab in the dashb
     How the simulation plant steps physics and publishes state.
   </Card>
 </CardGroup>
+
+{/* stub — Operator panel visibility, pending human review */}
+
+In an action’s **Advanced settings**, use **Show operator panel** to hide its on-screen target control. Catalog settings apply when adding new twins; Workbench settings apply to the selected twin. A saved pin stays in your layout with a hidden-state message. SDK, agent and workflow access are unchanged. Existing shared keyboard guides are managed separately.
+
+{/* stub — Twin keyboard settings, pending release and human review */}
+
+In **Workbench → Control → Overview**, use **Edit mapping** to change supported keyboard keys for that twin. Joint and command keyboards reuse their existing editors. Command-key edits preserve the saved movement, camera and lighting commands and their values. Saving preserves the shared preset and other twins’ mappings. If the input or keys changed elsewhere, reload before saving.
+
+For a robot with attached twins, select each twin’s saved keyboard mappings in **Workbench → Control → Overview**. Distinct keys can stay selected together. **Pause input** affects only the selected twin; conflicting keys explain what to change before activation. **Restore previous environment inputs** returns all twins to their previous input assignments. Multiple gamepad inputs cannot yet be selected together.
+
+With driver-based keyboard controls, switching windows pauses held input. After returning or restoring the command connection, release held keys and press again.
+
+{/* stub — Leader mapping editor, pending release and human review */}
+
+For a calibrated leader-arm preset, use **Map joints** to pair each servo with a robot joint. **Arrange mapping** enables drag placement; **Done** hides it. Optional aliases stay under **Advanced**. Catalog edits update the shared preset; calibrate the connected leader on a twin before operating. In Workbench, **Use input** assigns an unchanged preset; **Save & use input** saves mapping edits and assigns it. Those edits affect every twin using the preset. Existing legacy presets keep their current editor.
+
+{/* stub — Input compatibility and migration, pending release and human review */}
+
+New input choices follow the selected action. A saved input that conflicts with that action shows **Deprecated mapping**. Use **Review migration** to remove or replace it, then **Save**. The shared preset is retained. **Needs mapping** means setup is incomplete; saving does not verify a connected device.
+
+{/* stub — Manual input runtime feedback, pending release and human review */}
+Keyboard and gamepad mappings stay visible while a physics simulation starts or is stopped. Controls pause until the simulator is ready; Playground controls remain available without starting a backend simulation.
+
+The compact joint guide shows the last commanded **Target** and **Δ**, the difference from the reported position. **No feedback** or **Feedback stale** means it cannot confirm the current position. In Playground, the readout follows the scene; a physics simulation needs its own feedback. Angle units can change without enabling control; linear joints remain in metres.
+
+Pinned navigation and joint target panels follow the same readiness state. You can enter targets while waiting; they are checked automatically when the simulator is ready. Checking a target does not move the robot.

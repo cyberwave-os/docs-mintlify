@@ -1,10 +1,10 @@
 ---
-title: "Advanced Settings"
+title: "Simulation timing and advanced settings"
 description: "Tune how fast a simulation steps, how often it publishes, and how its range sensors behave."
 icon: "gauge"
 ---
 
-<Note>This page is a stub. A human will curate and expand it before publishing.</Note>
+{/* TODO(docs): This page is a stub. A human will curate and expand it before publishing. */}
 
 The Sim tab's **Advanced Settings** section sets how a simulation runs. Every field
 is optional — leave one empty and the server picks, using the value shown in the
@@ -59,6 +59,13 @@ every stream pass — the older behaviour, and rarely what you want on a scene w
 a real lidar on it.
 
 ## When you can change them
+
+For a 3D range sensor, the saved sensor configuration can declare horizontal and
+vertical resolution and field of view. The simulator samples those rows within
+its total ray budget. A sensor with no vertical rows retains its existing planar
+scan. If the scan is empty, check its mounting position and orientation: a sensor
+inside the robot may only see the robot itself. A point cloud is an observation;
+it does not by itself establish a saved map or obstacle avoidance.
 
 These settings are fixed for the life of a run. Set them before pressing
 **Start**; the fields are disabled while a simulation is active. Values you type

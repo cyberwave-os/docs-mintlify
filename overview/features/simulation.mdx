@@ -10,9 +10,9 @@ Cyberwave turns every [environment](/overview/features/environment) into a runna
 from cyberwave import Cyberwave
 
 cw = Cyberwave()
-cw.affect("simulation")
+robot = cw.twin("the-robot-studio/so101")   # create the twin first: it selects the environment
+cw.affect("playground")                     # free; "simulation" starts a billable MuJoCo run
 
-robot = cw.twin("the-robot-studio/so101")
 robot.joints.set("shoulder_pan", 45, degrees=True)   # runs against the virtual twin
 ```
 
@@ -83,9 +83,8 @@ Open any environment in the editor and click **Simulate** in the top bar.
 from cyberwave import Cyberwave
 
 cw = Cyberwave()
-cw.affect("simulation")          # subsequent commands run in Playground / MuJoCo
-
 arm = cw.twin("the-robot-studio/so101")
+cw.affect("playground")          # subsequent commands run in the free Playground
 arm.joints.set("shoulder_pan", 30, degrees=True)
 arm.joints.set("elbow_flex",   -45, degrees=True)
 ```
@@ -106,6 +105,15 @@ drone.commands.takeoff()         # rises to its hover altitude
 drone.move_forward()
 drone.commands.land()
 ```
+
+{/* stub — this section will be curated by a human before publishing */}
+
+**Camera previews, including depth.** Each camera on a twin gets its own tile in
+the right sidebar, previewing what that camera sees as you move things around. A
+depth camera previews as the same grayscale ramp it produces in MuJoCo — near
+surfaces dark, far ones bright, scaled to the sensor's own range, with anything
+past its reach left white. Playground previews are for framing and reach; to pull
+frames into code or a workflow, run the environment in MuJoCo.
 
 ### MuJoCo: contact-rich physics, your way
 
@@ -181,6 +189,10 @@ own — the same **Move Twin** and waypoint workflows you use on a real robot, a
 the same navigation stack running behind them. Send a goal and the robot plans a
 path, avoids what its lidar sees, and reports progress back to the workflow.
 
+On a real Go2, a printed AprilTag recorded during mapping lets the robot find
+itself on the saved map after a restart. See
+[AprilTag relocalization](/robots/go2-apriltag-relocalization).
+
 Supported today: **Unitree Go2** and **MiR250** (including the Coesia variant).
 The MiR250 fuses its front and rear lidars into a single 360° scan, so a single
 pass down an aisle maps both sides.
@@ -201,8 +213,9 @@ Stop a run with `sim.stop()` (it also stops at its `duration`):
 
 ```python
 cw = Cyberwave(environment_id="acme/envs/floor")
+camera = cw.twin("cyberwave/standard-cam")
 cw.affect("simulation")               # starts MuJoCo, logs ~0.6 credits/hour
-frame = robot.get_frame()             # reads from the running sim
+frame = camera.get_frame()            # reads from the running sim
 ...
 cw.environments.simulations.get_active(robot.environment_id).stop()
 ```
@@ -213,7 +226,7 @@ What each runtime serves:
 - **MuJoCo only**: camera frames, `get_video()`, depth, point clouds, LiDAR — otherwise `SimulationNotRunningError` / `SimulationLevelError`.
 - **Any sim runtime**: locomotion and flight control surfaces — `twin.commands.*`, `twin.locomotion.*`, `twin.flight.*` and their twin shortcuts (`twin.move_forward()`, `twin.takeoff()`, `twin.land()`, …). In MuJoCo a drone flies under thrust, so it obeys gravity and contacts
 - **Not in simulation**: the `imu` and `gps` sensors — raise `NotSimulatedError` (live/driver-only). A twin positioned from GPS renders from its saved position in Simulate; see [Geo reference](/feature-reference/environment-editor/geo-reference).
-- **WIP** {/* stub */}: the `compass` sensor isn't implemented in any runtime yet.
+- **Not available yet**: the `compass` sensor isn't implemented in any runtime.
 
 ---
 

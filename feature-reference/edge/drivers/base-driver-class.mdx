@@ -3,9 +3,7 @@ title: "BaseDriver (Python SDK)"
 description: "Reference for cyberwave.driver.BaseDriver — what the SDK runs automatically, what you must implement, lifecycle, registry, alerts, and manifests."
 ---
 
-<Warning>
-**STUB DOCUMENT:** Expanded technical reference aligned with `cyberwave-python`; a human editor may tighten prose before publish.
-</Warning>
+{/* TODO(docs): **STUB DOCUMENT:** Expanded technical reference aligned with `cyberwave-python`; a human editor may tighten prose before publish. */}
 
 ## What `BaseDriver` is
 
@@ -41,7 +39,7 @@ cw = Cyberwave(api_key="...")
 twin = cw.twin("acme-corp/my-arm", twin_id="...")
 
 twin.driver.set_schema(MyDriver.get_manifest())  # before run — aligns twin.commands
-MyDriver(twin).run()  # blocking; asyncio.run(run_async())
+MyDriver(twin=twin).run()  # blocking; asyncio.run(run_async())
 ```
 
 ### Edge Core / Docker (env-driven)
@@ -99,7 +97,7 @@ Pure forward-only ROS drivers often leave the four async `on_*` hooks as no-ops 
 | `define_interface(iface)` | Yes for custom topics/commands | Empty body OK if defaults suffice (unusual) |
 | Command callbacks | Per `add_listener` | Sync or async; registry dispatches on driver asyncio loop |
 | Publisher callbacks | Per tick-based `add_publisher` | Return `dict` each tick at `PublisherArgs.rate_hz` |
-| `ASSET_KEY` | Strongly recommended | Catalog key + manifest `asset_key`; enables auto `register_interface_on_twin` |
+| `REGISTRY_ID` | Strongly recommended | Catalog key + manifest `asset_key`; enables auto `register_interface_on_twin` |
 
 ### Optional overrides (defaults are fine)
 
@@ -130,7 +128,7 @@ sequenceDiagram
   BaseDriver->>BaseDriver: CONFIGURING
   BaseDriver->>Cloud: _connect_cloud_async()
   BaseDriver->>Cloud: telemetry_start, connected
-  opt auto_register_interface + ASSET_KEY
+  opt auto_register_interface + REGISTRY_ID
     BaseDriver->>Cloud: register_interface_on_twin()
   end
   BaseDriver->>BaseDriver: on_configure()
@@ -163,7 +161,7 @@ sequenceDiagram
 1. **`CONFIGURING`** — Log `[STATE] unconfigured → configuring`. Raise lifecycle alert + twin notice *"Driver starting"*.
 2. **`_connect_cloud_async()`** — `Cyberwave(source_type="edge")` (SDK defaults + `CYBERWAVE_*` env). Connect MQTT. Resolve twin: reuse `twin=` or fetch by `robot_uuid` / asset.
 3. **`_start_driver_telemetry_session()`** — Publish `telemetry_start` + `connected` on MQTT; start debounced `driver_info` via `BaseTelemetry`.
-4. **`register_interface_on_twin()`** — If `auto_register_interface` and class `ASSET_KEY` are set: `twin.driver.set_schema(self.manifest)` (failures are logged, driver continues).
+4. **`register_interface_on_twin()`** — If `auto_register_interface` and class `REGISTRY_ID` are set: `twin.driver.set_schema(self.manifest)` (failures are logged, driver continues).
 5. **`on_configure()`** — Your hook.
 6. **`CONNECTING`** — Twin notice *"Driver connecting to device"*. **`on_connect_to_device()`**.
 7. **`INACTIVE`** — Notice *"Driver wiring interfaces"*. **`on_register_callbacks()`** then **`_wire_interface_from_registry()`**:
@@ -264,6 +262,44 @@ def define_interface(self, iface):
 **`twin/command` must stay MQTT.** Do not set `enable_zenoh=True` on command listeners.
 </Warning>
 
+{/* stub — typed command parameters, pending human review and SDK release */}
+
+### Command parameters
+
+In a supporting SDK release, declare the values a user must provide with a command:
+
+```python
+from cyberwave.driver import CommandArg, CommandArgs
+
+gripper_command = CommandArgs(
+    name="gripper",
+    description="Control the configured gripper",
+    args=(CommandArg(
+        "action", type="string", required=True,
+        enum=("grip", "release", "reset"),
+    ),),
+)
+```
+
+Pass this declaration to your existing listener. Keyboard setup in Catalog and Workbench shows the declared choices. Commands with missing required values remain available for configuration, without receiving an automatic key binding. Validate hardware limits and the command itself in your driver before executing it.
+
+The original `CommandArg(name, default, unit)` form keeps its existing behavior. Typed fields are optional and keyword-only; `min_items` declares a minimum array length. Numeric zero and boolean false defaults are retained. Adopt typed declarations deliberately with a compatible backend; declaring parameters does not make a device ready to move.
+
+{/* stub — reviewed driver updates, pending human review and SDK release */}
+
+After refreshing the twin, inspect its current commands before changing an existing typed declaration. Save the revision you reviewed and pass it with the update:
+
+```python
+twin.refresh()
+current_commands = twin.driver.get_command_specs()
+revision = twin.driver.get_revision()
+# Review current_commands and your replacement before applying it.
+twin.driver.set_schema("cw-driver.yml", expected_revision=revision)
+```
+
+If the update returns `409`, refresh and review again. Do not automatically retry a changed configuration. Existing untyped declarations keep their current behavior.
+
+
 ### Operation modes (`DriverOperationMode`)
 
 Orthogonal to lifecycle state — gates which `add_listener` / `add_publisher` entries are active. An entry is wired only when the driver's current mode is in its `operation_modes` set.
@@ -345,10 +381,10 @@ Declare the command source types a listener accepts with `ProtocolArgs`:
 
 ```python
 from cyberwave.constants import SOURCE_TYPE_EDGE
-from cyberwave.driver import ProtocolArgs
+from cyberwave.driver import CallbackGroup, DriverOperationMode, ProtocolArgs, TopicSpec
 
 iface.add_listener(
-    MqttTopicSpec(namespace="joint", leaf="update", payload_schema_ref="JointUpdatePayload"),
+    TopicSpec(namespace="joint", leaf="update", payload_schema_ref="JointUpdatePayload"),
     CallbackGroup(callback=self._on_joint_cmd),
     protocol=ProtocolArgs(source_types=["tele", "edit", "sim_tele"]),
     operation_modes=frozenset({DriverOperationMode.TELEOP_LOCAL, DriverOperationMode.TELEOP_REMOTE}),
@@ -386,7 +422,7 @@ During **ACTIVE**, `_tick_loop_async` runs at **`TICK_RATE_HZ`** (class attribut
 | Property | Source |
 | -------- | ------ |
 | `robot_uuid` | `twin.uuid`, or `CYBERWAVE_TWIN_UUID` |
-| `asset_key` | Class **`ASSET_KEY`** on your driver subclass (required) |
+| `asset_key` | Class **`REGISTRY_ID`** on your driver subclass (required) |
 | `env_uuid` | Twin’s environment (after connect) |
 | `client` / `twin` | After `_connect_cloud_async` — raises if accessed early |
 
@@ -403,7 +439,7 @@ During **ACTIVE**, `_tick_loop_async` runs at **`TICK_RATE_HZ`** (class attribut
 | `driver.manifest` | Instance shortcut | Same as `get_manifest()` on running driver |
 | `driver.register_interface_on_twin()` | — | `set_schema` on bound twin |
 
-Compiled bundles include top-level **`asset_key`** from `ASSET_KEY`.
+Compiled bundles include top-level **`asset_key`** from `REGISTRY_ID`.
 
 Probe instances use `_manifest_probe()` — no MQTT, no lifecycle.
 
@@ -421,7 +457,7 @@ Loaded by `CyberwaveConfig` when the driver calls `Cyberwave(source_type="edge")
 | `CYBERWAVE_MQTT_HOST` | `mqtt.cyberwave.com` |
 | `CYBERWAVE_MQTT_PORT` | `8883` |
 | `CYBERWAVE_MQTT_USE_TLS` | `true` when port is 8883 |
-| `CYBERWAVE_MQTT_USERNAME` | Broker username |
+| `CYBERWAVE_MQTT_USERNAME` | Broker username. Leave unset: the SDK derives one from your API key so the broker can identify the session. Set it only for legacy broker accounts. |
 Edge Core also sets twin JSON path, child twin UUIDs, restart tuning — see [Writing compatible drivers](/feature-reference/edge/drivers/writing-compatible-drivers#environment-variables).
 
 ---
@@ -493,7 +529,7 @@ At **`on_activate`**, `_activate_registry_zenoh()` opens **`data_bus_for(twin_uu
 
 ```python
 class MyDriver(BaseDriver):
-    ASSET_KEY = "acme-corp/my-device"      # manifest + auto register
+    REGISTRY_ID = "acme-corp/my-device"      # manifest + auto register
     driver_family = "python"               # cw-driver metadata
     TICK_RATE_HZ = 50.0                    # on_tick + publisher scheduling base
     TELEMETRY_PUBLISH_RATE_HZ = 1.0        # built-in twin/telemetry publisher

@@ -1,6 +1,6 @@
 ---
 title: "Detect intruders in a zone"
-sidebarTitle: "Intrusion Detection"
+sidebarTitle: "Intrusion detection"
 description: "Build a privacy-preserving, edge-only intrusion alert workflow: camera_frame → YOLO → anonymize → spatial_filter → timed_condition → send_alert."
 icon: "user-shield"
 iconType: "solid"
@@ -29,7 +29,7 @@ flowchart LR
 ```
 
 The `anonymize` node publishes the pixelated frame to the camera
-driver's [filtered frame channel](/edge/drivers/frame-filters) so the
+driver's [filtered frame channel](/feature-reference/edge/drivers/frame-filters) so the
 WebRTC stream the operator sees is privacy-preserving by construction:
 no raw video ever leaves the edge.
 
@@ -90,7 +90,7 @@ alert_trigger(twin = camera-1, alert_type = intrusion)
 
 This cloud-side workflow wakes on every edge-emitted intrusion alert
 (no per-frame cost) and uses Django's email backend to deliver the
-message. See [`timed_condition`](/use-cyberwave/workflows/timed-condition#end-to-end-alert-pipeline)
+message. See [`timed_condition`](/feature-reference/workflows/timed-condition#end-to-end-alert-pipeline)
 for the full two-workflow shape.
 
 ## Operator experience
@@ -107,7 +107,7 @@ for the full two-workflow shape.
 
 The Zenoh→MQTT bridge does **not** forward raw frames. Only the
 alert payload (with optional anonymised snapshot) crosses the WAN.
-See the [Security Pipeline](/edge/drivers/security-pipeline) page
+See the [Security Pipeline](/feature-reference/edge/drivers/security-pipeline) page
 for the deeper privacy contract.
 
 <Warning>
@@ -118,11 +118,11 @@ alert payload) for legal de-identification.
 
 ## See also
 
-- [`spatial_filter`](/use-cyberwave/workflows/spatial-filter): the
+- [`spatial_filter`](/feature-reference/workflows/spatial-filter): the
   polygon zone primitive.
-- [`timed_condition`](/use-cyberwave/workflows/timed-condition): the
+- [`timed_condition`](/feature-reference/workflows/timed-condition): the
   dwell-then-cooldown gate.
-- [`anonymize`](/use-cyberwave/workflows/anonymize-image): the
+- [`anonymize`](/feature-reference/workflows/anonymize-image): the
   pixelation node and its mode reference.
-- [Security Pipeline](/edge/drivers/security-pipeline): multi-camera
+- [Security Pipeline](/feature-reference/edge/drivers/security-pipeline): multi-camera
   privacy-preserving WebRTC playbook.

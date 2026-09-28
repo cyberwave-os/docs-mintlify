@@ -1,6 +1,6 @@
 ---
 title: "Spot left-out equipment with a DJI Mini 3"
-sidebarTitle: "DJI Mini 3 Site Sweep"
+sidebarTitle: "DJI Mini 3 site sweep"
 description: "Connect a DJI Mini 3 to Cyberwave, run a VLM over its live camera feed to spot equipment left out in the open, alert instantly, then climb for a wider view."
 icon: "drone"
 iconType: "solid"
@@ -17,7 +17,7 @@ In this tutorial you will turn a stock **DJI Mini 3** into an autonomous **site 
 By the end of this guide you will be able to:
 
 - **Connect:** Pair a DJI Mini 3 with Cyberwave through the Cyberwave Edge for DJI app
-- **Stream:** Bring the drone's live camera feed into a Digital Twin
+- **Stream:** Bring the drone's live camera feed into a digital twin
 - **Analyze:** Run a VLM over the feed to spot left-out equipment
 - **Respond:** Alert instantly, then gain altitude for a wider view
 
@@ -51,7 +51,7 @@ Cyberwave decouples the aircraft from the application logic and the intelligence
 
 <CardGroup cols={3}>
   <Card title="Ingest" icon="download">
-    Pair the DJI Mini 3 through the **Cyberwave Edge for DJI** app. The drone's video and telemetry stream into a Digital Twin over Cyberwave's WebRTC and MQTT infrastructure.
+    Pair the DJI Mini 3 through the **Cyberwave Edge for DJI** app. The drone's video and telemetry stream into a digital twin over Cyberwave's WebRTC and MQTT infrastructure.
   </Card>
 
   <Card title="Orchestrate" icon="diagram-project">
@@ -66,8 +66,8 @@ Cyberwave decouples the aircraft from the application logic and the intelligence
 ### Components
 
 - **[DJI Mini 3](https://cyberwave.com/dji/DJI-Mini-3):** The physical aircraft. It captures video from its gimbal camera and streams it to Cyberwave through the Cyberwave Edge for DJI app running on the phone tethered to your DJI RC.
-- **[Digital Twin](/concepts/digital-twins):** The virtual replica of the drone in the Cyberwave dashboard. Once paired, the twin shows the live video feed, gimbal attitude, and GPS / pose, with no per-sensor configuration.
-- **[Workflow](/concepts/workflows):** An event-driven flow that chains: Fetch Frame → VLM Inference → Instant Alert → Climb for a wider view.
+- **[Digital twin](/overview/features/digital-twin):** The virtual replica of the drone in the Cyberwave dashboard. Once paired, the twin shows the live video feed, gimbal attitude, and GPS / pose, with no per-sensor configuration.
+- **[Workflow](/overview/features/workflows):** An event-driven flow that chains: Fetch Frame → VLM Inference → Instant Alert → Climb for a wider view.
 
 ---
 
@@ -134,7 +134,7 @@ The twin shows **Live**, the drone responds to keyboard control, and real video 
 </Check>
 
 <Info>
-The DJI Mini 3 has a **pitch-only mechanical gimbal**. Tilt the camera down before you launch so the ground fills the frame. See [Drones](/overview/drones) for the full command set and the [Python SDK](/tools/python-sdk) if you'd rather drive it from code.
+The DJI Mini 3 has a **pitch-only mechanical gimbal**. Tilt the camera down before you launch so the ground fills the frame. See [Drones](/overview/drones) for the full command set and the [Python SDK](/overview/tools/python-sdk) if you'd rather drive it from code.
 </Info>
 
 ---
@@ -314,7 +314,7 @@ You connected a consumer drone, streamed its camera into Cyberwave, and put a VL
   <Card title="Visual Safety Monitoring" icon="code" href="/tutorials/edge-to-cloud-vlm">
     The same Fetch → VLM → Alert loop on a fixed camera.
   </Card>
-  <Card title="Workflows" icon="diagram-project" href="/use-cyberwave/workflows">
+  <Card title="Workflows" icon="diagram-project" href="/feature-reference/workflows">
     Automate operations with visual workflows.
   </Card>
 </CardGroup>

@@ -1,13 +1,10 @@
 ---
-title: "Edge Workers"
+title: "Run models on the edge"
 description: "Manage, author, and deploy Python worker modules that run on-device for ML inference and event-driven processing."
 icon: "microchip-ai"
 ---
 
-<Warning>
-  **STUB DOCUMENT:** This page is intentionally minimal and will be expanded
-  with deeper technical details in a future update.
-</Warning>
+{/* TODO(docs): **STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update. */}
 
 ## Overview
 
@@ -28,7 +25,7 @@ Worker files live in `{CONFIG_DIR}/workers/` (default `~/.cyberwave/workers/`).
 
 ## Container Image
 
-The worker container image (`cyberwaveos/edge-ml-worker`) is pulled automatically by edge-core on first startup, in the background. This keeps `cyberwave edge install` fast and non-blocking — there is no need to wait for the image download during installation.
+The worker container image (`cyberwaveos/edge-ml-worker`) is pulled automatically by Edge Core on first startup, in the background. This keeps `cyberwave edge install` fast and non-blocking — there is no need to wait for the image download during installation.
 
 Edge-core manages the container lifecycle — you don't need to run it manually. The container mounts worker scripts and model weights from the host as read-only volumes.
 
@@ -76,10 +73,7 @@ cyberwave-edge-core worker restart
 
 ## Tuning Log Verbosity
 
-<Warning>
-  **STUB SECTION:** This page will be expanded with a per-component log-routing
-  diagram.
-</Warning>
+{/* TODO(docs): **STUB SECTION:** This page will be expanded with a per-component log-routing diagram. */}
 
 Worker containers and edge-driver containers have separate log-level knobs so
 you can raise one to `DEBUG` without drowning in the other.
@@ -116,9 +110,7 @@ logging.getLogger("cyberwave.workflows").setLevel(logging.WARNING)
 
 ## CLI: Monitoring Workers
 
-<Warning>
-  **STUB:** This section will be expanded with screenshots and deeper guidance.
-</Warning>
+{/* TODO(docs): **STUB:** This section will be expanded with screenshots and deeper guidance. */}
 
 `cyberwave worker monitor` opens a live-updating terminal dashboard for the running worker container.
 
@@ -193,19 +185,16 @@ files are left untouched to avoid spurious worker container restarts.
 **Lifecycle:**
 
 1. Activate a workflow in the UI (trigger: Camera Frame → Call Model → edge-compatible model).
-2. Edge core syncs on next boot, `CYBERWAVE_WORKER_SYNC_INTERVAL_LOOPS` expiry, or immediately when a `sync_workflows` MQTT command arrives on the twin's command topic. That command is sent by `cyberwave workflow sync`, by `POST /twins/{uuid}/sync-workflows`, and — for `run_on_edge` workflows — automatically by the activate API itself, so flipping the UI toggle takes effect on the edge within seconds instead of up to one sync interval.
+2. Edge Core syncs on next boot, `CYBERWAVE_WORKER_SYNC_INTERVAL_LOOPS` expiry, or immediately when a `sync_workflows` MQTT command arrives on the twin's command topic. That command is sent by `cyberwave workflow sync`, by `POST /twins/{uuid}/sync-workflows`, and — for `run_on_edge` workflows — automatically by the activate API itself, so flipping the UI toggle takes effect on the edge within seconds instead of up to one sync interval.
 3. `wf_<uuid8>.py` appears in the workers directory.
 4. The WorkerWatcher detects the new file and restarts the worker container.
 5. The worker container loads the new module and activates the hook.
 
-<Warning>
-  **STUB:** This subsection will be expanded with a deeper diagram of the
-  remove path.
-</Warning>
+{/* TODO(docs): **STUB:** This subsection will be expanded with a deeper diagram of the remove path. */}
 
 **Deactivating, soft-deleting, or flipping `run_on_edge` off** publishes a
 surgical `remove_workflow_worker` MQTT command to each affected twin
-command topic, naming the specific worker file(s) to unlink. Edge core
+command topic, naming the specific worker file(s) to unlink. Edge Core
 deletes the matching `wf_*.py` and immediately reconciles the worker
 container lifecycle — the workflow stops running on the device within
 seconds rather than waiting up to one full periodic interval (~5 minutes)
@@ -233,7 +222,7 @@ camera_frame → call_model → detection_event_gate → timed_condition → sen
 
 A `timed_condition` placed downstream of `call_model` _without_ a trailing `send_alert` is inert — the legacy implicit-alert path it used to gate is gone. The compiler attaches a warning to the resulting compilation so the silent-skip case is visible in `cyberwave workflow sync` preflight output, but the worker still ships and runs inference; nothing is published until you wire the `send_alert`.
 
-See the [`emit_event` migration table](/use-cyberwave/workflows#migrating-from-emit_event) for the field-by-field mapping (including the `force=True` default).
+See the [`emit_event` migration table](/feature-reference/workflows#migrating-from-emit_event) for the field-by-field mapping (including the `force=True` default).
 
 ---
 
@@ -356,10 +345,7 @@ decorator controls the frame sampling rate.
 
 ## Troubleshooting: `@cw.on_frame` hook never fires
 
-<Warning>
-  **STUB SECTION:** The most common reasons a worker container looks healthy but
-  hooks report `frames: 0` indefinitely.
-</Warning>
+{/* TODO(docs): **STUB SECTION:** The most common reasons a worker container looks healthy but hooks report `frames: 0` indefinitely. */}
 
 Run `cyberwave worker doctor` first. It runs both static ("paperwork") and
 runtime ("actual traffic") checks.

@@ -1,6 +1,6 @@
 ---
-title: "ROS 2 Driver"
-sidebarTitle: "ROS 2 Driver"
+title: "ROS 2 driver"
+sidebarTitle: "ROS 2 driver"
 description: "Docker images, configuration, and ROS 2 topic reference for the Go2 navigation driver."
 icon: "terminal"
 ---
@@ -29,7 +29,7 @@ docker pull cyberwaveos/ros2-elevation-mapping:jazzy
 
 ## Quick Start
 
-When connected to the Cyberwave platform, the **edge-core** service automatically pulls and starts all required containers based on the asset metadata configured for your twin.
+When connected to the Cyberwave platform, the **Edge Core** service automatically pulls and starts all required containers based on the asset metadata configured for your twin.
 
 For local development with Docker Compose, see the driver [README](https://github.com/cyberwave-os/cyberwave/tree/main/cyberwave-edge-runtime/runtime-services/drivers/ros2/robots/unitree/go2).
 
@@ -192,6 +192,16 @@ falls through to the fallback list.
   launches skip the check entirely.
 </Info>
 
+## Saved maps and relocalization
+
+The stack keeps its data on the edge computer under
+`/etc/cyberwave/ros2_go2_driver`, which the containers see as `/data`. Every
+finalized map is saved there as a map bundle
+(`/etc/cyberwave/ros2_go2_driver/map_bundles/<map-uuid>/`), together with any
+AprilTags seen while mapping. At start-up the stack restores the twin's latest
+map and relocalizes from a known tag. See
+[AprilTag relocalization](/robots/go2-apriltag-relocalization).
+
 ## Config Profiles
 
 | Profile  | When to use                                                                            |
@@ -265,8 +275,8 @@ set the robot IP or fallback list, add them to `shared_env`:
 }
 ```
 
-See [Drivers overview](/edge/drivers/overview) for the full metadata schema and
-[Writing compatible drivers](/edge/drivers/writing-compatible-drivers) for the
+See [Drivers overview](/feature-reference/edge/drivers/overview) for the full metadata schema and
+[Writing compatible drivers](/feature-reference/edge/drivers/writing-compatible-drivers) for the
 `edge_configs` per-device pattern.
 
 ## Stream Recording

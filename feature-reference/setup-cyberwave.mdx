@@ -29,7 +29,7 @@ Each token is scoped to a specific workspace, giving you isolated access per wor
   </Step>
 
   <Step title="Create a Token">
-    In the **API Tokens** section, click **Create Token**. Select the workspace
+    Open **Access** (**Profile → Access**) and click **Create Token**. Select the workspace
     you want the token scoped to, then copy the token immediately — it won't be
     shown again.
   </Step>
@@ -152,20 +152,22 @@ Both `Bearer` and `Token` prefixes are accepted.
 
 <AccordionGroup>
   <Accordion title="Authentication failed: Invalid or missing credentials">
-    - Verify your API token is correct and hasn't been revoked - Check that the
-    environment variable is set: `echo $CYBERWAVE_API_KEY` - Generate a new
-    token from your [profile page](https://cyberwave.com/profile) if needed
+    - Verify your API token is correct and hasn't been revoked.
+    - Check that the environment variable is set: `echo $CYBERWAVE_API_KEY`.
+    - Create a new token under **Profile → Access** if needed. See [API tokens](/feature-reference/api-tokens).
   </Accordion>
 
-  <Accordion title="No CYBERWAVE_API_KEY found">
-    The SDK couldn't find credentials. Either: - Set the `CYBERWAVE_API_KEY`
-    environment variable - Pass `api_key` directly to `Cyberwave()`
+  <Accordion title="No API key found! Set CYBERWAVE_API_KEY.">
+    The SDK couldn't find credentials. Either:
+
+    - Set the `CYBERWAVE_API_KEY` environment variable.
+    - Pass `api_key` directly to `Cyberwave()`.
   </Accordion>
 
   <Accordion title="MQTT connection failed">
-    - Check your network allows outbound connections on port **8883** (TLS) -
-    Verify your API token is valid and not revoked - The MQTT client connects
-    lazily — call a subscription method to trigger the connection
+    - Check that your network allows outbound connections on port **8883** (TLS).
+    - Verify your API token is valid and not revoked.
+    - The MQTT client connects lazily. Call a subscription method to trigger the connection.
   </Accordion>
 </AccordionGroup>
 
@@ -179,8 +181,8 @@ If you're running the Cyberwave Edge runtime (Edge Core plus drivers) on your ow
 |---------|------------------|-------------|---------------|
 | REST API | TCP `443` (HTTPS) | `api.cyberwave.com` | Always |
 | MQTT (telemetry, commands, WebRTC signaling) | TCP `8883` (MQTT over TLS) | `mqtt.cyberwave.com` | Always |
-| STUN/TURN negotiation | UDP + TCP `3478` | `turn.cyberwave.com` | Streaming video |
-| TURN media relay | UDP `49152–65535` | `turn.cyberwave.com` | Streaming video, when a direct peer-to-peer path isn't possible |
+| TURN relay over TLS (default) | TCP `443` | `tls.turn.cyberwave.com` | Streaming video |
+| STUN | UDP `3478` | `turn.cyberwave.com` | Streaming video (optional; the TLS relay connects without it) |
 | Zenoh peer discovery | UDP multicast, local subnet only | Local network | Running more than one driver/worker process on the edge |
 | Zenoh router (multi-host) | TCP `7447` | Between edge hosts on your site | Only if drivers are split across multiple hosts on the same site |
 
@@ -193,11 +195,11 @@ For the full picture of why each protocol is used, see [Architecture → Video S
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Quick Start" icon="rocket" href="/overview/hello-robot">
+  <Card title="Develop in simulation" icon="rocket" href="/overview/hello-robot">
     Create your first digital twin
   </Card>
 
-  <Card title="Python SDK" icon="python" href="/tools/python-sdk">
+  <Card title="Python SDK" icon="python" href="/overview/tools/python-sdk">
     Full SDK documentation
   </Card>
 </CardGroup>

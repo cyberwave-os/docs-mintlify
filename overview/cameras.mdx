@@ -6,7 +6,7 @@ icon: "camera"
 
 import { EdgeSetup } from "/snippets/edge-setup.mdx";
 
-Cyberwave treats every camera the same (**USB webcams, IP cameras, depth cameras, infrared, industrial GigE**): drop a digital twin into an [environment](/use-cyberwave/architecture/key-concepts#environments), pair the hardware, and start consuming the stream from the dashboard, the [Python SDK](/tools/python-sdk), or a [Workflow](/use-cyberwave/workflows).
+Cyberwave treats every camera the same (**USB webcams, IP cameras, depth cameras, infrared, industrial GigE**): drop a digital twin into an [environment](/feature-reference/architecture/key-concepts#environment), pair the hardware, and start consuming the stream from the dashboard, the [Python SDK](/overview/tools/python-sdk), or a [Workflow](/feature-reference/workflows).
 
 <iframe
   width="100%"
@@ -52,16 +52,16 @@ Every catalog page bundles the **bill of materials**, supported drivers, and **t
 
 <Check>
   The camera streams RGB (and depth / IR where available) into Cyberwave in real
-  time, ready for [recording](/use-cyberwave/environment-editor/replay),
-  [teleoperation](/use-cyberwave/environment-editor/teleoperation), and
-  [workflows](/use-cyberwave/workflows).
+  time, ready for [recording](/feature-reference/environment-editor/replay),
+  [teleoperation](/feature-reference/environment-editor/teleoperation), and
+  [workflows](/feature-reference/workflows).
 </Check>
 
 ---
 
 ## Capture frames from Python
 
-Once the twin is paired, the [Python SDK](/tools/python-sdk) gives you the same API for any camera in the catalog. Run this from your laptop or any cloud machine; Cyberwave handles the networking and orchestration end-to-end:
+Once the twin is paired, the [Python SDK](/overview/tools/python-sdk) gives you the same API for any camera in the catalog. Run this from your laptop or any cloud machine; Cyberwave handles the networking and orchestration end-to-end:
 
 ```python
 from cyberwave import Cyberwave
@@ -69,9 +69,9 @@ from cyberwave import Cyberwave
 cw = Cyberwave()
 camera = cw.twin("logitech/c275")              # swap for any other camera slug
 
-with cw.affect("live"):
-    frame = camera.capture_frame("numpy")      # latest RGB frame
-    depth = camera.capture_frame("depth")      # depth map (RealSense, ZED, …)
+cw.affect("live")
+frame = camera.get_frame("numpy")                          # latest RGB frame
+depth = camera.camera["<depth-sensor-id>"].get_frame()     # depth map (RealSense, ZED, …)
 ```
 
 Switching to a different camera is a **one-line change**; the rest of your automation stays exactly the same.
@@ -80,7 +80,7 @@ Switching to a different camera is a **one-line change**; the rest of your autom
 
 ## Build video workflows
 
-[Workflows](/use-cyberwave/workflows) turn a camera stream into a video-understanding pipeline. You compose them **low-code** in the dashboard or directly in **Python**, and Cyberwave decides whether each step runs on the **edge** next to the camera, in a [cloud node](/tools/cloud-node), or as a **mix of both**; your automation and your hardware don't change.
+[Workflows](/feature-reference/workflows) turn a camera stream into a video-understanding pipeline. You compose them **low-code** in the dashboard or directly in **Python**, and Cyberwave decides whether each step runs on the **edge** next to the camera, in a [cloud node](/overview/tools/cloud-node), or as a **mix of both**; your automation and your hardware don't change.
 
 A typical privacy-preserving security pipeline:
 
@@ -93,16 +93,16 @@ flowchart LR
     Anon -.->|anonymised stream| Stream["WebRTC live view"]
 ```
 
-1. **[Anonymize](/use-cyberwave/workflows/anonymize-image) faces on the edge** so the video leaving the device is already redacted.
+1. **[Anonymize](/feature-reference/workflows/anonymize-image) faces on the edge** so the video leaving the device is already redacted.
 2. Run a **local model** like [YOLO](https://cyberwave.com/models) to detect doors in the scene (pick from hundreds of models at [cyberwave.com/models](https://cyberwave.com/models)).
 3. When a door is open, call a **powerful cloud VLM** (Gemini Robotics, GPT, …) to reason about whether it's a security hazard.
-4. **[Send an alert](/edge/drivers/alerts)** with the frame attached.
+4. **[Send an alert](/feature-reference/edge/drivers/alerts)** with the frame attached.
 
 Full walkthroughs live in the [zone-based intrusion detection](/tutorials/intrusion-detection) and [edge-to-cloud VLM](/tutorials/edge-to-cloud-vlm) tutorials.
 
 <Info>
-  Because Cyberwave also speaks to [robotic dogs](/get-started/robotic-dogs),
-  [drones](/get-started/drones), and [arms](/get-started/robotic-arms), you can
+  Because Cyberwave also speaks to [robotic dogs](/overview/robotic-dogs),
+  [drones](/overview/drones), and [arms](/overview/robotic-arms), you can
   mix and match hardware in the same workflow, for example a fixed ceiling
   camera that **triggers** a dog patrol, or a wrist camera that hands off to a
   cloud VLA model when it sees an unfamiliar object.
@@ -112,7 +112,7 @@ Full walkthroughs live in the [zone-based intrusion detection](/tutorials/intrus
 
 ## Record, replay, review
 
-Cyberwave automatically handles the **recording, storage, and indexing** of every paired camera. Open any environment in **[Replay](/use-cyberwave/environment-editor/replay)** to scrub through the video timeline alongside the twin's pose, joint states, and point clouds, straight from the web app or pulled down via the SDK / [REST API](/api-reference/overview) for offline analysis, dataset curation, or model training.
+Cyberwave automatically handles the **recording, storage, and indexing** of every paired camera. Open any environment in **[Replay](/feature-reference/environment-editor/replay)** to scrub through the video timeline alongside the twin's pose, joint states, and point clouds, straight from the web app or pulled down via the SDK / [REST API](/api-reference/overview) for offline analysis, dataset curation, or model training.
 
 ---
 
@@ -122,7 +122,7 @@ Cyberwave automatically handles the **recording, storage, and indexing** of ever
   <Card
     title="Perception Capability"
     icon="eye"
-    href="/capabilities/perception"
+    href="/overview/cameras"
   >
     The full picture of what cameras and vision models can do on Cyberwave.
   </Card>
@@ -148,6 +148,27 @@ Cyberwave automatically handles the **recording, storage, and indexing** of ever
 {/* stub: pending editorial review */}
 
 Thermal cameras show a thermal-style color effect on their RGB feed in live and
-simulation camera views. Colors represent image brightness, **not measured
-temperature**. This display effect does not add thermal hardware integration or
-thermal simulation.
+simulation camera views. The colors map image brightness; on a white-hot feed,
+brightness follows temperature.
+
+Measured temperatures travel separately, as `type: "thermal"` telemetry on the
+twin's `telemetry` topic (and `thermal/<sensor_id>` on the edge data bus):
+`min_c` / `max_c` / `avg_c` plus each spot and box reading, in °C.
+
+- **FLIR AX8**: the `flir/ax8` driver (`cyberwaveos/flir-ax8-driver`) streams the
+  camera's RTSP thermal view (white-hot by default) and publishes its spot/box
+  temperatures. Set the twin's `metadata.ip_address`. The camera has one
+  RTSP stream; `metadata.image_mode` (`ir`, `msx` or `visual`) picks what it
+  shows.
+- **Simulation**: in MuJoCo, thermal sensors render from a heat model rather
+  than light. Scenery reads ambient, open sky reads cold, and robots run warm,
+  heating with their motor load. The render uses the sensor's detector
+  resolution (80x60 for the AX8), and the simulation publishes the same thermal
+  telemetry (`source_type: "sim"`). The heat model is an illustration, not a
+  calibrated thermal simulation.
+- **Heat signatures**: to make something hot in simulation, select the twin in
+  the editor, open **Twin properties**, and turn on **Heat signature** in the
+  Thermal section. The twin's summary shows the temperature as a chip. Every part of
+  that twin then reads that fixed temperature on simulated thermal cameras.
+  Changes apply to a running simulation immediately. Heat doesn't spread
+  between objects.

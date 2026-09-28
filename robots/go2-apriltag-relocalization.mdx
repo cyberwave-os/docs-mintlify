@@ -1,0 +1,285 @@
+---
+title: "Relocalize a Go2 on a saved map with an AprilTag"
+sidebarTitle: "AprilTag relocalization"
+description: "Print one AprilTag, record it while you map, and a Go2 that powers up in view of it finds itself on the saved map without re-mapping."
+icon: "location-crosshairs"
+---
+
+**At a glance:** 15 minutes · intermediate · a Unitree Go2 paired with Cyberwave, a printer, and a ruler.
+
+A Go2 that has just powered up does not know where it is. Without help it cannot tell the finished map from a new room, so you would have to map the site again before every mission.
+
+**AprilTag relocalization** fixes that. You stick one printed AprilTag in the site and let the robot see it while you map. The tag is saved with the map as a landmark. The next time the Go2 starts with that tag in camera view, it works out its pose from the tag, lands on the saved map, and navigation turns on. You do not have to map again.
+
+<Warning>
+  This is not a QR code. Operators often call it "the QR code", but the robot
+  only detects **AprilTags from the `tag36h11` family**. A QR code, an ArUco
+  marker or another AprilTag family is ignored.
+</Warning>
+
+---
+
+## How it works
+
+1. **While mapping.** The Go2 runs an AprilTag detector on its front camera. When it gets a steady view of a tag, it stores the tag's family, ID, size and pose in the map as a landmark.
+2. **When you stop mapping.** The map is finalized with the landmark in it. The robot keeps its pose from the mapping run and goes straight on to navigation, so the tag is not used at this point.
+3. **At the next start.** The stack picks the twin's **most recently finalized map** and loads its saved localization database. It then watches the camera for a tag that the map knows. A steady sighting gives the robot its pose on the map. Once the map matcher confirms that pose, navigation turns on.
+
+The twin's navigation badge in the environment shows each stage: **Mapping** while you map, **Localizing** while it looks for the tag, and **Localized** once navigation is ready. If it fails, the badge shows **Error**.
+
+---
+
+## Requirements
+
+- A **Unitree Go2** running the Cyberwave Go2 navigation stack (driver, SLAM and Nav2 containers). This is the stack Edge Core starts from the Go2 driver image. If you replaced the twin's driver entry with a hand-written multi-service `services` list, relocalization stays off.
+- The **front camera** streaming. The detector uses the same camera feed you see in the dashboard.
+- A map made **with the tag in view**. The tag is only recorded during a mapping run, so a map made before you put the tag up cannot relocalize from it.
+
+---
+
+## Prepare the tag
+
+### Tag specification
+
+| Property | Value |
+| --- | --- |
+| Family | AprilTag `tag36h11` |
+| ID | Any ID in the family. The map remembers whichever IDs it saw. |
+| Size | **13.34 cm (0.1334 m)**, measured as described below |
+| White margin | **At least one grid cell (1.7 cm) of white on every side**, with nothing dark touching it. The Cyberwave print gives 3.3 cm. |
+| Surface | Matte black on white, flat and rigid |
+
+<Warning>
+  **Keep the white margin.** The detector finds the tag by the outline of its
+  black square against white. If you trim the print to the black square, or
+  mount the tag on a black or dark stand, frame or panel, the black square
+  merges with its surroundings and the tag is **never detected**. It fails even
+  at close range and in clear view, and relocalization stays on
+  **Localizing**. Leave white paper on all four sides, and check that no dark
+  edge, leg or frame touches the tag.
+</Warning>
+
+**What "size" means.** An AprilTag's size is the side length of its **black square**, measured from one outer edge of the black border to the opposite outer edge. The white margin around it is not included. The robot turns the corners of that black square into distance and angle, so it uses 13.34 cm in its calculations whatever is actually on the wall. If the print is a different size, the robot thinks it is closer or farther than it really is and lands in the wrong place on the map.
+
+### Get and print a tag
+
+The easiest way is to print the tag from Cyberwave, which draws it at the exact physical size:
+
+<Steps>
+  <Step title="Add a marker">
+    Open any environment in the editor. In the **Scene objects** panel, choose **Add → Add Marker**, then select the new marker.
+  </Step>
+  <Step title="Set family and size">
+    In the marker's settings, keep **Family** as `apriltag_36h11`, pick any **Marker ID**, and set **Size** to **0.1334**. The default is 0.15, which does not match the Go2.
+  </Step>
+  <Step title="Print at size">
+    In the **Print** section, click **Print at size**. The page draws the black square at 133.4 mm, with a 100 mm scale bar and a dashed cut line around the white margin. In the print dialog, choose **actual size / 100% scale** and turn off "fit to page" and any "shrink to printable area" option. Use matte paper, because gloss reflects lights into the camera.
+  </Step>
+  <Step title="Measure">
+    Measure the black square with a ruler. It must be **13.3–13.4 cm** on each side. If it is not, fix the scale and print again. Do not use a print that is only close.
+  </Step>
+  <Step title="Mount it">
+    Glue or tape the tag to something **flat, rigid and light-coloured**, such as white foam board, a wall or a cabinet door. Cut along the dashed line and keep the whole white margin, at least 1.7 cm on every side. Do not mount it directly on a black or dark stand, panel or frame: back it with white card first, so that no dark edge touches the black square. Put it where the Go2's front camera looks straight at it from its start position: roughly at camera height, well lit, and not behind anything.
+  </Step>
+</Steps>
+
+<Accordion title="Printing a tag without Cyberwave">
+  Use the official images from the AprilRobotics [`apriltag-imgs`](https://github.com/AprilRobotics/apriltag-imgs) repository, in the `tag36h11` folder. For example, `tag36_11_00000.png` is ID 0. Each image is only 10 × 10 pixels: one ring of white pixels around an 8 × 8 black-bordered pattern, so the black square takes up **8/10 of the image width**. Enlarge the image so the whole image is **16.7 cm** wide (16.7 × 0.8 = 13.34 cm), using **nearest-neighbour** scaling ("no smoothing" or "pixelated") so the edges stay sharp, then print at 100% and measure as above.
+</Accordion>
+
+<Tip>
+  Mount the tag at the robot's usual start position, such as its dock or the
+  corridor where you power it up. Relocalization happens at start-up, so the tag
+  has to be visible from there. The tag must also stay where it was during
+  mapping. If you move it, the robot's pose on the map moves with it.
+</Tip>
+
+---
+
+## Record the tag into a map
+
+<Steps>
+  <Step title="Start mapping with the tag in view">
+    Open the environment in **Live** mode. In the right panel, under **Mapping**, press **Start mapping**. Before you drive off, keep the Go2 **still for a few seconds** facing the tag, 1–2 m away. The robot saves a landmark only after several steady, matching detections in a row, so a quick glance while you drive past is not enough.
+  </Step>
+  <Step title="Map the site">
+    Drive the robot around as usual. The [ROS 2 driver](/api-reference/autonomous-navigation-driver) page has advice on safe teleoperation while mapping.
+  </Step>
+  <Step title="Stop mapping">
+    Press **Stop mapping**. The map is finalized with the tag stored in it, and the robot goes straight into navigation.
+  </Step>
+</Steps>
+
+The finalized map, its localization database and the tag landmarks are saved on the **edge computer that runs the Go2 stack**, under:
+
+```text
+/etc/cyberwave/ros2_go2_driver/map_bundles/<map-uuid>/
+```
+
+The containers see this folder as `/data/map_bundles`. The occupancy grid is uploaded to Cyberwave so you can view it and place waypoints. The saved map that relocalization needs is not uploaded, and it is never downloaded back from the cloud.
+
+---
+
+## Relocalize on the next start
+
+Place the Go2 where it can see the tag, then power it up or restart its driver. You do not have to press anything. Once the stack is running:
+
+1. It selects the twin's most recently finalized map and loads its saved localization database. The badge shows **Localizing**.
+2. It watches the camera for a tag that the map knows. A sighting counts only if it is steady: **3 matching detections in a row**, each taken less than 1 s after the last and each with a **confidence of at least 0.5**. The detections must agree to within 20 cm and 20°.
+3. It collects at least **2 such sightings that agree** to within 30 cm and 15°, then uses them to set its pose on the map. It has **60 seconds** from the start of this search to do so.
+4. It waits until the map matcher has registered against the saved map and the pose has been **stable for 5 seconds**. If that does not happen within 30 seconds of setting the pose, the start fails.
+5. The badge changes to **Localized** and navigation (Nav2) turns on. Waypoint missions and **Move Twin** work from here.
+
+Keep the robot still and the tag in view until the badge reads **Localized**. With the tag in clear view this usually takes a few seconds.
+
+If the robot does not find the tag in time, or its pose does not settle, the badge shows **Error** and **navigation stays off**. The robot never drives on a pose it could not confirm. Fix the cause (see [Troubleshooting](#troubleshooting)) and restart the Go2 driver with the tag in view to try again.
+
+---
+
+## Limits
+
+- **Only the latest map.** At start-up the robot always uses the twin's most recently finalized map. You cannot pick an older map for relocalization. Every new mapping run replaces it, so keep the tag in view at the start of each run.
+- **Maps stay on the edge computer.** If you wipe `/etc/cyberwave/ros2_go2_driver`, reinstall the edge computer or move the twin to new hardware, the saved map is gone. The occupancy grid in the cloud is not enough to relocalize from, so you have to map again.
+- **One robot per map.** Each saved map belongs to the twin that made it. A second Go2, even in the same site, has to make its own map.
+- **The tag must not move.** The landmark is saved in map coordinates. If you move or rotate the tag after mapping, the robot starts from a wrong pose.
+- **Go2 only, for now.** Other quadrupeds and rovers do not have AprilTag relocalization yet.
+
+<Note>
+  **In simulation**, the simulated Go2 runs the same detector. To try the flow,
+  add a tag to the scene with **Add Marker** in the environment editor, keep
+  the family `apriltag_36h11`, and set **size** to `0.1334`. The marker's default
+  size of 0.15 m does not match what the robot expects.
+</Note>
+
+{/* TODO(docs): confirm whether a simulated Go2's saved map persists between separate simulation runs, and document the simulation flow end to end if it does. */}
+
+---
+
+## Troubleshooting
+
+Open the [Logs tab](/feature-reference/environment-editor/driver-logs), select the Go2 twin, and search for the lines below.
+
+<AccordionGroup>
+  <Accordion title="Selected MapBundle is not ready for fiducial seeding yet">
+    **Message**
+
+    ```text
+    Selected MapBundle is not ready for fiducial seeding yet: <reason>
+    ```
+
+    **Cause.** The robot found the latest map but cannot relocalize from it. The reason says why:
+
+    - `MapBundle is not fiducial-ready: fiducial_landmark_missing` means no tag was recorded during mapping. The tag was out of view, not seen steadily, or not a `tag36h11` tag. A tag with no white margin, or on a dark stand, is often not seen at all.
+    - `map bundle belongs to another robot instance` means the saved map was made by a different twin.
+    - A "not found" or file error means the saved map is missing from `/etc/cyberwave/ros2_go2_driver/map_bundles`, for example because the folder was wiped.
+
+    **Fix.** Map again with the tag in view. At the start of the run, keep the robot still facing the tag for a few seconds.
+  </Accordion>
+
+  <Accordion title="Loaded N known fiducials from MapBundle, but nothing happens">
+    **Message**
+
+    ```text
+    Loaded 1 known fiducials from MapBundle <map-uuid>
+    ```
+
+    **Cause.** This line means the map is fine and the robot is now searching for the tag. If it is not followed by `Fiducial seed observation status` lines, the camera is not detecting any tag. The most common cause is a **missing white margin**: the tag was trimmed to its black square, or it sits on a black or dark stand, panel or frame. The detector then cannot find the square's outline, even when the tag is large and sharp in the camera feed. Other causes are a tag that is out of view, too far away or too small in the image, washed out by glare, or printed blurry.
+
+    **Fix.** In the camera feed, check that the black square is surrounded by white on all four sides, with nothing dark touching it. If not, back the tag with white card so that at least 1.7 cm of white shows all round. Then move the robot to 1–2 m from the tag, facing it squarely, and replace glossy or blurry prints.
+
+    <Note>
+      A tag with a poor margin can still be detected now and then during
+      mapping, from a lucky angle. The map then records it and is marked
+      fiducial-ready, but relocalization fails at the next start, because
+      that needs steady sightings. After fixing the margin, map again, so the
+      landmark is saved from good sightings.
+    </Note>
+  </Accordion>
+
+  <Accordion title="Fiducial seed observation status: reason=...">
+    **Message**
+
+    ```text
+    Fiducial seed observation status: reason=<reason>, stable_observations=<n>, attempt=<k>
+    ```
+
+    **Cause.** The detector sees a tag, and `reason` says why it is not accepted yet:
+
+    - `unknown_fiducial`: the tag in view is not one recorded in this map (different ID or family). Use the tag that was up during mapping.
+    - `low_confidence`: the tag's corners do not match a flat square well. This usually means a curled or glossy print, motion blur, or a steep viewing angle.
+    - `stability_threshold_not_met`: the robot has fewer than 3 matching detections so far. Normal for the first moments. If it never clears, the robot or the tag is moving.
+    - `fiducial_size_mismatch`: the robot's configured tag size differs from the size saved with the map.
+    - `stable_known_fiducial`: a steady sighting was accepted.
+  </Accordion>
+
+  <Accordion title="Collected stable fiducial seed candidate, then an error">
+    **Message**
+
+    ```text
+    Collected stable fiducial seed candidate 1/3; waiting for consensus
+    ```
+
+    **Cause.** A steady sighting was accepted. The robot needs a second one that agrees with it before it sets its pose. If you then see `Fiducial seed session stopped without publishing an initial pose`, the sightings did not agree, or the tag left the view before the 60-second window closed. Sightings that disagree usually mean the print is the wrong size, so the distance is wrong each time, or the tag is not flat.
+
+    **Fix.** Measure the black square again (13.34 cm) and remount the tag flat. Restart the driver with the robot still and the tag in view.
+  </Accordion>
+
+  <Accordion title="No fiducial seed reached consensus before the cold-start deadline">
+    **Message**
+
+    ```text
+    No fiducial seed reached consensus before the cold-start deadline; navigation remains blocked because the restored MapBundle pose was not verified. Retry localization with a visible fiducial.
+    ```
+
+    **Cause.** The search timed out. Either no known tag was seen steadily, or the sightings never agreed.
+
+    **Fix.** Work through the entries above, then restart the Go2 driver with the tag in view.
+  </Accordion>
+
+  <Accordion title="Fiducial seed completed but RTAB-Map map->odom did not become stable">
+    **Message**
+
+    ```text
+    Fiducial seed completed but RTAB-Map map->odom did not become stable before the localization safety timeout; navigation remains blocked ...
+    ```
+
+    **Cause.** The tag gave the robot a pose, but the map matcher could not confirm it against the saved map within 30 seconds. Common reasons are a wrong tag size (so the pose is off), a tag that moved since mapping, or a site that has changed a lot since mapping.
+
+    **Fix.** Check the tag size and its position. If the site has changed, map it again.
+  </Accordion>
+
+  <Accordion title="Cannot transform fiducial ... during mapping">
+    **Message**
+
+    ```text
+    Cannot transform fiducial tag36h11/<id> from '<camera frame>' to 'map': <error>
+    ```
+
+    **Cause.** During mapping the robot saw the tag but could not place it on the map, because the camera's position in the map frame was not available. This is usually brief at the start of mapping. If it keeps repeating, the tag is never saved.
+
+    **Fix.** Wait until the map has started to appear in the viewport before you point the robot at the tag. If the warning does not stop, restart mapping.
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+  To check the print size from the robot's side, look for
+  `AprilTag detected ids=[...] selected_id=<id> distance=<d>m` in the logs and
+  compare `distance` with a tape measure from the camera to the tag. If they
+  differ by more than a few centimetres, the printed size is wrong.
+</Tip>
+
+---
+
+## Next steps
+
+<CardGroup cols={3}>
+  <Card title="Robotic dogs" icon="dog" href="/overview/robotic-dogs">
+    Set up a quadruped and add autonomy with waypoints.
+  </Card>
+  <Card title="Waypoints on the map" icon="map-pin" href="/feature-reference/environment-editor/map-waypoints">
+    Place the stops a relocalized Go2 drives between.
+  </Card>
+  <Card title="ROS 2 driver" icon="terminal" href="/api-reference/autonomous-navigation-driver">
+    Images, environment variables and topics for the Go2 stack.
+  </Card>
+</CardGroup>

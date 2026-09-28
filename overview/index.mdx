@@ -1,165 +1,144 @@
 ---
-title: "Quickstart"
-description: "Build, test, and deploy intelligent robotics systems with cloud-based digital twins and AI"
+title: "Cyberwave documentation"
+sidebarTitle: "Welcome"
+description: "Guides, tutorials and reference for connecting AI to robots with Cyberwave."
 icon: "house"
+mode: "wide"
 ---
 
-Cyberwave is the fastest way to make the world programmable. Connect any robot or sensor, build AI automations, train and run AI models for the physical world.
+<img src="/images/home-hero.png" style={{ width: "100%", height: "auto", borderRadius: "20px" }} alt="Connect AI to the physical world. Any robot. Any model. Simulation or real. Cyberwave turns every robot and sensor into a digital twin that your code, your models and your agents can drive, with the same API from the browser to the factory floor." />
 
-🦾 Connect to more than 90+ robots using the same SDK
+## Try it now
 
-🦾 Low code or full-code workflows to deploy AI in the world
+<CardGroup cols={3}>
+  <Card title="Drive a real robot" icon="hand-pointer" href="/overview/develop-remote-hardware">
+    **2 min · browser only.** Control a real SO-101 in our Milan lab from your browser.
+  </Card>
+  <Card title="Hello Robot in simulation" icon="cube" href="/overview/hello-robot">
+    **5 min · no code.** Add a twin, press Simulate, drive it with your keyboard.
+  </Card>
+  <Card title="Your first AI loop" icon="wand-magic-sparkles" href="/overview/first-ai-loop">
+    **20 min · Python + webcam.** A camera spots a cup; the arm picks it and sorts it, in the free Playground sim.
+  </Card>
+</CardGroup>
 
-🦾 Works in the lab all the way to production. Built-in safety and human-takover
+## The platform at a glance
 
-🦾 Run models on edge or in the cloud seamlessly and without worrying about infra
+**AI agents on top, your robots at the bottom, Cyberwave in between.** Agents plan and configure; perception models, controllers and learned policies act through digital twins. Cyberwave Edge connects the twins to real hardware. You get in through the dashboard, the Python SDK, the CLI, REST and MQTT, or MCP.
 
-## Quick start
+<img src="/images/cyberwave-architecture.png" style={{ width: "100%", height: "auto", borderRadius: "20px" }} alt="Cyberwave architecture. AI agents on top build the environment, control robots and define workflows. Below them your AI: perceive, control, learn. Then the Cyberwave platform: digital twins and environments, simulation, controllers and handover, catalog, data and training. Then Cyberwave Edge: Edge Core, drivers and workers on Raspberry Pi, Jetson, x86 or macOS. At the bottom your hardware: arms, quadrupeds, rovers, drones, cameras and sensors. Ways in: dashboard, Python SDK, CLI, REST and MQTT, MCP." />
 
-Cyberwave can be installed directly from PyPI.
+## How AI reaches a robot
 
-```bash
-pip install cyberwave
-cyberwave --help
+<CardGroup cols={2}>
+  <Card title="AI agents" icon="comments" href="/ai/agents">
+    Describe what you want. Agents build the environment, control the robot and write workflows, and you approve every plan.
+  </Card>
+  <Card title="AI models" icon="brain" href="/ai/models">
+    Models that perceive (detection, depth, speech), reason (VLMs, LLMs) or act (VLA, RL), on the edge or in the cloud.
+  </Card>
+  <Card title="Control" icon="gamepad" href="/ai/control">
+    Five ways to drive your robots: manual input, skills, workflows, VLA models and RL policies. Switch any time.
+  </Card>
+  <Card title="Learn" icon="database" href="/feature-reference/datasets/import">
+    Every run becomes data. Datasets train the next model, which deploys back to the same twin.
+  </Card>
+</CardGroup>
+
+[How it all fits together →](/ai/overview)
+
+## What it looks like in code
+
+<Tabs>
+  <Tab title="Move a robot">
+```python
+# pip install cyberwave   ·   export CYBERWAVE_API_KEY=...
+import time
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+arm = cw.twin("the-robot-studio/so101")   # creates or reuses "Quickstart Environment"
+cw.affect("playground")                   # free browser simulation; "live" for the real robot
+arm.policy.ensure_attached()              # the SDK takes control of the twin
+time.sleep(2)
+arm.joints.set("shoulder_pan", 45, degrees=True)
+print(arm.joints.get())
 ```
+  </Tab>
+  <Tab title="Add a model">
+```python
+# pip install "cyberwave[ml]" opencv-python
+import cv2
+from cyberwave import Cyberwave
 
-> Important
-> For a complete installation guide with hardware, [check out the complete guide](https://docs.cyberwave.com/hardware)
-
-Now you can control any robot with simple Python code from your computer:
-
+cw = Cyberwave()
+model = cw.models.load("yolo26n.pt")      # from the catalog, runs locally
+ok, frame = cv2.VideoCapture(0).read()    # your laptop webcam
+result = model.predict(frame, confidence=0.5)
+print(result.describe())                  # detections with labels and scores
+# Next: pick and sort what the camera sees -> /overview/first-ai-loop
+```
+  </Tab>
+  <Tab title="Ask the control agent">
 ```python
 from cyberwave import Cyberwave
 
 cw = Cyberwave()
+go2 = cw.twin("unitree/go2")
+env = go2.environment_id
 
-drone = cw.twin("dji/dji-mini-4-pro")
-drone.takeoff()
+plan = cw.agents.control.plan(env, "Move the Go2 to waypoint A", twin_uuid=go2.uuid, mode="simulation")
+actions = plan.get("dispatchable_actions") or []
+if not actions:
+    raise SystemExit(f"Nothing to dispatch: {plan}")
 
-robot_dog = cw.twin("unitree/go2")
-robot_dog.move_forward()
-
-camera = cw.twin("camera")
-camera.start_streaming()
-
-arm = cw.twin("the-robot-studio/so101")
-arm.joints.set("1", 30, degrees=True)
+print(actions[0])  # review before you confirm
+action = cw.control.dispatch(env, actions[0], confirmed=True, mode="simulation")
+cw.actions.wait(action["action_id"], twin_uuid=go2.uuid, timeout=60)
 ```
+The environment needs a waypoint named "A". More in [Control agent](/ai/control-agent).
+  </Tab>
+</Tabs>
 
-Cyberwave will take care of everything that is boring about robots:
+<Note>
+Get an API key under [API tokens](/feature-reference/api-tokens). `cw.affect("simulation")` starts a MuJoCo instance, which uses [credits](/billing/credits); `"playground"` is free. Stuck? See [troubleshooting](/support/troubleshooting).
+</Note>
 
-🤖 Sends instructions from your computer (or the cloud) to the actual robot
+## Works across form factors
 
-🤖 Integrating different robotic APIs, dependecies, and so on
+Arms, quadrupeds, rovers, drones and cameras all become digital twins with the same API. What a twin can do (move joints, grip, drive, fly, stream video) comes from its capabilities, not its brand. [How hardware works →](/robots/overview)
 
-🤖 Recording, storing, and making sure your data is safe and ready for you to train models!
+<CardGroup cols={4}>
+  <Card title="Arms" icon="robot" href="/overview/robotic-arms">SO-101, UR, Piper, OpenArm…</Card>
+  <Card title="Quadrupeds & rovers" icon="dog" href="/overview/robotic-dogs">Go2, Spot, UGV Beast…</Card>
+  <Card title="Drones" icon="plane" href="/overview/drones">DJI Mini, PX4 Vision…</Card>
+  <Card title="Cameras & sensors" icon="camera" href="/overview/cameras">USB, RTSP, GigE, RealSense…</Card>
+</CardGroup>
 
-## Develop using the simulation
+Is your device supported? Check the [compatibility table](/overview/supported-hardware), or [add your robot](/robots/add-your-robot).
 
-Cyberwave drops your robot into a virtual environment so you can test it without touching real hardware. Two simulations are available out of the box:
+## Choose your path
 
-🧪 **Playground**: runs directly in your browser with lightweight physics. Great to sanity-check your code, demo a behaviour, or verify joint angles before going live.
+<CardGroup cols={3}>
+  <Card title="Developers" icon="code" href="/overview/python-sdk-quickstart">Python SDK, CLI, MCP.</Card>
+  <Card title="ML engineers" icon="brain" href="/tutorials/train-vla-cyberwave">Record, train a VLA or RL policy, and deploy it.</Card>
+  <Card title="No-code builders" icon="diagram-project" href="/feature-reference/workflows">Workflows, from simulation to fleet.</Card>
+  <Card title="Robot makers" icon="screwdriver-wrench" href="/robots/add-your-robot">Get your hardware listed and supported.</Card>
+  <Card title="Integrators & enterprises" icon="building" href="/enterprise/overview">Deployment, security, fleet ops.</Card>
+  <Card title="Get help" icon="life-ring" href="/support/troubleshooting">Troubleshooting, Discord, status.</Card>
+</CardGroup>
 
-🧪 **MuJoCo**: full-fidelity, contact-rich physics. Use it for RL training, policy evaluation, and reproducible sim sweeps. Every environment exports to MuJoCo with one click.
+## See it in 60 seconds
 
-Switch by hitting **Simulate** in your Cyberwave environment, or from code:
-
-```python
-cw.affect("simulation")   # commands now run against the virtual twin
-cw.affect("live")         # flip back to the physical robot
-```
-
-Same code, same SDK, your robot just happens to be virtual.
-
-## Connect to a real robot
-
-Then to connect to your real hardware you just need to:
-
-```bash
-# Optional: SSH into a Raspberry Pi or Nvidia Orin
-ssh pi@cyberwave.local
-# Install the CLI
-curl -fsSL https://cyberwave.com/install.sh | bash
-# Pair your digital twin with the real hardware
-cyberwave pair
-```
-
-That's it! Cyberwave will guide you in selecting the robot you want to pair, no other integration work needed.
-[You can check a complete guide on how to connect any hardware here](https://docs.cyberwave.com/hardware).
-
-## Controllers
-
-A controller is whatever is driving your twin right now. You can swap them in and out at any time:
-
-🎮 **Human controllers**: live takeover from the dashboard with a keyboard or gamepad. Great for demos, recovery, or kickstarting data collection.
-
-🎮 **Code controllers**: drive the robot from your own Python using the SDK.
-
-🎮 **AI controllers**: hand the wheel to a trained model (yours or one from the catalog), running on the edge or in the cloud.
-
-For keyboard control, open the environment in the dashboard, select **Simulate**
-or **Live**, then click **Assign Controller** on the twin and select **Keyboard**.
-See [Hello Robot](/overview/hello-robot) for the simulation walkthrough and
-[Live Teleoperation](/feature-reference/environment-editor/teleoperation) for
-connected hardware.
-
-For a mobile twin that supports navigation, the Python SDK can set a default
-controller policy for future navigation plans:
-
-```python
-robot = cw.twin("unitree/go2")
-policy_uuid = "<navigation-controller-policy-uuid>"  # replace with your policy UUID
-robot.navigation.use_controller(policy_uuid)
-```
-
-This takes a navigation controller policy UUID, not a keyboard controller name or
-model slug. It configures future plans; it does not start motion or perform a live
-takeover. Arm-only twins do not expose navigation. To deploy an arm policy, follow
-the [SO-101 controller setup](/tutorials/so101-voice-pick-and-place#train-and-deploy-the-vla).
-
-Telemetry and recording keep running across switches, so a session can start with a human, hand off to a model, and end with a code controller, all on the same twin.
-
-## Models & Datasets
-
-Cyberwave makes "use an AI model on this robot" as boring as it should be:
-
-🧠 **100+ models in the catalog**: vision, language, VLAs, segmentation, pose. Drop one onto any twin and go.
-
-🧠 **Edge, cloud, or both**: the same model runs wherever you point it. That's where real robotic automation shines: a perception model on the edge, a planner in the cloud, all in the same workflow.
-
-🧠 **Bring your own**: register your fine-tuned checkpoints, or use Cyberwave to fine-tune open-source models on your own data.
-
-```python
-model = cw.models.load("yolov8n")        # straight from the catalog
-my_model = cw.models.load("my-vla-v3")   # your own checkpoint, same API
-```
-
-Datasets follow the same pattern: register a LeRobot-format dataset (or a folder) with `cw.datasets.add(...)` and it's ready to train on, visualise, or share.
-[Check the complete docs on models here](https://docs.cyberwave.com/use-cyberwave/ml-models)
-
-## Collect data, train and run inference
-
-Every twin is a data source the moment you start recording. Cyberwave handles the rest:
-
-🎬 **Scales itself**: automatic data collection that's happy in a one-arm lab and on a 24/7 production line. No buckets to manage, no schemas to maintain.
-
-🎬 **No lock-in**: datasets export and import in open formats (LeRobot, parquet, MP4). Delete your data any time, or just skip recording entirely.
-
-🎬 **Episode-first timeline**: slice runs into episodes from the dashboard, then fine-tune your own VLA or RL model on the result.
-
-🎬 **GDPR-ready**: built-in anonymisation (blur, pixelate, redact) on faces, plates, and any detected class. Cyberwave is proudly made in the EU.
-
-Recordings flow straight into the catalogue above: train on them in the cloud, evaluate in simulation, then deploy the result back to the same twin.
-[Check out a complete tutorial on fine-tuning your own VLA here](https://docs.cyberwave.com/tutorials/so101-voice-pick-and-place)
-
-## Join the community
-
-We build Cyberwave in the open. Come hang out:
-
-👋 [**Discord**](https://discord.gg/dfGhNrawyF): chat with the team and other builders. The fastest place to ask a question, share what you're working on, or get unstuck.
-
-👋 [**Built with Cyberwave**](https://cyberwave.com/built-with-cyberwave): a showcase of community projects. Drop yours in too.
-
-👋 [**GitHub**](https://github.com/cyberwave-os): every SDK, CLI, driver, and edge component lives in the open. PRs and issues welcome on any repo.
-
-👋 [**Events & hackathons**](https://cyberwave.com/community): come build with us in person and get your hands on a real robot.
+<Frame>
+  <iframe
+    width="100%"
+    height="420"
+    src="https://www.youtube.com/embed/vocKU2END60"
+    title="Hello Robot"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowfullscreen
+  ></iframe>
+</Frame>
+{/* TODO(docs): replace with a 15 s hero GIF: camera frame -> detection overlay -> SO-101 twin and real arm pick the object. */}

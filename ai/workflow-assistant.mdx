@@ -1,0 +1,54 @@
+---
+title: "Workflow assistant"
+sidebarTitle: "Workflow assistant"
+description: "Describe a recurring task and the workflow assistant drafts or edits the workflow: triggers, models, conditions and robot commands. You review every change."
+icon: "diagram-project"
+---
+
+The **workflow assistant** turns a recurring task into automation. You describe the behavior, for example *"inspect every pallet and alert me if one is damaged"*, and it drafts a [workflow](/feature-reference/workflows): the trigger, the models, the decisions and the robot commands. It can also change an existing workflow node by node. Every change is shown as a proposal before it is applied, and applying a draft doesn't activate the workflow.
+
+Use it when the job should keep running on its own. For a one-off action ("move to waypoint A now"), use the [control agent](/ai/control-agent) instead.
+
+## Use it in the workbench
+
+- **Create or edit a workflow:** select the workflow in the workbench, then use **Prompt** or the right-hand **Assistant** tab. Click the assistant's title to switch between the **Environment assistant** and the **Workflow assistant**. The workflow option needs the workbench open.
+- **Configure one node with AI:** in an editable environment workflow, **Configure with AI** opens the workflow assistant for the selected node. Edit the request, choose **Plan edit**, review the proposal, then **Review and apply**.
+
+## Use it from Python
+
+The workflow assistant works in steps, so you can inspect each one before anything changes:
+
+| Step | Call | Changes anything? |
+| --- | --- | --- |
+| Preview the strategy | `cw.agents.workflow.preview(env_uuid, prompt)` | No |
+| Plan the workflow | `cw.agents.workflow.plan(env_uuid, prompt)` | No |
+| Set up and draft | `cw.agents.workflow.setup_and_draft(env_uuid, prompt, confirmed_actions=[...])` | Yes: applies the setup actions you confirmed and drafts the workflow (private by default) |
+| Edit an existing workflow | `cw.agents.workflow.apply_plan(env_uuid, workflow_uuid, prompt)` | Yes: a constrained edit to that workflow |
+
+```python
+from cyberwave import Cyberwave
+
+cw = Cyberwave()
+prompt = "Inspect every pallet and alert me if one is damaged"
+
+plan = cw.agents.workflow.plan(env_uuid, prompt)       # read-only
+print(plan)                                           # review it first
+draft = cw.agents.workflow.setup_and_draft(env_uuid, prompt, agent_plan=plan)
+```
+
+Then open the draft in the workbench, test it against simulation, and activate it when you are happy. See [Run a workflow against simulation](/feature-reference/workflows/simulation-execution-target).
+
+## From your AI tools (MCP)
+
+With the [MCP server](/overview/tools/mcp-server), Claude Code, Cursor or any MCP client can use `cw_create_workflow_from_prompt` to preview or draft a workflow, then `cw_list_workflows`, `cw_get_workflow` and `cw_trigger_workflow` to find and run it.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Workflows" icon="diagram-project" href="/feature-reference/workflows">
+    Triggers, nodes, execution and monitoring.
+  </Card>
+  <Card title="Workflow node reference" icon="list" href="/overview/features/workflow-nodes">
+    Every node the assistant can use.
+  </Card>
+</CardGroup>

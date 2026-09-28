@@ -1,6 +1,6 @@
 ---
 title: "Monitor a camera feed for safety hazards"
-sidebarTitle: "Visual Safety Monitoring"
+sidebarTitle: "Visual safety monitoring"
 description: "Develop an edge-to-cloud VLM pipeline for real-time visual inspection and automated safety monitoring."
 icon: "code"
 iconType: "solid"
@@ -59,7 +59,7 @@ This tutorial rests on three architectural pillars:
 
 <CardGroup cols={3}>
   <Card title="Ingest" icon="download">
-    Connect a physical edge device (e.g., webcam) to Cyberwave using the **[Python Edge SDK](https://github.com/cyberwave-os/cyberwave-edge-python)**. This streams low-latency visual data to a Digital Twin via Cyberwave's WebRTC and MQTT infrastructure.
+    Connect a physical edge device (e.g., webcam) to Cyberwave using the **[Python Edge SDK](https://github.com/cyberwave-os/cyberwave-edge-python)**. This streams low-latency visual data to a digital twin via Cyberwave's WebRTC and MQTT infrastructure.
   </Card>
   
   <Card title="Orchestrate" icon="diagram-project">
@@ -73,9 +73,9 @@ This tutorial rests on three architectural pillars:
 
 ### Components
 
-- **[Edge Device](/concepts/edge-devices):** This is your physical hardware. In this tutorial, your **Laptop** and its **Webcam** act as the Edge Device. It sits in the real world, captures video, and sends it to the cloud via the Cyberwave SDK.
-- **[Digital Twin](/concepts/digital-twins):** A virtual replica of your physical device that lives in the Cyberwave dashboard. When your Edge Device comes online, it syncs with this Digital Twin, allowing you to see the video feed and control the device remotely from your browser.
-- **[Workflow](/concepts/workflows):** An event-driven serverless function that chains: Fetch Frame → VLM Inference → Boolean Logic → Trigger Action
+- **[Edge Device](/feature-reference/edge/overview):** This is your physical hardware. In this tutorial, your **Laptop** and its **Webcam** act as the Edge Device. It sits in the real world, captures video, and sends it to the cloud via the Cyberwave SDK.
+- **[Digital twin](/overview/features/digital-twin):** A virtual replica of your physical device that lives in the Cyberwave dashboard. When your edge device comes online, it syncs with this digital twin, allowing you to see the video feed and control the device remotely from your browser.
+- **[Workflow](/overview/features/workflows):** An event-driven serverless function that chains: Fetch Frame → VLM Inference → Boolean Logic → Trigger Action
 
 ---
 
@@ -89,7 +89,7 @@ Before starting this tutorial, ensure you have:
   </Tab>
   
   <Tab title="Software">
-    - Python 3.9 or higher
+    - Python 3.10 or higher
     - `pip` installed (Python package manager)
     - `git` installed
   </Tab>
@@ -105,7 +105,7 @@ Before starting this tutorial, ensure you have:
 ## Phase 1: Connect the Edge Infrastructure
 
 <Note>
-**Goal:** Connect your edge device (your physical hardware) to Cyberwave and ingest visual data into a Digital Twin.
+**Goal:** Connect your edge device (your physical hardware) to Cyberwave and ingest visual data into a digital twin.
 </Note>
 
 ### Step 1.1: Install the SDK
@@ -127,9 +127,9 @@ source venv/bin/activate
 pip install -e .
 ```
 
-### Step 1.2: Provision the Digital Twin
+### Step 1.2: Provision the digital twin
 
-In the Cyberwave Dashboard, create a Digital Twin to represent your edge node:
+In the Cyberwave dashboard, create a digital twin to represent your edge node:
 
 1. Create a **New Project** and **Environment**. 
 2. **Add a Scene Object** to the environment to create a new twin.
@@ -220,7 +220,7 @@ If you see these messages, your edge device is successfully connected!
 
 ### Step 1.6: Verify the Stream
 
-To confirm data ingestion, return to your Cyberwave Environment and "turn on" the camera in the interface. You should see live video frames streaming from your edge device directly into the Digital Twin.
+To confirm data ingestion, return to your Cyberwave Environment and "turn on" the camera in the interface. You should see live video frames streaming from your edge device directly into the digital twin.
 
 ![Camera turn on](/images/camera-turn-on.png)
 
@@ -368,7 +368,7 @@ Ensure the following before testing:
 
 - ✅ The `cyberwave-edge` service is running in your terminal.
 - ✅ The Workflow is **Active** in the dashboard.
-- ✅ You can see live video in the Cyberwave Digital Twin interface. 
+- ✅ You can see live video in the Cyberwave digital twin interface. 
 
 ### Test Case A: The "Safe" Worker
 
@@ -431,7 +431,7 @@ This is the power of the **Cyberwave Industrial AI stack**.
   <Accordion title="Edge device won't connect">
     **Solution:**
     - Verify your `CYBERWAVE_TOKEN` is correct
-    - Check that the `CYBERWAVE_TWIN_UUID` matches your Digital Twin
+    - Check that the `CYBERWAVE_TWIN_UUID` matches your digital twin
     - Check logs with `LOG_LEVEL=DEBUG`
   </Accordion>
   
@@ -451,7 +451,7 @@ This is the power of the **Cyberwave Industrial AI stack**.
   
   <Accordion title="VLM returns unexpected results">
     **Solution:**
-    - Check the image quality in the Digital Twin viewer
+    - Check the image quality in the digital twin viewer
     - Adjust the prompt for your specific use case
     - Increase `CAMERA_FPS` for better image quality
     - Ensure proper lighting in the camera view
@@ -473,21 +473,21 @@ This is the power of the **Cyberwave Industrial AI stack**.
   <Card
     title="Workflows"
     icon="diagram-project"
-    href="/use-cyberwave/workflows"
+    href="/feature-reference/workflows"
   >
     Automate robot operations with visual workflows
   </Card>
   <Card
-    title="ML Models"
+    title="Model catalog"
     icon="brain"
-    href="/use-cyberwave/ml-models"
+    href="/feature-reference/ml-models"
   >
     Register and deploy AI models
   </Card>
   <Card
     title="Cyberwave Edge"
     icon="microchip"
-    href="/edge/overview"
+    href="/feature-reference/edge/overview"
   >
     Connect physical hardware to Cyberwave
   </Card>

@@ -3,9 +3,7 @@ title: "BaseROS2Driver (ROS 2)"
 description: "Reference for cyberwave.driver.ros2.BaseROS2Driver — dual Cyberwave + rclpy lifecycle, from_ros MQTT forwarding, hooks, env vars, and UR Sim lab."
 ---
 
-<Warning>
-**STUB DOCUMENT:** Expanded technical reference aligned with `cyberwave-python`; replace the video placeholder when your walkthrough URL is ready.
-</Warning>
+{/* TODO(docs): **STUB DOCUMENT:** Expanded technical reference aligned with `cyberwave-python`; replace the video placeholder when your walkthrough URL is ready. */}
 
 ## What `BaseROS2Driver` is
 
@@ -22,10 +20,7 @@ from cyberwave.driver.ros2 import BaseROS2Driver, Ros2TopicSpec
 
 **Typical goal:** stream ROS topics (joint states, odometry, custom msgs) into Cyberwave MQTT with **minimal driver code** — often **under 100 lines** for a forward-only bridge. Reference: [`ursim_driver.py`](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-sdks/cyberwave-python/examples/ursim_driver.py).
 
-<Info>
-**Video walkthrough** — Add your hosted recording when available:  
-`[UR Sim → Cyberwave: build a ROS 2 driver in minutes](VIDEO_URL_HERE)`
-</Info>
+{/* TODO(docs): add the "UR Sim → Cyberwave: build a ROS 2 driver in minutes" video link */}
 
 ---
 
@@ -163,7 +158,7 @@ Event hooks **keep** `on_` where there is no conflict: **`on_topic_name_changed(
 | Item | Required? |
 | ---- | --------- |
 | Subclass **`BaseROS2Driver`** | Yes |
-| **`ASSET_KEY`** matching catalog asset | Yes (manifest + auto-register) |
+| **`REGISTRY_ID`** matching catalog asset | Yes (manifest + auto-register) |
 | **`define_interface`** with `add_publisher(..., from_ros=Ros2TopicSpec(...))` | Yes |
 | **`CallbackGroup()`** with **no** callback for auto `JointState` serialize | Typical for joints |
 | **`configure` / `connect_to_device` / `activate`** | May be empty `pass` / log only |
@@ -477,7 +472,7 @@ Node name / namespace can be overridden via ROS env helpers (`node_name_from_env
 | `CYBERWAVE_BASE_URL` | API base |
 | `CYBERWAVE_MQTT_*` | Broker connection |
 
-Backend lifecycle alerts are **always** synced after connect (not env-configurable). Set **`ASSET_KEY`** on the driver class (not via env).
+Backend lifecycle alerts are **always** synced after connect (not env-configurable). Set **`REGISTRY_ID`** on the driver class (not via env).
 
 ### ROS 2 driver specific
 
@@ -557,7 +552,7 @@ def _on_cmd(self, envelope: dict) -> None:
 
 ```python
 def define_interface(self, iface):
-    iface.add_listener(MqttTopicSpec(...), CallbackGroup(self._inbox.append))
+    iface.add_listener(TopicSpec(...), CallbackGroup(self._inbox.append))
 
 def _inbox_append(self, payload): ...        # asyncio thread — just enqueue, no rclpy
 
@@ -577,7 +572,7 @@ Full listing (~75 lines) in the monorepo. Structure:
 
 ```python
 class UrSimDriver(BaseROS2Driver):
-    ASSET_KEY = "universal_robots/UR7"
+    REGISTRY_ID = "universal_robots/UR7"
 
     def define_interface(self, iface):
         iface.add_publisher(
