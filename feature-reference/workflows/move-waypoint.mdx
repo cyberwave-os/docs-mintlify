@@ -1,0 +1,60 @@
+---
+title: "Move Waypoint"
+description: "Update an environment waypoint's stored position and rotation from a workflow."
+tag: stub
+---
+
+**Move Waypoint** updates the position and/or rotation of an existing
+environment waypoint. A common use is re-anchoring a waypoint onto a detected
+object (for example from [Object Pose](/feature-reference/workflows/object-pose)),
+so that waypoints defined relative to it move along with it. The waypoint's own reference frame is never changed.
+A **Move Twin** later in the same run drives to the updated waypoints.
+
+## Settings
+
+| Field | Meaning |
+| --- | --- |
+| **Reference Frame** | The frame the incoming position/rotation are expressed in: **Waypoint's own frame** (default, no conversion), **Environment**, **Robot part** (a twin and link, or the twin root), or **Another waypoint**. Cyberwave converts the pose into the frame the waypoint was defined in before storing it. |
+| **Waypoint** | The environment waypoint to update. |
+
+## Inputs
+
+| Field | Meaning |
+| --- | --- |
+| `position` | `{x, y, z}` in metres, in the selected reference frame. |
+| `rotation` | Quaternion `{w, x, y, z}`, in the selected reference frame. |
+
+Pass either or both; a field you leave out keeps its stored value. A position or
+rotation that is passed must include every axis.
+
+<Note>
+  A robot part that moves with the robot's joints, such as a wrist camera, is
+  placed from the robot's measured joint positions at the moment the node runs:
+  the real robot for live workflows, the simulation for simulation workflows.
+  Keep the arm still between capturing the pose and updating the waypoint. If
+  no fresh joint positions arrive, the node fails instead of guessing.
+</Note>
+
+## SDK
+
+```python
+client.environments.update_waypoint(
+    environment_uuid,
+    "waypoint_base",
+    position={"x": 0.0, "y": 0.0, "z": 0.35},
+    reference_frame={
+        "type": "twin_link",
+        "twin_uuid": arm_uuid,
+        "link": "camera_color_frame",
+    },
+    joint_state_source="live",
+)
+```
+
+`reference_frame` accepts `{"type": "environment"}`,
+`{"type": "twin_link", "twin_uuid": ..., "link": ...}` (omit `link` for the
+twin root) or `{"type": "waypoint", "waypoint_id": ...}`. Omit it when the pose
+is already relative to the waypoint's own frame.
+
+`joint_state_source` (`"live"` or `"simulation"`) is required when the
+conversion goes through a robot part that moves with the joints.
