@@ -80,6 +80,24 @@ sensors:
 `cx` and `cy` are optional. Omitting them falls back to image centre, which is fine for cameras
 with low distortion or when sub-centimetre accuracy is not required.
 
+### Calibration reported by the driver
+
+Drivers that know their camera's calibration write it into the twin, so you don't have to. The
+Kinova Gen3 driver reports its color stream's ROS `camera_info` (resolution, `fx`, `fy`, `cx`, `cy`)
+whenever it changes, for example after `COLOR_RESOLUTION` is changed. Workflows using that twin
+recompile with the new values straight away. Drivers call the same endpoint the SDK exposes:
+
+```python
+client.twins.report_camera_info(
+    twin_uuid, "wrist_color_camera",
+    width=640, height=480, fx=653.68, fy=651.86, cx=311.75, cy=232.40,
+)
+```
+
+A reported calibration applies to that one resolution only. If the node then receives frames of a
+different size, it fails with a message naming both sizes instead of rescaling the intrinsics,
+because camera modes don't necessarily share a field of view.
+
 ## Companion nodes
 
 - `data_source` (with `data_type = twin_depth`) — supplies the registered depth map.
