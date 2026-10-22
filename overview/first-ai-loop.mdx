@@ -1,15 +1,15 @@
 ---
-title: "Your first AI loop: see, pick, sort"
+title: "Your first AI loop"
 sidebarTitle: "Your first AI loop"
 description: "A webcam spots a cup or a bottle on your desk; an SO-101 twin aims, grasps and drops it in the right bin. Free Playground sim, no robot."
 icon: "wand-magic-sparkles"
 ---
 
-**At a glance:** 20 min · Beginner · Python 3.10+, a Cyberwave API key, a laptop webcam, a cup and a bottle. No robot, no credits.
-
 You will build the smallest version of a real robot cell: **vision-guided pick-and-sort**. A camera looks at your desk. A perception model finds a cup or a bottle and where it is. The robot aims at it, grasps it, lifts it, and drops it in the bin for its class: cups on the left, bottles on the right.
 
 The robot is an SO-101 arm running in the free Playground simulation, so you can build and debug the logic before you touch hardware. When you have a real SO-101, you change one line and the same script drives it.
+
+## How it works
 
 ```mermaid
 flowchart LR
@@ -26,6 +26,8 @@ In the Playground only the arm is simulated. Your real cup stays on the desk. Af
 </Note>
 
 ## Before you start
+
+- Python 3.10 or higher and a laptop webcam. Allow about 20 minutes.
 
 - A Cyberwave account and an API token. Create the token under **Profile → Access**. See [API tokens](/feature-reference/api-tokens).
 - If your token covers more than one workspace, also set `CYBERWAVE_WORKSPACE_ID`. Otherwise the first request fails with `400 workspace_required`.
