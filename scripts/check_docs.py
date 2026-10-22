@@ -80,6 +80,15 @@ for r in docs.get("redirects", []):
     src = r["source"]
     if ":" not in src and page_exists(src):
         errors.append(f"redirect: source {src} shadows an existing page")
+    # Catch-all redirects take precedence over published pages in production.
+    # Local preview does not expose that precedence, so check it structurally.
+    catch_all = re.fullmatch(r"(.*)/:[A-Za-z_][A-Za-z0-9_]*\*", src)
+    if catch_all:
+        prefix = catch_all.group(1)
+        for page in sorted(pages):
+            route = "/" + page.removesuffix("/index")
+            if route == prefix or route.startswith(prefix + "/"):
+                errors.append(f"redirect: source {src} shadows existing page {route}")
 
 LINK = re.compile(r'(?:\]\(|href=["\'])(/[^)"\'\s]*)')
 redirect_sources = {r["source"] for r in docs.get("redirects", []) if ":" not in r["source"]}

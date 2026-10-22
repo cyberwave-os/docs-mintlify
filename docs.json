@@ -938,8 +938,24 @@
       "destination": "/overview"
     },
     {
-      "source": "/get-started/:slug*",
-      "destination": "/overview/:slug*"
+      "source": "/get-started/index",
+      "destination": "/overview"
+    },
+    {
+      "source": "/get-started/hello-robot",
+      "destination": "/overview/hello-robot"
+    },
+    {
+      "source": "/get-started/python-sdk-quickstart",
+      "destination": "/overview/python-sdk-quickstart"
+    },
+    {
+      "source": "/get-started/first-ai-loop",
+      "destination": "/overview/first-ai-loop"
+    },
+    {
+      "source": "/get-started/develop-remote-hardware",
+      "destination": "/overview/develop-remote-hardware"
     },
     {
       "source": "/use-cyberwave/teleoperation",
