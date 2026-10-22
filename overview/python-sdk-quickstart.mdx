@@ -1,26 +1,21 @@
 ---
-title: "Develop with the Python SDK"
+title: "Python SDK"
 description: "Install the SDK, authenticate, and control your first robot in under 5 minutes"
 icon: "python"
 ---
 
-import EarlyAccess from "/snippets/early-access.mdx";
+Control a simulated SO-101 arm with the Python SDK. This walkthrough uses the
+free Playground simulation and requires no physical hardware.
 
-<EarlyAccess />
+Prefer to start with prompts? Choose a path in the [Agentic quickstart](/get-started/quickstart).
 
-The Cyberwave Python SDK (`cyberwave`) lets you control robots, manage digital twins, and stream sensor data with a few lines of Python. This guide takes you from an empty terminal to a moving robot in the free Playground simulation, no hardware required.
-
-<Note>
-  Already comfortable with the basics? The [full Python SDK reference](/overview/tools/python-sdk) covers joint control, video streaming, workflows, datasets, AI models, and more.
-</Note>
-
-## Prerequisites
+## Before you start
 
 - **Python 3.10 or higher** installed on your machine
 - A **Cyberwave account** ([request early access](https://cyberwave.com/request-early-access) if you don't have one)
 - A **Cyberwave API key** (we'll generate one in Step 2)
 
-## Step 1: Install the SDK
+## 1. Install the SDK
 
 Install the SDK and CLI from PyPI:
 
@@ -34,7 +29,7 @@ Verify the install:
 cyberwave --help
 ```
 
-## Step 2: Get your API key
+## 2. Get your API key
 
 <Steps>
   <Step title="Open your profile">
@@ -45,7 +40,7 @@ cyberwave --help
   </Step>
 </Steps>
 
-## Step 3: Authenticate
+## 3. Authenticate
 
 The SDK reads your API key from the `CYBERWAVE_API_KEY` environment variable. This is the recommended approach — it keeps secrets out of your code.
 
@@ -71,7 +66,7 @@ cw = Cyberwave()  # picks up CYBERWAVE_API_KEY automatically
   Prefer to pass the key explicitly? Use `Cyberwave(api_key="your_api_key_here")`. Avoid this in code you commit or share.
 </Tip>
 
-## Step 4: Control your first robot
+## 4. Control your first robot
 
 The snippet below creates a digital twin of an [SO-101 robot arm](https://cyberwave.com/catalog), runs it in the free **Playground** simulation, and moves one of its joints. Nothing here touches physical hardware, so it's safe to run as-is.
 

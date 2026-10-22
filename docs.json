@@ -17,6 +17,7 @@
             "group": "Get started",
             "pages": [
               "overview/index",
+              "get-started/quickstart",
               "overview/develop-remote-hardware",
               "overview/hello-robot",
               "overview/python-sdk-quickstart",
@@ -886,7 +887,7 @@
     },
     {
       "source": "/overview/quickstart",
-      "destination": "/overview/hello-robot"
+      "destination": "/get-started/quickstart"
     },
     {
       "source": "/create-skill/ml-models/speech-to-text",

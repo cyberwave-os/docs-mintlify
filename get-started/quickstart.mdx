@@ -1,0 +1,472 @@
+---
+title: "Agentic quickstart"
+description: "Build with prompts in Cyberwave or connect your own AI agent. Choose your path; no hardware required."
+icon: "robot"
+---
+
+Choose how you want to start: prompt Cyberwave’s built-in agent in your browser,
+or connect an agent you already use.
+
+<Tabs>
+<Tab title="Prompt in Cyberwave">
+
+**Build with the built-in agent.** Describe your scene, review what it creates,
+and refine it with follow-up prompts. You need a Cyberwave account and a browser;
+no API key or coding-agent installation is required.
+
+## Watch the browser walkthrough
+
+This 2-minute 20-second walkthrough shows a fresh scene built from the dashboard
+and a separate follow-up edit. Captions describe the silent footage. Build waits
+are shortened; robot actuation and rendered camera capture are next steps, not
+results demonstrated in this video.
+
+<video controls playsInline preload="metadata" poster="/videos/quickstart/Thumbnail.jpg" style={{ width: "100%", borderRadius: "12px" }} aria-label="Agentic quickstart: build a scene with Cyberwave’s built-in agent">
+  <source src="/videos/quickstart/Agentic-Quickstart-Screen-Cut.mp4" type="video/mp4" />
+</video>
+
+<Accordion title="Walkthrough transcript">
+  **0:00 — Start with a prompt.** Build a robotics scene using Cyberwave's
+  built-in agent. The browser path needs no external coding-agent installation.
+
+  **0:10 — Describe your scene.** Select your workspace on the dashboard. Ask
+  for a Go2, camera, two orange boxes and a floor, then select Build environment.
+
+  **0:25 — Watch the build.** The agent finds assets, applies scene changes and
+  checks its result. The recording accelerates this sequence. Asset choices may
+  change during validation.
+
+  **1:05 — Review the result.** The completed scene contains Unitree Go2,
+  Standard Camera, two orange boxes and a floor. This is a scene-editing result.
+
+  **1:20 — Refine conversationally.** A separate earlier take shows a follow-up
+  prompt adding a floor while preserving existing objects.
+
+  **1:40 — Check readiness.** Inspect controls and simulation prerequisites
+  before running. The shown camera still needs setup; this video does not
+  demonstrate verified motion or rendered camera capture.
+
+  **2:05 — Keep building.** Continue below, or use the optional external-agent
+  and Python paths.
+</Accordion>
+
+## 1. Open your workspace
+
+[Create a Cyberwave account](https://cyberwave.com/signup), finish verification,
+and create or join a workspace. On the [dashboard](https://cyberwave.com/dashboard),
+find **What do you want to build?** and select the workspace for your scene.
+You can start directly from this prompt box; creating a blank environment first
+is optional.
+
+## 2. Describe your scene
+
+Paste this into **Describe the environment you want to create**, then select
+**Build environment**:
+
+```text
+Build a simple inspection scene with a Unitree Go2, an RGB camera facing it,
+two orange boxes beside the robot, and a flat floor beneath them.
+Leave a clear path in front of the Go2.
+Use catalog assets and simple primitives. Do not start simulation or connect
+physical hardware yet.
+```
+
+The editor opens while the assistant builds. If the editor tour appears, choose
+**Later** to follow this walkthrough, or take the tour first. Watch the assistant
+find assets and apply scene changes. Review any proposed
+changes or confirmation cards before accepting them. Check the scene itself:
+you should see one Go2, one camera, two orange boxes and a floor. Wait for the
+final build summary; the agent may revise its asset choices during its checks.
+
+**Try a follow-up:** in **Edit** mode, open the right-hand **Assistant** panel.
+Its heading should say **Environment assistant**. If hidden, use **Panels** to
+show it. The agent can keep editing the same scene.
+
+```text
+Add a flat floor beneath the Go2 and boxes if one is missing.
+Keep the clear forward path and existing objects. Use a simple primitive.
+Make scene edits only; do not start simulation or preparation tests.
+```
+
+**Already have a Go2 and camera?** Use this continuation instead of duplicating them:
+
+```text
+Add two orange boxes beside the Go2 to make a simple inspection scene.
+Keep a clear path in front of the robot and position the existing RGB camera
+to see it. Reuse the existing robot and camera. Make scene edits only;
+do not start simulation, preparation tests, training, asset generation,
+or connect hardware.
+```
+
+### Watch: create and refine with prompts
+
+These silent review clips show the continuation prompts above in an existing
+Go2 scene. They use actual browser captures at 8 fps with pauses shortened.
+
+<video controls playsInline preload="metadata" poster="/videos/quickstart/scene-creation-preview.jpg" style={{ width: "100%", borderRadius: "12px" }} aria-label="Build an inspection scene with the built-in agent">
+  <source src="/videos/quickstart/02-build-scene-review.mp4" type="video/mp4" />
+</video>
+
+<video controls playsInline preload="metadata" poster="/videos/quickstart/scene-refinement-preview.jpg" style={{ width: "100%", borderRadius: "12px" }} aria-label="Refine the scene by asking the agent to add a floor">
+  <source src="/videos/quickstart/03-refine-scene-review.mp4" type="video/mp4" />
+</video>
+
+The clips demonstrate scene editing; simulation movement and camera capture
+are separate steps below.
+
+<Accordion title="Create something beyond the catalog">
+  Describe the object, its dimensions and how it should behave, or attach a
+  reference image. The environment assistant searches existing assets first;
+  supported new objects can be generated as private assets. Review the build
+  status and preview before accepting a revision. Generation and simulation
+  preparation are separate operations—check their requirements before starting.
+  [Explore asset creation](/feature-reference/environment-editor/assistant-asset-generation).
+</Accordion>
+
+## 3. Ask the robot to act
+
+Scene editing places objects. To make the robot act, switch to **Simulate** and
+open the **Control assistant**. Ask it to inspect readiness first:
+
+```text
+Inspect this Go2's simulation readiness and available controls.
+Explain anything missing and which simulation engine this task needs.
+Do not start compute or execute movement yet.
+```
+
+<Note>
+  **MuJoCo** starts billable cloud compute and needs [credits](/billing/credits).
+  The free **Playground** supports kinematic motion but does not render camera
+  frames. Check your workspace balance and review preparation requirements
+  before starting MuJoCo. Stop it when you finish.
+</Note>
+
+When readiness checks pass, start a bounded MuJoCo session in the simulation
+controls. Then ask:
+
+```text
+In simulation, plan a short forward movement for the Go2, followed by a stop.
+Use its supported bounded controls and show me the plan before execution.
+```
+
+Review the target robot, direction and limits, then approve the supported action.
+Watch the robot and inspect the reported result. Follow up with:
+
+```text
+Check the robot's actual pose before and after the action. Tell me what
+movement was observed and whether it stopped. If motion cannot be verified,
+explain what failed.
+```
+
+**Prefer an arm?** Build the scene with an SO-101, then ask for a small movement
+of one controllable joint within its limits. Review and approve that action.
+
+
+## 4. Inspect the camera view
+
+Check the RGB camera's simulation readiness before starting the camera test.
+If the viewer reports **needs simulation setup**, open **Fix simulation** and
+review **Prepare simulation**. That preparation can use credits. If the camera
+was added after startup, restart MuJoCo to load the updated scene.
+
+Ask the assistant:
+
+```text
+Inspect the RGB camera in this simulation. Capture a fresh rendered frame
+if supported and describe what is visible. Report any missing setup or
+unavailable capability. Do not substitute an editor preview for a camera frame.
+```
+
+Open the returned frame and check that it shows the scene. If the assistant
+cannot retrieve a frame, switch to **Connect your agent** for the SDK camera example,
+or follow the reported readiness issue; a scene preview alone does not complete
+this step.
+
+
+## 5. Stop and keep building
+
+Stop the simulation in the environment controls and confirm **No active simulation**.
+Your environment remains available for further editing.
+
+Return to **Edit → Assistant** to change the scene or ask for a workflow draft:
+
+```text
+Draft an inspection workflow for this scene: inspect the two boxes, capture
+an image when the camera is ready, then stop. Explain any missing capabilities.
+Do not run the workflow yet.
+```
+
+Review the draft and its requirements before running it. Learn more about the
+[environment assistant](/ai/environment-assistant),
+[control agent](/ai/control-agent) and [workflow assistant](/ai/workflow-assistant).
+
+</Tab>
+<Tab title="Connect your agent">
+
+**Use Claude Code, Codex, another MCP client or Python.** Connect your workspace,
+then create and control a simulated robot from your own tools.
+
+You'll need Git and an installed coding agent for the skill setup. Python
+examples need Python 3.11+. Terminal commands support macOS, Linux and Windows WSL.
+
+## 1. Set up your workspace
+
+[Create a Cyberwave account](https://cyberwave.com/signup), finish verification,
+and create or join a workspace. Keep [Cyberwave](https://cyberwave.com/dashboard)
+open beside your terminal to watch the scene.
+
+<Note>
+  The motion and camera examples use **MuJoCo**, which starts billable cloud
+  compute and needs [credits](/billing/credits). Check your workspace balance
+  before starting. The free Playground supports kinematic motion but does not
+  render camera frames.
+</Note>
+
+## 2. Get your API key
+
+
+Open [Profile → Access](https://cyberwave.com/profile?tab=access), create an API key
+named **Quickstart**, and scope it to **one workspace**. Copy it when shown.
+See [API keys and scopes](/feature-reference/api-tokens) for details.
+
+In your terminal, run this block and paste the key at the hidden prompt. It works
+in Bash and Zsh, including WSL, and keeps the value out of your command history:
+
+```bash
+printf 'Cyberwave API key: '
+read -rs CYBERWAVE_API_KEY
+printf '\n'
+export CYBERWAVE_API_KEY
+```
+
+<Accordion title="Stuck? API key setup">
+  The key is shown once; create a replacement if you missed it. For
+  `workspace_required`, create a key scoped to one workspace. For `403`, check
+  your workspace role and key scope. Keep the key in your terminal or client's
+  secret settings. [Ask for help on Discord](https://discord.gg/dfGhNrawyF).
+</Accordion>
+
+## 3. Choose your client
+
+
+<Tabs>
+<Tab title="Claude Code">
+  Install the skill and register the hosted MCP server:
+
+  ```bash
+  git clone https://github.com/cyberwave-os/cyberwave-skill ~/.claude/skills/cyberwave
+  claude mcp add --scope user --transport http cyberwave https://mcp.cyberwave.com/mcp --header "Authorization: Bearer $CYBERWAVE_API_KEY"
+  claude
+  ```
+
+  Claude stores the expanded authentication header in its local user
+  configuration. In Claude Code, invoke `/cyberwave`.
+  [Claude Code MCP setup](https://code.claude.com/docs/en/mcp) describes
+  connection status and configuration scopes.
+</Tab>
+<Tab title="Codex">
+  Install the skill and register the hosted server:
+
+  ```bash
+  git clone https://github.com/cyberwave-os/cyberwave-skill ~/.agents/skills/cyberwave
+  codex mcp add cyberwave --url https://mcp.cyberwave.com/mcp --bearer-token-env-var CYBERWAVE_API_KEY
+  codex
+  ```
+
+  Start Codex from the terminal where you exported the key; the server
+  reads that environment variable when connecting. Invoke `$cyberwave`.
+  See [Codex MCP setup](https://developers.openai.com/codex/mcp).
+</Tab>
+<Tab title="Other MCP clients">
+  In your client's MCP settings, add a **Streamable HTTP** server named
+  **cyberwave** at `https://mcp.cyberwave.com/mcp`. Configure its
+  `Authorization` header as `Bearer ` followed by your API key using the
+  client's private credential field. Reconnect the server.
+
+  Header and secret support varies by client. Use the
+  [MCP client guide](/overview/tools/mcp-server) for configuration details;
+  if your client cannot send a Bearer header, use Claude Code, Codex or the
+  SDK tab. Interactive `cyberwave login` does not configure a hosted MCP client.
+</Tab>
+  <Tab title="Python SDK">
+    In the terminal where you exported your key:
+
+    ```bash
+    pip install cyberwave
+    ```
+
+    Use the [Python motion example](#4-move-a-simulated-robot). It creates the environment automatically
+    and prints a link to open it. The [SDK reference](/overview/tools/python-sdk)
+    covers installation extras and advanced usage.
+  </Tab>
+</Tabs>
+
+**Verify your MCP connection:** if you chose Claude Code, Codex or another
+MCP client, ask your agent:
+
+```text
+List my Cyberwave workspaces using the Cyberwave MCP tools.
+```
+
+A tool response listing your workspace confirms the connection. If there are
+several, select it by name. Continue with the same agent session. For Python,
+continue with the SDK motion example below.
+
+<Accordion title="Stuck? Connection failed">
+  For `401` or `AUTH_ERROR`, replace the key and update your client's credential.
+  If tools are missing, reconnect the MCP server and restart the agent. If the
+  skill folder already exists, reuse the installed skill instead of cloning
+  over it. [Ask for help on Discord](https://discord.gg/dfGhNrawyF).
+</Accordion>
+
+## 4. Move a simulated robot
+
+
+<Tabs>
+  <Tab title="Go2">
+    Copy these prompts into your agent, one at a time:
+
+    ```text
+    Create a new Quickstart Environment in my workspace with a Unitree Go2.
+    Use simulation only. Start a MuJoCo simulation for five minutes, inspect
+    its readiness and available controls, and give me the environment link.
+    Discover resource references yourself and reuse them in later calls.
+    ```
+
+    Open that link, then ask:
+
+    ```text
+    In that simulation, walk the Go2 forward 1 metre, turn left 90 degrees,
+    then stop. Plan and dispatch supported bounded controls. Inspect actual
+    pose telemetry before and after; report observed motion separately from
+    commands accepted. Do not substitute scene editing for robot actuation.
+    ```
+
+    ```text
+    Render a preview of the environment and tell me where the robot ended up.
+    If movement cannot be verified, explain the failed step instead of
+    claiming the robot moved.
+    ```
+
+    **SDK alternative:** save as `quickstart.py`, then run `python quickstart.py`:
+
+    ```python
+    import time
+    from cyberwave import Cyberwave
+
+    cw = Cyberwave()
+    robot = cw.twin("unitree/go2")
+    cw.affect("simulation", duration=300)
+    robot.policy.ensure_attached()
+    time.sleep(2)
+    robot.move_forward(0.5, duration=2)
+    cw.disconnect()
+    ```
+
+    `move_forward` takes **speed in metres per second**, then sends a stop at
+    the end of the duration. This requests roughly one metre of travel; inspect
+    the robot in the environment to verify motion. Disconnecting the SDK leaves
+    the simulation running until its duration expires or you stop it.
+  </Tab>
+  <Tab title="Prefer an arm?">
+    Use the same setup, then ask:
+
+    ```text
+    Create a new Quickstart Environment with the-robot-studio/so101 and start
+    a five-minute MuJoCo simulation. Discover resource references yourself.
+    Inspect the arm's controllable joints and limits. Plan and execute a small
+    bounded movement of one joint in simulation, then run a saved motion pose
+    if one is available. Verify actual joint telemetry and render a preview.
+    Give me the environment link. Do not substitute editor transforms for motion.
+    ```
+
+    **SDK alternative:**
+
+    ```python
+    import time
+    from cyberwave import Cyberwave
+
+    cw = Cyberwave()
+    robot = cw.twin("the-robot-studio/so101")
+    cw.affect("simulation", duration=300)
+    robot.policy.ensure_attached()
+    time.sleep(2)
+    robot.joints.set("shoulder_pan", 15, degrees=True)
+    cw.disconnect()
+    ```
+  </Tab>
+</Tabs>
+
+<Accordion title="Stuck? The robot isn't moving">
+  If simulation startup fails, check credits and its status in the environment.
+  If the controller is still attaching, wait for readiness before retrying a
+  bounded command. If a command is accepted without observed movement, ask your
+  agent to inspect simulation control readiness and telemetry; an accepted
+  command alone does not prove motion. [Ask for help on Discord](https://discord.gg/dfGhNrawyF).
+</Accordion>
+
+## 5. Capture a camera frame
+
+
+Continue in the same agent session:
+
+```text
+In the same simulated environment, add an RGB camera, positioned to see the
+robot. Check that the camera supports rendered frames and is ready for MuJoCo.
+If simulation setup is missing, explain the required preparation before
+starting it. Inspect whether the active MuJoCo scene includes the new camera; if
+needed, stop and restart the simulation for five minutes to load it. Capture
+one fresh camera frame and describe what is visible. Report the frame's
+freshness; an environment preview is not a camera frame.
+```
+
+For the SDK path, create a camera **before** `cw.affect(...)` in your motion example script:
+
+```python
+camera = cw.twin("cyberwave/standard-cam")
+camera.edit_position(x=2.0, y=0.0, z=1.5)
+```
+
+After simulation starts, capture a frame before disconnecting:
+
+```python
+frame = camera.get_frame("path")
+print("Camera frame:", frame)
+```
+
+Open the saved image to inspect it. Ask your agent to describe the image if it
+supports images. When finished, **stop the simulation in the environment**;
+ask your agent to stop it and verify its status if you used MCP.
+
+<Accordion title="Stuck? Camera capture failed">
+  `SimulationNotRunningError` means a running MuJoCo simulation is needed.
+  If the viewer says the camera **needs simulation setup**, open **Fix simulation**
+  for that camera and review **Prepare simulation**. Preparation includes a
+  simulator test and may use credits; complete it before restarting MuJoCo.
+  If the camera was added after startup, restart the simulation to load the
+  updated scene. If the frame is missing or stale, inspect camera and simulation
+  readiness before capturing again. [Ask for help on Discord](https://discord.gg/dfGhNrawyF).
+</Accordion>
+
+## 6. Stop the simulation
+
+Stop the simulation in the environment controls and confirm **No active simulation**.
+Closing your terminal or calling `cw.disconnect()` only disconnects the client;
+it does not stop the simulation.
+
+</Tab>
+</Tabs>
+
+## Next steps
+
+<CardGroup cols={3}>
+  <Card title="Fork a template" icon="clone" href="https://cyberwave.com/templates">
+    Explore existing templates and clone one into your workspace.
+  </Card>
+  <Card title="Build with the community" icon="discord" href="https://discord.gg/dfGhNrawyF">
+    Share your simulation and find your next project.
+  </Card>
+  <Card title="Run on real hardware" icon="plug" href="/overview/supported-hardware">
+    Pair hardware when you're ready to switch from simulation to live control.
+  </Card>
+</CardGroup>
