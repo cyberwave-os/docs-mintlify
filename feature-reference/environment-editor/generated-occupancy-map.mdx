@@ -76,6 +76,15 @@ view. See [AprilTag relocalization](/robots/go2-apriltag-relocalization).
 Doors and windows placed as openings are cut out of the walls they sit in, so
 routes can pass through them.
 
+## Automatic generation on simulation start
+
+Starting a simulation, or running a simulation workflow, generates a missing
+map for the first eligible ground robot in the environment and binds it as that
+robot's navigation map, so a copied environment does not navigate blind. An
+existing map is left alone. If generation is refused (no geometry, or you only
+have read access to the environment), the start proceeds without a map and the
+refusal is logged in the browser console.
+
 ## Requirements
 
 - The environment needs some geometry to rasterize. With nothing to bound a map
