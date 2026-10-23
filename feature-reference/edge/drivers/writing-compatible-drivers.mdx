@@ -83,7 +83,7 @@ Otherwise see the [fake IMU tutorial](#tutorial-build-your-first-driver-fake-imu
 
 ---
 
-## Python SDK drivers {#python-sdk-drivers}
+## Python SDK drivers
 
 The [`cyberwave`](https://pypi.org/project/cyberwave/) package provides **base classes** so you declare the platform contract once in Python instead of hand-wiring MQTT and catalog JSON.
 
@@ -110,7 +110,9 @@ The [`cyberwave`](https://pypi.org/project/cyberwave/) package provides **base c
 A driver with **no controller assigned starts in `NO_OP`** — control commands stay idle while edge telemetry/`from_ros` forwarders keep streaming. Declare always-on publishers with `operation_modes=frozenset(DriverOperationMode)`. See [Operation modes](/feature-reference/edge/drivers/base-driver-class#operation-modes-driveroperationmode). High-rate streams should throttle with `TopicSpec.rate_hz` on `from_ros` publishers (or `acquire_stream_publish_slot()` in custom callbacks; default cap 30 Hz). ROS drivers can also have the SDK spawn a vendor `ros2 launch` (`managed_launch`) and export a combined ROS+MQTT `manifest.yaml` (`write-manifest`) — see the [BaseROS2Driver reference](/feature-reference/edge/drivers/ros2-base-driver#managed-vendor-launch-managed_launch).
 </Tip>
 
-### Driver mixins (arm + joints) {#driver-mixins}
+<a id="driver-mixins"></a>
+
+### Driver mixins (arm + joints)
 
 For manipulator arms, compose SDK mixins instead of hand-wiring MQTT joint teleop, arm commands, and ROS feedback. See **[Driver mixins and capabilities](/feature-reference/edge/drivers/driver-mixins)** for the full inventory and a **Piper walkthrough**.
 

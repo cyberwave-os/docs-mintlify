@@ -348,7 +348,9 @@ The **Policies** tab is the post-training counterpart to the Runtime tab's "Trai
 
 See the dedicated [Uploading policies](/feature-reference/uploading-policies) page for the full checkpoint upload, publish, and inference flow, and [Online controllers](/feature-reference/online-controllers) for serving a published policy.
 
-## Managed training: `training_options.json` {#managed-training-training-options-json}
+<a id="managed-training-training-options-json"></a>
+
+## Managed training: `training_options.json`
 
 A task's async adapter declares which training strategies `cw_request_skill_teaching` (or `POST /api/v1/skill-teaching-requests`) can dispatch by shipping `training_options.json` next to `training.py`. This file is the contract between your adapter and the platform: it names each supported strategy, the JSON-Schema-constrained hyperparameters it accepts, and the defaults applied when a caller doesn't override them.
 
