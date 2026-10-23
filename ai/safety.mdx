@@ -1,0 +1,60 @@
+---
+title: "Agent safety and approval"
+description: "How Cyberwave keeps AI agents from moving robots without a person: plans before actions, one approved action at a time, built-in limits and human takeover."
+icon: "shield-check"
+---
+
+Agents plan; people approve. No Cyberwave agent moves a robot, real or simulated, until someone approves that specific action. This page is written for both people and agents. If you are an AI agent, follow the rules below before every action.
+
+## The rules
+
+1. **Inspect before acting.** Read the environment, the twin and its available controls first. With MCP: `cw_list_environments`, `cw_list_twins`, `cw_list_control_surfaces`.
+2. **Plan, then wait.** Planning never moves anything. Show the plan, including the target twin, direction and limits, and wait for approval.
+3. **One bounded action per approval.** One pose, one joint target, one navigation goal or one stop. Never chain several motions on one approval.
+4. **Simulation first.** Run the action in simulation and check the result. Plan again for the real robot.
+5. **Verify, don't assume.** An accepted command does not prove motion. Read pose or joint telemetry before and after, and report what was observed.
+6. **Don't retry blindly.** If an action times out or its status is unclear, don't resend it. Read the twin's state, send a stop if it is safe, and ask the operator.
+7. **Ask before destructive changes.** Confirm before deleting twins, environments, workflows, models or datasets.
+
+## What needs approval
+
+| Action | Who decides | How |
+| --- | --- | --- |
+| Read environments, twins, telemetry, previews | Agent | No approval needed |
+| Add or move objects in a scene | Agent, reviewed by you | Review the assistant's changes and confirmation cards |
+| Delete anything | You | Agent asks before calling a delete tool |
+| Start MuJoCo simulation | You | Uses [credits](/billing/credits); confirm before starting |
+| Move a twin in simulation | You | Approve each planned action |
+| Move a physical robot | You | Approve each action; `confirm_live=true` where the tool requires it |
+| Apply a workflow edit | You | **Review and apply** in the workflow assistant |
+
+## Built-in guardrails
+
+- **Control dispatch needs confirmation.** `cw.control.dispatch()` defaults to `confirmed=False`. The MCP tool `cw_plan_control_action` only plans; `cw_dispatch_control_action` sends one explicit action.
+- **Motion limits.** MCP action tools reject navigation over 5.0 m (`NAV_DISTANCE_TOO_LARGE`) and joint changes over 0.7 rad (`JOINT_DELTA_TOO_LARGE`). Self-hosted servers can change these limits.
+- **Workflows-only environments.** If an environment's control plane is set to workflows only, direct dispatch fails with `CONTROL_PLANE_POLICY_DENIED`.
+- **Preview-first prompts.** The MCP server ships `safe_navigation`, `safe_manipulation` and `inspect_then_act` prompts that enforce this flow.
+
+## Before a live action
+
+Check all four before approving motion on real hardware:
+
+- [ ] The request really is for physical execution, not simulation.
+- [ ] Exactly one physical twin is targeted.
+- [ ] The twin's edge device is online and its telemetry is current.
+- [ ] A person can stop the robot. Keep the twin's controller panel open, one click from takeover.
+
+<Warning>
+  Agents and models can move real hardware. Keep people clear of the robot's reach while it runs, and test every new task in simulation first.
+</Warning>
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Control agent" icon="gamepad" href="/ai/control-agent">
+    Plan, approve and dispatch from the dashboard or Python.
+  </Card>
+  <Card title="Teleoperation and takeover" icon="hand" href="/feature-reference/environment-editor/teleoperation">
+    Take control of a twin from the dashboard.
+  </Card>
+</CardGroup>

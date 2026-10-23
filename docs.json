@@ -15,65 +15,49 @@
         "groups": [
           {
             "group": "Get started",
+            "icon": "rocket",
             "pages": [
               "overview/index",
               "get-started/quickstart",
-              "overview/develop-remote-hardware",
-              "overview/hello-robot",
-              "overview/python-sdk-quickstart",
-              "overview/first-ai-loop",
+              "get-started/choose-your-path",
+              "get-started/core-concepts",
+              "get-started/account"
+            ]
+          },
+          {
+            "group": "Build with AI",
+            "icon": "wand-magic-sparkles",
+            "pages": [
               "ai/overview",
+              "overview/first-ai-loop",
+              "ai/connect-your-ai-tool",
+              "ai/prompt-library",
               {
-                "group": "Set up",
+                "group": "Agents",
+                "icon": "comments",
                 "pages": [
-                  "feature-reference/setup-cyberwave",
-                  "feature-reference/api-tokens",
-                  "billing/credits"
+                  "ai/agents",
+                  "ai/environment-assistant",
+                  "ai/control-agent",
+                  "ai/workflow-assistant"
                 ]
-              }
-            ]
-          },
-          {
-            "group": "AI agents",
-            "pages": [
-              "ai/agents",
-              "ai/environment-assistant",
-              "ai/control-agent",
-              "ai/workflow-assistant"
-            ]
-          },
-          {
-            "group": "AI models",
-            "pages": [
-              "ai/models",
-              "feature-reference/ml-models/index",
-              "feature-reference/ml-models/structured-actions",
-              "feature-reference/ml-models/playground",
-              "feature-reference/ml-models/uploading-your-model",
-              "feature-reference/ml-models/speech-to-text"
-            ]
-          },
-          {
-            "group": "Control",
-            "pages": [
+              },
+              {
+                "group": "AI models",
+                "icon": "brain",
+                "pages": [
+                  "ai/models",
+                  "feature-reference/ml-models/index",
+                  "feature-reference/ml-models/structured-actions",
+                  "feature-reference/ml-models/playground",
+                  "feature-reference/ml-models/uploading-your-model",
+                  "feature-reference/ml-models/speech-to-text"
+                ]
+              },
               "ai/control",
               {
-                "group": "Manual input",
-                "pages": [
-                  "overview/features/teleoperation-and-remote-control",
-                  "feature-reference/environment-editor/teleoperation"
-                ]
-              },
-              {
-                "group": "Skills",
-                "pages": [
-                  "feature-reference/arm-commands",
-                  "feature-reference/twin-saved-poses",
-                  "feature-reference/twin-joint-home-positions"
-                ]
-              },
-              {
                 "group": "Workflows",
+                "icon": "diagram-project",
                 "pages": [
                   "overview/features/workflows",
                   "feature-reference/workflows",
@@ -83,15 +67,16 @@
                   "feature-reference/workflows/edge-dependencies",
                   {
                     "group": "Voice commands",
+                    "icon": "microphone",
                     "pages": [
                       "feature-reference/workflows/audio-in-workflows",
                       "feature-reference/workflows/call-model-stt-edge",
-                      "feature-reference/workflows/wake-word-engine/models-and-compile",
                       "feature-reference/workflows/wake-word-engine/testing"
                     ]
                   },
                   {
                     "group": "Examples",
+                    "icon": "lightbulb",
                     "pages": [
                       "feature-reference/workflows/inspect-area",
                       "feature-reference/workflows/move-to-gps"
@@ -99,99 +84,31 @@
                   }
                 ]
               },
-              {
-                "group": "VLA models",
-                "pages": [
-                  "feature-reference/ml-models/smolvla-training",
-                  "feature-reference/ml-models/openvla-oft-training",
-                  "overview/tools/vla-cloud-node"
-                ]
-              },
-              {
-                "group": "RL policies",
-                "pages": [
-                  "feature-reference/rl-tasks",
-                  "feature-reference/rl-task-scene-sensors",
-                  "feature-reference/uploading-policies"
-                ]
-              },
-              "feature-reference/online-controllers"
+              "ai/safety"
             ]
           },
           {
-            "group": "Learn",
+            "group": "Simulate & test",
+            "icon": "cube",
             "pages": [
-              "overview/features/models-and-datasets",
-              "overview/tools/python-sdk-recordings",
-              "feature-reference/environment-editor/replay",
-              "feature-reference/environment-editor/replay-timeline",
-              "feature-reference/datasets/import",
-              "feature-reference/datasets/playground",
-              "feature-reference/datasets/format-conversion",
-              "feature-reference/datasets/episode-failures"
-            ]
-          },
-          {
-            "group": "Run on edge or cloud",
-            "pages": [
-              "feature-reference/workflows/workers/overview",
-              "feature-reference/ml-models/edge-worker",
-              "feature-reference/workflows/workers/model-cache",
-              "feature-reference/workflows/workers/bench",
-              "overview/tools/cloud-node",
+              "overview/hello-robot",
+              "overview/features/simulation",
+              "feature-reference/environment-editor/simulation-view",
+              "feature-reference/environment-editor/simulation-timing",
               {
-                "group": "Vision pipelines on the edge",
+                "group": "Environments & editor",
+                "icon": "map",
                 "pages": [
-                  "feature-reference/edge/drivers/frame-filters",
-                  "feature-reference/edge/drivers/camera-detection-overlays",
-                  "feature-reference/edge/drivers/multi-camera-detection-routing",
-                  "feature-reference/edge/drivers/data-record-replay",
-                  "feature-reference/edge/drivers/security-pipeline"
-                ]
-              }
-            ]
-          },
-          {
-            "group": "Platform",
-            "pages": [
-              {
-                "group": "How Cyberwave works",
-                "pages": [
-                  "feature-reference/architecture/architecture",
-                  "feature-reference/architecture/core-data-hierarchy",
-                  "overview/features/digital-twin",
                   "overview/features/environment",
-                  "overview/features/simulation",
-                  "overview/features/replay-and-historical-data",
-                  "feature-reference/architecture/key-concepts"
-                ]
-              },
-              {
-                "group": "Catalog & assets",
-                "pages": [
-                  "feature-reference/catalog",
-                  "feature-reference/environment-editor/point-cloud-import"
-                ]
-              },
-              {
-                "group": "Digital twins",
-                "pages": [
-                  "feature-reference/digital-twins",
-                  "feature-reference/digital-twins/mimic-joints",
-                  "feature-reference/twin-live-position-and-frames",
-                  "feature-reference/telemetry-event-time"
-                ]
-              },
-              {
-                "group": "Environments",
-                "pages": [
                   "feature-reference/environment-editor/index",
                   "feature-reference/environment-editor/assistant-asset-generation",
                   "feature-reference/environment-editor/environment-templates",
                   "feature-reference/environment-editor/fixed-base-objects",
                   "feature-reference/environment-editor/disable-collision",
+                  "feature-reference/environment-editor/point-cloud-import",
                   {
                     "group": "Maps & navigation",
+                    "icon": "route",
                     "pages": [
                       "feature-reference/environment-editor/geo-reference",
                       "feature-reference/environment-editor/map-waypoints",
@@ -202,66 +119,48 @@
                 ]
               },
               {
-                "group": "Simulate",
+                "group": "Twins",
+                "icon": "clone",
                 "pages": [
-                  "feature-reference/environment-editor/simulation-view",
-                  "feature-reference/environment-editor/simulation-timing"
+                  "overview/features/digital-twin",
+                  "feature-reference/catalog",
+                  "feature-reference/digital-twins",
+                  "feature-reference/digital-twins/mimic-joints",
+                  "feature-reference/twin-live-position-and-frames",
+                  "feature-reference/telemetry-event-time"
                 ]
               },
               {
-                "group": "Live operation",
+                "group": "Teleoperation & poses",
+                "icon": "gamepad",
+                "pages": [
+                  "overview/features/teleoperation-and-remote-control",
+                  "feature-reference/environment-editor/teleoperation",
+                  "feature-reference/arm-commands",
+                  "feature-reference/twin-saved-poses",
+                  "feature-reference/twin-joint-home-positions"
+                ]
+              },
+              {
+                "group": "Live view",
+                "icon": "video",
                 "pages": [
                   "feature-reference/environment-editor/driver-logs",
                   "overview/tools/custom-webrtc-consumer"
-                ]
-              },
-              {
-                "group": "Edge runtime",
-                "pages": [
-                  "feature-reference/edge/drivers/overview",
-                  "feature-reference/edge/drivers/edge-workers",
-                  "feature-reference/edge/drivers/multi-camera-driver-orchestration"
                 ]
               }
             ]
           },
           {
-            "group": "For integrators",
-            "pages": [
-              "enterprise/overview",
-              "enterprise/integration-surfaces",
-              "enterprise/network-and-firewall",
-              "feature-reference/access-control",
-              "enterprise/fleet-provisioning",
-              "feature-reference/edge/drivers/alerts",
-              "overview/tools/zenoh-mqtt-bridge",
-              "api-reference/a2a-partner-api"
-            ]
-          },
-          {
-            "group": "Help",
-            "pages": [
-              "support/troubleshooting",
-              "support/index"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Robots",
-        "groups": [
-          {
-            "group": "Hardware in Cyberwave",
+            "group": "Connect hardware",
+            "icon": "plug",
             "pages": [
               "robots/overview",
-              "overview/supported-hardware"
-            ]
-          },
-          {
-            "group": "Featured hardware",
-            "pages": [
+              "overview/supported-hardware",
+              "overview/develop-remote-hardware",
               {
                 "group": "Robot arms",
+                "icon": "robot",
                 "pages": [
                   "overview/robotic-arms",
                   "tutorials/so101-teleop-dataset",
@@ -272,6 +171,7 @@
               },
               {
                 "group": "Quadrupeds & rovers",
+                "icon": "dog",
                 "pages": [
                   "overview/robotic-dogs",
                   "robots/go2-apriltag-relocalization",
@@ -280,42 +180,153 @@
               },
               {
                 "group": "Drones",
+                "icon": "helicopter",
                 "pages": [
                   "overview/drones"
                 ]
               },
               {
                 "group": "Cameras & audio",
+                "icon": "camera",
                 "pages": [
                   "overview/cameras",
                   "feature-reference/edge/drivers/native-microphone-driver",
                   "feature-reference/edge/drivers/native-speaker-driver",
                   "feature-reference/edge/macos-microphone"
                 ]
+              },
+              {
+                "group": "Edge computers",
+                "icon": "microchip",
+                "pages": [
+                  "feature-reference/edge/overview",
+                  "feature-reference/edge/raspberry-pi",
+                  "feature-reference/edge/jetson-orin-nano"
+                ]
+              },
+              {
+                "group": "Add your own robot",
+                "icon": "screwdriver-wrench",
+                "pages": [
+                  "robots/add-your-robot",
+                  "overview/connecting-hardware/custom-hardware",
+                  "tutorials/bring-your-own-hardware",
+                  "feature-reference/create-asset",
+                  "feature-reference/catalog/simulation-support",
+                  "feature-reference/edit-universal-schema",
+                  "feature-reference/catalog/asset-kits",
+                  "feature-reference/edge/drivers/writing-compatible-drivers",
+                  "feature-reference/edge/drivers/ros2-topic-namespacing",
+                  "feature-reference/docker-registry"
+                ]
+              },
+              {
+                "group": "Drivers",
+                "icon": "gears",
+                "pages": [
+                  "feature-reference/edge/drivers/overview",
+                  "feature-reference/edge/drivers/multi-camera-driver-orchestration"
+                ]
               }
             ]
           },
           {
-            "group": "Edge computers",
+            "group": "Train & improve",
+            "icon": "chart-line",
             "pages": [
-              "feature-reference/edge/overview",
-              "feature-reference/edge/raspberry-pi",
-              "feature-reference/edge/jetson-orin-nano"
+              "overview/features/models-and-datasets",
+              {
+                "group": "Record and replay",
+                "icon": "circle-play",
+                "pages": [
+                  "overview/features/replay-and-historical-data",
+                  "overview/tools/python-sdk-recordings",
+                  "feature-reference/environment-editor/replay",
+                  "feature-reference/environment-editor/replay-timeline"
+                ]
+              },
+              {
+                "group": "Datasets",
+                "icon": "database",
+                "pages": [
+                  "feature-reference/datasets/import",
+                  "feature-reference/datasets/playground",
+                  "feature-reference/datasets/format-conversion",
+                  "feature-reference/datasets/episode-failures"
+                ]
+              },
+              {
+                "group": "Train a VLA",
+                "icon": "eye",
+                "pages": [
+                  "feature-reference/ml-models/smolvla-training",
+                  "feature-reference/ml-models/openvla-oft-training",
+                  "overview/tools/vla-cloud-node"
+                ]
+              },
+              {
+                "group": "Train an RL policy",
+                "icon": "dumbbell",
+                "pages": [
+                  "feature-reference/rl-tasks",
+                  "feature-reference/rl-task-scene-sensors"
+                ]
+              },
+              {
+                "group": "Deploy a policy",
+                "icon": "upload",
+                "pages": [
+                  "feature-reference/uploading-policies",
+                  "feature-reference/online-controllers"
+                ]
+              }
             ]
           },
           {
-            "group": "Add your robot",
+            "group": "Deploy & operate",
+            "icon": "server",
             "pages": [
-              "robots/add-your-robot",
-              "overview/connecting-hardware/custom-hardware",
-              "tutorials/bring-your-own-hardware",
-              "feature-reference/create-asset",
-              "feature-reference/catalog/simulation-support",
-              "feature-reference/edit-universal-schema",
-              "feature-reference/catalog/asset-kits",
-              "feature-reference/edge/drivers/writing-compatible-drivers",
-              "feature-reference/edge/drivers/ros2-topic-namespacing",
-              "feature-reference/docker-registry"
+              {
+                "group": "Edge workers",
+                "icon": "microchip",
+                "pages": [
+                  "feature-reference/workflows/workers/overview",
+                  "feature-reference/ml-models/edge-worker",
+                  "feature-reference/edge/drivers/edge-workers"
+                ]
+              },
+              {
+                "group": "Vision pipelines on the edge",
+                "icon": "filter",
+                "pages": [
+                  "feature-reference/edge/drivers/frame-filters",
+                  "feature-reference/edge/drivers/camera-detection-overlays",
+                  "feature-reference/edge/drivers/multi-camera-detection-routing",
+                  "feature-reference/edge/drivers/data-record-replay",
+                  "feature-reference/edge/drivers/security-pipeline"
+                ]
+              },
+              "overview/tools/cloud-node",
+              {
+                "group": "Fleet and alerts",
+                "icon": "bell",
+                "pages": [
+                  "enterprise/fleet-provisioning",
+                  "feature-reference/edge/drivers/alerts"
+                ]
+              },
+              {
+                "group": "For IT & integrators",
+                "icon": "building",
+                "pages": [
+                  "enterprise/overview",
+                  "enterprise/integration-surfaces",
+                  "enterprise/network-and-firewall",
+                  "feature-reference/access-control",
+                  "overview/tools/zenoh-mqtt-bridge",
+                  "api-reference/a2a-partner-api"
+                ]
+              }
             ]
           }
         ]
@@ -325,12 +336,14 @@
         "groups": [
           {
             "group": "All tutorials",
+            "icon": "grip",
             "pages": [
               "tutorials/index"
             ]
           },
           {
             "group": "No hardware",
+            "icon": "laptop",
             "pages": [
               "tutorials/ur-sim-cyberwave-driver",
               "tutorials/train-rl-policy",
@@ -339,6 +352,7 @@
           },
           {
             "group": "Laptop camera only",
+            "icon": "camera",
             "pages": [
               "tutorials/edge-to-cloud-vlm",
               "tutorials/intrusion-detection"
@@ -346,6 +360,7 @@
           },
           {
             "group": "SO-101 arm",
+            "icon": "robot",
             "pages": [
               "tutorials/train-vla-cyberwave",
               "tutorials/so101-natural-language-agent",
@@ -355,6 +370,7 @@
           },
           {
             "group": "Mobile robots & drones",
+            "icon": "truck-monster",
             "pages": [
               "tutorials/ugv-voice-controlled",
               "tutorials/ugv-beast-workflows",
@@ -365,6 +381,7 @@
           },
           {
             "group": "Built by the community",
+            "icon": "users",
             "pages": [
               "tutorials/sandwich-robot-smolvla",
               "tutorials/cloth-folding-so101",
@@ -373,6 +390,7 @@
           },
           {
             "group": "Demos (video)",
+            "icon": "film",
             "pages": [
               "tutorials/rover-ai-mission",
               "tutorials/go2-digital-to-physical"
@@ -380,6 +398,7 @@
           },
           {
             "group": "Ideas",
+            "icon": "lightbulb",
             "pages": [
               "overview/idea-cookbook",
               "overview/starter-kit-builders"
@@ -392,6 +411,7 @@
         "groups": [
           {
             "group": "SDKs & CLI",
+            "icon": "code",
             "pages": [
               "overview/tools/python-sdk",
               "overview/tools/models/overview",
@@ -400,33 +420,21 @@
             ]
           },
           {
-            "group": "AI developer tools",
+            "group": "MCP & agent skill",
+            "icon": "plug",
             "pages": [
               "overview/tools/mcp-server",
               "overview/tools/claude-skill"
             ]
           },
           {
-            "group": "Driver SDK",
-            "pages": [
-              "feature-reference/edge/drivers/base-driver-class",
-              "feature-reference/edge/drivers/ros2-base-driver",
-              "feature-reference/edge/drivers/driver-mixins",
-              "feature-reference/edge/drivers/joint-motion-shaping",
-              "feature-reference/edge/drivers/data-wire-format",
-              "feature-reference/edge/drivers/data-fusion",
-              "feature-reference/edge/drivers/data-synchronized-hooks",
-              "feature-reference/edge/drivers/camera-hardware-h264-encoding",
-              "feature-reference/edge/drivers/camera-v4l2-backend",
-              "feature-reference/edge/drivers/navigation-coordinate-convention"
-            ]
-          },
-          {
             "group": "Workflow nodes",
+            "icon": "diagram-project",
             "pages": [
               "overview/features/workflow-nodes",
               {
                 "group": "Triggers & sources",
+                "icon": "bolt",
                 "pages": [
                   "feature-reference/workflows/mqtt-trigger",
                   "feature-reference/workflows/audio-track/overview",
@@ -436,6 +444,7 @@
               },
               {
                 "group": "AI & perception",
+                "icon": "eye",
                 "pages": [
                   "feature-reference/workflows/audio-assistant/overview",
                   "feature-reference/workflows/audio-assistant/voice-assistant",
@@ -448,6 +457,7 @@
               },
               {
                 "group": "Transform & logic",
+                "icon": "shuffle",
                 "pages": [
                   "feature-reference/workflows/fuzzy-matcher",
                   "feature-reference/workflows/anonymize-image",
@@ -461,6 +471,7 @@
               },
               {
                 "group": "Actuation",
+                "icon": "hand",
                 "pages": [
                   "feature-reference/workflows/virtual-controller",
                   "feature-reference/workflows/send-controller-command",
@@ -473,7 +484,33 @@
             ]
           },
           {
-            "group": "Config files & schemas",
+            "group": "Driver SDK",
+            "icon": "gears",
+            "pages": [
+              "feature-reference/edge/drivers/base-driver-class",
+              "feature-reference/edge/drivers/ros2-base-driver",
+              "feature-reference/edge/drivers/driver-mixins",
+              "feature-reference/edge/drivers/joint-motion-shaping",
+              "feature-reference/edge/drivers/data-wire-format",
+              "feature-reference/edge/drivers/data-fusion",
+              "feature-reference/edge/drivers/data-synchronized-hooks",
+              "feature-reference/edge/drivers/navigation-coordinate-convention"
+            ]
+          },
+          {
+            "group": "Edge internals",
+            "icon": "microchip",
+            "pages": [
+              "feature-reference/workflows/workers/bench",
+              "feature-reference/workflows/workers/model-cache",
+              "feature-reference/edge/drivers/camera-v4l2-backend",
+              "feature-reference/edge/drivers/camera-hardware-h264-encoding",
+              "feature-reference/workflows/wake-word-engine/models-and-compile"
+            ]
+          },
+          {
+            "group": "Asset & config files",
+            "icon": "file-code",
             "pages": [
               "feature-reference/manifest",
               "feature-reference/catalog/upload-asset",
@@ -482,7 +519,38 @@
             ]
           },
           {
+            "group": "Accounts & access",
+            "icon": "key",
+            "pages": [
+              "feature-reference/api-tokens",
+              "billing/credits"
+            ]
+          },
+          {
+            "group": "Architecture & glossary",
+            "icon": "sitemap",
+            "pages": [
+              "feature-reference/architecture/architecture",
+              "feature-reference/architecture/core-data-hierarchy",
+              "feature-reference/architecture/key-concepts"
+            ]
+          },
+          {
+            "group": "Help",
+            "icon": "life-ring",
+            "pages": [
+              "support/troubleshooting",
+              "support/index"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API",
+        "groups": [
+          {
             "group": "APIs",
+            "icon": "code",
             "pages": [
               "api-reference/overview",
               "api-reference/mqtt/main",
@@ -492,9 +560,11 @@
               "api-reference/metrics-events",
               {
                 "group": "REST (generated)",
+                "icon": "server",
                 "pages": [
                   {
                     "group": "Endpoints",
+                    "icon": "link",
                     "pages": [
                       "api-reference/rest/DefaultApi",
                       "api-reference/rest/CatalogApi",
@@ -506,6 +576,7 @@
                   },
                   {
                     "group": "Models",
+                    "icon": "cubes",
                     "pages": [
                       "api-reference/rest/AddMemberByEmailRequest",
                       "api-reference/rest/AddMemberByEmailResponse",
@@ -741,9 +812,15 @@
                 ]
               }
             ]
-          },
+          }
+        ]
+      },
+      {
+        "tab": "Changelog",
+        "groups": [
           {
             "group": "Changelog",
+            "icon": "clock-rotate-left",
             "pages": [
               "changelog"
             ]
@@ -947,7 +1024,7 @@
     },
     {
       "source": "/get-started/python-sdk-quickstart",
-      "destination": "/overview/python-sdk-quickstart"
+      "destination": "/get-started/choose-your-path#write-the-code-yourself"
     },
     {
       "source": "/get-started/first-ai-loop",
@@ -1704,6 +1781,14 @@
     {
       "source": "/catalog-redirects/z1-gripper",
       "destination": "https://cyberwave.com/unitree/z1-gripper"
+    },
+    {
+      "source": "/feature-reference/setup-cyberwave",
+      "destination": "/get-started/account"
+    },
+    {
+      "source": "/overview/python-sdk-quickstart",
+      "destination": "/get-started/choose-your-path#write-the-code-yourself"
     }
   ]
 }

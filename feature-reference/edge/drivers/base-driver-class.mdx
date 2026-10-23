@@ -1,6 +1,7 @@
 ---
 title: "BaseDriver (Python SDK)"
 description: "Reference for cyberwave.driver.BaseDriver — what the SDK runs automatically, what you must implement, lifecycle, registry, alerts, and manifests."
+icon: "cubes"
 ---
 
 {/* TODO(docs): **STUB DOCUMENT:** Expanded technical reference aligned with `cyberwave-python`; a human editor may tighten prose before publish. */}
@@ -357,7 +358,7 @@ Tick-based registry publishers are already paced by `PublisherArgs.rate_hz`; thi
 
 ---
 
-## Source-type convention {#source-type-convention}
+## Source-type convention
 
 Every state payload on the Cyberwave bus carries a **`source_type`** that says *who produced it*. This is how the platform keeps a driver's own feedback from being mistaken for a command (and vice versa). The basic contract for a driver is simple:
 

@@ -1,0 +1,136 @@
+---
+title: "Prompt library"
+description: "Copy-ready prompts for building scenes, controlling robots and drafting workflows with Cyberwave agents, in the dashboard or your own AI tool."
+icon: "message-lines"
+---
+
+These prompts work with the built-in assistants in the dashboard and with any agent [connected through MCP](/ai/connect-your-ai-tool). Each one names the robot, states limits, and asks the agent to check before it acts. Keep those parts when you adapt them.
+
+{/* TODO(docs): run each prompt 20 times against the hosted agents before publishing, and record pass rates. */}
+
+<Tip>
+  Good prompts say what to build or do, what not to do yet, and how to verify the result. "Do not start simulation" and "show me the plan before execution" keep the agent from spending credits or moving anything early.
+</Tip>
+
+## Check your connection
+
+```text
+List my Cyberwave workspaces using the Cyberwave MCP tools.
+```
+
+## Build a scene
+
+Use these in **Edit → Assistant**, the dashboard prompt box, or your AI tool.
+
+**Inspection scene with a quadruped**
+
+```text
+Build a simple inspection scene with a Unitree Go2, an RGB camera facing it,
+two orange boxes beside the robot, and a flat floor beneath them.
+Leave a clear path in front of the Go2.
+Use catalog assets and simple primitives. Do not start simulation or connect
+physical hardware yet.
+```
+
+**Pick-and-place cell with an arm**
+
+```text
+Create an environment with an SO-101 on a table, a camera above it and two bins.
+Use catalog assets. Do not start simulation yet.
+```
+
+**Refine without duplicating**
+
+```text
+Add a flat floor beneath the Go2 and boxes if one is missing.
+Keep the clear forward path and existing objects. Use a simple primitive.
+Make scene edits only; do not start simulation or preparation tests.
+```
+
+**Check your work**
+
+```text
+Render a preview of the environment and list every robot, camera and object in it.
+```
+
+## Control a robot
+
+Use these in **Simulate → Agent** or your AI tool. Start with readiness, then one bounded action.
+
+**Check readiness first**
+
+```text
+Inspect this Go2's simulation readiness and available controls.
+Explain anything missing and which simulation engine this task needs.
+Do not start compute or execute movement yet.
+```
+
+**Plan one bounded move**
+
+```text
+In simulation, plan a short forward movement for the Go2, followed by a stop.
+Use its supported bounded controls and show me the plan before execution.
+```
+
+**Move an arm joint**
+
+```text
+Inspect the SO-101's controllable joints and limits. Plan a small bounded
+movement of one joint in simulation and show me the plan before execution.
+```
+
+**Verify what happened**
+
+```text
+Check the robot's actual pose before and after the action. Tell me what
+movement was observed and whether it stopped. If motion cannot be verified,
+explain what failed.
+```
+
+**Capture a camera frame**
+
+```text
+Inspect the RGB camera in this simulation. Capture a fresh rendered frame
+if supported and describe what is visible. Report any missing setup or
+unavailable capability. Do not substitute an editor preview for a camera frame.
+```
+
+<Note>
+  Camera frames and physics need a running MuJoCo simulation, which uses [credits](/billing/credits). The free Playground supports kinematic motion only.
+</Note>
+
+## Automate it
+
+Use these in **Workflow → Assistant** or your AI tool.
+
+**Draft an inspection workflow**
+
+```text
+Draft an inspection workflow for this scene: inspect the two boxes, capture
+an image when the camera is ready, then stop. Explain any missing capabilities.
+Do not run the workflow yet.
+```
+
+**React to what the camera sees**
+
+```text
+Every time the camera sees a cup, move the arm to the left bin.
+Target simulation. Draft the workflow and explain each node; do not run it yet.
+```
+
+## Clean up
+
+```text
+Stop the active simulation in this environment and confirm that no simulation is running.
+```
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="AI agents" icon="comments" href="/ai/agents">
+    What each assistant does and where to find it.
+  </Card>
+  <Card title="Agent safety and approval" icon="shield-check" href="/ai/safety">
+    What the agent can do on its own, and what needs you.
+  </Card>
+</CardGroup>
