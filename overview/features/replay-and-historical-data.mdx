@@ -1,49 +1,235 @@
 ---
-title: "Replay & historical data"
-description: "Scrub through everything your robots and sensors have ever recorded (video, joints, point clouds, GPS) straight from your browser"
+title: "Record and replay"
+description: "Record video, joints, point clouds and audio from every twin, replay them in the environment editor, and fetch recordings from Python."
 icon: "clock-rotate-left"
 ---
 
-Being able to **re-watch what your robots did**, from any browser, days or weeks later, is one of Cyberwave's quiet superpowers. In the lab it's how you turn yesterday's runs into [training episodes and datasets](/feature-reference/datasets/playground) for your custom [VLAs](/feature-reference/ml-models/smolvla-training). In production it's how you actually learn from real-world data and make your [workflows](/overview/features/workflows) and [automations](/overview/features/teleoperation-and-remote-control) better over time.
+Cyberwave records what your robots and sensors do, so you can re-watch any run from your browser, days or weeks later. Open **Replay** in an [environment](/feature-reference/environment-editor/index), pick a run or a date, and the 3D scene, video, audio and workflow runs rewind together on one timeline. From Python, `twin.recordings.list()` and `twin.recordings.get()` fetch the same recordings for local analysis.
 
-Cyberwave ships the whole pipeline (capture, upload, indexing, signed-URL playback) out of the box. Zero configuration.
+In the lab, recordings become [training episodes and datasets](/feature-reference/datasets/playground) for your custom [VLAs](/feature-reference/ml-models/smolvla-training). In production, they let you learn from real-world data and improve your [workflows](/feature-reference/workflows) and [automations](/feature-reference/environment-editor/teleoperation) over time.
+
+Cyberwave ships the whole pipeline out of the box: capture, upload, indexing and signed-URL playback. You don't configure anything.
 
 ---
 
-## What's recorded (and where it lives)
+## What gets recorded
 
-Every [twin](/overview/features/digital-twin) in an [environment](/overview/features/environment) records on by default, and the [Cyberwave Edge](/feature-reference/edge/overview) is the one buffering and uploading everything for you:
+Every [twin](/overview/features/digital-twin) in an [environment](/overview/features/environment) records by default. The [Cyberwave Edge](/feature-reference/edge/overview) buffers and uploads everything for you:
 
 - **Live video** from every paired camera (MP4, range-requested on playback)
 - **Joint states, positions, velocities, gripper status** (Parquet, time-windowed reads)
 - **Mobile-base telemetry**: GPS, odometry, IMU
 - **Point clouds** from depth and LiDAR sensors (FlatBuffer chunks)
 - **Audio** from on-device microphones
-- **Workflow runs**: every node execution, input, and output, bound to the same timeline
+- **Workflow runs**: every node execution, input and output, bound to the same timeline
 
-You don't manage disk space. The [Edge Core](/feature-reference/edge/overview) buffers locally and uploads to Cyberwave Cloud the moment connectivity returns, so an intermittent network or a 4G hiccup never costs you a recording. See [`record` / `replay` in the SDK data layer](/feature-reference/edge/drivers/data-record-replay) for the underlying mechanics.
+You don't manage disk space. The [Edge Core](/feature-reference/edge/overview) buffers locally and uploads to Cyberwave Cloud as soon as connectivity returns, so an intermittent network or a 4G hiccup never costs you a recording. See [`record` / `replay` in the SDK data layer](/feature-reference/edge/drivers/data-record-replay) for the edge-side mechanics.
 
 ---
 
-## Open Replay on any environment
+## Record a simulation run
 
-Hit **Replay** in any [environment](/feature-reference/environment-editor/index), pick a time window, and the whole scene rewinds together:
+{/* TODO(docs): sources disagree: the overview says every twin records by default, while the editor page says simulation runs need **Record** then **Stop & save**. Confirm whether live twins and simulation runs differ. */}
+
+1. Start a backend simulation.
+2. Select **Record** in the top-right of the 3D view.
+3. Select **Stop & save**. The run is added to **Replay**, and you get a **View recording** link.
+
+A saved run groups the recorded motion, available sensor media, linked workflow executions and their evidence. The run details flag missing or unfinished streams. Sound-emission indicators replay at their recorded timestamps.
+
+<Tip>
+For a local environment without robot driver images, select **Physics only** under **Simulation → Advanced settings → Robot runtime**, and enable assigned controllers when needed. The default **Auto** runtime keeps using the robot's drivers.
+</Tip>
+
+---
+
+## Find a recording
+
+### Saved runs
+
+In **Replay**, the left sidebar lists recent saved runs:
+
+- Select a run's name to load it without playing.
+- Select its **Play** icon to open it and start playback.
+- Open the **⋯** menu for **Execution & evidence**.
+
+**Preparing Replay** shows a spinner while the run is saving and its motion and sensor streams are loading.
+
+Use the **Replays** and **Scene items** icons to switch lists. Select the active icon again to collapse the sidebar. Long names stay compact and show their full text on hover. **Advanced: choose streams** opens the date and stream picker for manual combinations.
+
+A saved-run URL includes `?mode=replay&run=<run-uuid>`. It reopens that run for anyone with access to the environment.
+
+### Recordings by date
+
+1. Switch the environment to **Replay**.
+2. Click the **calendar** button.
+3. Pick the date: the day you recorded, or **May 8, 2026** if you use the suggested demo environment.
+4. Click **Load sessions**. You don't need filters. The timeline fills in.
+
+The recordings list has filters in its header:
+
+- **Twin**
+- **Data source**: live or simulation
+- **Replay stream**: robot, camera, audio, depth, point cloud
+
+Each filter is a dropdown where you can tick several values. Everything is included until you untick something. **Clear filters** resets them.
+
+---
+
+## Replay in the environment editor
+
+When a recording loads, the whole scene rewinds together:
 
 - **3D twins** snap to their historical poses: robot joints, base position, attached objects.
 - **Live video tiles** scrub frame-accurately alongside the 3D view.
 - **Point clouds** render at the right pose for every frame.
 - **Audio** plays back in sync with the timeline.
-- **Workflow runs** that fired during the window show up as markers; click one to see node-level inputs, outputs, and errors ([env editor reference](/feature-reference/environment-editor/index#workflow-executions-in-an-environment)).
+- **Workflow runs** that fired during the window show up as markers. Click one to see node-level inputs, outputs and errors ([env editor reference](/feature-reference/environment-editor/index#workflow-executions-in-an-environment)).
 
-Under the hood, playback uses [signed URLs and range requests](/feature-reference/environment-editor/replay): nothing is inlined, nothing is fully loaded into the browser, and scrubbing stays fast even on multi-hour recordings.
+### Camera and audio sidebar
+
+The right-hand **Camera & audio** tab plays media available at the Replay cursor. Robot motion plays in the **3D scene and timeline**, not in this tab, so a motion-only recording can replay without camera or audio tracks. If media exists elsewhere in the recording, move the cursor onto its timeline clip to view or hear it.
+
+### Scene labels
+
+Scene labels are off by default. Hover an object or its scene-tree row to see its name, or turn on labels from **View** or the labels toolbar button. Agent overview previews include labels by default. Sensor imagery excludes editor labels.
+
+### Playback timing
+
+A recording can keep both the wall-clock time each sample arrived and the producer's own clock.
+
+- **Source clock** is the default when the producer's clock is available. Robot motion, camera media, audio and events follow that one timeline, so a slow simulation step or an acquisition pause does not stretch the mission's playback.
+- **Wall clock**, in timeline settings, lets you inspect those pauses.
+
+Recordings without source-clock anchors use wall timing. Playback can briefly wait for required media to load.
+
+### How playback loads data
+
+Playback loads **signed URLs** from the API instead of inlined samples. Nothing is fully loaded into the browser, so scrubbing stays fast even on multi-hour recordings.
+
+| Stream | How it loads |
+| --- | --- |
+| Camera | MP4 (and legacy MKV chunk lists) via signed URL. The browser uses HTTP range requests as needed. |
+| Audio | MP3 via signed URL. Plays in sync with the timeline. |
+| Robot / actuation | Parquet via signed URL. The web app reads a **time window** of rows around the playhead, so memory stays bounded. |
+| Point clouds | FlatBuffer chunk URLs, plus coarse timestamp indexes from metadata. |
+
+The `GET /api/v1/environments/{uuid}/recordings/{recording_uuid}/data` endpoint returns compact **source descriptors** (URLs, bounds, column hints), not dense per-frame JSON.
 
 ---
 
-## Slice runs into episodes, export to anything
+## The replay timeline
 
-A recording isn't just for watching. From the same timeline you can **slice a window into an episode** and group episodes into a [dataset](/feature-reference/datasets/import) you can train on.
+The **Replay** timeline shows everything an environment recorded over a time window, left to right. Each kind of data gets its own labeled row. Filled bars show where data exists. Dots in the **Events** row mark things that happened.
 
-When you're ready to leave the cloud (or hand data to an external tool), export to the format you actually need:
+### Rows
+
+A row only appears when it has something in it.
+
+| Row | What it holds |
+| --- | --- |
+| Robot | Joint states and actuation telemetry |
+| Video | Recorded camera streams |
+| Depth | Depth / LiDAR frames, geometry only |
+| Point cloud | Depth frames fused with camera color |
+| Audio | Recorded audio samples |
+| Events | Alerts, workflow steps and telemetry |
+| Episodes | Segments you labeled yourself |
+
+When two sources of the same kind overlap in time, such as two cameras recording the same minute, their bars stack inside the row. The row gets taller, but the bars keep the same thickness, so a bar never looks different just because something overlaps it. If more overlap than fit, the row label shows **+N**. Hovering still lists every one of them.
+
+**Episodes stack the same way.** Two episodes covering the same stretch, or one nested inside another, each get their own line in the Episodes row, so you can hover and click either. Each line down the stack is a deeper shade of green, so you can follow one episode from start to end where others cross it. When more episodes overlap than there are lines, the ones sharing a line get a diagonal hatch. They cover each other, so hover any of them to list what is there.
+
+### Color legend
+
+Open the **Legend** popover in the toolbar at any time. A color can mean only three things: a recording, an episode or an event.
+
+| Color | Meaning |
+| --- | --- |
+| Cyan bar | A **recording**. The row label says which kind. |
+| Green span | An **episode**: a labeled segment you created |
+| Deeper green | How deep in the overlap stack that episode sits |
+| Hatched green | Episodes sharing one line, so they cover each other |
+| Dot | An **event**, colored by severity (see below) |
+
+Every recording bar is the same cyan, whatever data it holds. The row label tells you the kind, so you never have to tell two similar shades apart.
+
+Event dots use a separate scale, so you can't mistake an event for a recording:
+
+| Dot | Meaning |
+| --- | --- |
+| Gray | Info: informational alerts, workflow steps, telemetry |
+| Orange | Warning |
+| Red | Error or critical |
+
+A **solid** dot is an alert. A **hollow** dot is a workflow step or telemetry. When several events land too close together to draw apart, they merge into one wider dot that shows their count. Hover it to see each event.
+
+### Hover and pin
+
+Hover any row and a card appears next to the cursor. Each row only tells you about its own contents, so a card never mixes recordings and events. If nothing is there, the card says so.
+
+- **Recording bar**: the kind of data, the twin's name, and the twin's UUID (click to copy). The bar's position and width already show when it starts and how long it runs. When sources overlap, hover the specific stacked bar you want.
+- **Events row**: the events at that moment, in this order: the **twin** (name, plus UUID to copy), the **severity** (Info, Warning or Critical), then the event's name and message. The timestamp is in the card's header.
+
+**Click an Events dot to pin its card open.** A hover card disappears when you move away, which makes its UUIDs hard to click. A pinned card stays, and says so, until you click elsewhere or press **Esc**. Clicking also moves the playhead to the event.
+
+### Keyboard
+
+| Key | Action |
+| --- | --- |
+| **Tab** | Move to a row |
+| **←** / **→** | Step between recording edges, along one source |
+| **↑** / **↓** | Switch between stacked sources |
+| **Home** / **End** | Jump to the first or last edge |
+| **Enter** | Move the playhead there. In the Events row, also pins the card. |
+| **M** | Mark an episode point at the playhead |
+| **Esc** | Close a pinned card, or leave episode mode |
+
+### Timeline controls
+
+The row above the timeline holds what you use while watching: playback speed, **Play / Pause**, **Create Episode**, the calendar. Settings that change how the timeline *reads* sit under the **Settings** gear beside the Legend: time reference, 3D rendered mode, and the Events filter. A setting only appears there when there is something to choose.
+
+- **Scrub and play back** at 1× or 2×. Click anywhere on a row to jump there.
+- **Zoom** into a stretch of the timeline for frame-level detail.
+- **Filter the Events row** by twin with **Settings → Events for**. Recording rows are unaffected.
+- **Pick the 3D rendered mode**, **Depth** or **Point cloud**, under **Settings** when a recording holds both. It sets which one the 3D view draws and highlights the matching row.
+- **Browse sessions** by date with the calendar picker.
+- **Minimize the rows** with the chevron at the right of the timeline. Playback controls stay available. Select it again to expand.
+
+Fullscreen hides the workbench bar.
+
+### Create an episode
+
+An episode marks a window you label as a [training or dataset](/feature-reference/datasets/import) segment.
+
+1. Click **Create Episode**. A short panel opens next to the button and tells you which point it wants next.
+2. Click the timeline twice. The playhead jumps to each click and turns green once the first mark lands.
+3. The two marks are ruled across every row, and the range between them fills in green with its duration.
+4. Name the episode in the dialog that opens.
+
+Press **M** to mark at the playhead from the keyboard. Press **Esc** to leave the mode.
+
+---
+
+## Export an MP4
+
+1. In **Replay**, select **Export MP4** in the playback toolbar beneath the 3D view.
+2. Choose the start and end time.
+3. Select **Download MP4**.
+
+The export uses the current camera angle and playback timing and renders the 3D scene at a fixed **1280 × 720, 30 fps**. Rendering may take longer than the video itself, but rendering delays are not in the file. The dialog shows progress and lets you cancel.
+
+<Note>
+Use Chrome or Edge with video encoding support. Each export can be up to two minutes long. The MP4 holds the 3D scene without audio. Camera videos, microphone recordings and execution evidence stay available in Replay. The file metadata links back to the run, subject to the environment's normal access rules.
+</Note>
+
+---
+
+## Slice runs into episodes and export datasets
+
+A recording isn't just for watching. From the timeline you can [create episodes](#create-an-episode) and group them into a [dataset](/feature-reference/datasets/import) you can train on.
+
+When you're ready to leave the cloud, or hand data to an external tool, export to the format you need:
 
 | Format                | Use case                                   |
 | --------------------- | ------------------------------------------ |
@@ -52,7 +238,7 @@ When you're ready to leave the cloud (or hand data to an external tool), export 
 | **RLDS**              | Open-X-Embodiment style TFRecord           |
 | **OpenVLA TFDS**      | Cyberwave's OpenVLA bundle for training    |
 
-See the [Dataset export reference](/feature-reference/datasets/format-conversion) for the full matrix and the [Datasets API](/api-reference/rest/DatasetSchema). No lock-in: your data leaves in open formats whenever you want it to.
+See the [Dataset export reference](/feature-reference/datasets/format-conversion) for the full matrix and the [Datasets API](/api-reference/rest/DatasetSchema). Your data leaves in open formats whenever you want it to.
 
 ```python
 from cyberwave import Cyberwave
@@ -62,6 +248,190 @@ cw = Cyberwave()
 dataset = cw.datasets.get("acme/datasets/pick-and-place-runs")
 url = cw.datasets.convert(dataset, "lerobot3")  # signed URL: fetch and go
 ```
+
+---
+
+## Work with recordings in Python
+
+List and fetch recordings for a twin or an environment, then inspect the fetched artifacts locally.
+
+<Tabs>
+  <Tab title="Twin-scoped">
+    ```python
+    items = twin.recordings.list()                       # the twin's most recent recording day
+    cams = twin.recordings.list(filter=[twin.recordings.types.CAMERA])
+    pcs = twin.recordings.list().filter(twin.recordings.types.POINTCLOUD)
+
+    rec = twin.recordings.get(items[0])                  # downloads artifacts locally
+    rec.info()                                           # identity, types, available accessors
+    rec.read_robot()                                     # robot actuation table (if present)
+    rec.close()                                          # remove downloaded temp files
+    ```
+  </Tab>
+  <Tab title="Environment-scoped">
+    An environment id is always required.
+
+    ```python
+    items = cw.environments.recordings.list(environment_id="acme/envs/floor")
+    rec = cw.environments.recordings.get(items[0])
+    ```
+  </Tab>
+</Tabs>
+
+### Defaults at a glance
+
+`recordings.list()` narrows a request on purpose before it downloads catalog pages. The defaults are the same for `twin.recordings.list()` and `cw.environments.recordings.list()`. Twin-scoped calls also apply the twin filter on the server.
+
+| Argument | Default | Effect |
+|---|---:|---|
+| `start`, `end` | both omitted | Calls availability and selects the most recent UTC day with eligible recordings. |
+| `include_unready` | `False` | Returns ready recordings only. Set `True` to include materializing or failed rows when your access allows it. |
+| `limit` | `200` | Returns at most 200 items, in HTTP pages of 50. |
+| `limit=0` | — | Follows every page in the selected day or explicit date range. |
+| `filter` | omitted | Applied locally after retrieval. It does not widen the selected day or range, or search past `limit`. |
+
+Pass **both** `start` and `end` to select an older or wider UTC date range.
+
+### Date filtering
+
+`start` and `end` accept a `date`, a `datetime`, or an ISO 8601 string (date-only or full datetime, with or without a `Z` or offset suffix). Provide **both** bounds together. A one-sided window is rejected.
+
+```python
+items = twin.recordings.list(start="2026-07-01", end="2026-07-05")
+items = twin.recordings.list(start="2026-07-01T00:00:00Z", end="2026-07-05")
+```
+
+With **no** `start` or `end`, `list()` checks which days have recordings and lists the most recent one, not the environment's whole history. Pass an explicit window to reach older recordings.
+
+### Paging
+
+`list()` fetches recordings in pages of 50 and returns at most `limit` (default `200`). Use `limit=0` to keep following pages until the window is exhausted.
+
+```python
+items = twin.recordings.list(limit=500)              # up to 500, 50 per request
+items = twin.recordings.list(start="2026-07-01", end="2026-07-05", limit=0)  # everything in range
+```
+
+`filter=` only narrows the recordings that were fetched. Widen `limit` or the date window instead of relying on `filter` to search further back.
+
+Like the replay picker, `list()` excludes materializing or failed recordings by default. Pass `include_unready=True` only when you need those rows.
+
+`list()` warns when it returns a partial view, so a truncated result never looks complete:
+
+```text
+recordings.list(): no start/end given, so only 2026-07-05 is listed — the most
+recent day with recordings. Pass start=/end= to list a wider window.
+recordings.list(): stopped at limit=200 and more recordings are available for
+2026-07-05. Raise limit= or pass limit=0 to fetch every page.
+```
+
+Silence them with `logging.getLogger("cyberwave.managers.recordings").setLevel(logging.ERROR)`.
+
+<Warning>
+If the API gateway rejects a catalog response because its payload is too large, the SDK raises `RecordingPayloadTooLargeError` instead of the opaque platform HTTP 500. The message includes the selected window, the cloud trace, and a hint to use a shorter `start`/`end` interval or a lower `limit`.
+</Warning>
+
+### Types and viewers
+
+{/* TODO(docs): sources disagree: the replay timeline puts LiDAR frames in the Depth row ("geometry only"), while the SDK lists lidar points under the `pointcloud` type. Confirm where LiDAR data lands. */}
+
+Recording types are `camera`, `robot`, `pointcloud` (colored or lidar points), `depth` (raw depth maps) and `audio`. A depth camera typically matches `camera` and `depth`, and also `pointcloud` when it produces colored points.
+
+`get()` downloads every artifact to a temp directory. The readers need the data extra:
+
+```bash
+pip install 'cyberwave[data]'
+```
+
+The `data` extra installs headless OpenCV, for decoding only. For GUI video playback with `show_video()`, also install a non-headless build: `pip install opencv-python`.
+
+### Contextual accessors
+
+A fetched recording exposes only the accessors that apply to its streams. `dir(rec)` and autocomplete list just the relevant ones. `info()` is always available.
+
+| Method | Present when | Returns |
+|---|---|---|
+| `info()` | always | summary dict: uuid, twin, env, types, available accessors |
+| `read_robot()` | recording has a robot stream | actuation table (`pyarrow.Table`) |
+| `read_depth()` | recording has a depth stream | list of `{timestamp_us, frame}` (uint16 `H×W`) |
+| `read_pointcloud()` | recording has a colored/lidar stream | list of `{timestamp_us, frame}` (float32 `N×cols`) |
+| `show_video()` | recording has video | plays the video in a `cv2` window |
+
+```python
+rec = twin.recordings.get(items[0])
+
+rec.info()
+if hasattr(rec, "read_robot"):
+    table = rec.read_robot()           # pyarrow.Table
+if hasattr(rec, "show_video"):
+    rec.show_video()
+if hasattr(rec, "read_depth"):
+    frames = rec.read_depth()          # [{"timestamp_us": ..., "frame": np.ndarray}, ...]
+if hasattr(rec, "read_pointcloud"):
+    points = rec.read_pointcloud()
+```
+
+Point-cloud frames come from the on-demand Parquet (see below). If it is still being prepared, `read_*` raises with a "retry in a few minutes" hint.
+
+### Point clouds as Parquet
+
+When you `get()` a recording, the SDK downloads point-cloud data as a single **Parquet** file, not the FlatBuffer chunks the browser streams. Each row is one frame: `timestamp_us`, `rows`, `cols`, `dtype`, and the raw frame `data`. `read_depth()` and `read_pointcloud()` rebuild the frames. To read the file directly with pyarrow:
+
+```python
+import numpy as np
+import pyarrow.parquet as pq
+
+table = pq.read_table("<downloaded>.parquet")
+row = table.slice(0, 1).to_pylist()[0]
+frame = np.frombuffer(row["data"], dtype=row["dtype"]).reshape(row["rows"], row["cols"])
+```
+
+The Parquet is built on demand. The first time a recording is opened, the server may still be preparing it. If so, `get()` logs a notice ("being generated / updated, retry in a few minutes"). Call `get()` again shortly to get the complete file.
+
+### Playback readiness
+
+Each recording returned by `GET /api/v1/environments/{uuid}/recordings` includes an optional `playback_readiness` object. Its top-level `state` tells you whether the recording is `ready`, `materializing` or `failed`. Its `streams` list gives the same detail for each available camera, robot, audio, depth or point-cloud stream.
+
+#### HTTP API defaults
+
+`GET /api/v1/environments/{uuid}/recordings` and `GET /api/v1/environments/{uuid}/recordings/availability` share the same filters, but their defaults differ on purpose from Python `recordings.list()`:
+
+| Request | No date range | Pagination | Readiness default |
+|---|---|---|---|
+| `/recordings` | Searches the whole eligible environment history | First 100 newest items (`limit` defaults to 100 and is capped at 100) | Non-admin users get ready rows only. Staff/admin users follow the deployment policy; pass `include_unready=false` for a predictable ready-only result. |
+| `/recordings/availability` | Reports all eligible dates in the environment | Not paginated | Same readiness rules as `/recordings`; `timezone` defaults to `UTC`. |
+
+To apply a date window, send **both** `start_date` and `end_date` (or both legacy `start_timestamp` and `end_timestamp` aliases). A one-sided date query does not produce a date-window filter. Repeated `twin_uuid`, `context` and `source_type` values are ORed within each kind and ANDed across kinds.
+
+#### Include recordings that are not ready
+
+Pass `include_unready=false` for ready recordings only. Pass `include_unready=true` to include recordings that are still materializing or have failed. That value needs staff or administrator access:
+
+```text
+GET /api/v1/environments/{uuid}/recordings?include_unready=true
+```
+
+#### Browse a large catalog or populate a calendar
+
+Pass `limit` to get a stable page ordered newest-first. Follow the opaque `next_cursor` while `has_more` is true. Cursors are signed and bound to the current filters, so a `400 Invalid recording catalog cursor` means you should restart the query. `limit` is capped at 100.
+
+```text
+GET /api/v1/environments/{uuid}/recordings?limit=50&source_type=camera&include_unready=false
+```
+
+You can repeat `twin_uuid`, `context` or `source_type`. Values are ORed within the same filter and combined with other filters. Source values are `camera`, `robot`, `audio`, `depth` and `pointcloud`. Responses include source, twin, context and readiness facets for the fully filtered catalog.
+
+For calendar day counts without loading media, request availability with the same filters. Use an IANA timezone when the calendar is not UTC.
+
+```text
+GET /api/v1/environments/{uuid}/recordings/availability?start_date=2026-08-01&end_date=2026-08-31&timezone=Europe/Rome
+```
+
+Availability does not sign media URLs or probe object storage.
+
+#### Retry materializing playback
+
+`GET /api/v1/environments/{uuid}/recordings/{recording_uuid}/data` can return `202 Accepted` when the recording is known but its playback files are not ready yet. The response includes `retry_after_seconds`. Wait about that long and retry the same request, instead of treating it as a missing recording.
 
 ---
 
@@ -76,35 +446,29 @@ url = cw.datasets.convert(dataset, "lerobot3")  # signed URL: fetch and go
     Curate episodes from teleop or autonomous runs and feed them straight into
     [SmolVLA](/feature-reference/ml-models/smolvla-training) or
     [OpenVLA](/feature-reference/ml-models/openvla-oft-training) training. The
-    same recording that lives in Replay is the one your model trains on.
+    same recording you watch in Replay is the one your model trains on.
   </Card>
   <Card
     title="In production"
     icon="chart-line"
-    href="/overview/features/workflows"
+    href="/feature-reference/workflows"
   >
     Review what happened the last time the line went down, find the failure mode
     in the timeline, and ship a fix to your
-    [workflows](/overview/features/workflows) or
+    [workflows](/feature-reference/workflows) or
     [policies](/feature-reference/ml-models/index) the same day.
   </Card>
 </CardGroup>
 
+Replay also helps with security and review: re-watch exactly what a robot did, find the moment something went wrong, and inspect it frame by frame.
+
 ---
 
-## What to read next
+## Next steps
 
 <CardGroup cols={3}>
   <Card
-    title="Replay reference"
-    icon="rewind"
-    href="/feature-reference/environment-editor/replay"
-  >
-    How signed URLs, MP4 ranges, Parquet windows, and point-cloud chunks
-    actually load.
-  </Card>
-  <Card
-    title="Datasets & export"
+    title="Datasets and export"
     icon="database"
     href="/feature-reference/datasets/format-conversion"
   >
@@ -116,5 +480,12 @@ url = cw.datasets.convert(dataset, "lerobot3")  # signed URL: fetch and go
     href="/tutorials/so101-teleop-dataset"
   >
     End-to-end: record a teleop session and turn it into a training dataset.
+  </Card>
+  <Card
+    title="Edge record and replay"
+    icon="microchip"
+    href="/feature-reference/edge/drivers/data-record-replay"
+  >
+    How the SDK data layer records and replays on the edge device.
   </Card>
 </CardGroup>

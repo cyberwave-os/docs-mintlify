@@ -1,26 +1,67 @@
 ---
 title: "Build and run workflows"
-description: "Automate robot operations with visual workflow orchestration"
+description: "Automate robots with workflows: chain triggers, models, and twin actions, then run them in the cloud, on the edge, or in simulation."
 icon: "diagram-project"
 ---
 
-## What are Workflows?
+A **workflow** is a graph of nodes that runs on its own: a trigger fires, and the workflow calls models, moves twins, checks conditions, and talks to other systems. You build it visually, in Python, or with an assistant, and run it in the cloud, on the edge, or in simulation.
 
-Failed simulation runs show their runtime alerts in **Simulate**. Open the execution details to inspect the failure.
+```python
+from cyberwave import Cyberwave
 
-Workflows in Cyberwave let you create automated sequences of robot operations. Connect nodes visually to build complex behaviors without writing procedural code.
+cw = Cyberwave()
 
-Workflows can run **on the cloud** (Celery tasks) or **on the edge device** depending on the trigger type. Cloud triggers handle schedule, webhook, event, and manual execution. The `camera_frame` trigger runs ML inference directly on the edge — no video leaves the device.
+run = cw.workflows.trigger(
+    "acme/workflows/pick-and-place",
+    inputs={"target_position": [1.0, 2.0, 0.0], "speed": 0.5},
+)
+run.wait(timeout=60)
+print(run.status)
+```
 
 ---
 
-## Workflow Components
+## What are workflows?
+
+Workflows are Cyberwave's automation primitive. They turn a graph of nodes (triggers, models, twins, conditions, integrations) into a runnable artifact. That artifact can fire on a schedule, an MQTT message, a webhook, or every camera frame on a Raspberry Pi.
+
+You connect nodes visually to build complex behaviors without writing procedural code. The graph and the Python are two views of one object, so you can open, edit, and visualize the same workflow in the workflow editor or in code.
+
+Workflows can run **on the cloud** (Celery tasks) or **on the edge device**, depending on the trigger type. Cloud triggers handle schedule, webhook, event, and manual execution. The `camera_frame` trigger runs ML inference directly on the edge, so no video leaves the device.
+
+### Three ways to build one
+
+You never have to pick between a low-code graph and "real" code. Cyberwave keeps the two in sync.
+
+<CardGroup cols={3}>
+  <Card title="Visual editor" icon="diagram-project" href="#creating-a-workflow">
+    Drag nodes from the palette, wire ports, configure parameters. Great for
+    prototyping and for handing flows to non-engineers.
+  </Card>
+  <Card title="Python SDK" icon="python" href="/overview/tools/python-sdk#workflows">
+    Build, list, trigger, and monitor workflows from
+    [`cw.workflows`](/overview/tools/python-sdk#workflows). Anything you can do in the UI
+    you can do in code.
+  </Card>
+  <Card title="With an agent" icon="sparkles" href="#workflow-assistant">
+    Use the [workflow assistant](#workflow-assistant) in the workbench, or describe
+    the automation in plain English to Claude, Cursor, or any MCP client.
+    Cyberwave's [MCP server](/overview/tools/mcp-server) and
+    [Claude skill](/overview/tools/claude-skill) wire up the graph for you.
+  </Card>
+</CardGroup>
+
+Every workflow round-trips between graph and Python, with no lock-in to either format. You get pure code where you need it and a visual graph everywhere else.
+
+---
+
+## Workflow components
 
 ### Nodes
 
-Nodes are the building blocks of workflows. Each node performs a specific action.
+Nodes are the building blocks of workflows. Each node performs a specific action. For every node in the palette, what it does, and where it runs, see [Workflow nodes](/overview/features/workflow-nodes).
 
-Nodes are organised into a hybrid robotics + automation taxonomy. The same categories show up in the editor palette and on `GET /api/v1/workflows/config` (`node_categories`), so the docs, the API, and the UI all read from the same `WorkflowNodeCategory` enum (see `cyberwave-backend/src/lib/node_categories.py`). Categories with no nodes today (Perception) are reserved — they appear in the API response but are hidden in the palette until they ship.
+Nodes are organised into a hybrid robotics + automation taxonomy. The same categories show up in the editor palette and on `GET /api/v1/workflows/config` (`node_categories`), so the docs, the API, and the UI all read from the same `WorkflowNodeCategory` enum (see `cyberwave-backend/src/lib/node_categories.py`). Categories with no nodes today (Perception) are reserved. They appear in the API response but are hidden in the palette until they ship.
 
 <CardGroup cols={2}>
   <Card title="Triggers" icon="bolt">
@@ -66,9 +107,13 @@ Connections define the execution flow between nodes:
 Connection validation prevents invalid graphs: trigger nodes cannot accept incoming connections, cycles are blocked, and `camera_frame` triggers can only connect to `call_model` nodes.
 </Info>
 
+To fire one shared downstream chain from many upstream nodes without copying it per branch, see [Reusing chains across upstreams](/feature-reference/workflows/reusing-chains).
+
 ---
 
-## Trigger Types
+## Trigger types
+
+A trigger decides when a workflow runs and where it runs.
 
 | Trigger | Where it runs | How it fires |
 |---------|--------------|-------------|
@@ -81,9 +126,42 @@ Connection validation prevents invalid graphs: trigger nodes cannot accept incom
 | **Email** | Cloud (Celery) | Incoming email |
 | **Camera Frame** | **Edge device** | Every camera frame, locally — never sends video to the cloud |
 
+{/* TODO(docs): sources disagree: the old "Execution modes" table described Events as "Run when sensor data matches conditions"; this table says "Business event matching conditions". */}
+
+You can also trigger a workflow from external systems through the REST API or MCP.
+
 ---
 
-## Creating a Workflow
+## Where workflows run
+
+### Cloud, edge, or both, in one graph
+
+A workflow can span both sides of your stack. Trigger and ML nodes that run [on the cloud](/overview/tools/cloud-node) coordinate with the same workflow's edge half through the [edge worker runtime](/feature-reference/workflows/workers/overview).
+
+A common shape:
+
+```mermaid
+flowchart LR
+    A[Camera Frame trigger<br/><i>edge</i>] --> B[Anonymize node<br/><i>edge</i>]
+    B --> C[Call Model · VLM<br/><i>cloud</i>]
+    C --> D[Send Email<br/><i>cloud</i>]
+```
+
+The video frame never leaves the device unanonymized, the VLM runs on a GPU in the cloud, and an email goes out, all from a single workflow definition. The [unified edge compiler](#environment-bound-workflows) decides what runs where based on the graph itself.
+
+You don't manage model downloads, hardware compatibility, or reconnects. Cyberwave provisions the right model into the right runtime (edge YOLO for [`camera_frame`](#edge-workflows-camera-frame), cloud VLMs for [`call_model`](#nodes)) and keeps it healthy when the network blinks.
+
+### Same workflow, sim or real
+
+Workflows run unchanged against [simulation](/overview/features/simulation) or live hardware. Set the workflow's execution target to **Simulation** and the same graph drives a MuJoCo twin in CI. Set it to **Live** and it drives a real robot in your cell. See [Running a workflow in simulation](/feature-reference/workflows/simulation-execution-target). `cw.affect()` does not change where `cw.workflows.trigger()` runs.
+
+Failed simulation runs show their runtime alerts in **Simulate**. Open the execution details to inspect the failure.
+
+This is the practical version of "test before you deploy". See the [environment editor](/feature-reference/environment-editor/index#workflow-executions-in-an-environment) for replaying past runs and inspecting per-node executions.
+
+---
+
+## Creating a workflow
 
 <Tabs>
   <Tab title="Dashboard">
@@ -161,11 +239,35 @@ Connection validation prevents invalid graphs: trigger nodes cannot accept incom
   </Tab>
 </Tabs>
 
+### Start from a template
+
+You don't have to start from a blank canvas. Cyberwave ships a library of workflow templates (motion detection, pick-and-place, intrusion alerts, voice control), and you can publish your own for your team or the world.
+
+```bash
+cyberwave workflow create --template motion-detection
+```
+
+Templates are versioned, slugged like the rest of Cyberwave (`acme/workflows/my-template`), and editable after cloning. They're a starting point, not a black box.
+
 ---
 
-## Edge Workflows (Camera Frame)
+## Workflow assistant
 
-The `camera_frame` trigger is designed for on-device ML inference. The backend generates a Python worker file that runs directly on the edge — raw video frames never leave the device.
+Select a workflow in the workbench, then use **Prompt** or the right-hand **Assistant** tab to edit it with the assistant. Click the assistant title in **Assistant** to switch between **Environment assistant** and **Workflow assistant**. When the workbench is closed, the workflow option is disabled and reads **Open the workbench**. The workbench shows node details only while a node inspector is open. Close it or clear the node selection to reclaim that space.
+
+---
+
+## Environment-bound workflows
+
+A workflow can optionally be bound to an environment (set `environment_uuid` when creating it, or open the *Create Environment Workflow* dialog from an environment panel). Bound workflows are scoped to that environment in the editor, surface in the environment's workflow list, and ship to the environment's edges through `edge_sync_workflows` when combined with `run_on_edge: true`.
+
+Compiler dispatch keys off the graph itself: a `twin_control` node renders through the navigation path and a `camera_frame` trigger renders through the perception path, regardless of how the workflow is bound. Run `cyberwave workflow compile <uuid>` to see exactly which path the unified compiler took, or the diagnostic explaining why it skipped the workflow.
+
+---
+
+## Edge workflows (camera frame)
+
+The `camera_frame` trigger is designed for on-device ML inference. The backend generates a Python worker file that runs directly on the edge, so raw video frames never leave the device.
 
 {/* stub: Camera Frame source selection — pending editorial review */}
 Choose a **Source Twin** with a declared camera, then select **Source Sensor**.
@@ -193,7 +295,7 @@ sequenceDiagram
     end
 ```
 
-For open-vocabulary edge models (YOLOE-26 text/visual, YOLO-World), set the **Prompt** field on the `call_model` node to drive `set_classes` at inference time. The camera worker forwards the static prompt into `model.predict(..., prompt=...)`. See [Prompting Call Model](./workflows/call-model-prompt) for the full guide, including the comma-list vs. single-phrase semantics and the camera-only limitation that reference-wired prompts are not supported.
+For open-vocabulary edge models (YOLOE-26 text/visual, YOLO-World), set the **Prompt** field on the `call_model` node to drive `set_classes` at inference time. The camera worker forwards the static prompt into `model.predict(..., prompt=...)`. See [Prompting Call Model](/feature-reference/workflows/call-model-prompt) for the full guide, including the comma-list vs. single-phrase semantics and the camera-only limitation that reference-wired prompts are not supported.
 
 ### Migrating from `emit_event`
 
@@ -249,21 +351,47 @@ The edge device also syncs automatically on boot and periodically (default ~5 mi
 
 ---
 
-## Execution Modes
+## See and customize the generated Python
 
-Workflows can be triggered by:
+{/* stub — this section will be curated by a human before publishing */}
 
-| Trigger | Description |
-|---|---|
-| **Manual** | Run on demand from the dashboard or SDK |
-| **Schedule** | Run at specific times (cron) |
-| **Events** | Run when sensor data matches conditions |
-| **API** | Trigger from external systems via REST or MCP |
-| **Camera Frame** | Run on every camera frame at the edge device |
+Every workflow compiles to a real Python worker built on the Cyberwave SDK. Open **Code** in the workflow editor to read the exact script your graph generates, then copy or download it. This works for every workflow, whichever runtime it uses. Cloud workflows run through Cyberwave's own interpreter rather than the script, but the generated Python is still there to read.
+
+Need to go beyond the nodes? On workflows set to the **edge runtime**, **Customize** the script and save it. Your edited version is persisted and shipped to the edge in place of the autogenerated one. **Restore** brings the autogenerated script back at any time. If you edit the graph after customizing, the editor flags that your custom script no longer matches the graph so you can regenerate.
+
+Custom worker code runs only on your own edge runtime.
 
 ---
 
-## Monitoring Executions
+## Code node
+
+The **Code** action node runs a user-supplied Python function on the edge. It is only valid on workflows with `run_on_edge: true` — Cyberwave never executes user-authored code on its own infrastructure.
+
+- **Runtime**: Python, on the edge worker container that already runs the compiled `wf_*.py` module.
+- **I/O contract**: Every Code node must define a top-level `def run(input: dict) -> dict`. The return value is fed into the next Code node's `input` via an internal `_node_output` variable.
+- **Validation**: The API parses the body with `ast.parse` on create/update and rejects syntax errors or missing `run` functions inline, before activation.
+- **Activation guards**: Activating a workflow is blocked if it contains a Code node and either (a) `run_on_edge` is false, or (b) the workflow uses a `camera_frame` trigger (not yet supported by the perception path of the edge compiler).
+- **Availability**: The node is always visible in the palette; it is disabled with an "Available only on run_on_edge workflows" tooltip when the workflow is not edge-bound.
+
+---
+
+## Edge voice workflows (audio + STT + control)
+
+Voice pipelines chain **Audio Track**, **Audio Assistant**, **Wake Word Engine**, **Call Model** (STT), **Fuzzy Matcher**, **Twin**, and **Virtual Controller**. Each node declares a minimal Python/SDK extra; the compile server validates imports before shipping `wf_*.py`.
+
+See **[Edge workflow dependencies](/feature-reference/workflows/edge-dependencies)** for the full matrix (compile server `base.txt`, edge worker extras, catalog STT models).
+
+| Doc                                                                        | Topic                                |
+| -------------------------------------------------------------------------- | ------------------------------------ |
+| [Audio in Workflows](/feature-reference/workflows/audio-in-workflows)      | PCM format, pipeline, compile checks |
+| [Call Model STT on edge](/feature-reference/workflows/call-model-stt-edge) | Whisper.cpp vs Faster Whisper        |
+| [Fuzzy Matcher](/feature-reference/workflows/fuzzy-matcher)                | Command matching after STT           |
+| [Twin](/feature-reference/workflows/twin)                                  | Twin + policy outputs → candidates   |
+| [Virtual Controller](/feature-reference/workflows/virtual-controller)      | MQTT dispatch                        |
+
+---
+
+## Monitoring executions
 
 Track workflow execution status and results:
 
@@ -276,7 +404,7 @@ for run in runs:
 
 Each execution tracks status at both the workflow level and individual node level, including `started_at`, `finished_at`, and `error_message` fields.
 
-### Check if a Workflow is Running
+### Check if a workflow is running
 
 Use `is_running()` to quickly check if a workflow has any active execution without manually querying runs:
 
@@ -322,9 +450,11 @@ These settings apply to cloud-dispatched manual and REST triggers, schedules, we
 
 ---
 
-## Example: Edge Detection Workflow
+## Example: edge detection workflow
 
 A camera_frame workflow that runs YOLO on the edge and emits alerts:
+
+{/* TODO(docs): sources disagree: this diagram shows call_model publishing an event directly, but the emit_event migration says call_model no longer publishes alerts and you need an explicit send_alert chain. */}
 
 ```mermaid
 flowchart LR
@@ -336,7 +466,38 @@ flowchart LR
 
 ---
 
-## Best Practices
+## What workflows are good at
+
+<CardGroup cols={2}>
+  <Card title="Orchestrating multiple twins" icon="users-gear">
+    Synchronise robots and sensors: swarm formations, multi-arm cells, or a
+    fleet of cameras feeding a single inspection job. Wire any twin from the
+    [catalog](https://cyberwave.com/catalog) into the same graph.
+  </Card>
+  <Card title="Switching between models and code" icon="shuffle">
+    Hand off mid-task; e.g. an [RL policy](/feature-reference/uploading-policies)
+    moves the arm to the box, then a deterministic Python
+    [`code` node](#code-node) takes over for
+    the pre-canned drop sequence.
+  </Card>
+  <Card title="Reacting to the real world" icon="bell">
+    [Camera-frame](#edge-workflows-camera-frame),
+    MQTT, schedule, webhook, and email
+    [triggers](#trigger-types) wake the workflow up
+    without you wiring anything custom.
+  </Card>
+  <Card title="Calling out to anything" icon="plug">
+    `http_request`, `send_email`, and `send_alert` nodes plug Cyberwave into
+    the rest of your stack: PagerDuty, Slack, your warehouse system, a Notion
+    page.
+  </Card>
+</CardGroup>
+
+Workflows compose the whole [Cyberwave ecosystem](https://cyberwave.com): hundreds of [twins](https://cyberwave.com/catalog) and the [models hub](https://cyberwave.com/models) are one node away.
+
+---
+
+## Best practices
 
 - **Keep workflows focused** — create separate workflows for distinct operations rather than one large workflow. This makes debugging and maintenance easier.
 - **Add error handling** — include condition nodes to handle failure cases gracefully. Consider what should happen if a joint can't reach its target.
@@ -345,42 +506,26 @@ flowchart LR
 - **Set appropriate cooldowns** — balance between responsiveness and event volume. 5s is a safe default; lower for time-critical use cases.
 - **Eject before customising** — never edit `wf_*.py` files directly. Copy them to a custom name and deactivate the originating workflow.
 
----
-
-## Environment-bound workflows
-
-A workflow can optionally be bound to an environment (set `environment_uuid` when creating it, or open the *Create Environment Workflow* dialog from an environment panel). Bound workflows are scoped to that environment in the editor, surface in the environment's workflow list, and ship to the environment's edges through `edge_sync_workflows` when combined with `run_on_edge: true`.
-
-Compiler dispatch keys off the graph itself: a `twin_control` node renders through the navigation path and a `camera_frame` trigger renders through the perception path, regardless of how the workflow is bound. Run `cyberwave workflow compile <uuid>` to see exactly which path the unified compiler took, or the diagnostic explaining why it skipped the workflow.
+{/* TODO(docs): sources disagree: "Use on_enter emit mode" and "Set appropriate cooldowns" refer to the removed emit_event fields; the migration section maps these to detection_event_gate and timed_condition. */}
+{/* TODO(docs): sources disagree: "Eject before customising" says copy wf_*.py to a custom name; "See and customize the generated Python" says use Customize in the editor, which ships your edited script in place of the autogenerated one. */}
 
 ---
 
-## Code node
+## What to read next
 
-The **Code** action node runs a user-supplied Python function on the edge. It is only valid on workflows with `run_on_edge: true` — Cyberwave never executes user-authored code on its own infrastructure.
-
-- **Runtime**: Python, on the edge worker container that already runs the compiled `wf_*.py` module.
-- **I/O contract**: Every Code node must define a top-level `def run(input: dict) -> dict`. The return value is fed into the next Code node's `input` via an internal `_node_output` variable.
-- **Validation**: The API parses the body with `ast.parse` on create/update and rejects syntax errors or missing `run` functions inline, before activation.
-- **Activation guards**: Activating a workflow is blocked if it contains a Code node and either (a) `run_on_edge` is false, or (b) the workflow uses a `camera_frame` trigger (not yet supported by the perception path of the edge compiler).
-- **Availability**: The node is always visible in the palette; it is disabled with an "Available only on run_on_edge workflows" tooltip when the workflow is not edge-bound.
-
-## Workflow assistant
-
-Select a workflow in the workbench, then use **Prompt** or the right-hand **Assistant** tab to edit it with the assistant. Click the assistant title in **Assistant** to switch between **Environment assistant** and **Workflow assistant**. When the workbench is closed, the workflow option is disabled and reads **Open the workbench**. The workbench shows node details only while a node inspector is open. Close it or clear the node selection to reclaim that space.
-
-## Edge voice workflows (audio + STT + control)
-
-Voice pipelines chain **Audio Track**, **Audio Assistant**, **Wake Word Engine**, **Call Model** (STT), **Fuzzy Matcher**, **Twin**, and **Virtual Controller**. Each node declares a minimal Python/SDK extra; the compile server validates imports before shipping `wf_*.py`.
-
-See **[Edge workflow dependencies](/feature-reference/workflows/edge-dependencies)** for the full matrix (compile server `base.txt`, edge worker extras, catalog STT models).
-
-| Doc                                                                        | Topic                                |
-| -------------------------------------------------------------------------- | ------------------------------------ |
-| [Audio in Workflows](/feature-reference/workflows/audio-in-workflows)      | PCM format, pipeline, compile checks |
-| [Call Model STT on edge](/feature-reference/workflows/call-model-stt-edge) | Whisper.cpp vs Faster Whisper        |
-| [Fuzzy Matcher](/feature-reference/workflows/fuzzy-matcher)                | Command matching after STT           |
-| [Twin](/feature-reference/workflows/twin)                                  | Twin + policy outputs → candidates   |
-| [Virtual Controller](/feature-reference/workflows/virtual-controller)      | MQTT dispatch                        |
-
----
+<CardGroup cols={2}>
+  <Card title="Workflow nodes" icon="shapes" href="/overview/features/workflow-nodes">
+    Every node in the palette, grouped by category, with what it does and where it runs.
+  </Card>
+  <Card title="Running a workflow in simulation" icon="cube" href="/feature-reference/workflows/simulation-execution-target">
+    Set the execution target to Simulation to test against a physics simulation.
+  </Card>
+  <Card title="Workflow API" icon="code" href="/api-reference/rest/WorkflowSchema">
+    REST schemas: [`WorkflowSchema`](/api-reference/rest/WorkflowSchema),
+    [`WorkflowExecuteSchema`](/api-reference/rest/WorkflowExecuteSchema),
+    [`WorkflowNodeSchema`](/api-reference/rest/WorkflowNodeSchema).
+  </Card>
+  <Card title="Edge-to-cloud VLM tutorial" icon="bolt" href="/tutorials/edge-to-cloud-vlm">
+    Build the anonymize-on-edge + VLM-on-cloud workflow end-to-end.
+  </Card>
+</CardGroup>
