@@ -4,10 +4,6 @@ description: "Let AI agents manage your robotics infrastructure through the Mode
 icon: "plug"
 ---
 
-import EarlyAccess from "/snippets/early-access.mdx";
-
-<EarlyAccess />
-
 ## Overview
 
 The Cyberwave MCP Server exposes Cyberwave platform operations as **tools** that MCP-compatible clients can discover and call. Agents can inspect environments, create digital twins, position robots, capture camera frames, preview or trigger workflows, and verify results with rendered environment previews.
@@ -301,67 +297,7 @@ Agents can request a prompt before executing a task. For example, `safe_manipula
 
 ## Client Setup
 
-Connect the Cyberwave MCP server to your preferred AI client. All examples use the hosted endpoint, replace `<CYBERWAVE_API_KEY>` with your key from the [profile page](https://cyberwave.com/profile).
-
-<Tabs>
-  <Tab title="Cursor">
-    Edit your Cursor `mcp.json` configuration file:
-
-    ```json
-    {
-      "mcpServers": {
-        "cyberwave": {
-          "url": "https://mcp.cyberwave.com/mcp",
-          "headers": {
-            "Authorization": "Bearer <CYBERWAVE_API_KEY>"
-          }
-        }
-      }
-    }
-    ```
-  </Tab>
-  <Tab title="VS Code">
-    Add to your VS Code `settings.json`:
-
-    ```json
-    {
-      "mcp": {
-        "servers": {
-          "cyberwave": {
-            "url": "https://mcp.cyberwave.com/mcp",
-            "headers": {
-              "Authorization": "Bearer ${env:CYBERWAVE_API_KEY}"
-            }
-          }
-        }
-      }
-    }
-    ```
-
-    Set the `CYBERWAVE_API_KEY` environment variable and restart VS Code, or replace `${env:CYBERWAVE_API_KEY}` with your key directly.
-  </Tab>
-  <Tab title="Claude Code">
-    ```bash
-    claude mcp add cyberwave -t http https://mcp.cyberwave.com/mcp \
-      -H "Authorization: Bearer <CYBERWAVE_API_KEY>"
-    ```
-  </Tab>
-  <Tab title="Gemini CLI">
-    ```bash
-    gemini mcp add -t http cyberwave https://mcp.cyberwave.com/mcp \
-      --header "Authorization: Bearer <CYBERWAVE_API_KEY>"
-    ```
-  </Tab>
-  <Tab title="Codex CLI">
-    Edit `~/.codex/config.toml`:
-
-    ```toml
-    [mcp_servers.cyberwave]
-    command = "npx"
-    args = ["-y", "mcp-remote@latest", "https://mcp.cyberwave.com/mcp", "--header", "Authorization: Bearer <CYBERWAVE_API_KEY>"]
-    ```
-  </Tab>
-</Tabs>
+Setup for Claude Code, Codex, Cursor, VS Code, Gemini CLI and other clients is in [Connect your AI tool](/ai/connect-your-ai-tool). It also covers installing the Cyberwave skill and verifying the connection.
 
 ---
 

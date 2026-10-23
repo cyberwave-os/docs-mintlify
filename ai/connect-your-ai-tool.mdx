@@ -1,0 +1,119 @@
+---
+title: "Connect your AI tool"
+description: "Give Claude Code, Codex, Cursor, VS Code or any MCP client access to your Cyberwave workspace with the hosted MCP server and the Cyberwave skill."
+icon: "plug"
+---
+
+Connect your coding agent once and it can build environments, control twins and draft workflows in your workspace. Two pieces do the work:
+
+- **The MCP server** gives the agent typed Cyberwave tools. It is hosted at `https://mcp.cyberwave.com/mcp`.
+- **The Cyberwave skill** teaches the agent when to use MCP, the CLI or the SDK, and the safety rules for robot control. Install it in clients that support skills.
+
+**Needs:** a Cyberwave API key scoped to one workspace ([create one](/get-started/account)), exported as `CYBERWAVE_API_KEY`. The skill install needs Git.
+
+## Set up your client
+
+<Tabs>
+  <Tab title="Claude Code">
+    ```bash
+    git clone https://github.com/cyberwave-os/cyberwave-skill ~/.claude/skills/cyberwave
+    claude mcp add --scope user --transport http cyberwave https://mcp.cyberwave.com/mcp \
+      --header "Authorization: Bearer $CYBERWAVE_API_KEY"
+    claude
+    ```
+
+    Then invoke `/cyberwave`. Claude stores the expanded header in its user configuration.
+  </Tab>
+  <Tab title="Codex">
+    ```bash
+    git clone https://github.com/cyberwave-os/cyberwave-skill ~/.agents/skills/cyberwave
+    codex mcp add cyberwave --url https://mcp.cyberwave.com/mcp \
+      --bearer-token-env-var CYBERWAVE_API_KEY
+    codex
+    ```
+
+    Start Codex from the terminal where you exported the key, then invoke `$cyberwave`.
+  </Tab>
+  <Tab title="Cursor">
+    Add to your Cursor `mcp.json`:
+
+    ```json
+    {
+      "mcpServers": {
+        "cyberwave": {
+          "url": "https://mcp.cyberwave.com/mcp",
+          "headers": { "Authorization": "Bearer <CYBERWAVE_API_KEY>" }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="VS Code">
+    Add to `settings.json`, then restart VS Code with `CYBERWAVE_API_KEY` set:
+
+    ```json
+    {
+      "mcp": {
+        "servers": {
+          "cyberwave": {
+            "url": "https://mcp.cyberwave.com/mcp",
+            "headers": { "Authorization": "Bearer ${env:CYBERWAVE_API_KEY}" }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Gemini CLI">
+    ```bash
+    gemini mcp add -t http cyberwave https://mcp.cyberwave.com/mcp \
+      --header "Authorization: Bearer $CYBERWAVE_API_KEY"
+    ```
+  </Tab>
+  <Tab title="Other MCP clients">
+    Add a **Streamable HTTP** server named `cyberwave` at `https://mcp.cyberwave.com/mcp`. Put `Bearer <your key>` in its `Authorization` header, using the client's private credential field, then reconnect. If your client can't send a header, use one of the other tabs.
+  </Tab>
+</Tabs>
+
+<Note>
+  `cyberwave login` configures the CLI only. It does not configure an MCP client.
+</Note>
+
+## Verify the connection
+
+Ask your agent:
+
+```text
+List my Cyberwave workspaces using the Cyberwave MCP tools.
+```
+
+A tool response that names your workspace means you're connected.
+
+<AccordionGroup>
+  <Accordion title="401 or AUTH_ERROR">
+    The key is wrong or revoked. Create a new key and update the client's credential.
+  </Accordion>
+  <Accordion title="The Cyberwave tools don't appear">
+    Reconnect the MCP server in your client and restart the agent session.
+  </Accordion>
+  <Accordion title="workspace_required">
+    The key covers several workspaces. Create a key scoped to one workspace.
+  </Accordion>
+  <Accordion title="The skill folder already exists">
+    Reuse it, or update it with `git -C ~/.claude/skills/cyberwave pull`.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={3}>
+  <Card title="Prompt library" icon="message-lines" href="/ai/prompt-library">
+    Prompts for scenes, control and workflows.
+  </Card>
+  <Card title="Agent safety and approval" icon="shield-check" href="/ai/safety">
+    How plans, approval and limits keep robots safe.
+  </Card>
+  <Card title="MCP tools reference" icon="book" href="/overview/tools/mcp-server">
+    Every tool, resource and deployment option.
+  </Card>
+</CardGroup>

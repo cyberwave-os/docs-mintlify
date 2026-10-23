@@ -1,0 +1,97 @@
+---
+title: "Account and API keys"
+description: "Create an account, create an API key scoped to one workspace, and use it from the SDK, MCP clients and the REST API."
+icon: "key"
+---
+
+You need an account for everything. You need an API key only when something outside the dashboard talks to Cyberwave: an AI coding tool, the Python SDK, the CLI or your own HTTP client.
+
+## Create an account
+
+[Sign up](https://cyberwave.com/signup), verify your email, and create or join a workspace. The dashboard, the built-in agents and the Playground need nothing else.
+
+{/* TODO(docs): confirm sign-up is self-serve for everyone; some pages still say "request early access". */}
+
+## Create an API key
+
+<Steps>
+  <Step title="Open Profile → Access">
+    Go to [Profile → Access](https://cyberwave.com/profile?tab=access) and select **Create Token**.
+  </Step>
+  <Step title="Scope it to one workspace">
+    Name the key (for example, **Quickstart**) and select **one workspace**. A key that covers several workspaces makes every request name one, or it fails with `400 workspace_required`.
+  </Step>
+  <Step title="Copy it now">
+    The key is shown once. If you miss it, create a new one.
+  </Step>
+</Steps>
+
+<Warning>
+  Never commit a key or paste it into a shared chat. Keep it in an environment variable or your client's secret settings.
+</Warning>
+
+## Use your key
+
+<Tabs>
+  <Tab title="Terminal">
+    Paste the key at a hidden prompt, so it stays out of your shell history:
+
+    ```bash
+    printf 'Cyberwave API key: '
+    read -rs CYBERWAVE_API_KEY
+    printf '\n'
+    export CYBERWAVE_API_KEY
+    ```
+  </Tab>
+  <Tab title="Python SDK">
+    The SDK reads `CYBERWAVE_API_KEY` from the environment:
+
+    ```python
+    from cyberwave import Cyberwave
+
+    cw = Cyberwave()
+    ```
+
+    `Cyberwave(api_key="...")` also works. Avoid it in code you share.
+  </Tab>
+  <Tab title="MCP client">
+    Send the key as `Authorization: Bearer <key>` to `https://mcp.cyberwave.com/mcp`. See [Connect your AI tool](/ai/connect-your-ai-tool).
+  </Tab>
+  <Tab title="REST API">
+    ```bash
+    curl "https://api.cyberwave.com/api/v1/assets/" \
+      -H "Authorization: Bearer $CYBERWAVE_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+## Environment variables
+
+| Variable | Use |
+| --- | --- |
+| `CYBERWAVE_API_KEY` | Your API key. Required. |
+| `CYBERWAVE_WORKSPACE_ID` | Workspace UUID. Needed when the key covers several workspaces. |
+| `CYBERWAVE_ENVIRONMENT_ID` | Default environment UUID. Skips auto-creating a Quickstart Environment. |
+| `CYBERWAVE_BASE_URL` | API base URL. Default `https://api.cyberwave.com`. |
+| `CYBERWAVE_MQTT_HOST` / `CYBERWAVE_MQTT_PORT` | MQTT broker. Default `mqtt.cyberwave.com`, port `8883` with TLS. |
+
+## If something fails
+
+| Error | Fix |
+| --- | --- |
+| `No API key found` | Export `CYBERWAVE_API_KEY` in the terminal that runs your code. |
+| `401` / `AUTH_ERROR` | The key is wrong or revoked. Create a new one. |
+| `400 workspace_required` | Set `CYBERWAVE_WORKSPACE_ID`, or use a key scoped to one workspace. |
+| `403` | Check your role in the workspace and the key's scope. |
+| MQTT connection failed | Allow outbound TCP 8883. See [Network and firewall](/enterprise/network-and-firewall). |
+
+## Go deeper
+
+<CardGroup cols={2}>
+  <Card title="API tokens" icon="key" href="/feature-reference/api-tokens">
+    Token types, service tokens, scopes and roles.
+  </Card>
+  <Card title="Credits and billing" icon="credit-card" href="/billing/credits">
+    What uses credits, and how to check your balance.
+  </Card>
+</CardGroup>
