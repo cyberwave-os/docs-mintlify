@@ -1,9 +1,19 @@
 ---
-title: "Upload a new asset (URDF ZIP)"
-description: "How to package and upload a URDF asset from the UI or API"
+title: "Asset and driver spec"
+sidebarTitle: "Asset and driver spec"
+description: "Specs for custom robots: URDF ZIP layout, upload fields and API, physics and universal schema, driver config files, metadata.drivers and env vars."
+icon: "file-code"
 ---
 
-## What is a URDF?
+This page lists the files, fields and limits you use when you add your own robot. For the step-by-step walkthrough, see [Add your own robot](/robots/add-your-robot).
+
+---
+
+## Asset package
+
+An **asset** is the reusable definition of a piece of hardware: its 3D meshes and kinematic model. Cyberwave creates a custom asset from a URDF package that you upload.
+
+### What is a URDF?
 
 URDF (**Unified Robot Description Format**) is the standard XML format used in ROS to describe a robot's links, joints, visuals, and collisions.
 
@@ -13,16 +23,16 @@ Useful open-source references:
 - [ROS Wiki: URDF](https://wiki.ros.org/urdf)
 - [urdfdom (URDF parser library)](https://github.com/ros/urdfdom)
 
----
+A complete sample is available: [dji-mini-4-pro.zip](/assets/dji-mini-4-pro.zip) (one `base_link`, four propeller links, four `continuous` joints).
 
-## Prepare your ZIP file correctly
+### ZIP layout
 
-Before uploading, create a folder that contains:
+The package is a single **ZIP archive** that contains:
 
-1. One main `.urdf` file
+1. One main `.urdf` (or `.xacro`) file
 2. Every file referenced by that URDF (meshes, textures, materials)
 
-Then zip that folder.
+Put them in a folder, then zip that folder.
 
 ```text
 my-robot/
@@ -36,6 +46,14 @@ my-robot/
     arm_albedo.png
 ```
 
+| Limit | Value |
+| --- | --- |
+| Maximum ZIP size | 512 MB, enough for large full-mesh assets like humanoid robots |
+| URDF files per ZIP | One main file. If there are several, set **Main URDF path** |
+| Symbolic links | Supported and resolved automatically |
+
+Cyberwave unpacks and validates the archive after you create the asset.
+
 ### File references inside URDF
 
 Your URDF can reference other files, for example:
@@ -45,30 +63,30 @@ Your URDF can reference other files, for example:
 - Texture image files used by materials (for example PNG/JPG)
 
 <Info>
-Use relative paths that match your ZIP structure. If the URDF references `meshes/arm_visual.obj`, that file must exist in the ZIP.
+Use relative paths that match your ZIP structure. If the URDF references `meshes/arm_visual.obj`, that file must exist in the ZIP. ROS `package://` URIs must be switched to relative paths.
 </Info>
-
-
-Symbolic links inside the ZIP are supported and resolved automatically.
 
 ---
 
-## Upload from the UI
+## Upload form fields
 
-1. Sign in (or sign up)
-2. Go to [cyberwave.com/catalog](https://cyberwave.com/catalog)
-3. Click **Upload Asset**
-4. Fill in required fields and upload your URDF ZIP
-5. (Optional) Open **Advanced** for extra fields
+The dashboard upload has three steps: **Package**, **Details** and **Access**. The steps are in [Create the asset](/robots/add-your-robot#create-the-asset).
 
-### Advanced form fields
+| Step | Field | Notes |
+| --- | --- | --- |
+| Package | **URDF Package (ZIP)** | The ZIP described above. Drag and drop, or click to select |
+| Details | **Name** | A clear name, for example `Acme Arm v1` |
+| Details | **Description** | A short description of what the robot or prop is |
+| Details (Advanced) | **Main URDF path** | Optional. Path to the main URDF inside the ZIP, for example `urdf/robot.urdf`. Leave it empty to auto-detect when the ZIP has only one URDF. Set it when the ZIP has more than one |
+| Details (Advanced) | **Thumbnail** | Optional. Preview image (PNG or JPG) for the asset card. If you don't upload one, Cyberwave can generate one automatically |
+| Access | **Visibility** | See below. Can be changed after creation |
+| Access | **Workspace** | The workspace the asset belongs to |
 
-- **Main URDF File Path**
-  - If your ZIP has only one URDF file, you can leave this empty
-  - If your ZIP has multiple URDF files, set the path (for example `urdf/robot.urdf`)
-- **Thumbnail**
-  - Optional
-  - If you do not upload one, Cyberwave can generate a thumbnail automatically
+| Visibility | Who can view |
+| --- | --- |
+| **Private** | Only you |
+| **Organization** | All members of your organization |
+| **Public** | Anyone on the platform |
 
 ---
 
@@ -94,16 +112,22 @@ curl -X POST "https://api.cyberwave.com/api/v1/assets/create-with-urdf" \
 
 API payload fields:
 
-- `file_url`: URL to your ZIP file
-- `force_name`: Name for the asset
-- `main_file_path`: Main URDF path in the ZIP
-- `description` (optional)
-- `subfolder` (optional)
-- `branch` (optional)
+| Field | Required | Description |
+| --- | --- | --- |
+| `file_url` | Yes | URL to your ZIP file |
+| `force_name` | Yes | Name for the asset |
+| `main_file_path` | Yes | Main URDF path in the ZIP |
+| `description` | No | Asset description |
+| `subfolder` | No | |
+| `branch` | No | |
+
+{/* TODO(docs): describe what `subfolder` and `branch` do. */}
 
 <Tip>
 For API uploads, make sure `file_url` is reachable by Cyberwave and points to the final ZIP file.
 </Tip>
+
+Python SDK upload methods are listed on the [Catalog](/feature-reference/catalog) page.
 
 ---
 
@@ -393,3 +417,102 @@ A policy that achieves 95% success in simulation can drop to 30–50% on real ha
 | Joints oscillate / vibrate | Damping too low or timestep too large | Increase contact damping; reduce timestep |
 | Simulation runs but doesn't match real robot | Default inertia / friction values | Measure real parameters; use domain randomization |
 | Objects bounce unrealistically | Restitution too high | Set to 0.0 – 0.1 for most rigid contacts |
+
+---
+
+## Driver config files
+
+Four files come up when you integrate a robot. They do different jobs.
+
+| Artifact | What it declares | Who writes it | Who reads it | Required? |
+|---|---|---|---|---|
+| Asset `metadata.drivers` (JSON on the asset or twin) | **Which Docker image(s) run** for this robot, per platform, with Docker params, GPU and multi-container `services` | You, on the asset | **Edge Core**, when it starts drivers for linked twins | Yes, from L2 |
+| `cw-driver.yml` | **The driver's interface**: MQTT topics, Zenoh channels, supported commands | You, or exported from your `BaseDriver` subclass | The platform compiles it into the twin's `metadata.mqtt` / `metadata.zenoh` when you call `twin.driver.set_schema(...)`. The UI teleop overlay and `twin.commands.*` read the result | Yes, from L2 |
+| `manifest.yaml` (ROS 2 drivers) | ROS node parameters, topics and `managed_launch`, **merged with** the `cw-driver` catalog | Exported by `BaseROS2Driver.write_manifest()`; don't hand-edit it | `BaseROS2Driver` at runtime (`CW_DRIVER_MANIFEST`), and `set_schema`, which extracts the `cw-driver` keys | Only for ROS 2 drivers, instead of a separate `cw-driver.yml` |
+| `cyberwave.yml` | Cloud nodes and edge ML workers: install, inference, training, models | You, for cloud nodes and workers | Cloud nodes, Edge Core's worker container | **Not for drivers** |
+
+<Note>
+The image that runs for your robot is set in the asset's `metadata.drivers`, not in a `cyberwave.yml` `driver:` block. The method that registers a driver interface is `twin.driver.set_schema(...)`. `twin.commands` only invokes and lists commands.
+</Note>
+
+Where each is documented: [Drivers (metadata.drivers)](/feature-reference/edge/drivers/overview) · [Writing compatible drivers (cw-driver.yml)](/feature-reference/edge/drivers/writing-compatible-drivers) · [BaseROS2Driver (combined manifest)](/feature-reference/edge/drivers/ros2-base-driver) · [cyberwave.yml](/feature-reference/manifest).
+
+### `cw-driver.yml` topic mapping
+
+Each YAML path under `mqtt` compiles to a flat MQTT topic:
+
+| YAML path | MQTT topic |
+| --- | --- |
+| `mqtt.joint.update` | `cyberwave/joint/{twin_uuid}/update` |
+| `mqtt.twin.command` | `cyberwave/twin/{twin_uuid}/command` |
+
+`commands.supported` entries are either a plain name (discrete, one-shot) or an object such as `{ name: move_forward, continuous: true, rate_hz: 10 }` (stick-held). `set_schema` compiles the file through `POST /api/v1/twins/{uuid}/driver-schema`. Full topic list: [MQTT reference](/api-reference/mqtt/main).
+
+---
+
+## `metadata.drivers` keys
+
+Edge Core reads `metadata.drivers` on the asset (or twin) and starts one container per linked twin.
+
+| Key or field | Meaning |
+| --- | --- |
+| `default` | Entry used when no platform key matches the host |
+| Platform keys, for example `linux-aarch64-jetson` or `darwin-arm64` | Edge Core uses the most specific key for the host |
+| `docker_image` | Image to run for a single-container driver |
+| `services` | Use instead of `docker_image` for multi-container stacks (driver + Nav2 + SLAM) |
+| `params` | Extra Docker arguments, for example `["--network", "host"]`. Pass env vars as `-e KEY=value` pairs |
+| `prefer_gpu` | GPU preference for the container, for example `true` |
+
+On a Jetson with no Jetson key, Edge Core tries a `jetson-`-prefixed tag first. Changing the asset affects twins created afterwards. Reference: [Drivers](/feature-reference/edge/drivers/overview).
+
+---
+
+## Driver environment variables
+
+Edge Core injects these when it runs your container, so you can assume they're always set:
+
+| Variable | Description |
+| --- | --- |
+| `CYBERWAVE_TWIN_UUID` | UUID of the twin this driver manages |
+| `CYBERWAVE_API_KEY` | API key scoped to this driver |
+| `CYBERWAVE_TWIN_JSON_FILE` | Path to a writable JSON file with the twin's current state |
+| `CYBERWAVE_CHILD_TWIN_UUIDS` | *(optional)* Comma-separated UUIDs of attached child twins (e.g. cameras) |
+
+Other variables used by drivers:
+
+| Variable | Description |
+| --- | --- |
+| `CW_ROS2_AUTO_ACTIVATE` | `true` is recommended during development of `BaseROS2Driver` drivers |
+| `CW_DRIVER_MANIFEST` | Combined manifest that `BaseROS2Driver` reads at runtime |
+| `CYBERWAVE_DATA_BACKEND` | Set to `zenoh` when you run the driver locally with `docker run` |
+
+---
+
+## Supported protocols
+
+Integration happens at the driver layer, so Cyberwave is protocol-agnostic and sits alongside the tools your team already uses. The same driver pattern bridges any of these to the digital twin:
+
+- **ROS 1 / ROS 2**: robot arms, mobile robots, and sensor stacks
+- **VDA5050**: AGV / AMR fleet communication
+- **OPC UA**: industrial automation and PLC connectivity
+- **Modbus TCP / RTU**: sensor and actuator networks
+- **gRPC / REST**: custom services and microservice architectures
+- **Serial / USB**: direct device control (servos, microcontrollers)
+
+Drivers run as Docker containers managed by [Edge Core](/feature-reference/edge/overview), on the edge device, on the robot, in the cloud, or on your laptop.
+
+---
+
+## Open-source repositories
+
+All integration libraries and reference drivers live under the [cyberwave-os](https://github.com/cyberwave-os) GitHub organization:
+
+| Repository | Description |
+|---|---|
+| [cyberwave-edge-core](https://github.com/cyberwave-os/cyberwave-edge-core) | Edge orchestrator |
+| [cyberwave-edge-python](https://github.com/cyberwave-os/cyberwave-edge-python) | Python Edge SDK |
+| [cyberwave-python](https://github.com/cyberwave-os/cyberwave-python) | Python platform SDK |
+| [cyberwave-edge-camera-driver](https://github.com/cyberwave-os/cyberwave-edge-camera-driver) | Reference camera driver |
+| [cyberwave-edge-so101](https://github.com/cyberwave-os/cyberwave-edge-so101) | Reference SO-101 arm driver |
+| [cyberwave-edge-ros-ugv](https://github.com/cyberwave-os/cyberwave-edge-nodes/tree/main/cyberwave-edge-ros-ugv) | Reference mobile base driver (locomotion + onboard camera) |
+| [driver-skill](https://github.com/cyberwave-os/driver-skill) | AI scaffolding skill for new drivers |

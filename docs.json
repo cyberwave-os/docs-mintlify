@@ -59,7 +59,6 @@
                 "group": "Workflows",
                 "icon": "diagram-project",
                 "pages": [
-                  "overview/features/workflows",
                   "feature-reference/workflows",
                   "feature-reference/workflows/simulation-execution-target",
                   "feature-reference/workflows/call-model-prompt",
@@ -134,7 +133,6 @@
                 "group": "Teleoperation & poses",
                 "icon": "gamepad",
                 "pages": [
-                  "overview/features/teleoperation-and-remote-control",
                   "feature-reference/environment-editor/teleoperation",
                   "feature-reference/arm-commands",
                   "feature-reference/twin-saved-poses",
@@ -209,9 +207,6 @@
                 "icon": "screwdriver-wrench",
                 "pages": [
                   "robots/add-your-robot",
-                  "overview/connecting-hardware/custom-hardware",
-                  "tutorials/bring-your-own-hardware",
-                  "feature-reference/create-asset",
                   "feature-reference/catalog/simulation-support",
                   "feature-reference/edit-universal-schema",
                   "feature-reference/catalog/asset-kits",
@@ -235,16 +230,7 @@
             "icon": "chart-line",
             "pages": [
               "overview/features/models-and-datasets",
-              {
-                "group": "Record and replay",
-                "icon": "circle-play",
-                "pages": [
-                  "overview/features/replay-and-historical-data",
-                  "overview/tools/python-sdk-recordings",
-                  "feature-reference/environment-editor/replay",
-                  "feature-reference/environment-editor/replay-timeline"
-                ]
-              },
+              "overview/features/replay-and-historical-data",
               {
                 "group": "Datasets",
                 "icon": "database",
@@ -286,15 +272,7 @@
             "group": "Deploy & operate",
             "icon": "server",
             "pages": [
-              {
-                "group": "Edge workers",
-                "icon": "microchip",
-                "pages": [
-                  "feature-reference/workflows/workers/overview",
-                  "feature-reference/ml-models/edge-worker",
-                  "feature-reference/edge/drivers/edge-workers"
-                ]
-              },
+              "feature-reference/workflows/workers/overview",
               {
                 "group": "Vision pipelines on the edge",
                 "icon": "filter",
@@ -944,7 +922,7 @@
     },
     {
       "source": "/feature-reference/recording-replay",
-      "destination": "/feature-reference/environment-editor/replay"
+      "destination": "/overview/features/replay-and-historical-data#replay-in-the-environment-editor"
     },
     {
       "source": "/feature-reference/teleoperation",
@@ -1044,7 +1022,7 @@
     },
     {
       "source": "/use-cyberwave/recording-replay",
-      "destination": "/feature-reference/environment-editor/replay"
+      "destination": "/overview/features/replay-and-historical-data#replay-in-the-environment-editor"
     },
     {
       "source": "/use-cyberwave/:slug*",
@@ -1216,7 +1194,7 @@
     },
     {
       "source": "/hardware/other-hardware/custom-hardware",
-      "destination": "/overview/connecting-hardware/custom-hardware"
+      "destination": "/robots/add-your-robot"
     },
     {
       "source": "/hardware/other-hardware/get-started",
@@ -1272,7 +1250,7 @@
     },
     {
       "source": "/feature-reference/concepts/workflows",
-      "destination": "/overview/features/workflows"
+      "destination": "/feature-reference/workflows"
     },
     {
       "source": "/feature-reference/workflows/overview",
@@ -1308,7 +1286,7 @@
     },
     {
       "source": "/overview/tools/recording-playback-readiness",
-      "destination": "/overview/tools/python-sdk-recordings#playback-readiness"
+      "destination": "/overview/features/replay-and-historical-data#playback-readiness"
     },
     {
       "source": "/overview/tools/rl-policy",
@@ -1789,6 +1767,46 @@
     {
       "source": "/overview/python-sdk-quickstart",
       "destination": "/get-started/choose-your-path#write-the-code-yourself"
+    },
+    {
+      "source": "/overview/features/teleoperation-and-remote-control",
+      "destination": "/feature-reference/environment-editor/teleoperation"
+    },
+    {
+      "source": "/overview/features/workflows",
+      "destination": "/feature-reference/workflows"
+    },
+    {
+      "source": "/overview/tools/python-sdk-recordings",
+      "destination": "/overview/features/replay-and-historical-data#work-with-recordings-in-python"
+    },
+    {
+      "source": "/feature-reference/environment-editor/replay",
+      "destination": "/overview/features/replay-and-historical-data#replay-in-the-environment-editor"
+    },
+    {
+      "source": "/feature-reference/environment-editor/replay-timeline",
+      "destination": "/overview/features/replay-and-historical-data#the-replay-timeline"
+    },
+    {
+      "source": "/feature-reference/ml-models/edge-worker",
+      "destination": "/feature-reference/workflows/workers/overview"
+    },
+    {
+      "source": "/feature-reference/edge/drivers/edge-workers",
+      "destination": "/feature-reference/workflows/workers/overview#worker-api"
+    },
+    {
+      "source": "/feature-reference/create-asset",
+      "destination": "/robots/add-your-robot#create-the-asset"
+    },
+    {
+      "source": "/overview/connecting-hardware/custom-hardware",
+      "destination": "/robots/add-your-robot"
+    },
+    {
+      "source": "/tutorials/bring-your-own-hardware",
+      "destination": "/robots/add-your-robot"
     }
   ]
 }

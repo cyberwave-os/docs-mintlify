@@ -38,7 +38,7 @@ The driver owns the stream lifecycle. The worker owns the policy. Toggling the f
 
 ## Privacy boundary
 
-`frames/*` channels are **local-only**: the Zenoh-MQTT bridge does NOT forward them to the cloud by default. Only events, detections and overlays cross the WAN. See [Edge Workers](./edge-workers) for the hook contract.
+`frames/*` channels are **local-only**: the Zenoh-MQTT bridge does NOT forward them to the cloud by default. Only events, detections and overlays cross the WAN. See [Run models on the edge](/feature-reference/workflows/workers/overview#worker-api) for the hook contract.
 
 ## Configuration (driver side)
 
@@ -91,7 +91,7 @@ def anonymise(frame, ctx):
     cw.data.publish(FILTERED_FRAME_CHANNEL, out, twin_uuid=twin_uuid)
 ```
 
-See the [security pipeline example](./edge-workers) for an end-to-end multi-camera setup.
+See the [security pipeline example](/feature-reference/edge/drivers/security-pipeline) for an end-to-end multi-camera setup.
 
 ## Annotation overlays
 
