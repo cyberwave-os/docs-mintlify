@@ -9,7 +9,7 @@ The Cyberwave platform uses MQTT for real-time communication between edge driver
 
 ## Topic prefix
 
-In non-production deployments the broker may be configured with an environment prefix (e.g. `local` for local dev). When a prefix is set, every topic below is written `{prefix}cyberwave/...`. The Python SDK's `topic_prefix` parameter and the `CYBERWAVE_MQTT_TOPIC_PREFIX` environment variable handle this automatically (when neither is set, the SDK derives the prefix from `CYBERWAVE_ENVIRONMENT`). All topic patterns on this page omit the prefix for clarity.
+In non-production deployments the broker may be configured with an environment prefix (e.g. `local` for local dev). When a prefix is set, every topic below is written `{prefix}cyberwave/...`. The Python SDK's `topic_prefix` parameter and the `CYBERWAVE_MQTT_TOPIC_PREFIX` environment variable handle this automatically (when neither is set, the SDK derives the prefix from `CYBERWAVE_ENVIRONMENT`). The SDK logs a warning when the resolved prefix does not match a hosted broker (`staging.mqtt.cyberwave.com` expects `staging`, `mqtt.cyberwave.com` expects none), since mismatched messages are silently dropped. All topic patterns on this page omit the prefix for clarity.
 
 ## Source types
 
