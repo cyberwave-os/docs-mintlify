@@ -17,7 +17,7 @@ Use this page to choose how each customer system talks to Cyberwave. One table c
 | **Workflow triggers** (`webhook`, `mqtt`, `schedule`, `email`, `event`, `manual`) | Start a no-code automation from an external event | REST or SDK trigger: API token. Webhook: not documented. | [Workflow nodes](/overview/features/workflow-nodes) · [MQTT trigger](/feature-reference/workflows/mqtt-trigger) |
 | **Workflow outputs** (`http_request`, `send_email`, `send_mqtt`, `send_ros2`, `send_alert`) | Push results out of a workflow to an external API, email, a twin topic or ROS 2 | Configured on the node | [Workflow nodes](/overview/features/workflow-nodes) |
 | **Execution ingress** (MQTT) | Report runs of your own external process as workflow executions, so they appear on the Cyberwave timeline | Broker-level (MQTT credentials) | [Execution ingress](/feature-reference/workflows/execution-ingress) |
-| **A2A partner API** (`POST /api/v1/a2a`) | An external agent submits a natural-language task and follows it over SSE | Workspace-scoped API token with the `a2a` scope key | [A2A partner API](/api-reference/a2a-partner-api) |
+| **A2A partner API** (`POST /api/v1/a2a`) | An external agent submits a natural-language task and follows it over SSE | Workspace-scoped API token with A2A protocol access turned on | [A2A partner API](/api-reference/a2a-partner-api) |
 | **MCP server** (`https://mcp.cyberwave.com/mcp`, or self-hosted over stdio) | AI agents and IDEs (Claude, Cursor, any MCP client) operate environments, twins and workflows | `Authorization: Bearer <CYBERWAVE_API_KEY>` | [MCP server](/overview/tools/mcp-server) (early access) |
 | **ROS 2** (`BaseROS2Driver`, `send_ros2` node) | The robot already speaks ROS 2. Bridge its topics into a twin, or publish typed messages from a workflow. | Runs as a driver under Edge Core with the driver's API key | [BaseROS2Driver](/feature-reference/edge/drivers/ros2-base-driver) · [UR Sim tutorial](/tutorials/ur-sim-cyberwave-driver) |
 | **Custom driver** (Docker image under Edge Core) | Any device with its own protocol: vendor SDK, serial, CAN, fieldbus gateway | `CYBERWAVE_API_KEY` injected into the container | [Writing compatible drivers](/feature-reference/edge/drivers/writing-compatible-drivers) |
@@ -31,7 +31,6 @@ For long-lived integrations, use a **service token** scoped to the customer's wo
 {/* TODO(docs): /feature-reference/docker-registry tells users to run `cyberwave auth configure-docker`; no such command exists in the CLI source. Fix that page. */}
 {/* TODO(docs): webhook trigger — URL format, authentication, payload shape, response, rate limits. Nothing is documented today. */}
 {/* TODO(docs): http_request node — methods, headers/secrets handling, timeouts, retry semantics. */}
-{/* TODO(docs): the A2A page requires an `a2a` scope key on the token, but /feature-reference/api-tokens does not describe scope keys. Document how to add one. */}
 {/* TODO(docs): the A2A task model is store-operations specific (`storeId`). Clarify whether other task types are planned. */}
 
 ## Connecting to MQTT

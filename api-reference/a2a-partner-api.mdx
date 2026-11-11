@@ -17,7 +17,10 @@ and the bearer auth scheme a client should use.
 
 Authenticate using a [Cyberwave API Token](/api-reference/overview#authentication)
 from your [profile page](https://cyberwave.com/profile). The token must belong to
-the target workspace and include the `a2a` scope key. Send it on every request:
+the target workspace and have **A2A protocol access** turned on. Turn it on when
+you create the token, or later with **Edit scope** on the token's row. See
+[API tokens](/feature-reference/api-tokens#a2a-protocol-access). Send it on every
+request:
 
 ```http
 Authorization: Bearer <APIToken>
@@ -312,8 +315,8 @@ stream. For example, reconnecting after completion returns:
 }
 ```
 
-Missing or invalid authentication returns HTTP 401. A token without the `a2a`
-scope returns HTTP 403. Check these HTTP failures as well as JSON-RPC errors.
+Missing or invalid authentication returns HTTP 401. A token without A2A
+protocol access returns HTTP 403. Check these HTTP failures as well as JSON-RPC errors.
 An `error` event after the SSE response has started is a transport error, not a
 `finished` task outcome; poll the task to determine its state.
 
