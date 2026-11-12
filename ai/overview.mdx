@@ -13,7 +13,7 @@ Cyberwave sits between AI models and physical machines. AI agents sit on top: th
 flowchart TB
   A[AI agents<br/>build · control · automate]
   A --> P[AI models<br/>perceive · reason · act]
-  A --> C[Control<br/>manual · skills · workflows · VLA · RL]
+  A --> C[Control<br/>manual teleop · local teleop · agentic · policy]
   S[Sensors] --> P
   P --> C
   C --> T[Digital twin]
@@ -32,7 +32,7 @@ flowchart TB
     Models that perceive (*a cup at x = 212 px*, *"stop"*), reason (plan steps from a goal) or act (VLA and RL policies that drive the robot). Any task, any modality, on the edge or in the cloud.
   </Card>
   <Card title="Control" icon="gamepad" href="/ai/control">
-    Choose who drives the robot, from a person with a gamepad to a policy that learned the task: manual input, skills, workflows, VLA models, RL policies.
+    Choose who drives the robot, from a person at the keyboard to a policy that learned the task: Manual teleop, Local teleop, Agentic or Policy.
   </Card>
   <Card title="Learn" icon="database" href="/feature-reference/datasets/import">
     Every run can be recorded. Recordings become datasets, datasets train the next VLA or RL policy, and the policy deploys back to the same twin.
@@ -59,7 +59,7 @@ Models can move real hardware. Keep a person one click away from taking control,
 
 <CardGroup cols={2}>
   <Card title="Ways to control a robot" icon="gamepad" href="/ai/control">
-    The five kinds of controller and when to use each.
+    The four kinds of controller and when to use each.
   </Card>
   <Card title="How hardware works" icon="cubes" href="/robots/overview">
     One twin model for arms, quadrupeds, drones and cameras.

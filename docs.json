@@ -62,6 +62,7 @@
                   "feature-reference/workflows",
                   "feature-reference/workflows/simulation-execution-target",
                   "feature-reference/workflows/call-model-prompt",
+                  "feature-reference/workflows/call-model-tracking",
                   "feature-reference/workflows/reusing-chains",
                   "feature-reference/workflows/edge-dependencies",
                   {
@@ -135,7 +136,9 @@
                 "pages": [
                   "feature-reference/environment-editor/teleoperation",
                   "feature-reference/arm-commands",
+                  "feature-reference/arm-cartesian-control",
                   "feature-reference/twin-saved-poses",
+                  "feature-reference/twin-movements",
                   "feature-reference/twin-joint-home-positions"
                 ]
               },
@@ -163,6 +166,8 @@
                   "overview/robotic-arms",
                   "tutorials/so101-teleop-dataset",
                   "tutorials/agilex-piper-quickstart",
+                  "robots/agilex-piper-move-twin",
+                  "feature-reference/edge/drivers/piper-collision-aware-motion",
                   "feature-reference/edge/drivers/openarm-ros2",
                   "feature-reference/hand-eye-calibration"
                 ]
@@ -236,6 +241,9 @@
                 "icon": "database",
                 "pages": [
                   "feature-reference/datasets/import",
+                  "feature-reference/datasets/timeseries",
+                  "feature-reference/environment-editor/sensor-bindings",
+                  "feature-reference/environment-editor/replay-feed",
                   "feature-reference/datasets/playground",
                   "feature-reference/datasets/format-conversion",
                   "feature-reference/datasets/episode-failures"
@@ -468,6 +476,9 @@
               "feature-reference/edge/drivers/base-driver-class",
               "feature-reference/edge/drivers/ros2-base-driver",
               "feature-reference/edge/drivers/driver-mixins",
+              "feature-reference/edge/drivers/arm-motion-building-blocks",
+              "feature-reference/edge/drivers/integrating-moveit",
+              "feature-reference/edge/drivers/stress-testing-your-driver",
               "feature-reference/edge/drivers/joint-motion-shaping",
               "feature-reference/edge/drivers/data-wire-format",
               "feature-reference/edge/drivers/data-fusion",

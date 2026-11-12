@@ -33,6 +33,23 @@ labels a joint as `default (0.0)` while manual control shows the same
 
 Velocity and effort updates still only touch `Twin.joint_states`.
 
+## Unknown joint names are rejected
+
+`PUT /api/v1/twins/{uuid}/joint_states` writes only the joints named in
+the twin's schema. If **none** of the supplied names exist in that
+schema, the request fails with `400` and lists the unknown and the
+expected names. Usually the cause is URDF joint names sent
+where schema names are expected. This applies to every caller, with or
+without `as_home_position`. Earlier the request returned success and
+wrote nothing, which hid the naming bug. Retrying will not help, so the
+frontend stops and shows "Pose not saved".
+
+A payload where at least one name matches still applies partially.
+A payload that names only joints the schema declares as fixed is a
+no-op, not a `400`: those names are real, just not controllable. A twin
+with no controllable joints (a rigid asset) still accepts any payload as
+a no-op.
+
 ## What live/teleop writes do *not* persist
 
 `PUT /api/v1/twins/{uuid}/joint_states` without `as_home_position`
@@ -57,3 +74,49 @@ asset can carry different durable poses.
 controllable joint without an explicit runtime entry. The same fallback
 is used by `Twin._derive_joint_states()` so MJCF composition, RL task
 hints, and the manual control bar all agree on the same default pose.
+
+The response carries a `position_source` array parallel to `name`, so a
+client can tell a real reading from a fallback:
+
+| Value | Meaning |
+| ----- | ------- |
+| `state` | A recorded runtime position — the robot reported it. |
+| `home` | No runtime position; the authored `home_position`. |
+| `default` | No runtime position and no authored home; the geometric zero. |
+| `simulation` | Only with `?source=simulation`: a fresh measurement from the running simulation. That read never falls back — with no fresh measurement it answers `409` instead of a saved pose. |
+
+Only `state` and `simulation` are measured positions. Treating a `home` or
+`default` row as a live reading shows a never-moved joint as a measured
+pose. `velocity` and `effort` keep ROS all-or-nothing semantics — they are
+empty unless *every* reported joint carries the value — so index them
+defensively rather than assuming they parallel `name`.
+
+## Returning to the edit/home pose
+
+In Simulate and Live, the Poses panel lists the twin's authored edit/home pose
+(the durable `home_position`) as an **Authored home** row, with a **Preview** so
+you can see it before triggering. Use it to recover a robot that has ended up in
+a bad configuration.
+
+- **Edit** — there is no row to return to, because in Edit the twin's current
+  pose *is* its authored home: applying any pose (or moving a joint slider)
+  updates the durable home directly. That is also why there is no save-home
+  button. Use **Save Pose** to capture the current pose under a name.
+- **Simulate / Playground** — the **Authored home** row offers **Snap**
+  (teleport the simulated robot there), **Move** (send it as one joint
+  target), and **Trajectory** (drive there along an interpolated path). A
+  running controller can override a snap; pause it first. Snap is behind a
+  feature flag during rollout; Move and Trajectory are always available.
+- **Live** — **Trajectory** is how you get a real robot home: it drives there
+  along an interpolated path. **Move** sends the home pose as a single target,
+  which on real hardware nudges toward it rather than arriving. Hardware is never
+  teleported, so there is no **Snap** in Live.
+
+Snap rebases an attached keyboard controller onto the home pose immediately; Move
+and Trajectory rebase it once the robot reports arriving. Either way the next
+keypress continues from home rather than pulling the robot back toward its
+previous target.
+
+To capture a *new* target pose, use **Save Pose** (it opens the pose dialog);
+to snap or move to any saved pose, see
+[Saved poses](/feature-reference/twin-saved-poses).

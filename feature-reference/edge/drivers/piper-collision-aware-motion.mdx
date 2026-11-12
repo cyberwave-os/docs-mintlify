@@ -1,0 +1,170 @@
+---
+title: "Piper Collision-Aware Motion"
+description: "Plan and execute collision-free arm moves on the AgileX Piper with scene primitives, straight-line approaches, and payload attachment"
+---
+
+<Note>
+**stub** — This page will be curated before publishing. Content below reflects the current implementation.
+</Note>
+
+## What it gives you
+
+The Piper twin plans against a **planning scene** you describe. A move that would
+hit the desk, the container, or another object is **refused**, not executed, and
+every refusal names a reason.
+
+Five commands, alongside the existing `grip`, `release`, `home` and `stop`. Poses
+are metres in the arm base frame (`base_link`) unless you name another frame, and
+describe the **grasp TCP** (the grasp centre, not the wrist).
+
+| Command | What it does |
+| --- | --- |
+| `scene_set` | Describe the world as boxes, cylinders and spheres |
+| `set_pose` | Move the TCP to a pose, or by one. `motion: "ptp"` takes any collision-free path; `motion: "lin"` moves in a straight line, refused if blocked, never bent |
+| `grasp` | Try a ranked list of grasp candidates and move to the first one that works |
+| `attach_payload` | Carry what you picked, so later plans keep it clear |
+| `detach_payload` | Release it |
+
+These are the arm-driver commands of the Python SDK. Their full argument tables
+and defaults are in [Arm motion building blocks](/feature-reference/edge/drivers/arm-motion-building-blocks#commands).
+`ee_pose` is `set_pose` with `motion: "ptp"` on the default backend.
+
+## When it is available
+
+The commands, their arguments and their refusal codes are the same whichever
+backend answers them. The Piper has two:
+
+- `moveit`: MoveIt beside the arm. The Piper's standard service graph runs it; that
+  graph is used when the twin does not define its own services.
+- `pinocchio`: the in-process planner.
+
+With `moveit.enabled` true, `moveit` is the default backend. Otherwise
+`pinocchio` is. A request can name the other one with `backend`.
+
+With MoveIt, a PTP move tries Pilz PTP first and falls back to OMPL. A LIN move is
+Pilz LIN. The in-process backend differs in two ways:
+
+- a PTP move that is blocked is refused, because it has no sampling planner to
+  route around an obstacle;
+- an `allow_touch` object is left out of the collision model, where MoveIt still
+  checks it against every arm link except the gripper.
+
+If MoveIt is the backend but is not running, the commands are refused with
+`backend_unavailable`, and the detail starts with `moveit:`. If the in-process
+backend cannot plan at all, the refusal is also `backend_unavailable`, with a
+detail starting `pinocchio:`. The jog commands always plan in-process.
+
+Every backend the driver uses holds the same scene and payload. A `scene_set` or
+payload change is applied to all of them, or to none.
+
+If a wrist camera is fitted and declared in the driver configuration, the
+planner includes it, so its geometry counts toward collisions.
+
+## A pick, in order
+
+```python
+piper = cw.twin("agilex/piper")
+
+piper.commands.scene_set(
+    scene_revision="rev-1",
+    objects=[
+        {"id": "desk", "primitive": "box", "dimensions": [1.2, 0.8, 0.04],
+         "pose": {"position": {"x": 0.35, "y": 0.0, "z": -0.02},
+                  "orientation": {"x": 0, "y": 0, "z": 0, "w": 1}}},
+        {"id": "toy", "primitive": "box", "dimensions": [0.12, 0.09, 0.07],
+         "pose": {"position": {"x": 0.32, "y": 0.05, "z": 0.035},
+                  "orientation": {"x": 0, "y": 0, "z": 0, "w": 1}}},
+    ],
+    allow_touch=["toy"],
+)
+
+# Moves to the first candidate that plans and stops at the grasp pose.
+piper.commands.grasp(
+    scene_revision="rev-1",
+    candidates=[
+        {"pose": grasp_a, "approach": [0, 0, -1]},  # straight down
+        {"pose": grasp_b},  # along the tool's own axis
+    ],
+)
+piper.commands.grip(force=1.0, max_effort_nm=0.8)  # N·m, 0.5–3.0
+piper.commands.attach_payload(object_id="toy", dimensions=[0.14, 0.11, 0.09])
+
+# Lift 5 cm straight up in the base frame.
+piper.set_pose([0.0, 0.0, 0.05, 0.0, 0.0, 0.0], mode="relative", motion="lin",
+               reference_frame="base_link", scene_revision="rev-1")
+```
+
+`grasp` plans three phases for each candidate, in rank order: a PTP move to the
+pregrasp pose, a straight approach onto the grasp pose, and a straight lift
+that is checked but not executed. The first candidate whose three phases all
+plan is executed up to the grasp pose. The gripper is left for you to close,
+and the lift is yours to send.
+
+`allow_touch` is what makes a grasp plannable: with the target in the scene, no
+path to a pose at the target is collision-free, because the fingers have to reach
+it. Listing it there permits contact with that object and nothing else.
+
+On MoveIt, each candidate is checked as one plan-only Pilz sequence (PTP, LIN,
+LIN). The chosen candidate is executed as a PTP move and a LIN move, and the
+result reports the planner `pilz_sequence`.
+
+`piper.set_pose(pose, ...)` sends the `set_pose` command with the same
+arguments. `piper.move(pose, ...)` is a shortcut for it.
+
+## Scene revisions
+
+`scene_revision` is a name you choose for one observation of the world. The
+motion commands quote it, and a request quoting a stale revision is refused.
+That is what stops a grasp computed from one camera frame being executed against
+a world that has since changed.
+
+If you leave `scene_revision` out of `scene_set`, the driver numbers the scene
+for you (`scene-1`, `scene-2`, ...). A motion command that leaves it out is
+not checked against a revision.
+
+Re-observe and send a fresh `scene_set` before a final approach. The planner
+knows nothing you did not tell it.
+
+## Watching progress
+
+Status is published on the twin's `state/motion` stream on every transition,
+at 2 Hz while a motion runs, and every 5 seconds while idle. It carries:
+
+- the default backend (`moveit` or `pinocchio`) and whether it is available;
+- the active scene revision and the attached payload;
+- the motion state (`idle`, `planning`, `executing`, `failed`, `cancelled`);
+- the `command`, `backend` and `motion_id` of the current motion;
+- which planner produced the last trajectory;
+- the last result or refusal.
+
+Commands carry no request id. The driver numbers every motion it starts, and
+the `last_result` or `last_refusal` that ends a motion names the same
+`motion_id`. A refusal of a command that never started has no `motion_id`.
+Every result has its own `timestamp_ms`. For a grasp, `last_result.selected_candidate`
+names the candidate that was executed. See
+[Results](/feature-reference/edge/drivers/arm-motion-building-blocks#results)
+for how to match a command to its result, or to get an `accepted` / `rejected`
+reply over MQTT v5.
+
+## Refusals
+
+A refusal is a normal outcome, not an error. Each one carries a code:
+`backend_unavailable`, `scene_revision_unknown`,
+`stale_robot_state`, `busy`,
+`invalid_scene`, `invalid_request`, `payload_already_attached`,
+`planning_failed`, `execution_failed`, `cancelled`.
+
+With MoveIt, `planning_failed` carries MoveIt's own reason in its detail, so a
+target inside an obstacle (`GOAL_IN_COLLISION`) reads differently from one the
+arm cannot reach (`NO_IK_SOLUTION`). The in-process planner names the collision
+or the failed IK sample instead.
+
+Each grasp candidate that is refused also raises its own
+`grasp_candidate_refused` alert (type `planning_failed`) on the twin. So you can
+see why every candidate before the chosen one failed.
+
+## Optional `expected_joints`
+
+Send the arm posture you observed when you computed a target. If the arm has
+moved since, the command is refused `stale_robot_state` rather than acting on a
+pose derived from a stale view.

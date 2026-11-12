@@ -1,7 +1,6 @@
 ---
 title: "Send Controller Command node"
 description: "Send a specific controller command to a twin with explicit controller and command selection."
-icon: "paper-plane"
 ---
 
 The **Send Controller Command** (`send_controller_command`) node provides a direct way to dispatch controller commands to a digital twin. Unlike Virtual Controller (which resolves commands dynamically from upstream strings), this node lets you **explicitly select** the twin, controller policy, and specific command at configuration time.
@@ -29,6 +28,10 @@ For keyboard/teleop controllers the command dropdown lists every available actua
 | `command` | string | No | Actuation string for keyboard/teleop controllers (e.g. `move_forward`). Set in inspector or wired from upstream. |
 | `params` | object | No | Command parameters (e.g. `{"linear_x": 1.5}`). Overrides binding defaults. Can be wired from upstream. |
 | `instruction` | string | No | Text prompt for model/VLA controllers. Ignored for keyboard controllers. |
+| `duration_seconds` | number | No | Keyboard/teleop: re-publish the command every 100 ms for this long. `0` (default) sends once. |
+| `wait_for_completion` | boolean | No | Keyboard/teleop, cloud only: wait for the robot to report the command's outcome before continuing. Default `false`. See [Waiting for completion](#waiting-for-completion). |
+| `completion_timeout_seconds` | number | No | How long `wait_for_completion` waits before failing the node. Default `60`, max `600`. |
+| `on_failure` | string | No | Live cloud runs: what this robot does when the run fails or is canceled. `stop` (default; the DJI app brakes and hovers), `none` (leave its current command running), `land` or `return_to_home` (stop, then that command). The last command node that drove a robot decides for it. Set under Advanced inputs. |
 
 ## Keyboard/teleop controllers
 
@@ -54,7 +57,26 @@ When a keyboard or teleop controller is selected:
 | `source_type` | `tele` (live) or `sim_tele` (simulation) | `edge` |
 | `command` | Selected actuation slug | Selected actuation slug |
 | `data` | From `params` input or binding defaults | From `params` input |
+| `data.move_id` | Live only: one id per node run, the same on every retry and repeat (a `move_id` already in `params` is kept) | Not set |
 | `timestamp` | Server-side `time.time()` | Worker-side `time.time()` |
+
+### Delivery
+
+A cloud run keeps **one** connection to the message broker for the whole execution. If the broker stalls, a live command keeps retrying for up to 20 s (the `LIVE_COMMAND_PUBLISH_DEADLINE_S` setting) before the node fails, and the error names the actual cause (no CONNACK / no PUBACK). Retried copies carry the same `data.move_id`, so drivers that deduplicate on it (the DJI phone app does) run the command once.
+
+### Waiting for completion
+
+By default the node finishes as soon as the command is published, so the next node runs while the robot may still be moving, and a command the robot rejected or aborted still reads as a success. With `wait_for_completion` on, the node subscribes to `cyberwave/twin/{uuid}/{command}/status` before publishing and waits for a terminal status:
+
+- **`completed`** — the node succeeds; the status payload is returned as `completion`.
+- **`failed`** or **`cancelled`** — the node fails with the robot's reason, the execution errors, and no later command is sent.
+- **nothing within `completion_timeout_seconds`** — the node fails.
+
+A status is matched on the command's `move_id`, or on the command name when the status carries no id (for example DJI's `take_photo`, `gimbal_rotate` and `land`). Use this instead of fixed Timer nodes between chained moves.
+
+<Warning>
+The driver must publish command status. Some drivers report `completed` when they *accept* a command rather than when it is physically done (DJI acknowledges `takeoff`, `land` and gimbal moves within milliseconds), so keep a short settle step after those.
+</Warning>
 
 ## Model controllers (mlmodel/vla)
 
@@ -77,6 +99,13 @@ When a model controller is selected:
 | `topic` | string | MQTT topic (keyboard/teleop) |
 | `payload` | object | Full MQTT payload or inference result |
 | `source_type` | string | `tele` / `sim_tele` / `edge` |
+| `move_id` | string | Live keyboard/teleop commands: the id carried in `data.move_id` |
+| `completion_status` | string | With `wait_for_completion`: the terminal status (`completed`) |
+| `completion` | object | With `wait_for_completion`: the robot's full status payload |
+
+## Stable controller references
+
+When the node is saved, the selected controller's `catalog_key` and slug are stored next to its UUID (`controller_catalog_key`, `controller_policy_slug`). If a catalog re-seed recreates the controller under a new UUID, the node resolves it by those instead of failing with "unknown controller policy". A `catalog_key` only ever resolves to a public catalog controller, never to a private copy. **Call Model** nodes do the same with the model's slug (`selected_model_slug`).
 
 ## When to use
 

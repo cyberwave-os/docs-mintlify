@@ -6,7 +6,7 @@ icon: "link"
 
 {/* TODO(docs): **STUB:** This reference will be expanded with screenshots and robot examples. */}
 
-In **Control**, map keys, gamepad axes or a leader arm to the robot's independent
+Map keyboard keys or a leader arm to the robot's independent
 joints. A joint can move in the 3D model without being independently commandable.
 
 - **Coupled joints** follow another joint. For example, a gripper can expose one
@@ -19,13 +19,14 @@ information on an older asset does not establish which joints are passive.
 
 ## Configure the input
 
-1. Open the asset's **Control** tab, or select the twin in **Workbench → Control**.
-2. Select **Joint target control**, then configure an input such as **Keyboard**.
-3. Assign a key pair to an independent joint and save. A PiPER gripper with the
+1. Select the twin and open its keyboard controller's settings from the
+   **Controller** section of the right-hand panel.
+2. Assign a key pair to an independent joint. A PiPER gripper with the
    declared finger coupling uses `joint7`; `joint8` is not a second manual target.
-4. Review the keys together in **Overview**. Saving a mapping does not start motion.
+3. Save for **This twin** or **All twins in this environment**. Saving a mapping
+   does not start motion.
 
-Twin-specific mappings customize a reusable input without changing its template.
+Customized keys change the twin or environment without changing the shared controller.
 Existing mappings remain available for review; after changing a robot's joint
 configuration, review them before use. Model outputs and leader mappings must
 also match the independently commandable joints.

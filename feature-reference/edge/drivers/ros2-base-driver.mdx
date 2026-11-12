@@ -267,7 +267,7 @@ A topic registered as **both** a `from_ros` publisher (`edge`) and a command lis
 
 ### Arm drivers: mixin listener + `from_ros` publisher
 
-For a full manipulator stack, **do not** register `joint/update` yourself. Compose [driver mixins](/feature-reference/edge/drivers/driver-mixins). The **[Piper driver](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-edge-nodes/piper/piper_driver.py)** shows the full integration.
+For a full manipulator stack, **do not** register `joint/update` yourself. Compose [driver mixins](/feature-reference/edge/drivers/driver-mixins). The **[Piper driver](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-edge-nodes/piper/public/cw_piper/driver.py)** shows the full integration.
 
 | Registration | Owner |
 | ------------ | ----- |

@@ -162,7 +162,7 @@ sequenceDiagram
 1. **`CONFIGURING`** — Log `[STATE] unconfigured → configuring`. Raise lifecycle alert + twin notice *"Driver starting"*.
 2. **`_connect_cloud_async()`** — `Cyberwave(source_type="edge")` (SDK defaults + `CYBERWAVE_*` env). Connect MQTT. Resolve twin: reuse `twin=` or fetch by `robot_uuid` / asset.
 3. **`_start_driver_telemetry_session()`** — Publish `telemetry_start` + `connected` on MQTT; start debounced `driver_info` via `BaseTelemetry`.
-4. **`register_interface_on_twin()`** — If `auto_register_interface` and class `REGISTRY_ID` are set: `twin.driver.set_schema(self.manifest)` (failures are logged, driver continues).
+4. **`register_interface_on_twin()`** — If `auto_register_interface` and class `REGISTRY_ID` are set: `twin.driver.set_schema(self.manifest)` (failures are logged, driver continues). Skipped when the twin still holds what this driver last wrote: the catalog hash and the digest of the twin's `mqtt` / `zenoh` blocks are recorded under `metadata["driver_catalog_sha256"]` and compared on start, so a rollback or an edit is re-registered. Call `register_interface_on_twin(force=True)` after a backend change to how catalogs compile.
 5. **`on_configure()`** — Your hook.
 6. **`CONNECTING`** — Twin notice *"Driver connecting to device"*. **`on_connect_to_device()`**.
 7. **`INACTIVE`** — Notice *"Driver wiring interfaces"*. **`on_register_callbacks()`** then **`_wire_interface_from_registry()`**:

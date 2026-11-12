@@ -1,0 +1,49 @@
+---
+title: "Arm Cartesian control"
+description: "Read an arm's end-effector pose and control how fast it moves"
+tag: "stub"
+---
+
+## Reading the end-effector pose
+
+Arm twins report the measured pose of their end-effector, so you can read where
+the tool actually is rather than inferring it from joint angles.
+
+```python
+pose = twin.pose.get(version="v1")  # arms that publish /pose, e.g. AgileX Piper
+print(pose.position.x, pose.position.y, pose.position.z)
+print(pose.orientation.w)
+```
+
+The pose is in the robot's base frame and updates continuously from the robot's
+own joint feedback. Nothing is reported until the arm has sent its first
+feedback, so treat an empty result as "not ready yet" rather than "at the
+origin".
+
+Where supported, the reported point is the **grasp centre** — the place the
+fingers actually close — not a point inside the wrist. Robots expose the offset
+to that point as a setting you can measure and correct on your own hardware.
+
+## Controlling speed
+
+`ee_move` and `ee_rotate_*` accept an optional `speed` between 0 and 1, applied
+to that one command only. Use it to travel quickly and approach slowly.
+
+```python
+twin.commands.ee_move(forward=0.10, speed=1.0)   # transit
+twin.commands.ee_move(up=-0.02, speed=0.2)       # slow, careful descent
+```
+
+Omitting `speed` leaves the robot's configured speed unchanged. A robot that
+exposes no speed control ignores the argument. `grip`, `release`, `home`, and
+`base_rotate_*` do not take a `speed`. On dual-arm robots the prefixed commands
+(`left_ee_move`, `right_ee_rotate_up`, …) accept it too.
+
+## Gripper width
+
+Arms that report a continuous gripper opening send the measured width rather
+than a simple open/closed label, so you can tell whether a grasp actually
+holds an object by comparing the opening after closing against an empty close.
+
+See also [Arm commands](/feature-reference/arm-commands) for the full command
+vocabulary.

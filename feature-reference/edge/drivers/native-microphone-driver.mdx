@@ -1,7 +1,7 @@
 ---
 title: "Native microphone driver"
 sidebarTitle: "Native microphone driver"
-description: "Set up the native Cyberwave microphone driver for WebRTC audio, MQTT start/stop control, and Zenoh audio worker hooks."
+description: "Set up the native Cyberwave microphone driver for WebRTC audio, microphone arrays, MQTT start/stop control, and Zenoh audio worker hooks."
 icon: "microphone-lines"
 ---
 
@@ -13,7 +13,9 @@ import EarlyAccess from '/snippets/early-access.mdx';
 
 ## What It Provides
 
-The native microphone driver runs on the edge device that has the microphone attached. It captures audio through `sounddevice` / PortAudio, sends a WebRTC audio stream to the twin, and publishes raw chunks to the local Zenoh data bus on `audio/default` by default.
+The native microphone driver runs on the edge device that has the microphone attached. It captures audio through `sounddevice` / PortAudio, sends a WebRTC audio stream to the twin, and publishes raw chunks to the local Zenoh data bus on `audio/<sensor key>`, a key built from the sensor's `id` (see [Sensor ids and Zenoh keys](#sensor-ids-and-zenoh-keys)). For the standard catalog microphone, whose sensor id is `audio`, that is `audio/audio`.
+
+The same driver also runs microphone arrays such as the miniDSP UMA-16: one twin, one sensor per microphone, every channel recorded as its own track. See [Microphone arrays](#microphone-arrays).
 
 It also subscribes to:
 
@@ -54,19 +56,19 @@ cyberwave/twin/{twin_uuid}/webrtc-command
 { "command": "stop_recording",  "source_type": "tele", "sensor": "audio", "frontend_type": "audio", "session_id": "sdk_9314159f" }
 ```
 
-`source_type` is `"tele"` when the frontend REC button publishes the message and `"edge"` when the microphone driver relays it (fallback path). `session_id` is a free-form correlation hint; the media-service derives the actual recording session from the live SFU producer state and only echoes the field back in its logs. The `sensor` value must match a sensor `id` from `twin.capabilities.sensors` (computed from `twin.universal_schema.sensors[]`); the audio widget resolves it via `getAudioSensorConfig(twin).sensorId`.
+`source_type` is `"tele"` when the frontend REC button publishes the message and `"edge"` when the microphone driver relays it (fallback path). `session_id` identifies the **owner** of a recording, and the media-service keeps one set of owners per recording. A start with a new `session_id` joins a recording that is already running instead of starting a second one, and repeating a start with the same id changes nothing. A stop removes only its own owner: the recording keeps going while other owners remain, and ends when the last one leaves. A command without a `session_id` uses a shared legacy owner, and a stop without one also releases recordings started automatically (`auto_recording_audio`). So always send the stop with the same `session_id` as its start; a stop with a different id releases nothing and leaves the recording running. The `sensor` value must match a sensor `id` from `twin.capabilities.sensors` (computed from `twin.universal_schema.sensors[]`); the audio widget resolves it via `getAudioSensorConfig(twin).sensorId`.
 
 The REC button is **recording-only**: it never republishes `start_audio` / `stop_audio`. The audio widget auto-publishes `start_audio` on mount and `stop_audio` on unmount, so by the time the user can click REC the WebRTC producer is already running. Re-sending `start_audio` from the REC click would just log `start_audio command received - stream already active` on the driver and add a 3 s ACK wait before the actual recording publish.
 
-The media-service SFU starts (or stops) persisting the running audio track and replies on `cyberwave/twin/{twin_uuid}/webrtc-command/status`:
+The media-service SFU starts (or stops) persisting the running audio track, or on an array every channel, and replies on `cyberwave/twin/{twin_uuid}/webrtc-command/status`:
 
 ```json
 { "command": "start_recording", "status": "ok", "message": "recording started", "recording_id": "...", "source_type": "backend", "timestamp": 1716643200.123 }
 ```
 
-As a **fallback path** for callers that only know the twin command topic, the microphone driver also accepts `start_recording` / `stop_recording` on `cyberwave/twin/{twin_uuid}/command` and forwards them verbatim to `webrtc-command`. On the fallback path the driver does **not** publish its own status ACK — callers consume the authoritative status from `webrtc-command/status`.
+As a **fallback path** for callers that only know the twin command topic, the microphone driver also accepts `start_recording` / `stop_recording` on `cyberwave/twin/{twin_uuid}/command` and forwards them to `webrtc-command` with the smallest payload the media-service needs (shown under [Configuration](#configuration)). On a microphone array it forwards one command that covers every channel instead, so the whole array starts and stops together (see [Recording an array](#recording-an-array)). On the fallback path the driver does **not** publish its own status ACK — callers consume the authoritative status from `webrtc-command/status`.
 
-`CYBERWAVE_METADATA_AUTO_RECORDING_AUDIO=true` makes the **initial** WebRTC offer carry `recording: true` so the media-service starts recording in the same negotiation. After startup, recording is controlled entirely by `start_recording` / `stop_recording`. When `CYBERWAVE_METADATA_ENABLE_RECORDING=false`, the driver drops fallback relays silently (the frontend publishes to `webrtc-command` itself and is not affected).
+`CYBERWAVE_METADATA_AUTO_RECORDING_AUDIO=true` makes the **initial** WebRTC offer carry `recording: true` so the media-service starts recording in the same negotiation. After startup, recording is controlled entirely by `start_recording` / `stop_recording`. When `CYBERWAVE_METADATA_ENABLE_RECORDING=false`, the driver drops fallback relays, logging a warning for each (the frontend publishes to `webrtc-command` itself and is not affected).
 
 ## Setup
 
@@ -105,11 +107,13 @@ The standard Cyberwave catalog microphone asset declares one sensor block. Both 
 }
 ```
 
-Edge-core maps `parameters` → `CYBERWAVE_METADATA_*` env vars when the driver container starts. The driver publishes WebRTC offers with:
+Edge-core maps `parameters` → `CYBERWAVE_METADATA_*` env vars when the driver container starts, and the driver reads the twin's metadata only then. You do not have to restart anything after editing these settings, though: Edge Core notices the change and restarts the microphone driver for you, usually within half a minute; a change saved within 90 seconds of the driver's start is the exception and needs a manual restart (see [When you change a twin's settings](/feature-reference/edge/drivers/overview#when-you-change-a-twins-settings)). The restart briefly interrupts the live stream, and a recording that is running continues in a new file.
+
+The driver publishes WebRTC offers with:
 
 | Offer field | Catalog value | Role |
 | --- | --- | --- |
-| `sensor` | `"audio"` | Routing key (`sensors[].id`) |
+| `sensor` | `"audio"` | Routing key (`sensors[].name`, equal to the `id` in the catalog) |
 | `sensor_type` | `"audio"` | Matches `sensors[].type`; media-service classifies as **producer** |
 | `role` | `"producer"` | Active edge twin — publishes audio into the SFU |
 | `sender` | `"edge"` | Only edge may produce microphone traffic (TR-1.24) |
@@ -120,34 +124,187 @@ Recording commands (`start_recording` / `stop_recording`) use `"sensor": "audio"
 
 | Variable | Default | Purpose |
 |---|---:|---|
-| `CYBERWAVE_METADATA_AUDIO_DEVICE` | `default` | Select an input by index, name fragment, or `default`. |
+| `CYBERWAVE_METADATA_AUDIO_DEVICE` | `default` | The input to open: `default`, an index such as `0`, a device name (exact, then partial match), or a stable link such as `/dev/snd/by-id/…` or `/dev/snd/by-path/…`, which pins one physical unit. Maps from the twin's top-level `audio_device`, else from the sensor's `audio_device`. See [Choosing the device](#choosing-the-device). |
+| `CYBERWAVE_METADATA_SERIAL_NUMBER` | unset | USB serial of the unit to bind to, from the twin's top-level `serial_number`. Outranks `audio_device`. |
 | `CYBERWAVE_METADATA_ENABLE_AUDIO` | `true` | Enables WebRTC startup and reconnect. If `false`, no WebRTC audio or recording starts. Maps from `enable_audio` in the twin JSON. |
-| `CYBERWAVE_METADATA_ENABLE_RECORDING` | `true` | Gates the driver's fallback relay of `start_recording` / `stop_recording` (on the command topic) to the media-service. Does not affect `start_audio` / `stop_audio` (live stream is always allowed when `enable_audio=true`), and does not affect direct `webrtc-command` publishes from the frontend or Recorder node. Maps from `enable_recording` in the twin JSON. |
-| `CYBERWAVE_METADATA_AUTO_RECORDING_AUDIO` | `false` | When `true`, sets `recording: true` on the **initial** WebRTC offer so the media-service auto-starts recording at startup. After startup, recording is driven by explicit `start_recording` / `stop_recording`. Maps from `auto_recording_audio` in the twin JSON. |
-| `CYBERWAVE_METADATA_AUDIO_CHANNEL` | `audio/default` | Zenoh channel for raw audio chunks. |
-| `CYBERWAVE_METADATA_AUDIO_MIC_NAME` | `audio` | WebRTC `sensor` routing key (catalog `sensors[].id`). |
+| `CYBERWAVE_METADATA_ENABLE_RECORDING` | `false` | Gates the recording commands the driver forwards from the command topic to the media-service: the single-microphone relay and, on an array, the command for every channel. Does not affect `start_audio` / `stop_audio` (live stream is always allowed when `enable_audio=true`), and does not affect direct `webrtc-command` publishes from the frontend or Recorder node. Maps from `enable_recording` in the twin JSON; on an array, from the first audio sensor, for the whole array. When unset, it follows `CYBERWAVE_METADATA_AUTO_RECORDING_AUDIO`. The Generic Microphone asset ships with `false`. It controls what the driver forwards, not whether the microphone can be recorded. |
+| `CYBERWAVE_METADATA_AUTO_RECORDING_AUDIO` | `false` | When `true`, sets `recording: true` on the **initial** WebRTC offer so the media-service auto-starts recording at startup. After startup, recording is driven by explicit `start_recording` / `stop_recording`. An explicit `enable_recording: false` blocks it, and the driver logs a warning. Maps from `auto_recording_audio` in the twin JSON. |
+| `CYBERWAVE_METADATA_AUDIO_CHANNEL` | `audio/<sensor key>` | Explicit Zenoh channel for raw audio chunks on a single-microphone twin. When unset it is built from the sensor id (see [Sensor ids and Zenoh keys](#sensor-ids-and-zenoh-keys)), and is `audio/default` only when there is no sensor id at all. Ignored on arrays. |
+| `CYBERWAVE_METADATA_AUDIO_MIC_NAME` | `audio` | WebRTC `sensor` routing key of a single-microphone twin, also used in the recording commands the driver forwards. Maps from the sensor's `name`, not its `id`; keep the two identical (see [Sensor ids and Zenoh keys](#sensor-ids-and-zenoh-keys)). |
 | `CYBERWAVE_METADATA_AUDIO_SAMPLE_RATE` | `48000` | Capture sample rate (catalog standard). WebRTC output is always resampled to 48 kHz Opus. |
-| `CYBERWAVE_METADATA_AUDIO_CHANNELS` | `1` | Capture channels; auto-detection can upgrade to stereo. |
+| `CYBERWAVE_METADATA_AUDIO_CHANNELS` | `1` | Capture channels, 1 to 64: `1` mono, `2` stereo; when unset, auto-detection can upgrade to stereo. Above 2 on a twin whose single audio sensor has no `channel_index`, the driver records each channel as `<id>_chNN` (see [One sensor for every channel](#one-sensor-for-every-channel)). Maps from `audio_channels`. |
+| `CYBERWAVE_METADATA_AUDIO_GAIN_DB` | off | Optional gain in dB (−60 to +60), followed by a soft limiter. For raw MEMS arrays such as the miniDSP UMA-16; most microphones don't need it. Maps from `audio_gain_db`. |
+| `CYBERWAVE_METADATA_AUDIO_HIGH_PASS_HZ` | off | Optional 2nd-order high-pass cutoff in Hz, for example `20` (DC and subsonic only) or `80` (also removes fan rumble). Maps from `audio_high_pass_hz`. |
+| `CYBERWAVE_METADATA_AUDIO_LOW_PASS_HZ` | off | Optional 2nd-order low-pass cutoff in Hz, for example `12000`. Removes the ultrasonic PDM noise of raw MEMS arrays before the gain. Maps from `audio_low_pass_hz`. |
 
-When relaying a fallback recording command, the driver publishes the smallest payload the media-service needs (note `source_type: "edge"` here vs. `"tele"` for the frontend's REC button):
+`audio_gain_db`, `audio_high_pass_hz` and `audio_low_pass_hz` are off when missing, `null` or `0`. On a multichannel array (one sensor per `channel_index`), set them on each sensor's `parameters`; each channel uses its own values. They apply to the live stream, recordings and Zenoh alike.
+
+When relaying a fallback recording command for a single microphone, the driver publishes the smallest payload the media-service needs. A relayed REC is a command, so it carries `source_type: "tele"` like the frontend's REC button, and `source_subtype: "generic_microphone"` says the driver sent it. Arrays send a different command, described in [Recording an array](#recording-an-array).
 
 ```json
-{ "command": "start_recording", "source_type": "edge", "sensor": "audio", "frontend_type": "audio" }
+{ "command": "start_recording", "source_type": "tele", "source_subtype": "generic_microphone", "sensor": "audio", "frontend_type": "audio" }
 ```
 
 ```json
-{ "command": "stop_recording", "source_type": "edge", "sensor": "audio", "frontend_type": "audio" }
+{ "command": "stop_recording", "source_type": "tele", "source_subtype": "generic_microphone", "sensor": "audio", "frontend_type": "audio" }
 ```
 
 The media-service resolves the twin UUID from the MQTT topic and defaults the stream identity to `audio/live/default`. The same payload shape is used by the frontend audio widget's REC button and by the Recorder workflow node, so the three paths converge on the same media-service handler and the same ACK on `webrtc-command/status`.
 
-To run multiple microphones on one device, run multiple driver instances. Give each instance a different `CYBERWAVE_TWIN_UUID` and set `CYBERWAVE_METADATA_AUDIO_DEVICE` to the desired input.
+## Choosing the device
+
+On a host with a single microphone, the system default input or a device name is all the driver needs. A name such as `UMA16v2` is matched against the input devices exactly first and then as a partial match. If nothing matches, the driver logs a warning and falls back to the default input, which is convenient on a one-microphone host and easily the wrong device on a host with several.
+
+To run several microphones on one edge, give each one its own twin, and so its own driver, and tell each twin which unit is its own. A device name cannot do that: two units of the same model have identical names, and their ALSA card numbers change when they are replugged. The twin should **pin** its unit instead, in one of two ways:
+
+- a stable udev link in the twin's top-level `metadata.audio_device`: `/dev/snd/by-id/…` follows the device to any USB port, while `/dev/snd/by-path/…` follows the USB port and is the only way to tell apart two identical units that report no USB serial;
+- a USB serial in the twin's top-level `metadata.serial_number`, matched against the names under `/dev/snd/by-id`. Keep it a JSON string so leading zeroes survive.
+
+On Linux you rarely write these by hand. `cyberwave edge install` pins each microphone twin to the unit you pick (or the only one that fits), writes the link to the twin's `audio_device` and clears `serial_number`, so that a leftover serial cannot override the new pin. Twins that also carry a camera, such as a webcam or a Unitree Go2, are left out of this step: their driver picks the microphone by device name, so only their video is pinned. See [Pin cameras and microphones](/feature-reference/edge/drivers/overview#pin-cameras-and-microphones-by-serial-number).
+
+The driver takes the first of these that is set: the macOS bridge URL, then `serial_number`, then `audio_device` (the top-level pin before the sensor's own `audio_device`), then the system default. Pins belong on the twin, never on the asset, where they would bind every new twin to the same unit.
+
+**A pinned device is waited for, never replaced.** Unlike a name, a pin names one physical unit, so the driver does not fall back to another input when it is absent. While the pinned unit is missing, because it is unplugged or has not enumerated yet after a cold boot, the driver raises one `sensor_failure` alert that names the device and keeps waiting for it. As soon as the unit is back, the driver opens it, follows it to its new card number if the replug renumbered it, and resolves the alert. Expect silence rather than another microphone's audio. The one exception is a `serial_number` that matches none of the USB audio devices present when the driver starts: that is treated as a configuration mistake, and the driver stops with an error that asks you to check the serial.
+
+Pins only work when the driver container can see the host's `/dev/snd`, because that is where the driver resolves the serial or link to a sound card. Edge Core passes `/dev/snd` to the microphone driver on Linux, so this matters only when you start the container yourself (see [Setup](#setup)). Without it, a `serial_number` is ignored with a warning and the driver carries on with `audio_device` or, failing that, the default input, so the pin is not enforced; a link pin can never be found, so the driver streams nothing and keeps waiting.
+
+Keep one twin per physical device. ALSA opens a hardware input exclusively, so a second driver aimed at the same unit cannot open it.
+
+## Sensor ids and Zenoh keys
+
+Each microphone sensor publishes its raw PCM on the edge's Zenoh data bus under `audio/<key>`, where the key is derived from the sensor's `id`. Zenoh keys here may contain only lowercase letters, digits and `_`, and must start with a letter, so the driver converts the id:
+
+- it is lower-cased;
+- every other character becomes `_` (a run of them becomes a single `_`), and `_` at either end is dropped;
+- an id that does not start with a letter gets an `s_` prefix.
+
+| Sensor `id` | Zenoh key |
+|---|---|
+| `audio` | `audio/audio` |
+| `SPH1668LM4H_ch01` | `audio/sph1668lm4h_ch01` |
+| `Mic-1` | `audio/mic_1` |
+| `1st mic` | `audio/s_1st_mic` |
+
+Use the converted key wherever you subscribe to Zenoh, for example `@cw.on_audio(twin_uuid, sensor="sph1668lm4h_ch01")` in an [edge worker](/feature-reference/edge/drivers/edge-workers). The live stream, recordings and recording commands do not convert anything, but they do not all use the same field. On a single-microphone twin, the live stream and the recording commands the driver forwards are addressed by the sensor's **`name`**, while the Zenoh key comes from its **`id`**; on an array, every channel is addressed by its sensor `id`. The frontend addresses a microphone by its id, so a single-microphone twin whose `id` and `name` differ can end up with a live stream and recording commands that do not match. Keep `id` and `name` identical, as the catalog microphone does (`audio` and `audio`). Two sensors whose ids convert to the same key, such as `Mic-1` and `mic_1`, cannot both stream: the driver keeps the first one and logs a warning. The simplest way to avoid surprises is to give sensors ids made of letters, digits and underscores only.
+
+## Microphone arrays
+
+A microphone array is one twin with one sensor per microphone. The driver captures every channel from the same device clock, so sample *n* is the same instant on every channel, records each channel as its own track, and lets you listen to the array as one live stream.
+
+### Declaring the channels
+
+Declare one audio sensor per microphone in the asset's universal schema (`universal_schema.sensors[]`), and set `parameters.channel_index` on each one to the device input it reads, counted from 0. The backend resolves the schema into the twin's `capabilities.sensors`, and that is where the driver reads them, like every other driver reads its sensors. Two or more sensors with a `channel_index` make the twin an array. A single sensor with a `channel_index` is an ordinary microphone: the driver logs that it ignored the index. If the twin declares several audio sensors and none has a `channel_index`, the driver logs a warning and captures one stream.
+
+```json
+{
+  "id": "SPH1668LM4H_ch01",
+  "name": "SPH1668LM4H_ch01",
+  "type": "audio_mono",
+  "parent_link": "uma16_v2_link",
+  "parameters": {
+    "channel_index": 0,
+    "audio_device": "UMA16v2",
+    "audio_channels": 1,
+    "audio_sample_rate": 48000,
+    "audio_gain_db": 48,
+    "audio_high_pass_hz": 80,
+    "audio_low_pass_hz": 12000
+  }
+}
+```
+
+This is a sensor of `capabilities.sensors`. The backend forwards these per-sensor settings from the schema: `channel_index`, `audio_gain_db`, `audio_high_pass_hz`, `audio_low_pass_hz`, `audio_device`, `audio_channels`, `audio_sample_rate`, `audio_bit_depth`, `enable_audio`, `enable_recording` and `auto_recording_audio`. A setting outside that list does not reach the driver. Device-level values that belong to no sensor, such as `serial_number`, the `audio_device` pin and `audio_sync_marker_interval_s`, stay in the twin's top-level `metadata`.
+
+<Note>
+  `metadata.sensors` still works as a deprecated fallback: when a twin's `capabilities.sensors` declares no audio sensor, the driver reads the audio sensors of `metadata.sensors` and logs a warning. A `metadata.sensors` list also *replaces* the schema's sensors in the twin's `capabilities`, which hides the mounts the schema declares. Existing UMA-16 and generic-microphone twins that carried a `metadata.sensors` list were moved into their schema automatically; a list that could not be moved safely (a sensor the asset does not declare, say) stays in place and keeps working through this fallback.
+</Note>
+
+A few rules then decide what streams:
+
+- **Any subset of the inputs.** The driver opens as many device inputs as the highest `channel_index` needs and streams only the declared ones, so you can leave unused microphones out.
+- **Up to 64 channels.** `channel_index` must be a whole number from 0 to 63; a sensor with any other value is ignored with a warning.
+- **No duplicates.** When two sensors claim the same index, or their ids convert to the same Zenoh key, the first one wins and the driver logs a warning.
+- **Inputs the device does not have.** A sensor whose index is beyond the device's inputs (index 16 on a 16-input array, say) is neither streamed nor recorded, and the twin gets one `microphone_channel_unavailable` alert naming it. The alert clears at the next start where the device provides every declared channel.
+- **Per-channel and per-array settings.** Gain and filters are read from each channel sensor, so each channel can have its own. `enable_audio`, `enable_recording` and `auto_recording_audio` apply to the whole array and are read from the first audio sensor: give every channel the same values. The driver warns at start when the channels disagree on `enable_recording`.
+
+Channels cost CPU and bandwidth on the edge. Sixteen channels take about a fifth of a Raspberry Pi 5 core and about 1 Mbit/s of uplink, and each extra channel adds its share.
+
+### One sensor for every channel
+
+There is a shorter way to declare an array: a single audio sensor, without `channel_index`, whose `audio_channels` is above 2 (up to 64). The driver then opens that many device inputs and treats each one as a channel named after the sensor, `<id>_ch01`, `<id>_ch02` and so on, counted from 01. Those names are what you find in recordings and, converted, in the Zenoh keys (`audio/<key>_ch01`, …). The live stream and recording commands, on the other hand, use the sensor's own `id`, so the audio widget's **REC** button and a Recorder node aimed at that sensor record every channel together, exactly as for a declared array.
+
+The shortcut has limits. Every channel shares the one sensor's settings, so there is no per-channel gain, filter or position, and the audio widget offers no channel selector, because it only recognises channels declared with `channel_index`; scripts can still choose the live source with `set_listen_source` and an `<id>_chNN` name. Prefer one sensor per channel with `channel_index` whenever you can.
+
+### Setting up a UMA-16
+
+The miniDSP UMA-16 v2 asset declares its sixteen microphones as channel sensors in its universal schema, `SPH1668LM4H_ch01` to `SPH1668LM4H_ch16`, with `channel_index` 0 to 15, the `UMA16v2` device name, and gain and filter settings suited to its raw MEMS microphones. Channel `chNN` is the microphone printed `MIC NN` on the board. Every sensor is mounted on the asset's `uma16_v2_link`: its `offset.position` is that microphone's place in the link frame, the 42 mm grid around the array centre `(0, 0.0218, 0.0123)` metres, with the board facing up (grid in the x-y plane). That is what places the sixteen microphones on the device in the 3D view and in simulation.
+
+A twin copies the asset's schema once, when it is created, and owns its copy from then on: tune the gain of one deployment by editing that sensor in the twin's own schema, which a later sync with the asset keeps. The flip side is that a UMA-16 twin created before the asset declared the channel sensors still holds the old single `SPH1668LM4H` sensor, and the driver then streams a single channel with no gain or filters. If the audio widget offers no channel selector and the driver log lacks the lines below, sync the twin with its asset. Twins that carried a `metadata.sensors` list were already moved to the asset's schema automatically.
+
+<Note>
+  The driver reads the twin's sensors when it starts, and edge-core restarts a driver on a change to the twin's top-level `metadata`, not to its `capabilities`. After changing a sensor setting in the twin's schema, restart the driver for it to apply.
+</Note>
+
+A host with a single array finds it by its `UMA16v2` name. With two or more arrays on one edge, pin each twin to its own unit as described in [Choosing the device](#choosing-the-device). A healthy start logs `capturing 16 channels`, one `Audio processing chN …` line per channel and `Multichannel audio on ONE peer connection: live track SPH1668LM4H_ch01 (source all) …`.
+
+### Recording an array
+
+Recording an array works the way it does for a single microphone. Press **REC** in the audio widget, use a [Recorder](/feature-reference/workflows/recorder) node in a workflow, or send `start_recording` from a script: any recording command that names one channel of the array records all of them, so a command written for the first channel already records the whole array. `auto_recording_audio: true` starts recording the whole array whenever the driver connects.
+
+The array is one recording with one set of owners, identified by the commands' `session_id` as described under *Recording* near the top of this page. If the widget and a workflow both record the array, the second start joins the running recording, each stop releases only its own `session_id`, and the files end when the last owner stops. A script must therefore stop with the same `session_id` it started with. Commands sent through the driver's command topic need no id: the driver gives each start one and reuses it for the matching stop.
+
+What you get is one recording per channel. Each channel is stored as its own recording, under its own sensor id, so per-channel downloads and APIs work exactly as they do for a single microphone. The channels of one recording are aligned: they all start at the moment the media service accepts the command, share the same start time, end on the same sample when you stop, and therefore have the same length. They cannot drift apart, because every channel comes from one capture clock and travels in the same 20 ms message.
+
+The edge keeps the last 30 seconds of audio for the recording when its connection to the media service stalls, and sends it once the connection recovers, so a network outage of up to 30 seconds leaves no gap in the files as long as the connection itself survives. If the connection has to be replaced (for example after the edge changes its network address), up to about one second of audio that was already in transit can be lost; the driver counts it and raises an `audio_capture_loss` alert. A longer outage costs the oldest audio: the recording then has one gap, filled with silence at the same place on every channel, so the files keep their wall-clock length and stay aligned. After an outage, stopping can take up to 30 seconds while that backlog drains, yet the files still end at the moment you stopped.
+
+Some events split a recording. If the connection drops altogether, or the driver restarts, which includes the automatic restart after a settings change, the current set of files ends and, if the recording is still running, a new aligned set starts when the driver is back. The fraction of a second that was in flight when the connection dropped can be lost.
+
+While the array records, the audio widget shows the progress of every channel, for example `REC 16/16 · 1,500 chunks · 0 filled`: how many channels are recording out of how many the array has, how many 20 ms chunks were written, and how many of those were silence filled in for a gap. After an outage it adds how far the recording is behind (`2.5 s behind`) until the backlog has drained, and it names any channel that failed, is missing, or stopped growing while the others grew.
+
+In Replay's recordings list, the channels of one recording appear as a single row with an `N channels` badge. Tick the row to include every channel, or expand it to see each channel, labelled with its sensor (for example `SPH1668LM4H_ch01`), and pick individual ones.
+
+### When a set is incomplete
+
+A set of channel recordings is either complete or marked incomplete. The marker, `complete: false`, is stored with each channel's recording metadata and returned in the media service's reply to the stop command on `cyberwave/twin/{twin_uuid}/webrtc-command/status`. A set is incomplete when:
+
+- **a channel failed.** Its recorder stopped during the recording, so that channel's file ends early and the channel is marked failed. The other channels carry on to the end.
+- **a channel was missing.** The recording command listed a sensor that the array does not stream, for example one dropped with a `microphone_channel_unavailable` alert. It is reported as missing, and the set is incomplete from the start.
+- **the stop could not wait for the backlog.** When the audio still in transit after a long outage has not arrived 30 seconds after the stop, every channel ends on the last audio received, earlier than the moment you stopped.
+
+The files that exist are still aligned with each other and share their start, so an incomplete set is usable: it is narrower or shorter than you asked for, not scrambled. To find the cause, look at the widget's progress line while recording (it names failed and missing channels), the twin's `microphone_channel_unavailable` and `audio_capture_loss` alerts, and the edge's network connection.
+
+### Listening to an array
+
+An array has one live stream, not one per channel. By default it plays **All channels**, a mix of every channel. The selector next to **REC** in the audio widget switches it to a single channel, and back. The choice is shared: it changes what everyone watching the twin hears, and every viewer's selector shows the current choice. The switch takes effect within a 20 ms tick, without reconnecting. The live stream is never recorded; recordings always come from the channels themselves, whatever you are listening to.
+
+The widget's header counts what reaches your browser, for example `All channels · 12,345 chunks · 3 lost (0.02 %)`. A driver restart returns the stream to **All channels**, and so does losing the selected channel. Arrays use a longer capture buffer than single microphones, which keeps them from losing audio under load at the price of up to about 140 ms of extra live latency; recordings are not delayed by it.
+
+Scripts can make the same choice by publishing on `cyberwave/twin/{twin_uuid}/command`:
+
+```json
+{ "command": "set_listen_source", "source": "all" }
+{ "command": "set_listen_source", "source": "SPH1668LM4H_ch05" }
+```
+
+A command sent in the platform's command envelope, with the source in `data` (`{"command": "set_listen_source", "data": {"source": "all"}}`), works too.
+
+The driver publishes the current choice as a retained message on `cyberwave/twin/{twin_uuid}/audio-listen-state`, `{"source": "all", "sensors": [...], "source_type": "edge"}`. A source that is neither `all` nor one of the streamed channel sensors is ignored.
+
+### Audio lost on the edge
+
+Every 10 seconds the driver checks whether audio was lost on the edge before it could be sent: blocks the capture could not keep up with, which it replaces with silence so that the channels stay aligned and the files keep their length, and audio dropped from the 30-second backlog during a longer outage. When it finds any, it logs a warning and raises one `audio_capture_loss` alert on the twin, for example "Microphone audio lost on the edge: 1.2 s on 16 channels in the last 10 s". The alert resolves itself after a minute without loss.
+
+Capture losses almost always mean the edge is short of CPU. Check for an `edge_cpu_saturation` alert, which names the busiest containers, and avoid analysing or building on the same edge while it records; decode and analyse recordings on another machine. The alert does not cover the rare `input overflow` that PortAudio itself reports in the driver log: those samples are lost before the driver sees them, and they make the recording slightly shorter than wall-clock time while the channels stay aligned.
+
+### Media service support
+
+Array recording needs a media service that accepts it. Against an older one the array still streams live audio, but nothing is recorded, and the twin gets a `microphone_multichannel_recording_unsupported` alert ("This media-service cannot record multichannel audio; update it"). Once the media service is updated, the next connection records again and clears the alert.
 
 ## Linux Audio Notes
 
 The driver image installs `libportaudio2`, which gives `sounddevice` access to PortAudio's ALSA backend. If the host routes audio through PulseAudio or PipeWire, also make the relevant Pulse/PipeWire socket and client libraries available to the container.
 
-The driver logs all input devices at startup and publishes selected-device metadata to the twin. Set `CYBERWAVE_LOG_LEVEL=DEBUG` to see raw environment values and the resolved microphone configuration.
+The driver logs all input devices at startup, and which one it selected; it does not write the selected device back to the twin (see [Twin metadata](#twin-metadata)). Set `CYBERWAVE_LOG_LEVEL=DEBUG` to see raw environment values and the resolved microphone configuration.
 
 ## macOS Notes
 
@@ -167,7 +324,7 @@ For local debugging without Docker, use `./run-local.sh` (direct `sounddevice` /
 ## Edge Cases
 
 - No audio devices at startup: the driver enumerates devices and fails configuration if none are available. Publishing a microphone sensor-failure alert before retrying with backoff is the expected runtime behavior.
-- Device disconnected mid-stream: the Linux/macOS device monitor detects add/remove events. The expected behavior is to stop WebRTC, publish a sensor-failure alert, and reconnect when the device returns.
+- Device disconnected mid-stream: the Linux/macOS device monitor detects add/remove events. The driver stops WebRTC, publishes a sensor-failure alert, and reconnects when the device returns. A pinned unit is waited for and never replaced by another input (see [Choosing the device](#choosing-the-device)).
 - Docker access: prefer `/dev/snd` plus the `audio` group; use privileged mode only when host audio permissions require it.
 - Cloud STT URL expiry: use signed URLs with enough TTL for queued workloads, or inline `audio_base64` for small files.
 - Large STT inputs: keep Whisper jobs below roughly `25 MB`; oversized inputs should fail with a clear validation error.
@@ -187,6 +344,8 @@ The driver streams captured audio on two independent, parallel paths:
 
 Audio is resampled to 48 kHz (the Opus codec's internal rate) before entering the WebRTC queue. The `stream_attributes` field in the MQTT `webrtc-offer` payload includes the actual `sample_rate` used, so the media service and frontend can verify compliance. The media service router uses standard mediasoup Opus negotiation — no custom validation is needed.
 
+An array uses one WebRTC connection per twin for everything: the single live stream described in [Listening to an array](#listening-to-an-array), and the audio of every channel for recording, which travels together in one message per 20 ms.
+
 ### Zenoh path
 
 Raw PCM chunks are published at the hardware's native capture rate with **no resampling**. On the first publish, the Zenoh wire header carries metadata:
@@ -200,38 +359,33 @@ Raw PCM chunks are published at the hardware's native capture rate with **no res
 }
 ```
 
-`@cw.on_audio` workers receive this metadata so they can correctly interpret the raw audio bytes.
+`@cw.on_audio` workers receive this metadata so they can correctly interpret the raw audio bytes. On an array, every channel is its own mono key, named after its sensor as described in [Sensor ids and Zenoh keys](#sensor-ids-and-zenoh-keys), so a worker can pick out a single microphone.
 
 ### Parallelism
 
-The PortAudio callback places raw audio into a zero-copy swap buffer for Zenoh (O(1)) and queues resampled audio for WebRTC. Three threads run in true parallel: PortAudio capture, Zenoh publisher, and WebRTC streamer.
+The PortAudio callback only copies each block into a queue; a processing thread applies the optional filters and gain and splits the audio between the two paths. Zenoh receives it through a short queue of about half a second, so a burst of callbacks reaches Zenoh whole and in capture order, while the WebRTC side is encoded and sent from its own event loop.
 
 ### Edge health (`edge_health`)
 
 {/* TODO(docs): **STUB DOCUMENT:** CYB-2005 contract summary; a human will expand before publishing. */}
 
-The driver delegates `edge_health` to the SDK's `MicrophoneAudioStreamer`. Once WebRTC is connected, each heartbeat includes `streams.stream.stream_config` with `kind: "audio"`, `sample_rate_hz`, `channels`, and `codec: "opus"`. The block intentionally omits `source` (no host device path on the wire). Liveness uses `mark_alive`, so `fps` and `frames_sent` stay at zero for audio rows. The dashboard renders sample rate and channel layout from this block; workflow triggers still read Zenoh PCM, not MQTT health.
+A single-microphone driver delegates `edge_health` to the SDK's `MicrophoneAudioStreamer`. Once WebRTC is connected, each heartbeat includes `streams.stream.stream_config` with `kind: "audio"`, `sample_rate_hz`, `channels`, and `codec: "opus"`. The block intentionally omits `source` (no host device path on the wire). Liveness uses `mark_alive`, so `fps` and `frames_sent` stay at zero for audio rows. The dashboard renders sample rate and channel layout from this block; workflow triggers still read Zenoh PCM, not MQTT health.
+
+An array reports one stream per channel, keyed by sensor id, and its `stream_config` also carries the `channel_index`. Because every channel travels in every message, the rows are healthy together while the connection is up, and all turn stale about 30 seconds after it is lost.
 
 ### Twin metadata
 
-The driver publishes both rates to the twin metadata under `audio_device`:
-
-| Field | Description |
-|-------|-------------|
-| `capture_sample_rate` | Hardware native rate (e.g. 32000) |
-| `stream_sample_rate` | WebRTC output rate (48000 when resampling is on) |
-| `channels` | Channel count |
-| `layout` | `"mono"` or `"stereo"` |
-| `software_resampling` | Whether resampling is active |
+The driver reads its configuration from the twin and does not write it back. The twin's top-level `audio_device` is the device pin described in [Choosing the device](#choosing-the-device); an object found there is a snapshot left by older driver versions and is ignored. The only thing a single-microphone driver writes is its own sensor, as a bare `id` and `type` into `metadata.sensors`, and only when neither the twin's `capabilities.sensors` nor its `metadata.sensors` declares one (the catalog microphone declares `audio` in its schema, so it writes nothing); an array driver writes nothing at all. Capture and stream sample rates show up in the driver log and in `edge_health`.
 
 ## Success Checks
 
 - `docker compose up` with a USB microphone streams audio to the microphone twin.
 - Frontend MQTT `start_audio` / `stop_audio` toggles the live WebRTC audio producer (no recording side effect); the driver replies with `audio_started` / `audio_stopped` on the matching status topic.
 - Frontend MQTT `start_recording` / `stop_recording` on `webrtc-command` toggles persisted recording without disturbing the live stream; the media-service replies on `webrtc-command/status`.
-- Zenoh `audio/default` chunks are consumable by an `on_audio` worker hook at the hardware's native sample rate.
+- Zenoh `audio/<sensor key>` chunks are consumable by an `on_audio` worker hook at the hardware's native sample rate.
 - Startup logs list available devices; `CYBERWAVE_METADATA_AUDIO_DEVICE` selects a specific one.
-- USB disconnect and reconnect transitions through alert, reconnect, and alert resolution.
+- USB disconnect and reconnect transitions through alert, reconnect, and alert resolution; a pinned unit is waited for, never substituted.
+- On an array, one REC produces one recording per channel, all with the same start and length, and the live selector switches what every viewer hears.
 
 For source-level details, see the [Generic Microphone Driver README](https://github.com/cyberwave-os/generic-microphone-driver).
 

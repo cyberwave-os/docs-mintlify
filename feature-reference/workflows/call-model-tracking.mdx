@@ -1,0 +1,40 @@
+---
+title: "Call Model — object tracking"
+description: "Give every detected object a stable track_id across camera frames, for any edge detection model"
+icon: "crosshairs"
+---
+
+Set **Object Tracking** on a **Call Model** (`call_model`) node to give each detected object a `track_id` that stays the same from frame to frame. Two objects of the same class get different ids, so you can tell a new person from one already seen, or count distinct trucks.
+
+Tracking runs on the edge and works the same for every detection or segmentation model, whatever its runtime (Ultralytics, ONNX, TensorRT, Hailo and others). Segmentation masks are tracked through their bounding box.
+
+```text
+camera_frame → call_model (YOLO, Object Tracking: ByteTrack) → spatial_filter → …
+```
+
+## Options
+
+| Value | Best for | Behaviour |
+| --- | --- | --- |
+| `none` (default) | — | No tracking. Detections carry no `track_id`. |
+| `bytetrack` | Fixed cameras | ByteTrack. Matches objects by position and motion; fast (under 1 ms per frame for 20 objects on a CPU). |
+| `botsort` | PTZ and moving cameras | BoT-SORT. Also estimates the camera's own motion from the image, so ids survive pans, tilts, zooms and a camera on a moving robot. About 4× the cost per frame of ByteTrack. |
+
+Pick ByteTrack unless the camera moves. On a moving camera ByteTrack sees every object jump at once when the view shifts, and can give them new ids; BoT-SORT compensates for that shift first.
+
+## How ids behave
+
+- Each camera has its own ids, even when several cameras share one model, and so does each Call Model node.
+- A new object gets its id once it has been seen in two consecutive frames; until then its `track_id` is `null`.
+- An object that disappears briefly keeps its id. Ids are not reused while the model stays loaded on the device.
+- When frames stop for more than 2 seconds (and for more than twice the camera's usual frame interval), tracking restarts: objects get new ids, numbered after the ones already issued. A camera sampled every few seconds keeps its ids.
+- The label is unchanged: the id comes as a separate `track_id` field on each detection, in the node's `detections` output and on the device's detections data channel.
+
+## Compile checks
+
+Compilation fails with an error naming the node when a tracker is chosen on a model that:
+
+- does not output detections, for example a depth or speech-to-text model;
+- runs in the cloud, because the edge worker never holds the frames.
+
+Set **Object Tracking** back to `none` for those models.

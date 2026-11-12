@@ -8,7 +8,7 @@ Agents plan; people approve. No Cyberwave agent moves a robot, real or simulated
 
 ## The rules
 
-1. **Inspect before acting.** Read the environment, the twin and its available controls first. With MCP: `cw_list_environments`, `cw_list_twins`, `cw_list_control_surfaces`.
+1. **Inspect before acting.** Read the environment, the twin and its available controls first. With MCP: `cw_list_environments`, `cw_list_environment_entities`, `cw_list_control_surfaces`.
 2. **Plan, then wait.** Planning never moves anything. Show the plan, including the target twin, direction and limits, and wait for approval.
 3. **One bounded action per approval.** One pose, one joint target, one navigation goal or one stop. Never chain several motions on one approval.
 4. **Simulation first.** Run the action in simulation and check the result. Plan again for the real robot.

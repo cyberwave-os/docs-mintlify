@@ -10,11 +10,11 @@ icon: "microchip"
 
 {/* stub — Control navigation update, pending human review */}
 
-Open **Workbench → Control** and select a twin to see its actions, control methods, controller settings and related workflows. **Manual inputs** lists saved input mappings and opens the existing keyboard or leader-arm editor. **Workflows & shortcuts** lists environment tasks; it is grey when no workflows exist. Shortcuts run only in their matching Simulation or Live mode.
+Each twin has one controller, in one of four categories: **Manual teleop**, **Local teleop**, **Agentic** or **Policy**. Choose it with **Choose controller** in the twin's **Controller** section of the right-hand panel, in any mode. Open **Workbench → Controllers** and select a twin to see its actions and related workflows, or select **Environment** to see the controllers in use, customize them for all twins in the environment, and give one controller to other twins.
 
-The detailed controller settings remain available, including model/camera configuration, code and motion sequences. Adding a different input may replace the twin’s primary controller; review that change before assigning it. A saved mapping does not confirm that its device is connected.
+The detailed controller settings remain available, including model/camera configuration, code and motion sequences. Customizing saves to **This twin** or **All twins in this environment** and never copies the controller. A saved mapping does not confirm that its device is connected.
 
-Select an action to focus its controls. In catalog Control and Workbench, **Other controls** keeps existing **Manual inputs** and **Autonomy and logic** settings together when they are shared across actions. In Edit, expand **Controller & runtime settings** for the full controller detail; operating controls stay visible in Simulation and Live. Opening or switching actions does not change a saved assignment.
+Select an action to focus its controls. In Edit, expand **Controller & runtime settings** for the full controller detail; operating controls stay visible in Simulation and Live. Opening or switching actions does not change a saved assignment.
 
 {/* stub — Tool-frame configuration, pending release and human review */}
 
@@ -30,7 +30,7 @@ Pin control guides, cameras or microphones to the **Overview** panel. Choose **A
 
 Robot keys pause while you use the Overview toolbar. After closing **+ Pin** or the layout menu with the keyboard, Tab to **Resume keyboard controls** and press Enter or Space to return to robot input. Clicking outside either menu restores robot input unless you move into a text field or dialog.
 
-Changing a key or gamepad button preserves that command’s saved values. Review its parameters separately to change the amount or behavior; catalog defaults initialize new bindings.
+Changing a key preserves that command’s saved values. Review its parameters separately to change the amount or behavior; catalog defaults initialize new bindings.
 
 Commands such as adjustable lights need a value before saving. The mapping editor shows the configured parameter and its range; expand **Other parameters** to use a supported alternative.
 
@@ -90,7 +90,7 @@ Three policy types run on the online-controller host path:
   </Card>
 </CardGroup>
 
-Other controller policies — `teleop`, `navigation`, `motion`, and `mlmodel`/`vla` — do **not** use the online-controller host path. They run on their own command-triggered or cloud inference paths.
+Other controller policies — `teleop`, `localop`, `agentic`, `navigation`, `motion`, and `mlmodel`/`vla` — do **not** use the online-controller host path. They run on their own command-triggered or cloud inference paths.
 
 ## How controllers are routed
 
@@ -283,15 +283,17 @@ Then **start a simulation** from the environment's **Simulate** tab in the dashb
 | `DELETE` | `/api/v1/controller-policies/{uuid}` | Delete a controller policy. |
 | `POST` | `/api/v1/controller-policies/{uuid}/execute` | Run the policy on a twin. |
 | `POST` | `/api/v1/controller-policies/{uuid}/stop` | Stop a policy/twin run. |
-| `POST` | `/api/v1/controller-policies/stop-environment-controllers` | Stop all online controllers in an environment. |
-| `POST` | `/api/v1/controller-policies/{uuid}/clone` | Duplicate a controller policy. |
+| `POST` | `/api/v1/controller-policies/stop-environment-controllers` | Stop all online controllers and skill runs in an environment. |
+| `POST` | `/api/v1/controller-policies/{uuid}/clone` | Duplicate a controller policy (the catalog's **Duplicate**). |
+| `GET` / `PUT` / `DELETE` | `/api/v1/twins/{uuid}/controller-settings/{policy_uuid}` | Read, save or reset a controller's settings for one twin. |
+| `GET` / `PUT` / `DELETE` | `/api/v1/environments/{uuid}/controller-settings/{policy_uuid}` | Read, save or reset a controller's settings for all twins in an environment. |
 | `GET` | `/api/v1/controller-policies/{uuid}/rl-task-provenance` | Get RL-task provenance for a policy. |
 
 ## Control setup
 
 {/* stub — shared Control setup, pending human review */}
 
-In **Workbench / Control**, select a twin. **Overview** shows its configured inputs, policies and workflow-backed services together. Each saved service links to its action setup, including any missing inputs or changed references. Select an action to review **Autonomy and logic**, its input, and **Advanced settings**. **Other controls** retains the original shared settings. Related workflows appear in **Overview**.
+In **Workbench → Controllers**, select a twin. **Overview** shows its policies and workflow-backed services together. Each saved service links to its action setup, including any missing inputs or changed references. Select an action to review **Autonomy and logic** and **Advanced settings**. Related workflows appear in **Overview**.
 
 The selected model shows the kind of output it produces. **Relative depth** has no metric distances; **Metric depth** still needs camera calibration and a suitable mapping pipeline. A path predicted in an image is not a robot navigation route. Catalog services identify reusable **Workflow templates**; Workbench shows the state of the environment workflow.
 
@@ -316,19 +318,15 @@ snapshots are retained. A saved map still needs coverage and alignment checks
 before use for navigation.
 
 
-Catalog **Control** has three sections: **Control services**, **Hardware drivers** and **Catalog preview**. Control services uses the same action organization as Workbench. Editors can change setup rules under an action’s **Advanced settings**; hardware capabilities remain in **Capabilities**.
+The asset's **Controllers** tab has three sections: **Control services**, **Hardware drivers** and **Catalog preview**. Control services uses the same action organization as Workbench. Editors can change setup rules under an action’s **Advanced settings**; hardware capabilities remain in **Capabilities**.
 
 Adding a twin copies saved asset action settings into that twin. Workbench edits stay local to it; the reusable input preset and asset defaults are unchanged. **From asset defaults** and **Customized for this twin** identify the saved scope. These action settings do not activate inputs yet.
 
-Use **Add input** to select an existing preset. Supported joint keys appear **From preset**. **Edit keys** customizes the action; **Reset to preset** removes that customization. Clearing every key keeps the action empty until you reset or map new keys. The reusable preset is unchanged. During editing, expand **Current input setup** to inspect the existing controls.
-
 From **Overview**, **Edit mapping** opens that action’s input settings directly. You can collapse the settings without losing unsaved changes. Read-only users can **View mapping**.
 
-For a standard command keyboard, **Use standard keys** fills supported keys for the selected action. Review them, then **Save**. The same keyboard can serve Drive, Camera and Lights with separate mappings. Existing custom keys are retained; use **Edit keys** to add commands that need your own values or choices.
+**Save** stores your action settings without starting a robot. The selected service appears under **Autonomy and logic**; its configuration details stay beside the selector. Use the operating panels to control a robot. Pairing, calibration and runtime readiness are checked on the twin.
 
-**Save** stores your action settings without starting a robot. The selected service appears under **Autonomy and logic**; its configuration details stay beside the selector. Use the operating panels in Workbench to control a robot. Saving does not activate inputs; pairing, calibration and runtime readiness are checked on the twin.
-
-**Direct control** means the action uses its configured manual inputs without an action policy. When compatible policies exist, you can select one or return to Direct control while retaining your input mappings. Actions that require a policy still show **Not configured** until one is selected. This choice does not certify that the simulator or hardware is ready.
+**Direct control** means the action uses its configured manual inputs without an action policy. When compatible policies exist, you can select one or return to Direct control. Actions that require a policy still show **Not configured** until one is selected. This choice does not certify that the simulator or hardware is ready.
 
 The operating panels can list supported joints even before the 3D model loads. Enter targets in the displayed units and review them before moving. Changing a target requires a new review; motion requires a ready execution route. Control setup remains configuration only.
 
@@ -337,10 +335,6 @@ For an immediate simulation move, **Queued** means the command was sent, not tha
 {/* stub — command parameters, pending human review */}
 
 When a keyboard command needs values, its mapping editor shows a **Parameters** step after you choose a key. For example, a configured gripper can offer **grip**, **release** or **reset**. Complete required values before saving. Reopening the same preset in Catalog or Workbench preserves the saved parameters. Editing parameters requires saving them; **Assign as-is** uses only an unchanged, complete preset. Saving a mapping does not verify a connected device or execute its command.
-
-{/* stub — shared action discovery, pending human review */}
-
-In **Workbench / Control**, **Add action** opens the same picker as the catalog. Choose a declared action to configure its manual inputs and logic inline. Configuration pages do not start a robot or embed a test panel. Additional legacy setup paths remain under **More actions**. Opening setup does not start control.
 
 
 ## Where to go next
@@ -363,9 +357,7 @@ In an action’s **Advanced settings**, use **Show operator panel** to hide its 
 
 {/* stub — Twin keyboard settings, pending release and human review */}
 
-In **Workbench → Control → Overview**, use **Edit mapping** to change supported keyboard keys for that twin. Joint and command keyboards reuse their existing editors. Command-key edits preserve the saved movement, camera and lighting commands and their values. Saving preserves the shared preset and other twins’ mappings. If the input or keys changed elsewhere, reload before saving.
-
-For a robot with attached twins, select each twin’s saved keyboard mappings in **Workbench → Control → Overview**. Distinct keys can stay selected together. **Pause input** affects only the selected twin; conflicting keys explain what to change before activation. **Restore previous environment inputs** returns all twins to their previous input assignments. Multiple gamepad inputs cannot yet be selected together.
+Open the keyboard controller's settings from the twin's **Controller** section to change its keys. Choose **This twin** or **All twins in this environment** before saving; **Reset to defaults** removes that scope's keys. Joint and command keyboards reuse their existing editors. Command-key edits preserve the saved movement, camera and lighting commands and their values. Saving never changes the shared controller. If the keys changed elsewhere, reload before saving.
 
 With driver-based keyboard controls, switching windows pauses held input. After returning or restoring the command connection, release held keys and press again.
 
@@ -373,12 +365,8 @@ With driver-based keyboard controls, switching windows pauses held input. After 
 
 For a calibrated leader-arm preset, use **Map joints** to pair each servo with a robot joint. **Arrange mapping** enables drag placement; **Done** hides it. Optional aliases stay under **Advanced**. Catalog edits update the shared preset; calibrate the connected leader on a twin before operating. In Workbench, **Use input** assigns an unchanged preset; **Save & use input** saves mapping edits and assigns it. Those edits affect every twin using the preset. Existing legacy presets keep their current editor.
 
-{/* stub — Input compatibility and migration, pending release and human review */}
-
-New input choices follow the selected action. A saved input that conflicts with that action shows **Deprecated mapping**. Use **Review migration** to remove or replace it, then **Save**. The shared preset is retained. **Needs mapping** means setup is incomplete; saving does not verify a connected device.
-
 {/* stub — Manual input runtime feedback, pending release and human review */}
-Keyboard and gamepad mappings stay visible while a physics simulation starts or is stopped. Controls pause until the simulator is ready; Playground controls remain available without starting a backend simulation.
+Keyboard mappings stay visible while a physics simulation starts or is stopped. Controls pause until the simulator is ready; Playground controls remain available without starting a backend simulation.
 
 The compact joint guide shows the last commanded **Target** and **Δ**, the difference from the reported position. **No feedback** or **Feedback stale** means it cannot confirm the current position. In Playground, the readout follows the scene; a physics simulation needs its own feedback. Angle units can change without enabling control; linear joints remain in metres.
 

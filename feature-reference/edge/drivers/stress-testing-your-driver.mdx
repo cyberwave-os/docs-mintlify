@@ -1,0 +1,205 @@
+---
+title: "Stress-testing your driver"
+description: "Run cyberwave-stress-test --uuid against your twin: it reads what the driver exposes, runs the matching test sections on the real robot, and judges each one from measured feedback."
+tag: "stub"
+---
+
+{/* TODO(docs): **stub** — This page will be curated before publishing. Content reflects the current Python SDK (`cyberwave.test.driver_testing`). */}
+
+Before you ship an arm driver, run it through `cyberwave-stress-test` on the real robot. The tool ships with the Python SDK. It asks the twin what it can do, runs only the test sections that match, and decides pass or fail from what the robot measures, never from what was commanded. You write no per-robot test code.
+
+<Warning>
+`cyberwave-stress-test` **moves the robot**. Clear the workspace, empty the gripper, keep the e-stop in reach, and attach the twin's teleop controller. Run one twin at a time, with no other client sending targets.
+</Warning>
+
+## Run it
+
+```bash
+pip install cyberwave
+export CYBERWAVE_API_KEY=...
+
+cyberwave-stress-test --uuid <twin-uuid> --list                          # print the plan; nothing moves
+cyberwave-stress-test --uuid <twin-uuid> --yes                           # every section the twin supports
+cyberwave-stress-test --uuid <twin-uuid> --sections joints,planned --yes
+cyberwave-stress-test --uuid <twin-uuid> --skip @moveit --report ./run1/report.json --yes
+```
+
+`python -m cyberwave.test.driver_testing.cli` is the same command.
+
+| Flag | What it does |
+| --- | --- |
+| `--uuid` | The twin to test (required). |
+| `--list` | Print the resolved plan and exit. Moves nothing. |
+| `--sections`, `--skip` | Comma-separated section ids (`planned.ptp`), areas (`planned`), ids with a backend (`planned.ptp@moveit`) or a bare backend (`@moveit`). |
+| `--yes` | Confirm moving a live robot. Without it, the tool prompts on a terminal and refuses otherwise. |
+| `--allow-untested` | Catalog commands you accept untested, comma-separated. Any other untested command stops the run before anything moves. |
+| `--continue-on-failure` | After a failed section, send `stop`, verify a measured hold, and go on. The preflight is always mandatory. |
+| `--report` | A `report.json` path or a directory. Default: a new temporary directory. |
+| `--backends` | Planned-motion backends to test besides the driver's default, e.g. `pinocchio`. |
+| `--arm-joints`, `--gripper-joint` | Override the joints read from the universal schema. |
+| `--navigate-link` | The link the `navigate` service moves. Navigation sections run only when it is the link `twin/pose` reports. |
+| `--workspace-min`, `--workspace-max` | The Cartesian box, `x,y,z` in m, in the frame of the measured pose (default `-0.8,-0.8,0.02` to `0.8,0.8,1.2`). Write a negative corner with `=`: `--workspace-min=-0.5,-0.5,0.05`. |
+
+`cyberwave-stress-test --help` lists the step sizes, tolerances and timeouts.
+
+## How sections are chosen
+
+Discovery reads four things from the twin before anything moves:
+
+- **capabilities**: `twin.capabilities`;
+- **command catalog**: `twin.commands.get_schema()`, its `commands.supported` list and served flat MQTT topic paths (such as `cyberwave/joint/{twin_uuid}/update`);
+- **observed state streams**: subscribed `state/motion` and `state/kinematics` messages, even when the served catalog omits those topics;
+- **joints and limits**: the universal schema's controllable joints, with their limits and home positions. Joints named like a gripper part (`grip`, `finger`, `jaw`, `knuckle`, ...), or prismatic joints after the arm, are the gripper;
+- **planned-motion backends**: the `kinematics_backend` that `state/motion` reports, plus any `--backends`.
+
+Each section declares what it needs. A section runs when the twin has all of it, and is reported as skipped with the reason otherwise, for example `catalog lacks base_rotate_left, base_rotate_right`. A section can also skip itself at run time, for example when a backend refuses with `backend_unavailable`.
+
+## What your driver needs, in SDK terms
+
+Each section exercises what an SDK driver mixin gives your driver. Compose the mixin and its sections apply:
+
+| SDK driver piece | What it exposes | Sections |
+| --- | --- | --- |
+| joint feedback on `joint/update`, `JointCommandBufferMixin` | measured joints, joint targets | `joints.*`, `planned.teleop_preempts` |
+| `ArmCapabilityMixin` | `ee_move`, `ee_rotate_*` (arm config `supports_ee`), `base_rotate_*` (`supports_base_rotate`), `grip` / `release` (`supports_gripper`), `home` (`supports_home`) | `cartesian.ee_move`, `cartesian.ee_rotate`, `base.rotate`, `gripper.*`, `joints.home` |
+| `EECartesianPoseMixin` (`use_cartesian_pose`), or `PlannedMotionMixin` (`use_planned_ee_pose`) | `ee_pose`: an absolute TCP pose in the arm's base frame | `cartesian.ee_pose` |
+| `PlannedMotionMixin` | `set_pose`, `grasp`, `scene_set`, `attach_payload`, `detach_payload`, `state/motion`, `stop` cancelling a motion | `planned.*`, `grasp.*`, `scene.*`, `faults.refusals` |
+| `WorldObstaclesMixin` | `add_obstacles`, `remove_obstacle` | `obstacles.roundtrip` |
+| `CartesianStateMixin` (`use_cartesian_state = True`) | the measured TCP on `state/kinematics` | needed by `cartesian.ee_pose` and `planned.replace`; makes every Cartesian section use absolute TCP targets |
+| a `navigate` block in the catalog | waypoint missions, driven with `twin.navigation` | `navigation.*` |
+
+A driver that exposes `ee_pose` should also compose `CartesianStateMixin` with `use_cartesian_state = True`. Without the measured TCP, nothing can check where an absolute pose landed, and `ee_pose` is reported untested.
+
+## Every command is tested
+
+Every command in the driver's `commands.supported` must be exercised by at least one section. `--list` ends with a table of every catalog command:
+
+- **tested**: the sections that exercise it;
+- **not selected**: only `--sections` or `--skip` left it out;
+- **untested**: no section exercises it, or every one that does is skipped for this twin, with the reason.
+
+An untested command stops the run before anything moves, unless you name it in `--allow-untested`. After the run the table is recomputed: a section that skipped itself at run time (for example, a backend refusing with `backend_unavailable`) tested nothing, so its commands count as untested and the run fails. `report.json` carries the table under `coverage`.
+
+A driver-specific command needs a section of its own: see [Adding a section](#adding-a-section-for-a-new-capability). Declare what it exercises with `covers=` when that differs from the commands it requires.
+
+## Sections
+
+| Section | Catalog commands | Feedback | What passes |
+| --- | --- | --- | --- |
+| `joints.single` | — | joints | Each arm joint alone reaches a target inside its limits and comes back; the others don't move. |
+| `joints.multi` | — | joints | Every arm joint at once reaches a target inside its limits and comes back. |
+| `joints.latest_target` | — | joints | A newer joint target replaces an older one immediately: latest target wins. |
+| `joints.sine` | — | joints | Sinusoidal teleop load, then a measured return to the baseline. |
+| `joints.home` | `home` | joints | The arm settles, at the schema's home when every arm joint declares one. |
+| `cartesian.ee_move` | `ee_move` | pose | A relative jog up and its inverse: measured displacement, then measured restore. |
+| `cartesian.ee_rotate` | any `ee_rotate_*` | pose | Every rotation the catalog has, each undone by its inverse: measured angle, then measured restore. A rotation without its inverse in the catalog fails. |
+| `cartesian.ee_pose` | `ee_pose` | pose (`state/kinematics`) | An absolute pose a step above the TCP, measured, then back. Needs the measured TCP. |
+| `planned.ptp`, `planned.lin` (per backend) | `set_pose` | joints, pose, motion | `plan_only` succeeds, then the move executes, arrives (measured) and returns. |
+| `planned.replace` | `set_pose` | joints, pose (`state/kinematics`), motion | A newer `set_pose` replaces an executing one; its endpoint holds. Needs the measured TCP. |
+| `planned.stop` | `set_pose` | joints, pose, motion | `stop` ends an executing move with a measured hold; a fresh command still works. |
+| `planned.teleop_preempts` | `set_pose` | joints, pose, motion | A joint target preempts an executing `set_pose` and holds. |
+| `scene.collision_guard` | `scene_set`, `set_pose` | joints, pose, motion | With a test fixture at the tool, a `plan_only` move is refused for collision. A generic IK miss doesn't count. Skipped while a task scene the tool did not install is active. |
+| `scene.payload` | `attach_payload`, `detach_payload` | motion | `state/motion` reports the payload attached, then none. Skipped while a payload is already attached. |
+| `grasp.candidates` | `grasp` | motion | A `plan_only` grasp skips an unreachable first candidate and selects the second. |
+| `grasp.execute` (per backend) | `grasp` | joints, pose, motion | An executed grasp on the tool's own pose, in free space, with `approach_distance_m` = `--grasp-approach-m`. Passes on `succeeded` for that candidate, a measured back-off to the pregrasp and return, and an unmoved gripper. The lift is only planned, never executed. |
+| `gripper.endpoints` | `grip`, `release` | joints | Release, grip, release reach distinct, repeatable measured jaw endpoints. |
+| `gripper.independent` | `grip`, `release`, `set_pose` | joints, pose, motion | The gripper cycles while an arm move completes without being cancelled. |
+| `base.rotate` | `base_rotate_left`, `base_rotate_right` | joints | One joint turns by the angle, nothing else moves, and it turns back. |
+| `obstacles.roundtrip` | `add_obstacles`, `remove_obstacle` | joints, pose | A fixture is persisted, it is removed, and the original list is back. An in-process plan into it is refused (checked with the pinocchio backend only; on other drivers the report says `not checked`). |
+| `navigation.mission` | the `navigate` block | joints, pose | A waypoint mission out and back completes, with measured outward motion. |
+| `navigation.cancel` | the `navigate` block | joints, pose | A mission stopped while it moves reports `cancelled` and the arm holds. |
+| `faults.refusals` | `set_pose` | joints, motion | An unknown `scene_revision`, and stale `expected_joints` (with the pinocchio backend), are refused with their codes, not timed out. |
+
+Every run starts with a **preflight** and ends with a **return to the measured start**.
+
+## Measured feedback and result matching
+
+- Only `source_type=edge` joints and poses count. SDK target caches and teleop echoes never complete a section.
+- The pose is `state/kinematics` when the driver publishes it (`CartesianStateMixin`: the TCP in the arm's base frame), else `twin/pose`. With only `twin/pose`, which may be a flange rather than the TCP, sections move by relative displacements (`mode: relative` in the planning frame) and check the measured displacement. `cartesian.ee_pose` and `planned.replace` need an absolute TCP target, so they are skipped, and `ee_pose` counts as untested.
+- Commands carry no request id. A command's motion is the first new `motion_id` that `state/motion` reports for that command after it was sent. Its result is the one naming that `motion_id`. A refusal before a motion started has no `motion_id` and is matched by command name. Every result is recognized by its unique `timestamp_ms`.
+
+## Safety model
+
+- **Preflight at the measured start:** complete joint feedback, every joint inside its limits, the pose inside the workspace box, then `stop` and a measured still arm. That posture is where the run returns to.
+- **Joint limits:** every joint target is clamped to the schema limits minus `--joint-limit-margin-rad` (0.05). Steps turn toward the middle of the range.
+- **Workspace box:** a Cartesian target outside `--workspace-min` / `--workspace-max` is never sent; the section is skipped with the reason.
+- **Speed limits:** the tool refuses to start when the sine's peak joint speed exceeds `--max-joint-speed-rad-s` (0.25), a Cartesian step exceeds `--max-cartesian-step-m` (0.08), or a rotation step exceeds `--max-rotation-step-rad` (0.3). Joint teleop is capped at 10 Hz. The driver's own velocity limits still apply.
+- **After a failed section:** `stop`, then a measured hold, before anything else.
+- **Skipped means nothing moved:** a section checks everything that can skip it before it sends a motion. If a section, including one you add, skips after sending one, the harness still sends `stop` and verifies a measured hold, and the report lists what was sent under `sent_before_skip`.
+- **Every exit, Ctrl-C included,** cancels any active waypoint mission, joins the teleop stream and sends `stop`.
+
+The tool never replaces state it cannot restore. The driver cannot report a task scene's objects or an attached payload back, so:
+
+- `scene.collision_guard` runs only when no task scene is active, or the active one is from an earlier stress run (its revision starts with `stress-`). It leaves an empty task scene behind.
+- `scene.payload` runs only when no payload is attached.
+
+When either is skipped, its commands count as untested. Clear the scene (`scene_set` with no objects) or detach the payload to test them. `obstacles.roundtrip` restores the persisted world obstacle list. A killed process can skip that: check the scene before the next run.
+
+With only `twin/pose`, the fixture box is centred on the reported link. Make `--probe-box-m` larger than twice the link-to-TCP distance so the box contains the TCP.
+
+## Reading the report
+
+`--report` writes three files:
+
+- `report.json`:
+  - `outcome` (`passed`, `failed` or `interrupted`) and `error`;
+  - `config`, the arguments;
+  - `profile`, what discovery found;
+  - `plan`, every section with `planned` or `skipped` and the reason;
+  - `phases`, every section as it ran: `passed` with its metrics, `failed` with its error, or `skipped` with its reason;
+  - `skipped`, the sections that never ran;
+  - `coverage`, every catalog command as tested, not selected or untested.
+- `events.jsonl`: the trace. Every measured sample, sent target and command, and motion status, with local monotonic and UTC receipt times.
+- `joints.csv`: measured joints and transmitted targets for plotting. A blank field in a target row is an axis that target did not address, not zero.
+
+The exit code is 0 only when every section that ran passed and no catalog command is untested (outside `--allow-untested`).
+
+Setpoint RMSE and feedback gaps in the sine metrics are diagnostics, not pass gates: MQTT can delay samples while the arm keeps moving.
+
+## Adding a section for a new capability
+
+A section is one decorated function. It declares what it needs and drives the twin through a `StressHarness`:
+
+```python
+import time
+
+from cyberwave.test.driver_testing import SectionSkipped, section
+
+
+@section(
+    "conveyor.belt",
+    area="conveyor",
+    summary="belt_start moves the belt joint; belt_stop holds it",
+    commands={"belt_start", "belt_stop"},
+    topics={"joints"},
+)
+def belt(harness):
+    if "belt_joint" not in harness.feedback.latest.get("joints", (0, {}))[1]:
+        raise SectionSkipped("no belt_joint in measured feedback")
+    sent = harness.command("belt_start", speed=0.1)
+    harness.feedback.wait(
+        lambda: abs(harness.feedback.latest["joints"][1]["belt_joint"]) > 0.05,
+        harness.args.phase_timeout_s,
+        "belt never moved",
+    )
+    stopped = harness.command("belt_stop")
+    held = harness.wait_still(stopped, names=["belt_joint"])
+    return {"held_at": held["belt_joint"]}  # metrics for the report
+```
+
+Import the module before `resolve_plan` runs, and the section appears in `--list`. Use the harness's primitives so the section gets the same guarantees:
+
+- `command` sends a catalog command;
+- `set_joints` sends clamped, rate-limited joint targets;
+- `move` / `step` send `set_pose`;
+- `outcome` / `result` match a command's result by `motion_id`;
+- `wait_joints`, `wait_pose` and `wait_still` wait for fresh measured feedback;
+- `check_workspace` refuses a target outside the box.
+
+A robot-specific harness subclasses `StressHarness` and overrides what only that robot has, for example a fixture of its own workcell, on top of the generic sections.
+
+## Testing the test
+
+The registry and discovery are pure: `profile_from` builds a `TwinProfile` from a capabilities dict, a catalog and a universal schema, and `resolve_plan` turns it into a plan. Unit-test your own sections the same way the SDK does: give the harness a fake twin that publishes measured feedback.
+
+Related: [Arm motion building blocks](/feature-reference/edge/drivers/arm-motion-building-blocks), [Integrating MoveIt](/feature-reference/edge/drivers/integrating-moveit).

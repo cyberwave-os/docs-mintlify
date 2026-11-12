@@ -8,7 +8,7 @@ icon: "gamepad"
 The **control agent** turns a request like *"move the Go2 to waypoint A"* or *"run the pick skill on the SO-101"* into concrete actions. It only proposes actions the twin can actually perform: each twin exposes **control surfaces**, derived from its metadata, that list the controls it supports. Nothing moves until a person approves one action.
 
 **Use it from:**
-- **The dashboard:** in **Simulate → Agent**, describe the task and any limit, then select **Plan**. Check the robot, controller and limits before you execute. Cancelling stops only that run.
+- **The dashboard:** choose **AI → Ask the agent**, or right-click a twin and choose **Ask the agent**. The panel is titled **Agentic controller**. Describe the task and any limit, then select **Plan**. Check the robot, controller and limits before you execute. Cancelling stops only that run. If the selected robot runs another controller, you can switch it to the Agentic controller first or ask without switching.
 - **Python:** `cw.agents.control`, shown step by step below.
 - **Your own AI tools:** the MCP server exposes the same calls to Claude Code, Cursor and any MCP client (see [below](#from-your-ai-tools-mcp)).
 
@@ -134,6 +134,7 @@ Planning never authorizes motion. `confirmed` defaults to `False` on `dispatch()
 - **Before a live dispatch**, make sure that: the request really is for physical execution, exactly one physical twin is targeted, the twin's edge device and telemetry are current, and a stop is available.
 - **Don't retry blindly.** If `dispatch()` or `wait()` times out or returns an unclear status, don't resend the motion. Read the twin's state, send a stop if it is safe, and ask the operator.
 - **Keep a human controller one click away.** See [safety and takeover](/feature-reference/environment-editor/teleoperation).
+- **Skills on the real robot need a confirmed plan.** A live skill run starts only from a planned live action that was confirmed: in the agent's chat (Confirm under Ask, or Auto after accepting the [safety notice](https://cyberwave.com/safety/robot-control)), or with `cw.control.dispatch(..., confirmed=True, mode="live")`. A workflow's **Online Controller** step can start one when its **Confirm Live** box is ticked. Starting a task directly (the Tasks API) or from a mission runs skills in simulation only: a live start is refused with "A live skill run starts only from a confirmed live control plan".
 
 `cw.actions.wait()` returns when the action reaches `completed`, `failed`, `cancelled` or `blocked`. With the default `raise_on_failure=True`, any status other than `completed` raises `RuntimeError`. If no terminal status arrives within `timeout` seconds, it raises `TimeoutError`. A single failed status poll does not end the wait.
 
@@ -147,6 +148,20 @@ Planning never authorizes motion. `confirmed` defaults to `False` on `dispatch()
 | `mlmodel_uuid` | Pick a model record from your catalog for the agent |
 | `controller_policy_uuid` | Plan a run of a specific controller policy, for example a trained VLA or RL policy |
 | `simulation_backend` | Choose the simulation backend in `simulation` mode |
+
+### The Agentic controller's settings
+
+When the twin's controller is the **Agentic controller**, its settings shape every plan for that twin:
+
+| Setting | Effect |
+|---|---|
+| **Model** | The LLM that plans for this robot |
+| **Allowed actions** | The action kinds the agent may use. Leave all unchecked to allow every action the robot supports. |
+| **Instructions** | Added to the agent's fixed safety rules; they never override them |
+
+Open the controller's settings from the twin's **Controller** section and save them for **This twin** or **All twins in this environment**. **Reset to defaults** goes back to the next layer: twin, then environment, then robot, then the controller's defaults.
+
+A model saved in the Agentic controller's settings for the twin or the environment wins over an `llm_model_uuid` or `llm_model_name` passed to `plan()`. The request model applies only when neither sets one. A model saved on the robot model itself is only a recommendation. The chat model you pick in the assistant panel is a separate environment setting, not the Agentic controller's model: when the agent plans for a robot, the robot's Agentic model wins, and the chat model is used only if the robot has none.
 
 
 ## Skip the LLM: resolve a route directly
@@ -178,7 +193,7 @@ The same flow is available to Claude Code, Cursor and any MCP client, with no co
 |---|---|
 | `cw.agents.control.surfaces` | `cw_list_control_surfaces` |
 | `cw.agents.control.plan` | `cw_plan_control_action` |
-| `cw.control.resolve_route` | `cw_resolve_control_route` |
+| `cw.control.resolve_route` | `cw_plan_control_action` with `route_id` |
 | `cw.control.dispatch` | `cw_dispatch_control_action` |
 
 `cw_plan_control_action` only plans. The assistant must call `cw_dispatch_control_action` with one explicit action. If the environment's control-plane access is set to workflows only, the MCP server refuses direct dispatch with `CONTROL_PLANE_POLICY_DENIED`. The [Claude skill](/overview/tools/claude-skill) applies the safety rules above before any live dispatch. Set it up with the [MCP server](/overview/tools/mcp-server) guide.
@@ -202,7 +217,7 @@ The same flow is available to Claude Code, Cursor and any MCP client, with no co
     The environment assistant, the control agent and the workflow assistant.
   </Card>
   <Card title="Ways to control a robot" icon="gamepad" href="/ai/control">
-    Where the agent fits next to manual input, skills, workflows and learned policies.
+    Where the Agentic controller fits next to Manual teleop, Local teleop and Policy.
   </Card>
   <Card title="Workflow assistant" icon="diagram-project" href="/ai/workflow-assistant">
     Turn a recurring task into a workflow from one sentence.

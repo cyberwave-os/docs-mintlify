@@ -429,7 +429,7 @@ The CLI and Edge Core share one config directory: `$CYBERWAVE_EDGE_CONFIG_DIR` i
 
 | Variable | What it does |
 |---|---|
-| `CYBERWAVE_BASE_URL` | API URL. Defaults to `https://api.cyberwave.com`. |
+| `CYBERWAVE_BASE_URL` | API URL. Defaults to the backend saved in `credentials.json`, else `https://api.cyberwave.com`. `cyberwave logout` clears the saved one. |
 | `CYBERWAVE_API_KEY` | Token that `edge install` / `pair` falls back to when no login is saved. Also what the Python SDK reads. |
 | `CYBERWAVE_EDGE_CONFIG_DIR` | Overrides the config directory. |
 | `CYBERWAVE_ENVIRONMENT` | Backend stage, such as `dev`. Defaults to production. |

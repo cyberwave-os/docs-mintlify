@@ -34,15 +34,15 @@ A typical session uses all three in order: build the scene, try the task with th
 - **Plans come first.** Every agent returns a plan or a proposal before changing anything.
 - **You approve one step at a time.** The control agent dispatches a single action only with explicit confirmation. The workflow assistant applies an edit only after **Review and apply**.
 - **Simulation before hardware.** Plan and test in simulation, then plan again for the real robot.
-- **A person can always take over** from the twin's controller panel. See [Ways to control a robot](/ai/control).
+- **A person can always take over** from the twin's **Controller** section in the right-hand panel. See [Ways to control a robot](/ai/control).
 
 ## Where you use them
 
 | | Environment assistant | Control agent | Workflow assistant |
 | --- | --- | --- | --- |
-| **Dashboard** | Environment editor → **Agent** | Simulate → **Agent** | Workflow workbench → **Prompt** or **Assistant** |
+| **Dashboard** | Environment editor → **Agent** | **AI → Ask the agent** (the **Agentic controller** panel) | Workflow workbench → **Prompt** or **Assistant** |
 | **Python SDK** | `cw.agents.environment` | `cw.agents.control` | `cw.agents.workflow` |
-| **MCP** | `cw_plan_scene`, `cw_create_environment` | `cw_plan_control_action`, `cw_dispatch_control_action` | `cw_create_workflow_from_prompt` |
+| **MCP** | `cw_edit_environment`, `cw_create_environment` | `cw_plan_control_action`, `cw_dispatch_control_action` | `cw_create_workflow_from_prompt` |
 
 To give Claude Code, Codex, Cursor or any MCP client these abilities, see [Connect your AI tool](/ai/connect-your-ai-tool). For the rules every agent follows, see [Agent safety and approval](/ai/safety).
 

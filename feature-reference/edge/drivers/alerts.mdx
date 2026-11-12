@@ -123,7 +123,7 @@ Edge Core automatically raises technical alerts for operational issues. These ar
 
 | `alert_type` | Severity | Source | Trigger |
 | --- | --- | --- | --- |
-| `driver_start_failure` | `error` | `edge` | Driver container cannot reach a stable running state |
+| `driver_start_failure` | `error` | `edge` | Driver container cannot reach a stable running state. Also raised, titled *Driver stack is not pinned to one release*, when the driver's sibling images are not pinned to a release and Edge Core refuses to start it; the alert lists the services and how to fix them |
 | `driver_restart_loop` | `error` | `edge` | Driver restarts too frequently (circuit-breaker tripped) |
 | `driver_health` | `warning` | `edge` | Driver container stopped unexpectedly |
 | `model_download_failure` | `warning` | `edge` | Required ML model could not be downloaded |
