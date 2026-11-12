@@ -683,6 +683,18 @@ for r in runs:
     print(r.uuid, r.status, r.error)
 ```
 
+`list()` returns one page, newest first: the latest 100 runs unless you pass `limit` (up to 1000) and `offset`, or `before=<run uuid>` to continue after a given run. To walk every run, iterate instead. The iterator chains pages with `before`, so runs that start, finish or are deleted meanwhile don't make it skip any:
+
+```python
+for r in cw.workflow_runs.iter(workflow_id="workflow-uuid"):
+    print(r.uuid, r.started_at)
+
+# Same, from a Workflow object
+wf = cw.workflows.get("workflow-uuid")
+for r in wf.iter_runs(status="success"):
+    print(r.uuid)
+```
+
 Check if a workflow is currently running:
 
 ```python

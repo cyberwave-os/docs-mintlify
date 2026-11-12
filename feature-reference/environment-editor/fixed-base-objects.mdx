@@ -44,6 +44,6 @@ cylinders, pallet stacks, carts) default to free.
 
 ## Setting it from an agent
 
-`cw_create_procedural_primitive` takes a `fixed_base` argument, and
-`cw_edit_environment` can change it on an existing object. Leave it out to
-inherit the default for that kind of object.
+`cw_edit_environment` takes a `fixed_base` field on procedural primitive
+create and update operations. Leave it out to inherit the default for that kind
+of object.

@@ -127,7 +127,7 @@ Place the Go2 where it can see the tag, then power it up or restart its driver. 
 1. It selects the twin's most recently finalized map and loads its saved localization database. The badge shows **Localizing**.
 2. It watches the camera for a tag that the map knows. A sighting counts only if it is steady: **3 matching detections in a row**, each taken less than 1 s after the last and each with a **confidence of at least 0.5**. The detections must agree to within 20 cm and 20°.
 3. It collects at least **2 such sightings that agree** to within 30 cm and 15°, then uses them to set its pose on the map. It has **60 seconds** from the start of this search to do so.
-4. It waits until the map matcher has registered against the saved map and the pose has been **stable for 5 seconds**. If that does not happen within 30 seconds of setting the pose, the start fails.
+4. It waits until the map matcher has registered against the saved map and the pose has been **stable for 5 seconds**. If that does not happen within 90 seconds of setting the pose (`apriltag_localization_max_wait_sec`), the start fails.
 5. The badge changes to **Localized** and navigation (Nav2) turns on. Waypoint missions and **Move Twin** work from here.
 
 Keep the robot still and the tag in view until the badge reads **Localized**. With the tag in clear view this usually takes a few seconds.
@@ -243,7 +243,7 @@ Open the [Logs tab](/feature-reference/environment-editor/driver-logs), select t
     Fiducial seed completed but RTAB-Map map->odom did not become stable before the localization safety timeout; navigation remains blocked ...
     ```
 
-    **Cause.** The tag gave the robot a pose, but the map matcher could not confirm it against the saved map within 30 seconds. Common reasons are a wrong tag size (so the pose is off), a tag that moved since mapping, or a site that has changed a lot since mapping.
+    **Cause.** The tag gave the robot a pose, but the map matcher could not confirm it against the saved map within 90 seconds. Common reasons are a wrong tag size (so the pose is off), a tag that moved since mapping, or a site that has changed a lot since mapping.
 
     **Fix.** Check the tag size and its position. If the site has changed, map it again.
   </Accordion>

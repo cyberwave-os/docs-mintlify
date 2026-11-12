@@ -142,11 +142,15 @@ This is the moment where it stops being a setup tutorial and starts being a robo
 
 In the dashboard:
 
-1. Open your environment
-2. Click **Assign Controller** on the SO-101 twin
-3. Pick **Local Teleop**
+1. Open your environment, select the SO-101 twin and switch to **Live**
+2. In the **Controller** section of the right-hand panel, click **Choose controller**
+3. Pick **Local Teleop** (under **Local teleop**)
 
 That's it. Pick up the leader and gently move it; the follower should track it instantly.
+
+The Local teleop card shows whether the robot's edge is connected and whether the leader and follower are ready. It tells you when no leader arm is connected or calibration is needed, and lists driver errors. In **Simulate** it explains that local teleop needs the real robot.
+
+To move the follower by hand instead, turn on **Hand-guide** on the same card: torque is released, you move the arm by hand, and the twin follows its real joint angles. Turn it off to go back to the leader.
 
 <Check>
   Teleop is live. Wave the leader around, watch the follower copy you, and watch
@@ -163,8 +167,8 @@ That's it. Pick up the leader and gently move it; the follower should track it i
 ### A few things you might notice
 
 - When you **detach** a controller, the follower drifts back into a safe **sit pose** before disconnecting. Always leave clearance around the arm.
-- If you assign a **non-teleop controller** (Keyboard, a VLA model, etc.), the follower first moves to a **zero pose** when the controller comes online, _then_ starts taking commands.
-- For non-teleop controllers, **collision detection is on by default**. You'll see alerts in the dashboard if something looks like it's about to clash; heed them before the arm moves.
+- If you assign a **controller other than Local teleop** (Keyboard, a VLA model, etc.), the follower first moves to a **zero pose** when the controller comes online, _then_ starts taking commands.
+- For controllers other than Local teleop, **collision detection is on by default**. You'll see alerts in the dashboard if something looks like it's about to clash; heed them before the arm moves.
 
 ---
 
@@ -267,19 +271,16 @@ Click **Start Training** and let it run.
 
 Once training finishes:
 
-1. Go to **AI → Deployments**
-2. Click **Start New Deployment**
-3. Pick the trained model
-4. Pick the SO-101 twin (or twins) you want to deploy it to
-5. Click **Deploy**
+1. In your environment, open **AI → Deployment → Start new deployment**
+2. Pick the completed training
+3. Pick the SO-101 twin (or twins) you want to deploy it to
+4. Click **Assign policy**
 
-Now use it as a controller policy:
+Deploying assigns the **Policy controller** with your trained model to the twins you picked; there is nothing else to assign. To review it:
 
-1. In your environment, switch to **Edit Mode**
-2. Click **Assign Controller Policy**
-3. Pick the deployment you just created
-4. Click **Save Configuration**
-5. Switch to **Live Mode**
+1. Select the SO-101 twin and open its **Controller** section in the right-hand panel
+2. Check the model, its joint and camera setup, and (for language models) the **Default instruction**
+3. Switch to **Live Mode**
 
 If you trained a VLA or natural-language model, you'll see a prompt input at the top. Type the task (_"pick up the cube and place it in the box"_) and the model will drive the real SO-101.
 
@@ -298,19 +299,19 @@ If you trained a VLA or natural-language model, you'll see a prompt input at the
 
 ## Bonus: remote operation without a leader arm
 
-You don't always need a leader arm. **Remote operation** means assigning any non-teleop controller (keyboard, gamepad, scripted sequence, VLA) to the follower and driving it from afar.
+You don't always need a leader arm. **Remote operation** means assigning any controller other than Local teleop (keyboard, scripted sequence, VLA) to the follower and driving it from afar.
 
-1. Open your environment
-2. Click **Assign Controller** on the SO-101 twin
+1. Open your environment and select the SO-101 twin
+2. In the **Controller** section of the right-hand panel, click **Choose controller**
 3. Pick one of:
-   - **Keyboard**: drive individual joints from your keyboard
-   - **VLA model**: let a vision-language-action model take over
+   - **Keyboard** (Manual teleop): drive individual joints from your keyboard
+   - **Policy controller** (Policy): let a vision-language-action model take over
    - **Custom controller**: anything you've registered in the platform
 
 Same pattern, no leader required.
 
 <Info>
-  Heads-up: the moment you assign a non-teleop controller, the follower moves to
+  Heads-up: the moment you assign a controller other than Local teleop, the follower moves to
   a **zero pose** before it starts taking commands. And collision detection runs
   by default, so expect alerts if anything looks tight.
 </Info>

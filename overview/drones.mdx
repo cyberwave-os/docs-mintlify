@@ -81,9 +81,15 @@ Switching to a different drone is a **one-line change**: change `cw.twin(...)` t
   ship out of the box. **Continuous-stick locomotion** (`move_forward`,
   `strafe_*`, `turn_*`, `ascend`, `descend`) is **opt-in per twin**: set
   `metadata.drivers.default.virtual_stick = true` to engage DJI MSDK v5's
-  Virtual Stick API. The physical RC always wins: stick inputs reclaim
-  authority immediately, targets decay to zero after 500 ms of silence, and
-  the driver hands authority back to the RC after 5 s of zero-velocity. The
+  Virtual Stick API. Moving the RC sticks during a move corrects it rather
+  than taking the aircraft back: by default (**Blend**) each touched stick
+  axis replaces that axis of the command, at most 0.3 m/s or 0.5 rad/s,
+  while the move continues; the app's **Pause / resume** setting instead
+  pauses a workflow leg and its clock until the sticks are centred. Either
+  way the plan carries on once the sticks are centred, so to stop it press
+  the RC's pause button (which hands flight control back to the RC) or send
+  `stop` / `emergency_stop`. Targets decay to zero after 500 ms of silence,
+  and the driver hands authority back to the RC after 5 s of zero-velocity. The
   same continuous verbs are fully wired on PX4-class builds and in the
   simulator without the opt-in. See the [Cyberwave Edge for DJI
   README](https://github.com/cyberwave-os/cyberwave/tree/main/cyberwave-edge-nodes/cyberwave-edge-dji-mini-android#off-rc-teleoperation-virtual-stick)

@@ -1,0 +1,70 @@
+---
+title: "Move an AgileX Piper to poses with Move Twin"
+sidebarTitle: "Piper waypoint missions"
+description: "Send an AgileX Piper's gripper through a list of poses from a workflow or the API. MoveIt plans each move and the arm reports when the mission ends."
+icon: "route"
+tag: stub
+---
+
+A **Move Twin** workflow node, or `POST /twins/{uuid}/navigation`, can drive an
+AgileX Piper's end effector through one or more **poses** (position plus
+orientation). The Piper driver plans the whole list as one motion with MoveIt
+and reports the mission's result back to the workflow.
+
+## Before you start
+
+- A Piper paired with Cyberwave and enabled over CAN. See
+  [Get started with the AgileX Piper arm](/tutorials/agilex-piper-quickstart).
+- A recent `piper-driver` image on the edge. It starts the planner and the
+  mission service next to the driver. No extra setup is needed.
+
+## How a mission runs
+
+1. Each waypoint is a pose of the **`link6`** frame (the wrist flange). The
+   fingertips are 0.1358 m further along `link6`'s +z axis. To target the
+   fingertips, set Move Twin's tool offset.
+2. Each waypoint is planned as a straight-line move (`LIN`, the default) or a
+   joint move (`PTP`). Choose per mission with the `planner` field.
+3. The mission ends as `completed`, `failed` (with the planner's reason) or
+   `cancelled`. Move Twin waits for that result.
+
+## Things to know
+
+- **Stop** cancels the running mission, and it reports `cancelled`.
+- **No camera.** A mission that asks for a picture on arrival fails before
+  the arm moves.
+- **Don't teleop during a mission.** Teleop and the planner command the same
+  joints, and the most recent command wins.
+- **Simulation.** A simulated Piper takes the same Move Twin node, so you can
+  test a mission before running it live. See
+  [Simulation execution target](/feature-reference/workflows/simulation-execution-target).
+- Motions are planned at 20% of the planner's velocity and acceleration
+  limits, which sit below the arm's own. The arm's firmware also enforces
+  its own limits.
+
+## API
+
+```bash
+curl -X POST "https://api.cyberwave.com/api/v1/twins/$TWIN_UUID/navigation" \
+  -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "command": "path",
+        "planner": "LIN",
+        "source_type": "tele",
+        "waypoints": [
+          {"position": {"x": 0.25, "y": 0.0, "z": 0.25},
+           "rotation": {"x": 1.0, "y": 0.0, "z": 0.0, "w": 0.0}}
+        ]
+      }'
+```
+
+- Always send a `rotation`. If you leave it out, the arm is asked to point the
+  tool straight up, which is usually unreachable. The rotation above points the
+  tool down.
+- `source_type` is `tele` for a live arm and `sim_tele` for a simulated one.
+  A live arm ignores commands meant for simulation, and a simulated arm ignores
+  live ones.
+
+The response's `action_id` names the mission. Its status arrives on the
+twin's `navigate/status` topic. See the [MQTT reference](/api-reference/mqtt/main).

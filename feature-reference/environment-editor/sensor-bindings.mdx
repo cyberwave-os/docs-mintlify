@@ -1,0 +1,215 @@
+---
+title: "Sensor bindings"
+description: "Bind recorded channels to the sensors a twin inherits from its asset: the type check, the identifier in datasets, Bind from dataset, the recipe's slot template and the Python helpers."
+icon: "link"
+---
+
+A **sensor binding** links one sensor slot of a digital twin to one channel of a [time-series dataset](/feature-reference/datasets/timeseries). The dataset page explains how to package and search the data and how to attach a single channel by hand; the [recorded data feed](/feature-reference/environment-editor/replay-feed) page explains how bound channels are played. This page covers what makes bindings work for a whole facility rather than one twin: sensors declared once on an asset, the type check on every binding, the identifier that tells a twin which channels are its own, **Bind from dataset**, the slot template in a recipe, and the Python helpers that build a rack of twenty servers in one script.
+
+## Sensors declared on an asset
+
+A sensor slot does not have to be added to every twin by hand. An asset can declare **scalar sensors** in its universal schema (the JSON that describes what the asset is; see [Editing a universal schema](/feature-reference/edit-universal-schema)), and every twin created from that asset inherits them through its capabilities (`capabilities.sensors`, see [Sensor capabilities](/feature-reference/digital-twins#sensor-capabilities)). A scalar sensor reports one number per reading: a temperature, a power draw, a fan speed. Unlike a camera or a lidar it has no field of view and needs no pose, so the 3D view draws nothing for it, and the twin editor's sensor list shows it by name with its unit and without field-of-view controls. It does not block a simulation either: the checks that run before a simulation starts skip scalar sensors, since there is nothing to simulate for them.
+
+An entry in the asset's `sensors` list carries a `type` from the scalar vocabulary (the list on the [dataset page](/feature-reference/datasets/timeseries#vocabulary)), the slot id under `parameters.id` and, optionally, a unit under `parameters.unit`. A position inside the asset is optional:
+
+```json
+{
+  "name": "inlet_temperature",
+  "type": "temperature",
+  "parent_link": "server_2u_link",
+  "offset": {"position": {"x": 0.275, "y": 0, "z": 0}, "rotation": {"x": 0, "y": 0, "z": 0, "w": 1}},
+  "parameters": {"id": "inlet_temperature", "unit": "°C"}
+}
+```
+
+The catalog asset **`cyberwave/server-2u`**, a generic two-unit rack server, declares fourteen such slots:
+
+| Slot | Type | Unit |
+|---|---|---|
+| `inlet_temperature`, `outlet_temperature` | temperature | °C |
+| `total_power` | power | W |
+| `cpu0_power`, `cpu1_power` | power | W |
+| `cpu0_temperature`, `cpu1_temperature` | temperature | °C |
+| `gpu0_temperature` to `gpu3_temperature` | temperature | °C |
+| `fan_speed` | fan_speed | rpm |
+| `psu0_input_power`, `psu1_input_power` | power | W |
+
+The names are generic on purpose: they say what a server measures, not what a vendor calls it. A twin made from the asset lists all fourteen slots in its **Data sources** and **Live values** sections from the start; the translation from a dataset's channel names to these slots happens in the binding (see [Bind from dataset](#bind-from-dataset)). A twin can still add slots of its own in `metadata.sensors` for readings its asset does not declare (see [Declare sensor slots on the twin](/feature-reference/datasets/timeseries#play-recorded-data-on-digital-twins)); both sets are merged into the twin's sensor list.
+
+## The type gate
+
+Both sides of a binding carry a type: the slot (declared on the asset or the twin) and the channel (from the recipe's `signals` annotations, `generic` when none matched). Cyberwave accepts a binding only when the two types are the same, or when one side is `generic` or has no type. A temperature slot takes a temperature channel and refuses a power channel, so a wrong pick in a list of hundreds of channels does not go unnoticed.
+
+A mismatch is sometimes intended, for example a `ratio` channel that should drive a `utilization` slot. It can be allowed explicitly, and only explicitly:
+
+- In the **Data sources** section the channel search is filtered to the slot's type by default; **All types** lifts the filter. Choosing a channel of another type asks for confirmation: `<channel> carries <type>, this sensor measures <type>. Bind anyway?` Once confirmed, the binding is stored with the override and the row shows an amber **type mismatch** badge from then on.
+- Over the API and from Python, the binding entry carries `"allow_type_mismatch": true`.
+
+Without the override the binding is refused. `PUT /api/v1/twins/{uuid}` with `data_sources` in the metadata answers `422` with the reason for each failing slot, named as `<twin>.<slot>`, for example `rack-48-s00.inlet_temperature: slot 'inlet_temperature' measures temperature but channel 'ipmi/total_power/node=960' carries power; choose a channel of the same type or allow the mismatch explicitly`. The same request also checks that the dataset exists and has finished processing (`422`, `dataset missing`) and that the channel is in the dataset's catalog (`422`, `unknown channel`). Nothing is written when one entry fails. Entries in the legacy shape and entries without a dataset are left as they are.
+
+**Units are not converted.** The check compares kinds, not units: a channel in `°F` on a slot declared in `°C` passes, and its values are stored and shown as they come. When the units differ, the row says `channel unit <u1>, sensor unit <u2>, values are not converted`. Convert at import instead, with `scale` and `offset` in the recipe's [signal annotations](/feature-reference/datasets/timeseries#signal-annotations), or declare the slot in the channel's unit.
+
+The environment's sensor-sources report, `GET /api/v1/environments/{uuid}/sensor-sources`, lists every bound slot with `type_mismatch` (the types differ and the mismatch was allowed), `unit_mismatch` and `allow_type_mismatch`, and each twin's identifier (`thing_id`). A switched-on binding whose types differ without the override, which is only possible for bindings made before the check existed, is refused by the [recorded data feed](/feature-reference/environment-editor/replay-feed#before-you-start): **Play** answers with a message naming the sensor as `<twin>.<slot>`. Attach the channel again in Edit mode, confirming the mismatch, or pick a channel of the slot's type.
+
+## Identifier in datasets
+
+In a dataset, a channel id is the signal followed by the thing: what is measured, then where (`ipmi/ambient/node=960`, see the [vocabulary](/feature-reference/datasets/timeseries#vocabulary)). A twin that stands for one such thing gets that string as its **identifier in datasets** (`metadata.thing_id`). With it, Cyberwave knows that `ipmi/ambient/node=960` is the inlet temperature of this server and `ipmi/ambient/node=961` belongs to its neighbour, and it can bind a twin's slots without you searching every channel.
+
+Set it in Edit mode in the twin's **Data sources** section, field **Identifier in datasets**, or over the API with `PUT /api/v1/twins/{uuid}` and the body `{"metadata": {"thing_id": "node=960"}}` (top-level metadata keys are merged, so the other keys are kept). From Python, `cw.twins.set_thing_id(twin.uuid, "node=960")` does the same. The build script in [From Python](#from-python) sets it for every server it creates. The identifier is free text and must match the thing part of the channel ids exactly; the report of `GET /api/v1/environments/{uuid}/sensor-sources` shows it per twin.
+
+A dataset whose data has no entity column names its channels by the signal alone (`weather/temp`). The template below still binds such a channel: when the signal joined with the twin's identifier is not in the catalog but the signal alone is, the signal alone is used. The twin still needs an identifier to take part.
+
+## Bind from dataset
+
+Once a twin has an identifier, one click binds every slot the dataset can serve. In Edit mode, the **Data sources** section has a **Bind from dataset** button: pick one of your time-series datasets and, when the twin has docked children (twins attached to one of its links, such as the servers in a rack), tick **Also docked children** to bind them in the same go. The button uses the dataset's slot template (next section); a dataset without one says so, and you attach channels by hand or pass a template over the API.
+
+For every twin, and for every scalar slot the template names, Cyberwave joins the template's signal and the twin's identifier into a channel id (`ipmi/ambient` and `node=960` give `ipmi/ambient/node=960`), looks it up in the dataset's catalog, applies the [type gate](#the-type-gate) and writes the binding. Each twin's bindings are saved once, as a whole. The report, shown under the button, lists per twin its identifier, how many slots were bound and the slots skipped with the reason (the API response below also names the channel of every bound slot):
+
+| Skipped because | What to do |
+|---|---|
+| the twin has no identifier (`twin has no thing_id`) | Set **Identifier in datasets** and bind again. |
+| the channel is not in the catalog, for example `channel ipmi/fan0_0/node=960 not in catalog` | The dataset has no such reading for this thing: nothing to bind, or fix the template. |
+| the slot is already bound (`already bound to <channel>`) | Existing bindings are kept. Clear the slot first, or use `overwrite` over the API. |
+| the types differ (the reason of the [type gate](#the-type-gate)) | The template points the slot at a channel of another type. Fix the template, or bind by hand and confirm the mismatch. |
+
+Slots the template does not mention are left as they are. The totals at the end of the report count bound and skipped slots over all twins. The form's **Use recorded data** box, ticked by default, sets the switch of every new binding (`use_recorded` over the API); look over the rows afterwards and switch off the ones that should keep their live input.
+
+The same operation over the API, with edit access to the environment like editing a twin:
+
+```http
+POST /api/v1/environments/{environment_uuid}/sensor-bindings/auto
+```
+
+```json
+{
+  "dataset_uuid": "…",
+  "twin_uuids": ["…"],
+  "include_docked_children": false,
+  "template": {"inlet_temperature": "ipmi/ambient", "total_power": "ipmi/total_power"},
+  "use_recorded": true,
+  "overwrite": false
+}
+```
+
+| Field | Default | Meaning |
+|---|---|---|
+| `dataset_uuid` | | The time-series dataset to bind. Required. |
+| `twin_uuids` | every twin of the environment that has an identifier | The twins to bind; `422` when one is not in the environment. |
+| `include_docked_children` | `false` | Also bind the docked children of the listed twins. |
+| `template` | the dataset's slot template | Slot id to signal mapping. `422` when neither is given. |
+| `use_recorded` | `true` | The **Use recorded data** switch of the new bindings. |
+| `overwrite` | `false` | Replace bindings that already exist on the named slots. |
+
+```json
+{
+  "twins": [
+    {
+      "twin_uuid": "…",
+      "twin_name": "rack-48-s00",
+      "thing_id": "node=960",
+      "bound": [{"slot": "inlet_temperature", "channel_id": "ipmi/ambient/node=960"}],
+      "skipped": [{"slot": "fan_speed", "reason": "channel ipmi/fan0_0/node=960 not in catalog"}]
+    }
+  ],
+  "bound": 12,
+  "skipped": 3
+}
+```
+
+## Slot template in the recipe
+
+The template that **Bind from dataset** uses is part of the dataset: the optional `slots` entry of `cyberwave-timeseries.json` (see the [recipe reference](/feature-reference/datasets/timeseries#recipe-reference)) maps slot ids to signals. Signals, not channels: the thing part comes from each twin's identifier, so one template serves every server of every rack.
+
+```json
+"slots": {
+  "inlet_temperature": "ipmi/ambient",
+  "total_power": "ipmi/total_power"
+}
+```
+
+The import stores it with the dataset as `metadata.timeseries.slot_template`. A dataset imported without one can still be bound over the API or from Python by passing `template` in the request.
+
+The reference recipe for the Marconi100 export, `cyberwave-python/examples/timeseries_replay/recipes/marconi100.json`, maps the slots of `cyberwave/server-2u` this way:
+
+| Slot | Signal |
+|---|---|
+| `inlet_temperature` | `ipmi/ambient` |
+| `total_power` | `ipmi/total_power` |
+| `cpu0_power`, `cpu1_power` | `ipmi/p0_power`, `ipmi/p1_power` |
+| `cpu0_temperature`, `cpu1_temperature` | `ipmi/p0_vdd_temp`, `ipmi/p1_vdd_temp` |
+| `gpu0_temperature`, `gpu1_temperature` | `ipmi/gpu0_core_temp`, `ipmi/gpu1_core_temp` |
+| `gpu2_temperature`, `gpu3_temperature` | `ipmi/gpu3_core_temp`, `ipmi/gpu4_core_temp` (Marconi numbers its four GPUs 0, 1, 3 and 4) |
+| `fan_speed` | `ipmi/fan0_0` |
+| `psu0_input_power`, `psu1_input_power` | `ipmi/ps0_input_power`, `ipmi/ps1_input_power` |
+
+`outlet_temperature` has no Marconi counterpart and stays unbound.
+
+## From Python
+
+The [Python SDK](/overview/tools/python-sdk) wraps the calls above. Twins, datasets, environments and feeds are given by id (the `uuid` of the object). Errors raise the SDK's usual API exception with the backend's message, for example the reason of a refused binding.
+
+| Helper | What it does |
+|---|---|
+| `cw.datasets.channels(dataset_id, q=None, type=None, signal=None, thing=None, include_hidden=False, limit=50, offset=0)` | Search channels, with the parameters of the [channels endpoint](/feature-reference/datasets/timeseries#list-and-search-channels). |
+| `cw.datasets.rows(dataset_id, channels, start, end, limit=100000)` | Read readings, as the [rows endpoint](/feature-reference/datasets/timeseries#read-rows) does. |
+| `cw.twins.data_sources(twin_id)` | The twin's bindings map. |
+| `cw.twins.bind_sensor(twin_id, slot, dataset_id, channel_id, use_recorded=True, allow_type_mismatch=False, label=None, unit=None, type=None)` | Attach one channel. Reads the map and writes it back whole, so the other bindings stay. |
+| `cw.twins.unbind_sensor(twin_id, slot)` | Detach a channel. |
+| `cw.twins.set_thing_id(twin_id, thing_id)` | Set the identifier in datasets. |
+| `cw.environments.sensor_sources(env_id)` | The sensor-sources report. |
+| `cw.environments.auto_bind(env_id, dataset_id, twin_ids=None, include_docked_children=False, template=None, use_recorded=True, overwrite=False)` | **Bind from dataset**; returns the report. |
+| `cw.replay_feeds.start(env_id, start, end=None, speed=1.0, loop=False, run_id=None, source_type="auto")`, `.current(env_id)`, `.get(env_id, feed_id)`, `.pause(env_id, feed_id)`, `.resume(env_id, feed_id)`, `.stop(env_id, feed_id)` | Drive the [recorded data feed](/feature-reference/environment-editor/replay-feed#api). |
+| `scene.add_twin(asset_key, name=None, position=None, fixed_base=False, dock_to=None, dock_link=None, dock_offset=(x, y, z), dock_rotation=(x, y, z, w))` | Create a twin; with `dock_to` (a twin or its id) it is docked to that twin's link in the same call. |
+| `cw.asset_kits.create(name, registry_id, components=[...], description=None)`, `cw.asset_kits.instantiate(kit_id, environment_id, position=None)` | Register and deploy an [asset kit](/feature-reference/catalog/asset-kits). |
+
+Together they build a rack in a few lines. The script below creates rack 48 of the Marconi100 data: the rack twin from `cyberwave/server-rack-42u`, twenty `cyberwave/server-2u` twins docked to its `server_rack_42u_link` link at 2U pitch from the bottom up, each with its node number as identifier, and binds them with the dataset's slot template. The API key comes from `CYBERWAVE_API_KEY`.
+
+```python
+from cyberwave import Cyberwave
+
+ENVIRONMENT, DATASET, RACK = "<environment-uuid>", "<dataset-uuid>", 48
+cw = Cyberwave()
+scene = cw.get_scene(ENVIRONMENT)
+rack = scene.add_twin("cyberwave/server-rack-42u", name=f"rack-{RACK}", position=[0, 0, 0], fixed_base=True)
+for i in range(20):  # i = 0 is the bottom server, 19 the top one
+    server = scene.add_twin(
+        "cyberwave/server-2u", name=f"rack-{RACK}-s{i:02d}", fixed_base=True,
+        dock_to=rack, dock_link="server_rack_42u_link", dock_offset=(0.105, 0, 0.10 + 0.04445 * (2 * i + 1)),
+    )
+    cw.twins.set_thing_id(server.uuid, f"node={20 * RACK + i}")  # Marconi100: rack n holds nodes 20n to 20n+19
+report = cw.environments.auto_bind(ENVIRONMENT, DATASET, use_recorded=True)  # template: the dataset's "slots"
+print(f'{report["bound"]} slots bound, {report["skipped"]} skipped')
+for twin in report["twins"]:
+    for item in twin["skipped"]:
+        print(twin["twin_name"], item["slot"], item["reason"])
+```
+
+Running it again reuses the twins (the SDK returns an existing twin of the same asset and name instead of creating another) and skips the slots that are already bound. The SDK ships the same build as a script with more checks, `cyberwave-python/examples/datacenter_rack/build_rack.py`, which finds the rack and the servers by name and, on a re-run, also re-docks the servers and rewrites their identifiers:
+
+```bash
+python build_rack.py --environment <environment-uuid> --rack 48 --dataset <dataset-uuid> \
+  [--template marconi100 | <json file>] [--use-recorded | --no-use-recorded] [--position x y z] [--as-kit]
+```
+
+It creates `rack-48` and `rack-48-s00` to `rack-48-s19`, docked bottom to top, sets the identifiers `node=960` to `node=979`, binds the dataset with the chosen template (the Marconi100 one, a JSON file of your own, or else the dataset's) and prints the report. `--as-kit` also registers the kit `cyberwave/server-rack-42u-20x2u` (the rack with twenty servers at the same offsets) in the Catalog.
+
+<Note>
+If you prefer the app, add the kit with **Add to environment** from the Catalog ([Asset kits](/feature-reference/catalog/asset-kits)), give each server its **Identifier in datasets**, and press **Bind from dataset** on the rack with **Also docked children** ticked.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Time-series datasets" icon="chart-line" href="/feature-reference/datasets/timeseries">
+    Package sensor logs, search channels and attach a channel by hand.
+  </Card>
+  <Card title="Recorded data feed" icon="play" href="/feature-reference/environment-editor/replay-feed">
+    Play the bound channels into the twins in Live and Simulate.
+  </Card>
+  <Card title="Asset kits" icon="cubes" href="/feature-reference/catalog/asset-kits">
+    Reuse a rack with its servers as one docked assembly.
+  </Card>
+  <Card title="Python SDK" icon="python" href="/overview/tools/python-sdk">
+    Install the SDK and authenticate.
+  </Card>
+</CardGroup>

@@ -147,7 +147,7 @@ The **Local Teleop** controller is specifically designed for high-quality data c
 
 1. In your environment, switch to **Live Mode**
 2. Select the SO101 twin
-3. Click **Assign Controller**
+3. Click **Choose controller** in its **Controller** section
 4. Select **Local Teleop** from the controller list
 
 ![Assigning the Local Teleop controller](/images/so101-assign-controller.png)
@@ -407,19 +407,17 @@ After training completes successfully, deploy your model to make it available as
 
 ### Create a Model Deployment
 
-1. Navigate to **AI → Deployments** in your environment
-2. Click **Start New Deployment**
-3. Select your trained model from the list
+1. In your environment, open **AI → Deployment → Start new deployment**
+2. Select your completed training from the list
 
 ![Model deployment interface](/images/so101-model-deployment.png)
 
-4. Select the target twins (your SO-101 robot)
-5. Configure deployment settings (default settings work for most cases)
-6. Click **Deploy**
+3. Select the cameras and the target twins (your SO-101 robot)
+4. Click **Assign policy**
 
 ![Deployed model ready](/images/so101-deployed-model.png)
 
-Your model is now deployed and available as a VLA controller policy.
+Your model is now deployed: the selected twins run it with the **Policy controller**.
 
 <Check>
 **Model deployed successfully.** Your trained AI model is now ready to control the robot autonomously.
@@ -441,15 +439,15 @@ When you deploy a model and assign it to a twin:
 
 Now you'll use your deployed model to control the physical SO-101 robot using natural language prompts.
 
-### Assign the VLA Controller
+### Check the Policy Controller
 
-1. Switch to **Edit Mode** in your environment
-2. Select the SO101 twin
-3. Click **Assign Controller Policy** from the right side panel
-4. Select your deployed VLA model from the dropdown
-5. Click **Save Configuration**
+Deploying already assigned the **Policy controller** with your model, so there is nothing else to assign.
 
-The model now appears as an active controller policy.
+1. Select the SO101 twin
+2. Open its **Controller** section in the right-hand panel
+3. Check the model, the joint mapping and, for language models, the **Default instruction**. To switch models later, pick another one here and save it for **This twin** or **All twins in this environment**.
+
+The model now appears as the twin's active controller.
 
 ![VLA controller policy assigned](/images/so101-vla-controller-ready.png)
 

@@ -9,7 +9,7 @@ The Cyberwave platform uses MQTT for real-time communication between edge driver
 
 ## Topic prefix
 
-In non-production deployments the broker may be configured with an environment prefix (e.g. `local` for local dev). When a prefix is set, every topic below is written `{prefix}cyberwave/...`. The Python SDK's `topic_prefix` parameter and the `CYBERWAVE_MQTT_TOPIC_PREFIX` environment variable handle this automatically (when neither is set, the SDK derives the prefix from `CYBERWAVE_ENVIRONMENT`). All topic patterns on this page omit the prefix for clarity.
+In non-production deployments the broker may be configured with an environment prefix (e.g. `local` for local dev). When a prefix is set, every topic below is written `{prefix}cyberwave/...`. The Python SDK's `topic_prefix` parameter and the `CYBERWAVE_MQTT_TOPIC_PREFIX` environment variable handle this automatically (when neither is set, the SDK derives the prefix from `CYBERWAVE_ENVIRONMENT`). The SDK logs a warning when the resolved prefix does not match a hosted broker (`staging.mqtt.cyberwave.com` expects `staging`, `mqtt.cyberwave.com` expects none), since mismatched messages are silently dropped. All topic patterns on this page omit the prefix for clarity.
 
 ## Source types
 
@@ -309,6 +309,7 @@ Robot-specific command strings used by bundled controllers:
 | `command`                      | Robot                | Description                                   |
 | ------------------------------ | -------------------- | --------------------------------------------- |
 | `led_toggle`                   | Quadruped            | Toggle LEDs                                   |
+| `led_on` / `led_off`           | Quadruped            | Turn LEDs on / off                            |
 | `chassis_light_toggle`         | UGV Beast            | Toggle chassis light                          |
 | `camera_light_toggle`          | UGV Beast            | Toggle camera light                           |
 | `camera_up` / `camera_down`    | UGV Beast            | Tilt camera                                   |
@@ -462,6 +463,23 @@ The camera does **not** need to be streaming video for this to work — the driv
 | `height`      | number | no       | Frame height in pixels                             |
 | `timestamp`   | number | no       | Unix timestamp (seconds)                           |
 
+#### Matching a photo to its request
+
+The `take_photo` command may carry a `data` object:
+
+```json
+{ "command": "take_photo", "data": { "request_id": "3f2c…", "upload": false } }
+```
+
+| Field        | Type    | Description                                                                                                                |
+| ------------ | ------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `request_id` | string  | Echoed as `request_id` on the `camera/photo` reply, so a caller can tell its photo from another client's.                   |
+| `upload`     | boolean | `false` returns the image on `camera/photo` only, without storing it as a navigation capture. Use it outside a navigation route. |
+
+Drivers that support these fields (currently the Unitree GO2) also add `status` (`"ok"` or `"error"`) to the reply. An error reply has a `message` and no `image`. Other drivers ignore both fields, so match on `request_id` only for a driver known to echo it.
+
+On the GO2, a `take_photo` without `upload: false` is stored as a navigation capture, which only succeeds during an active navigation action; otherwise the reply is an error.
+
 #### Retrieving the photo
 
 Subscribe to the topic, then base64-decode the `image` field. Remember to prepend the [topic prefix](#topic-prefix) in non-production deployments (e.g. `localcyberwave/twin/...`).
@@ -526,6 +544,113 @@ Periodic robot metrics snapshot (battery, navigation status, load, errors, etc.)
 | ------------- | ------ | -------- | ---------------------------------------------- |
 | `source_type` | string | yes      | Typically `"edge"`                             |
 | `metrics`     | object | yes      | Free-form dict of metric categories and values |
+
+---
+
+### `cyberwave/twin/{twin_uuid}/metrics/{channel}`
+
+**Direction:** publish (edge driver, simulator) → subscribe (backend)
+
+One sample of one structured metric. A channel is a timeseries of a single scalar, such as a gripper position or a motor temperature. Use it for signals that need their own rate: every valid sample is stored as its own row, nothing is sampled, and a channel sample does not fire `metrics` workflow triggers. The newest sample of each channel is served under `channels` by `GET /twins/{uuid}/metrics/latest`.
+
+The channel name is `.`-separated and each segment is one topic level, so channel `arm.gripper` is published on `cyberwave/twin/{twin_uuid}/metrics/arm/gripper`. A key of that name in the `metrics` snapshot above (the Python SDK's `publish_metrics`) names the same channel.
+
+```json
+{
+  "source_type": "edge",
+  "timestamp": 1788433200.25,
+  "value": 0.42
+}
+```
+
+| Field         | Type              | Required | Description                                                                                                                                                                         |
+| ------------- | ----------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `source_type` | string            | yes      | `"edge"` or `"sim"`: the robot reporting on itself. Any other value drops the sample                                                                                                |
+| `value`       | number or boolean | yes      | One scalar. An integer must fit in 64 bits; a float must be finite and below 2^63 in magnitude (JSON has no NaN or infinity). Strings, objects and arrays are dropped               |
+| `timestamp`   | number            | no       | When the value was measured, in Unix seconds (not milliseconds), from 2001 to ten years ahead. Without a usable stamp the sample is stored with its arrival time. `ts` is read as a fallback |
+
+The payload may also carry the optional envelope fields `source_subtype`, `producer_instance`, `workload_uuid` and `session_id` (strings), `producer_sequence`, `layout_version`, `source_timestamp_ns`, `clock_id`, `suppress_workflow_dispatch` and `trigger_chain`. A field that is in neither this list nor the table drops the whole message.
+
+Rules for the topic:
+
+- Each `.`-separated segment of the channel is non-empty and has none of `/`, `+`, `#`.
+- The channel is at most 120 characters.
+- `source_type` is not a valid channel name: it is the sample's source stamp.
+- A message the backend refuses is dropped without an error reply, so validate before you publish. The Python SDK's `publish_metric` and `publish_metrics` check these rules and raise instead of sending.
+
+---
+
+### `cyberwave/twin/{twin_uuid}/frame_poses`
+
+**Direction:** publish (edge driver, simulator) → subscribe (backend)
+
+Poses a driver or simulator reports for named frames of its own robot (a camera mount, an end effector), each tagged with how it was obtained. Optional: publish it when you know where a frame is better than the base pose and joint state alone say. Each message is recorded whole as one `twin_frame_poses` telemetry event. The backend keeps at most five messages per second per twin and drops the rest, so publish at the rate you want stored.
+
+The payload is the JSON form of the `cyberwave.mqtt.twin.v1.TwinFramePosesPayload` contract (`common/protobuf/proto/cyberwave/mqtt/twin/v1/frame_poses.proto`): proto3 JSON with the field names below as keys. Enums travel as their full names (`SUBSTRATE_SIM`), never as numbers or lowercase words. There is no `source_type` field; it is derived from `header.substrate`.
+
+```json
+{
+  "header": {
+    "stamp": {
+      "value_nanos": "1788433200250000000",
+      "clock": "CLOCK_DOMAIN_REALTIME",
+      "clock_id": "sim-7f3a"
+    },
+    "frame_id": "environment",
+    "twin_uuid": "8f1c2d3e-0000-4000-8000-000000000001",
+    "substrate": "SUBSTRATE_SIM"
+  },
+  "frames": [
+    {
+      "child_frame_id": "base_link",
+      "pose": {
+        "position": { "x": 1.2, "y": 0.5, "z": 0.31 },
+        "orientation": { "x": 0.0, "y": 0.0, "z": 0.04998, "w": 0.99875 }
+      },
+      "pose_provenance": "POSE_PROVENANCE_GROUND_TRUTH"
+    }
+  ],
+  "source_subtype": "mujoco",
+  "producer_instance": "sim-7f3a",
+  "producer_sequence": "77190",
+  "simulation_time_s": 12.5
+}
+```
+
+Golden payloads: `common/protobuf/fixtures/mqtt/twin/v1/frame_poses.json` (simulator, with every optional field) and `frame_poses_hardware.json` (wheel odometry with a covariance, and a SLAM pose for the same frame).
+
+| Field               | Type              | Required | Description                                                                                                              |
+| ------------------- | ----------------- | -------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `header`            | object            | yes      | Frame, substrate and optional stamp; see below                                                                           |
+| `frames`            | array             | yes      | One frame pose entry per reported pose, at least one; see below                                                          |
+| `source_subtype`    | string            | no       | Component that produced the poses, e.g. `"mujoco"`                                                                       |
+| `producer_instance` | string            | no       | Stable for one process boot, changes on restart                                                                          |
+| `producer_sequence` | integer or string | no       | Monotonic counter per producer and topic. A signed 64-bit integer or its decimal string; anything else drops the message |
+| `workload_uuid`     | string            | no       | Simulation workload the poses belong to                                                                                  |
+| `session_id`        | string            | no       | MQTT client id of the publishing SDK session, stamped by the Python SDK                                                  |
+| `simulation_time_s` | number            | no       | Simulation clock at the sample, in seconds. Finite and not negative                                                      |
+
+**`header`**
+
+| Field       | Type   | Required | Description                                                                                                                                                                                                                                                                                              |
+| ----------- | ------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `frame_id`  | string | yes      | Always `"environment"`: the environment's own frame, the one the twin's base pose is in. Compose a local or navigation-frame (`odom`, `map`) pose into it before publishing                                                                                                                              |
+| `substrate` | string | yes      | `"SUBSTRATE_SIM"` or `"SUBSTRATE_HARDWARE"`. Anything else is rejected                                                                                                                                                                                                                                   |
+| `twin_uuid` | string | no       | When present, equals the twin in the topic                                                                                                                                                                                                                                                               |
+| `stamp`     | object | no       | When the poses were true: `value_nanos` (a decimal string or a JSON integer, nanoseconds), `clock` (a `CLOCK_DOMAIN_*` name) and an optional `clock_id`. Only a `CLOCK_DOMAIN_REALTIME` or `CLOCK_DOMAIN_DISCIPLINED` stamp becomes the event time; otherwise the event is recorded at arrival time. A malformed stamp drops the message |
+
+**Frame pose entries (`frames[]`)**
+
+| Field             | Type   | Required | Description                                                                                                                                                  |
+| ----------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `child_frame_id`  | string | yes      | The frame being located, named as in the robot schema (`base_link`, `front_camera_link`)                                                                     |
+| `pose`            | object | yes      | `position` (`x`, `y`, `z`, metres) and `orientation` (unit quaternion `x`, `y`, `z`, `w`). Every component is a finite JSON number; none defaults to zero    |
+| `pose_provenance` | string | yes      | How the pose was obtained, one of the values below. `POSE_PROVENANCE_GROUND_TRUTH` is accepted only with `SUBSTRATE_SIM`                                     |
+| `pose_covariance` | object | no       | `{"data": [...]}` with exactly 36 numbers, row-major 6x6 over x, y, z, rx, ry, rz. Leave it out when you do not estimate it: absent means unknown, not certain |
+
+`pose_provenance` values: `POSE_PROVENANCE_GROUND_TRUTH`, `POSE_PROVENANCE_ODOMETRY`, `POSE_PROVENANCE_VISUAL_ODOMETRY`, `POSE_PROVENANCE_VIO`, `POSE_PROVENANCE_SLAM`, `POSE_PROVENANCE_LIDAR_LOCALIZATION`, `POSE_PROVENANCE_GPS`, `POSE_PROVENANCE_DEAD_RECKONING`, `POSE_PROVENANCE_CHARUCO`, `POSE_PROVENANCE_MOCAP`, `POSE_PROVENANCE_FUSED`. `POSE_PROVENANCE_UNSPECIFIED` is rejected.
+
+The same frame can appear more than once in a message under different provenances (odometry and SLAM for `base_link`), but each (`child_frame_id`, `pose_provenance`) pair appears once. A message that breaks any rule is dropped whole, with no error reply. The Python SDK's `publish_frame_poses` checks these rules and raises instead of sending.
 
 ---
 

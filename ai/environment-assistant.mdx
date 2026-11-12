@@ -26,7 +26,7 @@ Generated assets start private and scoped to the environment that asked for them
 
 The conversation stays the same when you switch between **Edit** and **Monitor** in Simulate or Live, within the same page session. Unsent drafts, tagged objects and reference images are kept when you visit **Control** and come back. In **Monitor**, action cards are read-only, and switching to Monitor asks the assistant to stop unfinished edits without stopping running robots or training jobs.
 
-To act on the robots themselves, use the [control agent](/ai/control-agent); it has its own composer. More on the editor: [Environment editor](/feature-reference/environment-editor).
+To act on the robots themselves, use the [control agent](/ai/control-agent) (**AI → Ask the agent**); it has its own composer. More on the editor: [Environment editor](/feature-reference/environment-editor).
 
 ## Use it from Python
 
@@ -47,9 +47,11 @@ print(cw.agents.environment.models())
 
 `message()` also accepts the conversation `history`, a `pending_confirmation` to answer, and an image (`image_base64`, `image_mime_type`) as a reference.
 
+The assistant's chat model is an environment setting: the model you pick in the assistant panel is saved for everyone in that environment. It is separate from the model robots plan with, which is set in each robot's Agentic controller. When the assistant asks a robot to plan, the robot's Agentic model wins; the chat model is used only if none is set.
+
 ## From your AI tools (MCP)
 
-With the [MCP server](/overview/tools/mcp-server), Claude Code, Cursor or any MCP client can plan a scene with `cw_plan_scene` and create environments with `cw_create_environment`. `cw_plan_scene` is advisory: it returns a plan and checks, and changes nothing.
+With the [MCP server](/overview/tools/mcp-server), Claude Code, Cursor or any MCP client can create environments with `cw_create_environment` and build or edit scenes with `cw_edit_environment`.
 
 ## Next steps
 

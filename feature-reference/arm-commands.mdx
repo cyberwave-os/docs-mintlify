@@ -9,11 +9,11 @@ grouped handles like `twin.gripper`). Availability depends on the robot.
 
 | Command | Args | Description |
 | --- | --- | --- |
-| `ee_move` | `forward`, `up`, `left` (m), `frame` (`tool`\|`base`) | Translate the end-effector. |
-| `ee_rotate_left` / `ee_rotate_right` | `angle` (rad) | Yaw the end-effector. |
-| `ee_rotate_up` / `ee_rotate_down` | `angle` (rad) | Pitch the end-effector. |
+| `ee_move` | `forward`, `up`, `left` (m), `frame` (`tool`\|`base`), `speed` (0–1) | Translate the end-effector. |
+| `ee_rotate_left` / `ee_rotate_right` | `angle` (rad), `speed` (0–1) | Yaw the end-effector. |
+| `ee_rotate_up` / `ee_rotate_down` | `angle` (rad), `speed` (0–1) | Pitch the end-effector. |
 | `base_rotate_left` / `base_rotate_right` | `angle` (rad) | Rotate the base joint. |
-| `grip` | `force` (0–1) | Close the gripper. Also `twin.gripper.grip(force)`. |
+| `grip` | `force` (0–1), optional `max_effort_nm` (N·m) | Close the gripper. `max_effort_nm` caps the squeeze so the object isn't crushed; the range depends on the driver (Piper: 0.5–3.0). Also `twin.gripper.grip(force, max_effort_nm=...)`. |
 | `release` | — | Open the gripper. Also `twin.gripper.release()`. |
 | `home` | — | Return to the home pose. |
 | `ee_pose` | `pose` — 6-element array `[x, y, z, roll, pitch, yaw]` (m, rad) | Move the end-effector to an absolute pose. |
@@ -26,6 +26,10 @@ twin.commands.release()
 twin.commands.home()
 ```
 
+`speed` scales that one command only; see
+[Arm Cartesian control](/feature-reference/arm-cartesian-control).
+
 Dual-arm robots (one twin, two end-effectors) expose the same commands prefixed
 per arm — `left_ee_move`, `right_grip`, `left_ee_pose`, … — plus a conjunct
-`home` that returns both arms.
+`home` that returns both arms. The prefixed end-effector commands take the same
+args as the single-arm ones, `speed` included.

@@ -90,7 +90,7 @@ Teleop listeners **reject `edge*`** messages so the driver never re-ingests its 
 
 ## Reference pattern: ROS manipulator arm (Agilex Piper)
 
-The **[Agilex Piper driver](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-edge-nodes/piper/piper_driver.py)** (`PiperDriver`) is the canonical integration: five base classes, a handful of seams, and **one** `define_interface` publisher — no hand-written MQTT joint bridge.
+The **[Agilex Piper driver](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-edge-nodes/piper/public/cw_piper/driver.py)** (`PiperDriver`) is the canonical integration: five base classes, a handful of seams, and **one** `define_interface` publisher — no hand-written MQTT joint bridge.
 
 ### How the pieces connect
 
@@ -226,7 +226,7 @@ ROS joint_states_single
 
 ### Passthrough motion vs shaped
 
-Piper returns `None` from `joint_controller_motion()` so targets pass straight through; velocity and effort limits come from ROS parameters (`joint_velocities`, `joint_efforts`, `gripper_effort`) inside `_build_joint_command_msg()`. Arms that need SDK-side smoothing return `trapezoidal_motion` instead — see [Joint motion shaping](/feature-reference/edge/drivers/joint-motion-shaping).
+Piper returns `None` from `joint_controller_motion()` so targets pass straight through. Effort comes from the `joint_efforts` / `gripper_effort` ROS parameters; joint velocity does **not** — Piper has a single arm-velocity setting, `max_joint_velocity_rad_s` (rad/s), and every command is bounded by it. There is no per-command `speed` argument on Piper's `ee_move` / `ee_rotate_*`. Arms that need SDK-side smoothing return `trapezoidal_motion` instead — see [Joint motion shaping](/feature-reference/edge/drivers/joint-motion-shaping).
 
 ### Operation modes and edge health
 
@@ -262,7 +262,7 @@ End users call `twin.joints.set()` / `twin.joints.get()`; they do not implement 
   <Card title="Writing compatible drivers" icon="book" href="/feature-reference/edge/drivers/writing-compatible-drivers">
     Platform contract, MQTT catalog, env vars.
   </Card>
-  <Card title="Agilex Piper driver" icon="code-branch" href="https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-edge-nodes/piper/piper_driver.py">
+  <Card title="Agilex Piper driver" icon="code-branch" href="https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-edge-nodes/piper/public/cw_piper/driver.py">
     Production reference — mixin integration, passthrough motion, managed launch.
   </Card>
 </CardGroup>

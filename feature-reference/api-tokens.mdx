@@ -74,6 +74,18 @@ reach only grows when you explicitly add a workspace to its scope.
 
 ---
 
+## A2A protocol access
+
+A token can call the [A2A partner API](/api-reference/a2a-partner-api) only if
+**A2A protocol access** is turned on. It is off by default, so existing tokens
+cannot reach it. A2A tasks can dispatch actions to robots in the token's
+workspaces, so turn it on only for tokens that need it.
+
+Use the switch when you create the token, or open **Edit scope** on the token's
+row to turn it on or off later. Changing it keeps the token's secret, so
+nothing using the token has to be updated. Each environment's **Control plane
+access** setting still limits what an A2A request may do there.
+
 ## Naming a workspace on every request
 
 Requests say which workspace they act in. A token scoped to exactly one

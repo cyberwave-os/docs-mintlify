@@ -5,6 +5,60 @@ rss: true
 icon: "clock-rotate-left"
 ---
 
+{/* TODO(deploy day): replace "TODO: deploy date" with the real date label (e.g. "November 12, 2026") when the MCP server, SDK 0.7.5 and CLI 0.12.10 ship. */}
+<Update label="TODO: deploy date">
+
+## MCP server 0.3.0: 23 tools removed
+
+The hosted MCP server no longer registers the tools below. A call to a removed
+name returns an unknown-tool error. Agents that re-read `tools/list` each
+session find the replacements on their own; saved prompts and scripted clients
+need updating.
+
+| Removed | Use instead |
+|---|---|
+| `cw_list_twins`, `cw_resolve_twin`, `cw_list_areas`, `cw_list_waypoints`, `cw_list_procedural_primitives` | `cw_list_environment_entities` (filter with `entity_type`, `name` or `entity_id`) |
+| `cw_search_workflow_templates` | `cw_list_workflows` with `query` |
+| `cw_create_area`, `cw_create_waypoint`, `cw_create_procedural_primitive`, `cw_add_twin_to_environment`, `cw_edit_position`, `cw_edit_rotation`, `cw_transform_environment_object`, `cw_resize_area`, `cw_update_environment_entity_properties`, `cw_plan_scene` | `cw_edit_environment` |
+| `cw_set_joint`, `cw_motion_pose`, `cw_navigation_goto`, `cw_navigation_stop`, `cw_resolve_control_route` | `cw_plan_control_action`, then `cw_dispatch_control_action` |
+| `cw_capture_frames` | `cw_capture_frame` |
+| `cw_set_asset_capabilities` | No replacement |
+
+## Python SDK 0.7.5
+
+- `twin.pose.set()` and `twin.pose.get(version=...)` for arms that publish a
+  `/pose` topic, such as the AgileX Piper. See
+  [Arm Cartesian control](/feature-reference/arm-cartesian-control).
+- REST calls now enforce their timeouts.
+- `paho-mqtt` is capped at `<=2.2.0`.
+- REST calls use the operating system's CA store when it is usable, so CAs
+  installed on the host (TLS-inspecting proxies, private backends) work again.
+  `SSL_CERT_FILE` and `SSL_CERT_DIR` still take precedence.
+
+## CLI 0.12.10
+
+The saved backend URL is now used by every command. A web-app URL (for example
+the dashboard address) is rejected with a message naming the API URL to use.
+
+</Update>
+
+<Update label="Unreleased">
+
+## Joint-state writes reject unknown joint names
+
+`PUT /api/v1/twins/{uuid}/joint_states` now returns `400` when none of the
+supplied joint names exist in the twin's schema. Previously it returned `200`
+and wrote nothing. The error lists the unknown names and the expected
+controllable joints. The usual cause is sending URDF joint names where the
+twin's schema names are expected. A payload where at least one name matches
+still applies partially, and twins with no controllable joints still accept any
+payload. MQTT joint-state topics are unaffected. Before deploying, check
+scripts that call this endpoint directly (for example through the Python SDK's
+generated `src_app_api_urdf_update_twin_joint_states`). See
+[Twin joint home positions](/feature-reference/twin-joint-home-positions).
+
+</Update>
+
 <Update label="September 9, 2026">
 
 ## New Features

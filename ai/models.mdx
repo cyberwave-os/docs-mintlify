@@ -14,10 +14,10 @@ An **AI model** on Cyberwave is a catalog entry that says four things: what it t
     **Sensor data in, facts out.** Detection, segmentation, pose, depth, captioning, speech-to-text. Something else (your code, a workflow, an agent) decides what the robot does with the result.
   </Card>
   <Card title="Reason" icon="comments">
-    **Instructions in, plans out.** Language and vision-language models answer prompts and break a goal into steps. They also power the [AI agents](/ai/agents).
+    **Instructions in, plans out.** Language and vision-language models answer prompts and break a goal into steps. They also power the [AI agents](/ai/agents) and the Agentic controller.
   </Card>
   <Card title="Act" icon="robot">
-    **Observations in, robot actions out.** VLA models and RL policies produce joint or velocity commands directly, so they run as the robot's [controller](/ai/control).
+    **Observations in, robot actions out.** VLA models and RL policies produce joint or velocity commands directly, so they run as the robot's [Policy controller](/ai/control).
   </Card>
 </CardGroup>
 
@@ -80,6 +80,6 @@ Output schemas and parsing: [Tasks and outputs](/feature-reference/ml-models/str
     `cw.models.load("yolo26n.pt").predict(frame)`, locally or in the cloud.
   </Card>
   <Card title="Make it the controller" icon="gamepad" href="/ai/control">
-    VLA models and RL policies drive the robot directly.
+    Run a VLA model or RL policy as the robot's Policy controller.
   </Card>
 </CardGroup>

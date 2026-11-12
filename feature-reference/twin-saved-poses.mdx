@@ -10,16 +10,60 @@ Poses are named joint-angle snapshots you can save and re-apply later, from
 the Poses section of a twin's right-hand panel (below Manual Control /
 Joint Editing).
 
+## Three ways to apply a pose
+
+- **Snap** puts the robot at the pose immediately. In a simulation (Playground,
+  MuJoCo, MuJoCo Warp or Isaac Sim) that sets the simulated state; in Edit it
+  applies the pose to the twin. Never in Live — real hardware cannot be
+  teleported.
+- **Move** sends the pose as one joint target and leaves the robot's own
+  controller to get there. In a simulation the robot holds it. On real hardware
+  the driver moves only while it is being told to, so a Move is a nudge toward
+  the pose rather than a way to arrive at it — use it to jog, not to reach.
+- **Trajectory** drives to the pose along an interpolated path. This is the one
+  to use to actually *reach* a pose on real hardware.
+
+Snap rebases an attached keyboard controller onto the pose immediately. Move and
+Trajectory hand the arm to the robot for the duration of the move and rebase the
+keyboard only once the robot reports arriving, so your next keypress continues
+from where the robot actually is rather than pulling it back.
+
 ## Where it works
 
-- **Edit mode**: save/edit/delete/apply poses against the twin's rest state.
-- **Live mode**: save captures the twin's current live telemetry (not the
-  rest state); applying a pose sends it to the real device over MQTT.
-- **Simulate mode**: save captures the current simulated joint state;
-  applying a pose drives the simulator over MQTT.
+| Mode | Actions |
+| ---- | ------- |
+| **Edit** | **Snap** and **Trajectory**. Both apply the pose to the twin, instantly or animated — and in Edit the twin's end state *is* its authored home pose everywhere else, so there is no separate save-home step. |
+| **Simulate / Playground** | **Snap**, **Move** and **Trajectory**. Save captures the current simulated joint state. |
+| **Live** | **Move** and **Trajectory** — never Snap. Save captures the twin's current live telemetry, not the rest state. |
+
+A running controller can override a snap on its next tick — pause it first.
+With MuJoCo, MuJoCo Warp or Isaac Sim, start the simulation before snapping:
+those engines apply the snap, and nothing moves while none is running.
+
+<Info>
+Snap is behind a feature flag during rollout. If you don't see it, ask your
+Cyberwave contact to enable it for your organization. Move and Trajectory are
+always available.
+</Info>
 
 ## Scopes
 
-A pose can be saved at twin, environment, or asset scope, controlling
-whether it's specific to this twin, this environment, or shared across every
-instance of the asset.
+Saving a pose asks how far it should reach:
+
+| Scope | Reach |
+| ----- | ----- |
+| **All twins of this asset** | Every instance of this robot, in every environment |
+| **This twin, here** | This twin, in this environment only |
+| **This twin, everywhere** | This twin, in every environment it appears in — the default |
+
+Two of the same robot in one environment always get separate poses, whichever of
+the two twin scopes you pick.
+
+## Authored home
+
+In Simulate and Live the panel also lists the twin's authored edit/home pose as
+an **Authored home** row (with a **Preview**). It offers the same actions as a
+saved pose in that mode: **Snap**, **Move** and **Trajectory** in
+Simulate/Playground, **Move** and **Trajectory** in Live. Edit has no such
+row — there the twin's current pose *is* its authored home. See
+[Joint home positions](/feature-reference/twin-joint-home-positions).

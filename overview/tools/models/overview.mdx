@@ -195,6 +195,24 @@ for d in pred:
 | `pred` | Concrete result subclass (`DetectionResult`, `ClassificationResult`, `TextResult`, …) |
 | `pred.raw`    | Unprocessed runtime payload when you need internals                                   |
 
+### Track objects across frames
+
+Pass `tracker=` to give each detected object a stable `track_id` across frames. It works the same for every model that returns detections, whatever its runtime, and needs the `ml-tracking` extra (`pip install "cyberwave[ml-tracking]"`).
+
+```python
+for frame in frames:
+    pred = model.predict(frame, tracker="bytetrack", stream="front")
+    for d in pred:
+        print(d.label, d.track_id)  # e.g. "person None" on its first frame, then "person 0"
+```
+
+- `tracker`: `"bytetrack"` or `"botsort"`, or a mapping of `TrackerConfig` fields from `cyberwave.models.tracking` to tune it, e.g. `{"kind": "bytetrack", "minimum_consecutive_frames": 3, "reset_after_s": 5.0}`. BoT-SORT compensates camera motion only when the input is a 3-channel (color) image array; on grayscale input it still tracks, without that compensation.
+- `stream`: the camera the frames come from. Each `(twin, stream)` pair keeps its own ids, so cameras sharing one model never mix them. Pass `track_scope` as well when two callers share one model and camera.
+- Two objects of the same class get different ids, and ids are never reused within a stream while the process runs.
+- `track_id` stays `None` until a new object has been seen in `minimum_consecutive_frames` consecutive frames (2 by default), so the first frame of every object has no id.
+- A frame gap longer than `reset_after_s` (2 s by default) that is also more than twice the previous frame interval resets the stream: objects then get new ids, numbered after the ones already issued. A camera sampled every few seconds is not reset.
+- If the tracker fails on a frame, `predict` still returns the detections, without ids, and logs a warning.
+
 ---
 
 ## Catalog-to-runtime workflow

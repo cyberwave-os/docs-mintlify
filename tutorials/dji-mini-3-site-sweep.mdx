@@ -236,7 +236,7 @@ Add a **Send Alert** node wired directly from the **Conditional** in Phase 2. Th
 Add a **drone action** node (the node that drives a command back to the twin through the edge) wired from the **instant alert** node, so it runs right after. Set it to **ascend** by a few meters, for example `ascend` with a target of 3 to 5 m, so the camera takes in more of the site. Once it has climbed, the wider view is live in the twin's feed for whoever responds to the alert.
 
 <Warning>
-**Continuous moves are opt-in on DJI aircraft.** `ascend` (and the other stick verbs) only run when the twin has `metadata.drivers.default.virtual_stick = true`. Without it, the driver refuses the command and raises an alert instead of moving. The physical RC always wins: stick input reclaims control immediately, and targets decay to zero after 500 ms of silence. See [Drones](/overview/drones) for the full safety story. Keep the RC in hand and only enable autonomous moves with clear airspace overhead.
+**Continuous moves are opt-in on DJI aircraft.** `ascend` (and the other stick verbs) only run when the twin has `metadata.drivers.default.virtual_stick = true`. Without it, the driver refuses the command and raises an alert instead of moving. Moving the RC sticks corrects a running move but does not stop the plan: to take the aircraft back, press the RC's pause button or send `stop` / `emergency_stop`. Targets decay to zero after 500 ms of silence. See [Drones](/overview/drones) for the full safety story. Keep the RC in hand and only enable autonomous moves with clear airspace overhead.
 </Warning>
 
 ### Step 3.3: Activate

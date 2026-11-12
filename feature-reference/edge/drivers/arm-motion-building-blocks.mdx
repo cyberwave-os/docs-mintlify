@@ -1,0 +1,217 @@
+---
+title: "Arm motion building blocks"
+description: "Shared SDK pieces for planned arm motion: set_pose and grasp on a built-in pinocchio backend or your own, Cartesian requests, local planning, collision checks, a command arbiter and world obstacles."
+tag: "stub"
+---
+
+{/* TODO(docs): **stub** — This page will be curated before publishing. Content reflects the current Python SDK (`cyberwave.driver`). */}
+
+An arm driver doesn't have to build its own planning and safety layer. The Python SDK ships the pieces every arm needs, so a driver supplies configuration and the few hardware-specific hooks.
+
+Install the arm extras for kinematics, planning and collision checks:
+
+```bash
+pip install "cyberwave[drivers]"
+```
+
+## Choosing a backend
+
+`PlannedMotionMixin` gives an arm driver one planned-motion layer. The `kinematics_backend` attribute names the default planner behind it. The SDK has one built in:
+
+- `"pinocchio"` plans in-process on the robot description and executes through the arm's trajectory controller.
+
+Whichever backend answers, the driver gets the same commands, arguments and refusal codes: `set_pose`, `grasp`, `scene_set`, `attach_payload` and `detach_payload` (see [Commands](#commands)), plus `ee_pose`. It also publishes the same `state/motion` stream, and `stop` cancels the active motion. A request can name any registered backend in `backend`; without one it gets the default.
+
+```python
+from cyberwave.driver import (
+    ArmCapabilityMixin,
+    EECartesianPoseMixin,
+    PlannedMotionMixin,
+    WorldObstaclesMixin,
+)
+from cyberwave.driver.control import Preconditions
+from cyberwave.driver.ros2 import BaseROS2Driver
+
+
+class MyArmDriver(
+    PlannedMotionMixin,  # first: it overrides seams of the mixins below
+    WorldObstaclesMixin,
+    ArmCapabilityMixin,
+    EECartesianPoseMixin,
+    BaseROS2Driver,
+):
+    kinematics_backend = "pinocchio"
+    use_base_commands = True
+    use_cartesian_pose = True
+    PLANNED_MOTION_MAX_JOINT_ACCELERATION_RAD_S2 = 2.0
+
+    def arm_config(self): ...
+
+    def _motion_preconditions(self):
+        # Gate every move on your own fault, mode and joint-feedback state.
+        return Preconditions(measured_state_seen=self._joint_feedback_seen)
+
+    def _planned_motion_kinematics_kwargs(self):
+        return {"srdf_path": "/path/to/robot.srdf"}
+```
+
+If your driver also sends motion of its own, such as a Cartesian jog, pass that work to `self.replace_planned_motion(...)`. When a planned motion is running, it is cancelled and your work runs once that motion has ended, so the two never reach the arm controller at the same time. When it returns `False`, nothing was running and you send the motion yourself.
+
+The in-process backend has two limits worth knowing:
+
+- It has no sampling planner: a PTP path blocked by an obstacle is refused rather than routed around it.
+- An `allow_touch` object is left out of the collision model, rather than allowed to touch only the gripper links.
+
+When it can't plan at all (no arm controller, or no limits to time a trajectory with), it refuses with `backend_unavailable`, and the detail starts with `pinocchio:`.
+
+### Bring your own backend
+
+A driver that has another planner, such as MoveIt running beside it, can plug it in. Implement the `MotionBackend` protocol in your driver package, register it under a name, and select that name:
+
+```python
+class MyArmDriver(PlannedMotionMixin, ...):
+    def _motion_backend_factories(self):
+        return {**super()._motion_backend_factories(), "moveit": self._build_moveit_backend}
+
+    def configure(self, ...):
+        ...
+        self.kinematics_backend = "moveit" if self._config.use_moveit else "pinocchio"
+```
+
+Assign `kinematics_backend` in `configure()` from your driver's config; it is read on every request. A name nobody registered fails loudly and lists the registered names.
+
+Every backend that has been used holds the same task scene and payload. A `scene_set`, `attach_payload` or `detach_payload` reaches all of them or none, and a backend used for the first time is given the current scene before its first goal.
+
+A backend that can't plan right now refuses with `backend_unavailable`, and the detail names the backend. `state/motion` reports the default backend in `kinematics_backend`, whether it can accept goals in `backend_available`, the backend answering the current motion in `backend`, and the planner it used in `planner`.
+
+See [Integrating MoveIt](/feature-reference/edge/drivers/integrating-moveit) for a complete example.
+
+## Commands
+
+Every argument that is an option has a default, so a request carries only what it needs.
+
+### `set_pose`
+
+Moves the TCP to a pose, or by one.
+
+| Argument | Default | |
+|---|---|---|
+| `pose` | required | a position and a rotation, in metres and radians: `[x, y, z, roll, pitch, yaw]` (extrinsic XYZ), `[x, y, z, qx, qy, qz, qw]`, `[[x, y, z], rotation]`, or a waypoint `{position, orientation \| rotation, reference_frame \| frame_id}` |
+| `mode` | `absolute` | `relative` moves the tool by the pose instead of to it, starting from its measured pose when the command arrives |
+| `motion` | `ptp` | `lin` moves the tool along a straight line, refused rather than bent |
+| `reference_frame` | the planning frame (absolute), the tool (relative) | any frame of the robot description, read at the arm's current posture, or `base` / `tool` |
+| `backend` | the driver's `kinematics_backend` | any registered backend |
+| `expected_joints` | none | refuse with `stale_robot_state` if the arm has moved from these joints |
+| `scene_revision` | none | refuse with `scene_revision_unknown` unless this scene is active |
+| `plan_only` | `false` | plan and report, move nothing |
+
+```json
+{"command": "set_pose", "data": {"pose": [0.30, 0.0, 0.20, 3.1416, 0.0, 0.0]}}
+{"command": "set_pose", "data": {"pose": [0.0, 0.0, -0.03, 0.0, 0.0, 0.0], "mode": "relative", "motion": "lin"}}
+{"command": "set_pose", "data": {"pose": {"position": {"x": 0, "y": 0, "z": 0.25}, "orientation": {"x": 0, "y": 0, "z": 0, "w": 1}, "reference_frame": "camera_link"}}}
+```
+
+A pose always carries a rotation: there is no position-only form, and no degrees. From Python, `twin.set_pose(...)`, `twin.move(...)` and, on an arm, `twin.pose.set(...)` send this command. They also take a `CartesianPose`, such as `twin.pose.get()`, and a `(position, rotation)` pair of arrays.
+
+A relative target is measured from where the tool is when the command arrives, and a newer motion replaces a running one. Two relative moves sent back to back therefore don't add up: the second starts wherever the first had got to. Use absolute targets for a sequence that has to land exactly.
+
+`ee_pose` is `set_pose` with `motion: "ptp"` on the default backend.
+
+### `grasp`
+
+Grasps the first reachable candidate of a ranked list. For each candidate in order, the backend plans:
+
+1. a PTP move to the pregrasp pose, `approach_distance_m` back from the grasp pose;
+2. a straight approach onto the grasp pose;
+3. a straight lift of `lift_distance_m`, checked from the grasp pose but never executed.
+
+The first candidate whose three phases all plan is executed up to the grasp pose. The gripper is left for you to close, and `state/motion` reports the chosen candidate in `last_result.selected_candidate`. Every refused candidate raises its own `planning_failed` alert.
+
+| Argument | Default | |
+|---|---|---|
+| `candidates` | required | ranked `[{pose, approach}]`; `pose` takes any `set_pose` form; `approach` (`{x, y, z}` or `[x, y, z]`) defaults to the tool's own forward axis at the grasp pose |
+| `reference_frame` | the planning frame | the frame of every candidate pose and approach |
+| `approach_distance_m` | `0.06` | |
+| `lift_distance_m` | `0.05` | |
+| `backend`, `expected_joints`, `scene_revision`, `plan_only` | as for `set_pose` | |
+
+### Scene and payload
+
+| Command | Arguments (default) |
+|---|---|
+| `scene_set` | `objects` (`[]`), `allow_touch` (`[]`), `scene_revision` (numbered by the driver: `scene-1`, `scene-2`, ...), `frame` (the planning frame). Without data it clears the task scene. |
+| `attach_payload` | `dimensions` (required), `object_id` (`payload`), `pose` relative to the TCP (the TCP itself) |
+| `detach_payload` | `object_id` (the attached payload) |
+
+A scene object's `pose` and a payload's `pose` take every form `set_pose` accepts (`[x, y, z, roll, pitch, yaw]`, `[x, y, z, qx, qy, qz, qw]`, the `[position, rotation]` pair, or `{position, orientation}`), but no `reference_frame`: they are already in their fixed frame, the scene's `frame` or the TCP.
+
+### Results
+
+Commands carry no request id. Instead the driver numbers every motion it starts: `state/motion` reports the current one's `command`, `backend` and `motion_id`, and the `last_result` or `last_refusal` that ends a motion names the same `motion_id` (plus the backend and, for a grasp, the selected candidate). After sending a command, watch for the first new `motion_id` reported with that command, then for the result that names it. When your command replaces a running motion, the replaced motion's `cancelled` result names the older id.
+
+A refusal of a command that never started has no `motion_id`. Every result also has a `timestamp_ms` that never repeats, so two identical refusals in a row stay distinct. A caller that needs its own verdict can also send the command as an MQTT v5 request: the driver replies `accepted` once the request has passed its gates and been handed to the backend, or `rejected` with the refusal line. `accepted` is not a plan: on the built-in `pinocchio` backend, planning runs inside that hand-off, so an `accepted` reply can already be followed by a `planning_failed` result. Wait for the result on `state/motion` before treating the motion as underway.
+
+## Cartesian requests
+
+`cyberwave.driver.control.cartesian_request` checks an `ee_pose` or jog request before anything moves. The checks are fault latch, control mode, hardware verification, geometry, collision model and measured state. A refused request returns a reason code your caller can act on.
+
+## Local planning
+
+`LocalCartesianPlanner` plans a straight-line (LIN) or joint-space (PTP) path with the arm's own IK. It refuses the whole path if any sample has no IK solution, collides, or would flip the IK branch. It then smooths and times the trajectory within your velocity and acceleration limits. It is the planner of the `pinocchio` backend and of the Cartesian jogs.
+
+Jogs (`ee_move`, `ee_rotate_*`) solve from the arm's current posture only. A target that posture can't reach is refused rather than answered with a different arm configuration.
+
+### Where planning runs
+
+In-process planning runs on the driver's event loop, inside the command handler. While a plan or a grasp search runs, the driver doesn't take other commands, including `stop`, and doesn't publish status. Typical costs on a desktop CPU with a meshed arm:
+
+- a successful LIN or PTP plan takes a few milliseconds;
+- one reachable grasp candidate takes about 0.3 s;
+- a refused grasp candidate takes about 0.07 s, so a 16-candidate search that finds nothing takes about 1 s.
+
+Edge computers are several times slower. Keep grasp searches small, and treat these costs as how long the arm can't take another command. `scipy` is imported when the planner is built, not on the first plan, and scene changes reuse the loaded collision meshes.
+
+## Collision-aware kinematics
+
+`CollisionAwareKinematics` extends the base solver with the following:
+
+- self-collision checking driven by your SRDF;
+- an optional floor slab;
+- obstacle primitives;
+- an attached payload carried on the tool frame;
+- multi-seed IK that stays on one branch along a path.
+
+## Motion limits and description checks
+
+- `resolve_motion_limits` turns a single joint-velocity setting in rad/s into per-joint planner limits. It accounts for the URDF limits and your controller's profile.
+- `evaluate_hardware_compatibility` refuses planned motion when the firmware and the robot description don't match.
+
+## Command arbiter
+
+`MotionArbiterCore` is the single writer for an arm driven by a position stream. It is wrapped as a ROS node by `cyberwave.driver.ros2.arbiter_node`. Its rules:
+
+- teleop preempts a planned trajectory;
+- a trajectory owns the arm while its controller goal is active;
+- faults latch until reset;
+- stale commands are dropped.
+
+`TrajectoryExecutor` sends and cancels `FollowJointTrajectory` goals.
+
+## World obstacles
+
+Add `WorldObstaclesMixin` to give a twin `add_obstacles` and `remove_obstacle` commands. The obstacle list is saved in twin metadata and restored when the driver starts.
+
+## Joint command safety hooks
+
+`JointCommandBufferMixin` has two hooks, both off by default:
+
+- set `STOP_MOTION_ON_MQTT_OUTAGE = True` to stop motion when the MQTT connection drops;
+- override `_joint_target_refusal` to refuse a joint target, for example one that would collide.
+
+## Motion status
+
+`MotionStatusStream` publishes the `state/motion` stream. Every planned-motion command reports its result there with a fixed set of refusal codes.
+
+## Test it on the robot
+
+Before you ship, run `cyberwave-stress-test --uuid <twin-uuid>` against the twin. It reads which of these commands your driver exposes, runs the matching sections on the real robot, and judges each from measured feedback. See [Stress-testing your driver](/feature-reference/edge/drivers/stress-testing-your-driver).

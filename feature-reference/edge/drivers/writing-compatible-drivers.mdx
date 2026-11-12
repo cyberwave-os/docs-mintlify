@@ -128,7 +128,7 @@ For manipulator arms, compose SDK mixins instead of hand-wiring MQTT joint teleo
 
 #### Integration example: `PiperDriver`
 
-Reference: [`cyberwave-edge-nodes/piper/piper_driver.py`](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-edge-nodes/piper/piper_driver.py).
+Reference: [`cyberwave-edge-nodes/piper/public/cw_piper/driver.py`](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-edge-nodes/piper/public/cw_piper/driver.py).
 
 ```python
 class PiperDriver(
@@ -489,6 +489,7 @@ Top-level fields:
 | Field | Purpose |
 | ----- | ------- |
 | `registry_ids` | One or more asset `registry_id` values this manifest describes — use the id of **your** workspace asset (e.g. `acme-corp/my-arm-v1`) |
+| `driver_capabilities` | Optional robot-side abilities: `local_teleop` (a leader device wired to the robot drives it) and `hand_guide` (torque off, the arm is moved by hand and streams its pose). The robot is then offered the **Local Teleop** controller and its **Hand-guide** switch. Applied to the asset when the manifest is loaded into the catalog; `twin.driver.set_schema(...)` does not apply it. |
 | `mqtt.schema_version` | Catalog format version (currently `1`) |
 | `mqtt.driver_family` | Implementation hint (`ros_cpp`, `python`, `android`, …) |
 | `mqtt.<namespace>.<leaf>` | Per-topic contract — see [YAML path → MQTT topic](#yaml-path--mqtt-topic) below |

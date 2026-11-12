@@ -131,7 +131,7 @@ Before you build the agent, you need a working UGV Beast twin and a Cyberwave en
 The agent will speak exactly the same vocabulary the UGV Beast Controller speaks today. Proving that controller end-to-end before you wire in any LLM rules out four moving parts (calibration, pairing, MQTT, edge driver) in two minutes, and it validates the precise set of `actuation` strings the planner will emit.
 
 1. Open your environment and switch to **Live Mode**.
-2. Select the UGV Beast twin and click **Assign Controller**.
+2. Select the UGV Beast twin and click **Choose controller** in its **Controller** section.
 3. Pick the **UGV Beast Controller** from the controller list (not the generic "Keyboard" controller; the UGV one is the rover-specific policy with the right key bindings and widgets pre-wired). The rover is now driven from your browser.
 4. Drive each binding once: **W / A / S / D** for forward / left / back / right, **I / J / K / L** for camera tilt up / pan left / tilt down / pan right, **U** to recentre the camera, **F** and **R** to toggle the chassis and camera lights, **E** to take a photo, **B** to refresh the battery widget. If the physical rover responds on every key, the entire cloud-to-edge path is healthy and the full action vocabulary works.
 

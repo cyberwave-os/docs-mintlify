@@ -1,0 +1,463 @@
+---
+title: "Time-series datasets"
+description: "Upload sensor logs as a time-series dataset, search its channels over the API, and play them on the sensors of digital twins."
+icon: "chart-line"
+---
+
+A **time-series dataset** holds numeric readings over time: temperatures, power draw, fan speeds, humidity, anything a sensor logs as a value at a point in time. It is the dataset kind for facility and data-center telemetry, plant monitoring exports, and any Parquet or CSV log that is not a robot trajectory. After import, every channel of the dataset can be searched over the API, bound to a sensor slot of a digital twin, and replayed in the environment at any speed.
+
+## Vocabulary
+
+| Term | Meaning | Example |
+|---|---|---|
+| **Signal** | What is measured, as named by the source. Parts are separated by `/`, source first. | `ipmi/ambient`, `weather/temp` |
+| **Thing** | Where it is measured: the physical entity, rendered as `column=value`. Empty when the data has no entity column. | `node=960`, `device=cdz1` |
+| **Channel** | One stream of readings: one signal on one thing. Its id is the signal, followed by `/` and the thing when there is one. Unique inside a dataset. | `ipmi/ambient/node=960`, `weather/temp` |
+| **Type** | The physical kind of a signal, in lowercase snake case. Used to match channels to the sensor slots of a twin. | `temperature`, `power` |
+| **Reading** | One value of one channel at one time. Values are always floating-point numbers. | |
+
+Types are free-form strings. These are the ones the UI knows; a twin sensor slot can be bound to a channel only when its type is one of them:
+
+`temperature`, `humidity`, `pressure`, `power`, `energy`, `voltage`, `current`, `frequency`, `fan_speed`, `speed`, `flow`, `utilization`, `load`, `memory`, `network`, `count`, `status`, `position`, `direction`, `ratio`, `index`, `distance`, `generic`.
+
+## Package a dataset
+
+A time-series upload is a zip that contains the data files and one **recipe** file named `cyberwave-timeseries.json`. The recipe may sit at the zip root or up to two directory levels below it. Its directory is the **dataset root**; every file glob in the recipe is relative to that directory. Data files are Parquet or CSV.
+
+```
+marconi100_rack48_2022-02_timeseries.zip
+├── cyberwave-timeseries.json
+└── year_month=22-02/
+    ├── plugin=ipmi_pub/metric=ambient/a_0.parquet
+    ├── plugin=ipmi_pub/metric=total_power/a_0.parquet
+    ├── plugin=vertiv_pub/metric=Return_Air_Temperature/a_0.parquet
+    └── plugin=weather_pub/metric=temp/a_0.parquet
+```
+
+<Steps>
+  <Step title="Upload the zip">
+    Open **Datasets**, click **Upload Dataset**, choose **Upload zip** and select the file (max 10 GB). From Python, `cw.datasets.add("./marconi100_rack48_2022-02_timeseries.zip", name="marconi100-rack48")` uploads the same file; a folder is zipped for you.
+  </Step>
+  <Step title="Wait for processing">
+    Cyberwave finds the recipe, validates it, reads the data files one at a time and then checks them for repeated readings in passes of a fixed size, so memory use is bounded by the largest single file plus a fixed amount for that check, however many readings there are. The dataset record gets `source_format: timeseries`. A recipe that fails validation fails the import with a message that names the problem; data files that do not match `path_pattern` are skipped with a warning. The import also fails, naming the file, when a column it reads appears twice in that file, or when two columns (or two signal values) of one file that both have readings would become the same signal.
+  </Step>
+  <Step title="Check the overview">
+    Open the dataset and switch to its **Playground** tab: it shows the title and description from the recipe, the time range, the number of rows, channels, signals and things, the types found, a table of signals and the first channels. On the Datasets page the card carries the kind **Time series**.
+  </Step>
+</Steps>
+
+The SDK examples folder `cyberwave-python/examples/timeseries_replay/` ships `make_zip.py <data-folder> <recipe.json> <out.zip>`, which packs a folder and a recipe into an upload zip.
+
+## Recipe reference
+
+| Field | Required | Default | Meaning |
+|---|---|---|---|
+| `version` | yes | | Always `1`. |
+| `title`, `description` | no | | Shown on the dataset card and overview. |
+| `files.glob` | yes | | Glob of data files relative to the dataset root. `**` is allowed. |
+| `files.format` | yes | | `parquet` or `csv`. |
+| `files.delimiter` | no | `,` | CSV only: the column separator. |
+| `files.header` | no | `true` | CSV only: whether the first row holds the column names. |
+| `path_pattern` | no | | Glob-like pattern with `{name}` captures, matched against each data file's path relative to the dataset root. See [Path captures](#path-captures). |
+| `layout` | yes | | `long` or `wide`. See [Long and wide layouts](#long-and-wide-layouts). |
+| `time.column` | yes | | The timestamp column. Parquet timestamps are used as they are. Strings are parsed as ISO-8601 unless `time.format` is set. Numbers are epoch values in `time.unit`. |
+| `time.timezone` | no | `UTC` | IANA timezone name, for example `Europe/Rome`, assumed for timestamps that carry none. |
+| `time.format` | no | ISO-8601 | A strptime format for string timestamps, for example `%d/%m/%Y %H:%M`. |
+| `time.unit` | no | `s` | Unit of numeric timestamps: `s`, `ms`, `us` or `ns` since the Unix epoch. |
+| `thing.columns` | no | none | Ordered candidate columns. The first one present in a file is that file's thing column. Files with none of them have an empty thing. |
+| `thing.format` | no | `{column}={value}` | How the thing string is rendered from the thing column. Only the `{column}` and `{value}` placeholders are allowed. |
+| `value.column` | long only | | The value column. Rows with a non-numeric value are dropped. |
+| `signal` | long: yes, wide: no | wide: `{column}` | Template that names the signal, over path fields and columns, for example `{source}/{signal}` or `{metric}`. A column referenced here groups the rows of a file by its value. |
+| `signals` | no | none | Map of glob pattern to annotations. See [Signal annotations](#signal-annotations). |
+| `slots` | no | none | Map of twin sensor slot id to signal, used by **Bind from dataset** and the SDK's `auto_bind`. See [Slot template](#slot-template). |
+
+### Long and wide layouts
+
+**Long**: one row per reading, one value column. The signal name comes from the `signal` template, built from path captures, columns, or both.
+
+| timestamp | node | value |
+|---|---|---|
+| 2022-02-01 00:00:00 | 960 | 26.8 |
+| 2022-02-01 00:00:00 | 970 | 25.1 |
+
+With `path_pattern` capturing `source=ipmi` and `signal=ambient` from the file path, the template `{source}/{signal}` names the signal `ipmi/ambient`, and `thing.columns: ["node"]` produces the channels `ipmi/ambient/node=960` and `ipmi/ambient/node=970`.
+
+**Wide**: one row per time (and per thing), one column per signal. Every column that is not the time column or a thing column is a signal, named after the column. Set `signal` to a template with `{column}` to rename them, for example `"room/{column}"`. A template without `{column}`, such as `"{machine}/temperature"`, suits files with a single numeric column; two numeric columns of one file cannot share a signal name, and the import fails. A column of text values yields no readings and no channel; a column of another non-numeric type, such as a second timestamp column, fails the import.
+
+| time | room | temperature | humidity |
+|---|---|---|---|
+| 2026-03-01T00:00:00Z | lab | 21.4 | 38 |
+| 2026-03-01T00:00:00Z | server_room | 24.9 | 31 |
+
+This produces the channels `temperature/room=lab`, `humidity/room=lab`, `temperature/room=server_room` and `humidity/room=server_room`.
+
+### Path captures
+
+`path_pattern` is matched against each data file's path relative to the dataset root:
+
+- `*` matches any text inside one path segment.
+- `**/` matches any number of leading directories.
+- `{name}` captures the text at that position, inside one path segment, and makes it a **path field** for the `signal` template.
+
+With `**/plugin={source}_pub/metric={signal}/*.parquet`, the file `year_month=22-02/plugin=ipmi_pub/metric=ambient/a_0.parquet` yields `source=ipmi` and `signal=ambient`. Capture names are yours to choose; the `{signal}` capture above is a path field that happens to share the name of the recipe key. Files that do not match the pattern are skipped with a warning.
+
+### Signal annotations
+
+`signals` maps patterns to annotations. Patterns use shell-style wildcards (`*`, `?`, `[..]`) and are matched, case-sensitively, against the full signal name.
+
+| Key | Default | Meaning |
+|---|---|---|
+| `type` | `generic` | Physical kind of the signal. Used to match channels to twin sensor slots and as a search filter. |
+| `unit` | empty | Unit shown next to the values, for example `°C` or `W`. |
+| `label` | last `/` segment of the signal | Human-readable name. |
+| `scale` | `1` | Every value is multiplied by this before it is stored. |
+| `offset` | `0` | Added to every value after `scale`. |
+| `hidden` | `false` | Hidden channels are stored and can be replayed, but channel search leaves them out unless asked for. |
+
+Patterns are applied **in file order**, and a later match overrides an earlier one **key by key**, so a broad pattern can set a default that narrower patterns refine:
+
+```json
+"signals": {
+  "schneider/*": {"scale": 0.1},
+  "schneider/*_power": {"type": "power", "unit": "W"},
+  "schneider/pdu_power": {"label": "PDU power"}
+}
+```
+
+`schneider/pdu_power` ends up with `scale: 0.1`, `type: power`, `unit: W` and `label: PDU power`. `schneider/pdu_current` only gets `scale: 0.1` and keeps the defaults for everything else.
+
+### Slot template
+
+`slots` maps the sensor slot ids of your twins to signals, so that a twin whose **Identifier in datasets** is `node=960` can be bound to `ipmi/ambient/node=960`, `ipmi/total_power/node=960` and so on in one go with **Bind from dataset**. Signals, not channels: the thing part comes from each twin's identifier.
+
+```json
+"slots": {
+  "inlet_temperature": "ipmi/ambient",
+  "total_power": "ipmi/total_power"
+}
+```
+
+The import stores it with the dataset as `metadata.timeseries.slot_template`. See [Sensor bindings](/feature-reference/environment-editor/sensor-bindings#slot-template-in-the-recipe) for the full Marconi100 template and how binding works.
+
+## Examples
+
+### Marconi100 export (Parquet, long layout)
+
+The CINECA Marconi100 telemetry export is Hive-partitioned Parquet: one folder per plugin and metric, one row per reading, with the server in the `node` column (other plugins use `device`, `panel` or `partition`). The recipe below is the reference recipe shipped with the SDK at `cyberwave-python/examples/timeseries_replay/recipes/marconi100.json`.
+
+```json
+{
+  "version": 1,
+  "title": "Marconi100 ExaMon export",
+  "description": "CINECA Marconi100 telemetry (M100 ExaData). Hive-partitioned Parquet: one folder per plugin and metric, one row per reading with the server in the 'node' column.",
+  "files": {"glob": "**/*.parquet", "format": "parquet"},
+  "path_pattern": "**/plugin={source}_pub/metric={signal}/*.parquet",
+  "layout": "long",
+  "time": {"column": "timestamp", "timezone": "UTC"},
+  "thing": {"columns": ["node", "device", "panel", "partition"], "format": "{column}={value}"},
+  "value": {"column": "value"},
+  "signal": "{source}/{signal}",
+  "signals": {
+    "ipmi/*_temp": {"type": "temperature", "unit": "°C"},
+    "ipmi/*_status": {"type": "status", "hidden": true},
+    "ipmi/ambient": {"type": "temperature", "unit": "°C", "label": "Inlet air temperature"},
+    "ipmi/fan*": {"type": "fan_speed", "unit": "rpm"},
+    "ipmi/gpu*_core_temp": {"type": "temperature", "unit": "°C"},
+    "ipmi/gpu*_mem_temp": {"type": "temperature", "unit": "°C"},
+    "ipmi/p*_power": {"type": "power", "unit": "W"},
+    "ipmi/*_power": {"type": "power", "unit": "W"},
+    "ipmi/total_power": {"type": "power", "unit": "W", "label": "Server total power"},
+    "ipmi/*_vdd_temp": {"type": "temperature", "unit": "°C"},
+    "ganglia/Gpu*_power_usage": {"type": "power", "unit": "W"},
+    "ganglia/Gpu*_temp": {"type": "temperature", "unit": "°C"},
+    "ganglia/Gpu*_utilization": {"type": "utilization", "unit": "%"},
+    "ganglia/cpu_*": {"type": "utilization", "unit": "%"},
+    "ganglia/mem_*": {"type": "memory", "unit": "kB"},
+    "ganglia/bytes_*": {"type": "network", "unit": "B/s"},
+    "ganglia/pkts_*": {"type": "network", "unit": "pkt/s"},
+    "ganglia/load_*": {"type": "load", "unit": ""},
+    "vertiv/*Temperature*": {"type": "temperature", "unit": "°C"},
+    "vertiv/*Humidity*": {"type": "humidity", "unit": "%"},
+    "vertiv/*Utilization": {"type": "utilization", "unit": "%"},
+    "vertiv/Fan_Speed": {"type": "fan_speed", "unit": "%"},
+    "vertiv/*Pressure*": {"type": "pressure", "unit": "Pa"},
+    "vertiv/*Valve_Open_Position": {"type": "position", "unit": "%"},
+    "vertiv/*Status": {"type": "status"},
+    "schneider/*": {"scale": 0.1},
+    "logics/*": {"type": "generic"},
+    "weather/temp": {"type": "temperature", "unit": "°C", "label": "Outdoor temperature"},
+    "weather/feels_like": {"type": "temperature", "unit": "°C", "label": "Outdoor feels-like temperature"},
+    "weather/dew_point": {"type": "temperature", "unit": "°C", "label": "Outdoor dew point"},
+    "weather/humidity": {"type": "humidity", "unit": "%", "label": "Outdoor humidity"},
+    "weather/pressure": {"type": "pressure", "unit": "hPa", "label": "Outdoor air pressure"},
+    "weather/wind_speed": {"type": "speed", "unit": "m/s", "label": "Wind speed"},
+    "weather/wind_deg": {"type": "direction", "unit": "°", "label": "Wind direction"},
+    "weather/clouds": {"type": "ratio", "unit": "%", "label": "Cloud cover"},
+    "weather/uvi": {"type": "index", "unit": "", "label": "UV index"},
+    "weather/visibility": {"type": "distance", "unit": "m", "label": "Visibility"}
+  },
+  "slots": {
+    "inlet_temperature": "ipmi/ambient",
+    "total_power": "ipmi/total_power",
+    "cpu0_power": "ipmi/p0_power",
+    "cpu1_power": "ipmi/p1_power",
+    "cpu0_temperature": "ipmi/p0_vdd_temp",
+    "cpu1_temperature": "ipmi/p1_vdd_temp",
+    "gpu0_temperature": "ipmi/gpu0_core_temp",
+    "gpu1_temperature": "ipmi/gpu1_core_temp",
+    "gpu2_temperature": "ipmi/gpu3_core_temp",
+    "gpu3_temperature": "ipmi/gpu4_core_temp",
+    "fan_speed": "ipmi/fan0_0",
+    "psu0_input_power": "ipmi/ps0_input_power",
+    "psu1_input_power": "ipmi/ps1_input_power"
+  }
+}
+```
+
+The file `year_month=22-02/plugin=ipmi_pub/metric=ambient/a_0.parquet` becomes one channel per server, such as `ipmi/ambient/node=960` with type `temperature`, unit `°C` and label `Inlet air temperature`. The weather files have no entity column, so `weather/temp` is a channel on its own. Schneider values are divided by ten on import. The `slots` entry maps the sensor slots of the `cyberwave/server-2u` asset to these signals, so a server twin with the identifier `node=960` is bound in one go; see [Sensor bindings](/feature-reference/environment-editor/sensor-bindings#slot-template-in-the-recipe).
+
+### Room sensor log (CSV, wide layout)
+
+A minimal package for a sensor log with one row per minute and room:
+
+```
+room-sensors.zip
+├── cyberwave-timeseries.json
+└── readings.csv
+```
+
+```csv
+time,room,temperature,humidity
+2026-03-01T00:00:00Z,lab,21.4,38
+2026-03-01T00:00:00Z,server_room,24.9,31
+2026-03-01T00:01:00Z,lab,21.5,38
+2026-03-01T00:01:00Z,server_room,25.0,31
+```
+
+```json
+{
+  "version": 1,
+  "title": "Room sensor log",
+  "description": "One row per minute and room.",
+  "files": {"glob": "*.csv", "format": "csv"},
+  "layout": "wide",
+  "time": {"column": "time"},
+  "thing": {"columns": ["room"]},
+  "signals": {
+    "temperature": {"type": "temperature", "unit": "°C", "label": "Room temperature"},
+    "humidity": {"type": "humidity", "unit": "%", "label": "Relative humidity"}
+  }
+}
+```
+
+`time` is the time column and `room` the thing column, so the remaining columns `temperature` and `humidity` are the signals. The import produces four channels: `temperature/room=lab`, `temperature/room=server_room`, `humidity/room=lab` and `humidity/room=server_room`. Without the `thing` entry, `room` would be treated as a signal column (its text values yield no channel) and the readings of both rooms would land in the same `temperature` and `humidity` channels: at each time only the reading imported last would be returned, and the import would report the clash under `duplicate_readings` (see below).
+
+## What the import produces
+
+- **Catalog**: one row per channel with `channel_id`, `signal`, `thing`, `type`, `unit`, `label`, `hidden`, `first_time`, `last_time`, `count` and `partition` (the signal's chunk directory). Channel search reads it.
+- **Store**: the readings rewritten sorted by time and chunked by signal and UTC day, with `scale` and `offset` already applied. Every signal gets its own chunks, even when two signal names differ only in characters a directory name cannot hold (`inlet temp` and `inlet_temp`, or `温度` and `湿度`). Hidden channels are stored too. A query reads only the chunks of the requested signals that overlap its time window, so its cost does not grow with the size of the whole dataset.
+- **Summary** on the dataset record (`metadata.timeseries`): title, description, time range, counts of rows, channels, hidden channels, signals and things, the number of channels per type, and one entry per signal (type, unit, label, channel count; capped at 500 signals). The dataset card and overview page show it.
+- **Repeated readings**: two readings of one channel at the same time, for example from exports that overlap, are both stored, and queries and the replay feed use the one imported last (files in path order). The summary then has `duplicate_readings`: `count` (readings beyond the first at their time), `conflicting` (times whose readings disagree) and `example` (one disagreement with its channel, time, values and files, in import order). Row and channel counts leave the repeats out. Disagreeing repeats usually mean the recipe puts two sources into one channel, such as one file per machine without the machine in the signal name.
+
+## Query API
+
+Both endpoints need the same read access as `GET /api/v1/datasets/{uuid}` and the usual `Authorization: Bearer` header (see [API overview](/api-reference/overview)). A dataset that has no time-series data, for example one that is still processing, answers `409` with `{"detail": "Dataset has no time-series data"}`. All times in responses are ISO-8601 in UTC with a `Z` suffix.
+
+### List and search channels
+
+```http
+GET /api/v1/datasets/{dataset_uuid}/timeseries/channels
+```
+
+| Parameter | Default | Meaning |
+|---|---|---|
+| `q` | | Free-text search. Split on whitespace; every word must occur (case-insensitive) in the channel id, label, unit or type. |
+| `type` | | Exact type, case-insensitive. |
+| `signal` | | Exact signal name. |
+| `thing` | | Exact thing string, for example `node=960`. |
+| `include_hidden` | `false` | Include channels annotated `hidden`. |
+| `limit` | `50` | Page size, at most `200`. |
+| `offset` | `0` | Page start. |
+
+Results are sorted by `channel_id`.
+
+```bash
+curl "https://api.cyberwave.com/api/v1/datasets/$DATASET/timeseries/channels?q=inlet+960&type=temperature" \
+  -H "Authorization: Bearer $CYBERWAVE_API_KEY"
+```
+
+```json
+{
+  "items": [
+    {
+      "channel_id": "ipmi/ambient/node=960",
+      "signal": "ipmi/ambient",
+      "thing": "node=960",
+      "type": "temperature",
+      "unit": "°C",
+      "label": "Inlet air temperature",
+      "hidden": false,
+      "first_time": "2022-02-01T00:00:00Z",
+      "last_time": "2022-02-28T23:59:40Z",
+      "count": 120960
+    }
+  ],
+  "total": 1,
+  "limit": 50,
+  "offset": 0
+}
+```
+
+### Read rows
+
+```http
+GET /api/v1/datasets/{dataset_uuid}/timeseries/rows
+```
+
+| Parameter | Default | Meaning |
+|---|---|---|
+| `channel` | | Channel id. Repeat the parameter for several channels, 1 to 200 per request. Unknown channels are ignored. |
+| `start` | | Window start, ISO-8601, inclusive. Required. |
+| `end` | | Window end, ISO-8601, exclusive. Required. |
+| `limit` | `100000` | Maximum number of rows, at most `500000`. |
+
+Rows come back sorted by time, then channel, with at most one row per channel and time (of repeated readings, the one imported last). `truncated: true` means the limit was hit; request a narrower window.
+
+```bash
+curl -G "https://api.cyberwave.com/api/v1/datasets/$DATASET/timeseries/rows" \
+  -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
+  --data-urlencode "channel=ipmi/ambient/node=960" \
+  --data-urlencode "channel=ipmi/total_power/node=960" \
+  --data-urlencode "start=2022-02-08T05:00:00Z" \
+  --data-urlencode "end=2022-02-08T05:01:00Z"
+```
+
+```json
+{
+  "rows": [
+    {"time": "2022-02-08T05:00:00Z", "channel": "ipmi/ambient/node=960", "value": 26.8},
+    {"time": "2022-02-08T05:00:00Z", "channel": "ipmi/total_power/node=960", "value": 880.0},
+    {"time": "2022-02-08T05:00:20Z", "channel": "ipmi/ambient/node=960", "value": 26.9},
+    {"time": "2022-02-08T05:00:20Z", "channel": "ipmi/total_power/node=960", "value": 884.0}
+  ],
+  "count": 4,
+  "truncated": false
+}
+```
+
+The same call from Python, with the API key in `CYBERWAVE_API_KEY`:
+
+```python
+import os
+import requests
+
+base_url = "https://api.cyberwave.com"
+headers = {"Authorization": f"Bearer {os.environ['CYBERWAVE_API_KEY']}"}
+
+rows = requests.get(
+    f"{base_url}/api/v1/datasets/{dataset_uuid}/timeseries/rows",
+    headers=headers,
+    params={
+        "channel": ["ipmi/ambient/node=960", "ipmi/total_power/node=960"],
+        "start": "2022-02-08T05:00:00Z",
+        "end": "2022-02-08T06:00:00Z",
+    },
+).json()
+for row in rows["rows"]:
+    print(row["time"], row["channel"], row["value"])
+```
+
+## Play recorded data on digital twins
+
+Once the import has finished, the channels of the dataset can drive the sensors of your digital twins. Three things are involved:
+
+- **Sensor slots**: the sensors a twin declares it has, for example `inlet_temperature`.
+- **Data source**: an optional link from one slot to one channel of one dataset. A slot without a data source is fed by the environment: the paired device in Live, the simulation in Simulate.
+- **Use recorded data**: a switch on each data source. Switched on, the recording is the slot's only source in Live and Simulate: the [recorded data feed](/feature-reference/environment-editor/replay-feed) plays the channel, and readings the device or the simulation sends for the slot are dropped, whether or not a feed is playing. Switched off, the data source is used by Replay mode only.
+
+<Steps>
+  <Step title="Declare sensor slots on the twin">
+    Twins made from an asset that declares scalar sensors, such as `cyberwave/server-2u`, have their slots from the start (see [Sensors declared on an asset](/feature-reference/environment-editor/sensor-bindings#sensors-declared-on-an-asset)). Any twin can add slots of its own: a sensor slot is an entry of `metadata.sensors` on the twin with an `id`, a `name`, a scalar `type` from the vocabulary above and, optionally, a unit.
+
+    ```json
+    {
+      "sensors": [
+        {"id": "inlet_temperature", "name": "Inlet air temperature", "type": "temperature", "parameters": {"unit": "°C"}},
+        {"id": "power", "name": "Server power", "type": "power", "parameters": {"unit": "W"}},
+        {"id": "fan_speed", "name": "Fan speed", "type": "fan_speed", "parameters": {"unit": "rpm"}}
+      ]
+    }
+    ```
+
+    Add it in **Edit** mode: select the twin, open its **Advanced** section and click **JSON** next to **Semantics** to open the **Edit Twin Metadata** dialog. Or write it with `PUT /api/v1/twins/{uuid}` and the body `{"metadata": {"sensors": [...]}}`. Slots with a scalar type can take a data source; cameras, depth and lidar sensors from the asset schema cannot.
+  </Step>
+  <Step title="Attach a data source">
+    In **Edit** mode, select the twin and open its **Data sources** section. Every slot with a scalar type has a **Data source** field, empty by default, which reads **Environment**. To attach a channel, press **Attach recorded channel**, pick one of your completed time-series datasets and search a channel; the list is filtered to the slot's type by default, and **All types** lifts that filter. **Change** opens the pickers again for an attached slot, and **Clear** detaches the channel. A channel of another type than the slot asks for confirmation and marks the row with a **type mismatch** badge; a differing unit is pointed out and never converted (see [The type gate](/feature-reference/environment-editor/sensor-bindings#the-type-gate)). To bind many slots at once, give the twin its **Identifier in datasets** and press **Bind from dataset** (see [Bind from dataset](/feature-reference/environment-editor/sensor-bindings#bind-from-dataset)).
+
+    Once a channel is attached, the row shows the **Use recorded data** switch, off by default, with the hint "Replaces the live input in Live and Simulate; the device is muted for this sensor". The row's summary reads `<dataset> · <channel> · recorded data on` (or `off`). Every change is saved at once. When the switch is on but the dataset behind it is gone (deleted, or not finished processing), the row warns "Recorded data selected, dataset missing — clear it or attach another channel": the sensor has no source left, and no feed can start until you fix it.
+
+    | Mode | No data source | Data source, switch off | Data source, switch on |
+    |---|---|---|---|
+    | **Edit** | Set up slots and data sources; nothing plays. | Same. | Same. |
+    | **Live** | Readings come from the paired device. | Readings come from the paired device. | The device is muted for this slot. The [recorded data feed](/feature-reference/environment-editor/replay-feed) plays the channel; while no feed plays, the slot shows no fresh value. |
+    | **Simulate** | Readings come from the simulation. | Readings come from the simulation. | The simulation is muted for this slot. The feed plays the channel; while no feed plays, the slot shows no fresh value. |
+    | **Replay** | Only what the sensor reported through Cyberwave can be shown. | The channel is available as **Imported data** in the [Sensors tab](/feature-reference/environment-editor/replay-timeline#sensors-tab). | Same as with the switch off. |
+
+    Saving writes `metadata.data_sources` on the twin, one entry per attached slot:
+
+    ```json
+    {
+      "data_sources": {
+        "inlet_temperature": {
+          "dataset_uuid": "…",
+          "channel_id": "ipmi/ambient/node=960",
+          "use_recorded": true,
+          "label": "Inlet air temperature",
+          "unit": "°C",
+          "type": "temperature"
+        }
+      }
+    }
+    ```
+
+    The same map can be written with `PUT /api/v1/twins/{uuid}` and a body of `{"metadata": {"data_sources": {...}}}`. Metadata is merged one key deep: each top-level key you send replaces the stored one and the other keys are kept, so always send the complete `data_sources` map and leave `sensors` out. Every entry is checked on save: the dataset must exist with finished time-series data, the channel must be in its catalog, and the types must match unless the entry carries `"allow_type_mismatch": true`; otherwise the request answers `422` with the reason for each failing slot, named as `<twin>.<slot>`, and nothing is written. A slot without an entry is fed by the environment, so to detach a channel leave its key out. Twins set up before the switch existed may still carry `"source": "replay"` in an entry: Cyberwave reads it as `use_recorded: true` and writes the shape above the next time the twin's data sources are saved.
+  </Step>
+  <Step title="Play the data">
+    Switch to **Live** or **Simulate**. As soon as one sensor in the environment has **Use recorded data** switched on, the right panel shows the **Recorded data feed**: choose a start time and a speed and press **Play**. The feed runs on Cyberwave's servers and plays every switched-on sensor of the environment together; see [Recorded data feed](/feature-reference/environment-editor/replay-feed). Until you press Play, the switched-on sensors get no fresh values at all, not even the device's, and the panel says so: "Recorded data selected on N sensors, no feed playing". A switched-on sensor whose dataset is missing is listed there too, and **Play** stays disabled until you fix or clear it in Edit mode.
+
+    To look at the data without feeding it into the live scene, use **Replay** mode: the calendar marks the days the attached datasets cover, and the **Sensors** tab shows the values at the playhead; see [Sensor data in Replay](/feature-reference/environment-editor/replay-timeline#sensor-data-in-replay).
+  </Step>
+  <Step title="Watch the values">
+    In **Live** or **Simulate**, select the twin. The **Live values** section lists every slot with its current value, unit and age, a sparkline of the last values, and a badge that names the source: **replay** with the run id and the data time while the feed plays, otherwise **edge** or **sim**. A switched-on slot gets values from the feed only: while no feed plays, or when its dataset is missing, it shows no fresh value, its age reads **stale** (a dash when it never had one), and it never falls back to a device reading. The values are stored in the sensor history like device readings, tagged as injected so that Replay mode can tell them apart later. The twin's `metadata.readings` holds the latest value per slot, and `metadata.replay` the run id, the dataset and the data time currently playing, so other tools see the same state.
+  </Step>
+</Steps>
+
+<Note>
+The SDK examples folder `cyberwave-python/examples/timeseries_replay/` still ships `player.py`, a script that publishes the same messages from your own machine. Use it for offline runs: `--from-folder` plays a local Parquet folder with its recipe, `--dry-run` prints the messages instead of publishing them, and `--all-attached` plays every attached channel regardless of the switch. Its messages carry the same recorded-data tag as the feed's, so a switched-on sensor accepts them; do not run it next to a running feed, or both write to the same sensors. For the Marconi100 example, `make_scene.py --environment <environment-uuid> --dataset <dataset-uuid>` in the same folder builds a demo scene: an equipment rack with three server twins (bottom, middle, top) that carry the sensor slots above, with the `ipmi/ambient` and `ipmi/total_power` channels of nodes 960, 970 and 979 attached and **Use recorded data** switched on. For a full rack of twenty `cyberwave/server-2u` servers bound through the recipe's slot template, use `examples/datacenter_rack/build_rack.py` instead; see [Sensor bindings](/feature-reference/environment-editor/sensor-bindings#from-python).
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Import datasets" icon="file-import" href="/feature-reference/datasets/import">
+    Upload sources, format detection and the full format matrix.
+  </Card>
+  <Card title="Digital twins" icon="box" href="/feature-reference/digital-twins">
+    Twin metadata, capabilities and sensors.
+  </Card>
+  <Card title="Sensor bindings" icon="link" href="/feature-reference/environment-editor/sensor-bindings">
+    Sensors declared on assets, the type check, identifiers and Bind from dataset.
+  </Card>
+  <Card title="API overview" icon="code" href="/api-reference/overview">
+    Authentication and base URL for the channel and row endpoints.
+  </Card>
+  <Card title="Python SDK" icon="python" href="/overview/tools/python-sdk">
+    Upload datasets and read twins from Python.
+  </Card>
+  <Card title="Recorded data feed" icon="play" href="/feature-reference/environment-editor/replay-feed">
+    Play attached channels into the twins in Live and Simulate.
+  </Card>
+  <Card title="Replay timeline" icon="clock-rotate-left" href="/feature-reference/environment-editor/replay-timeline">
+    Sensor data days in the calendar and the Sensors tab at the playhead.
+  </Card>
+</CardGroup>

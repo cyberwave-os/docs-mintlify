@@ -84,7 +84,7 @@ Telemetry, recording and the [environment replay](/overview/features/replay-and-
 
 <CardGroup cols={3}>
   <Card title="1. Operator input" icon="keyboard">
-    Send commands from the dashboard UI, a keyboard/gamepad controller, or the [Python SDK](/overview/tools/python-sdk) using `cw.affect("live")`.
+    Send commands from the dashboard UI, a keyboard or leader-arm controller, or the [Python SDK](/overview/tools/python-sdk) using `cw.affect("live")`.
   </Card>
 
 <Card title="2. Cloud relay" icon="cloud">
@@ -108,14 +108,21 @@ flowchart LR
 
 ## Control methods
 
+Each twin has one controller, picked with **Choose controller** in the **Controller** section of the right-hand panel. Teleoperation uses the two teleop categories:
+
 | Method                  | Description                                                                                                                           |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| **Keyboard controller** | Assign a keyboard controller to a twin in the dashboard. Move joints, the gripper or base motion, or navigate with key bindings, straight from the browser. Best for quick recoveries and demos. |
-| **Gamepad**             | Use a USB or Bluetooth gamepad for more intuitive control of mobile robots and arms                                                   |
-| **Leader arm**          | Teleoperate a follower arm using a physical leader arm (e.g. SO-101 leader/follower setup). Your motion is mirrored 1:1 onto the live robot. |
+| **Manual teleop**       | Drive from the browser: a keyboard controller (move joints or navigate with key bindings) or a USB leader arm connected over WebSerial |
+| **Local teleop**        | A leader arm or remote wired to the robot's edge drives the follower (e.g. SO-101 leader/follower setup)                              |
 | **Python SDK**          | Send commands programmatically with `cw.affect("live")` and `robot.policy.assign(...)`. See the [SDK docs](/overview/tools/python-sdk#affect-simulation-vs-live-environment) |
 
-For setup, see [Keyboard (Driver)](#keyboard-driver), [Shared controller templates](#shared-controller-templates) for gamepads and leader arms, and [Shared gamepad settings](#shared-gamepad-settings).
+The other two categories hand the robot to AI: **Agentic** (an LLM plans from your goal; see the [control agent](/ai/control-agent)) and **Policy** (a trained model such as a VLA or RL policy drives the robot).
+
+### Local teleop card
+
+In **Live**, the Local teleop card shows whether the robot's edge is connected and the leader/follower state: no leader arm connected, calibration needed, ready, and any driver errors. In **Simulate** it explains that local teleop needs the real robot.
+
+Where the driver supports it, the card has a **Hand-guide** switch: the robot's torque is released, you move the arm by hand, and the twin follows its real joint angles. Turn it off to return to the leader. Robots offer Local teleop and Hand-guide when their driver declares `driver_capabilities: [local_teleop, hand_guide]` in `cw-driver.yml` (SO-101 does), or when the robot is already linked to the controller (OpenArm is linked to Local Teleop).
 
 ---
 
@@ -126,8 +133,9 @@ For setup, see [Keyboard (Driver)](#keyboard-driver), [Shared controller templat
 Editors enter Live and Simulate in **Controlling** by default. Choose **View →
 Monitoring** to watch without sending robot commands. **Back to Controlling** in
 the mode toolbar restores input. This personal choice is remembered per environment.
-The right sidebar is labeled **Commands** while controlling. **Controllers** in
-the workbench remains the place to configure control inputs and services.
+The right sidebar is labeled **Commands** while controlling. A twin's controller is
+chosen and customized in its **Controller** section; the workbench **Controllers**
+tab also holds the environment-wide settings.
 
 Open simulation setup or hardware pairing from the active **Simulate** or **Live**
 button at the top. A setup shortcut beside unavailable controls opens this same
@@ -137,8 +145,9 @@ shows its own status and pairing shortcut in the sidebar.
 Users without edit access remain in **Monitoring**. They can watch an active
 simulation or connected hardware and switch between them when both are available.
 Switching monitored sources does not start, stop, or reconfigure them. Editors
-can still start and stop simulation while Monitoring. Keyboard, gamepad, leader,
-and control-agent commands remain disabled until they return to Controlling.
+can still start and stop simulation while Monitoring; keyboard, leader and agent
+commands stay paused until they return to Controlling. Each controller card says
+so and offers **Take control**.
 
 ---
 

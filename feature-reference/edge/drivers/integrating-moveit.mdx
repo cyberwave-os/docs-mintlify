@@ -1,0 +1,136 @@
+---
+title: "Integrating MoveIt"
+description: "Plug MoveIt into an arm driver's planned-motion layer: run it as a sidecar, write a MotionBackend in your driver package, and select it with kinematics_backend."
+tag: "stub"
+---
+
+{/* TODO(docs): **stub** — This page will be curated before publishing. Content reflects the current Python SDK (`cyberwave.driver`) and the Piper and Kinova drivers. */}
+
+The Python SDK's planned-motion layer has one built-in planner: in-process pinocchio. If your robot already has a MoveIt configuration, you can plan with MoveIt instead. Your driver hosts a small MoveIt backend and registers it with the SDK. Commands, refusal codes and the `state/motion` stream stay the same.
+
+## Why MoveIt isn't in the SDK
+
+The SDK is framework-neutral. MoveIt and its message package, `moveit_msgs`, exist only in ROS images, so code that imports them belongs to the driver that ships those images. The SDK defines the contract (`MotionBackend`) and a registry. Your driver supplies the implementation.
+
+## Run MoveIt as a sidecar
+
+Run `move_group` in its own container beside your driver, the way the Kinova and Piper drivers do:
+
+- a `moveit` compose service on the `cyberwaveos/ros2-moveit` image, in the twin's ROS namespace;
+- the plant (your driver or its vendor node) publishes `robot_description`, the TF tree, joint states and the MoveIt config package for this arm;
+- trajectory bridges expose the arm's `FollowJointTrajectory` action, so MoveIt executes through the same controller as everything else.
+
+Your driver image only needs the message definitions, for example `ros-$ROS_DISTRO-moveit-msgs`. Gate the `moveit` service's health on an advertised action, such as `sequence_move_group`, not on the node name: the node registers before the robot model has loaded.
+
+## Write a MotionBackend
+
+Put the backend in your driver package, next to the `BaseROS2Driver` node that owns its ROS clients. It needs:
+
+- `name` and `planning_frame`;
+- `available()` and `unavailable_refusal()`: cheap checks that the action servers and services are ready, and the reason when they aren't;
+- `validate_goal(goal)` and `plan_and_execute(goal, on_update, on_done)`: rclpy action clients for `sequence_move_group` (Pilz PTP and LIN) and `move_action` (OMPL). A goal is a `MotionGoal` (one pose, PTP or LIN) or a `GraspGoal` (ranked grasp candidates). Both arrive in your planning frame. A backend without a grasp search refuses a `GraspGoal` in `validate_goal`;
+- `apply_scene(request, diff)`, `attach(request)` and `detach(object_id)`: the `apply_planning_scene` and `get_planning_scene` services, sent as diffs;
+- `cancel()`: cancel the active goal, fire and forget.
+
+Import `moveit_msgs` lazily, inside functions, or behind a guard. The driver then still starts without it (in unit tests, manifest export, or an image without MoveIt) and reports why planning is unavailable instead of crashing.
+
+```python
+from cyberwave.driver.motion import (
+    MotionOutcome,
+    MotionResult,
+    MotionUpdate,
+    backend_unavailable,
+)
+
+
+class MoveItBackend:
+    name = "moveit"
+    planning_frame = "base_link"
+
+    def __init__(self, node):
+        self._node = node
+        self._clients = None
+        self._error = ""
+
+    def _connect(self):
+        if self._clients is None and not self._error:
+            try:
+                from moveit_msgs.action import MoveGroup, MoveGroupSequence
+                from rclpy.action import ActionClient
+            except ImportError as exc:
+                self._error = f"moveit_msgs is not installed ({exc})"
+                return None
+            ns = self._node.namespaced
+            self._clients = (
+                ActionClient(self._node, MoveGroupSequence, ns("sequence_move_group")),
+                ActionClient(self._node, MoveGroup, ns("move_action")),
+            )
+        return self._clients
+
+    def available(self):
+        clients = self._connect()
+        return clients is not None and all(c.server_is_ready() for c in clients)
+
+    def unavailable_refusal(self):
+        return backend_unavailable(
+            self.name, self._error or "move_group action servers are not ready"
+        )
+
+    def validate_goal(self, goal):
+        return None  # PTP, LIN and grasp sequences all exist on MoveIt
+
+    def plan_and_execute(self, goal, on_update, on_done):
+        on_update(MotionUpdate(planner="pilz_ptp"))
+        # Send a MoveGroupSequence goal. On "MONITOR" feedback, report
+        # on_update(MotionUpdate(executing=True)). On the result, map the
+        # MoveItErrorCodes value to an outcome and call on_done exactly once:
+        on_done(MotionResult(MotionOutcome.SUCCEEDED, planner="pilz_ptp"))
+
+    def apply_scene(self, request, diff): ...
+    def attach(self, request): ...
+    def detach(self, object_id): ...
+    def cancel(self): ...
+```
+
+## Register it and switch from config
+
+Extend the registry with `_motion_backend_factories` and assign `kinematics_backend` in `configure()`:
+
+```python
+class MyArmDriver(PlannedMotionMixin, WorldObstaclesMixin, ArmCapabilityMixin, BaseROS2Driver):
+    kinematics_backend = "pinocchio"
+
+    def _motion_backend_factories(self):
+        return {**super()._motion_backend_factories(), "moveit": self._build_moveit_backend}
+
+    def _build_moveit_backend(self):
+        from my_driver.motion.moveit import MoveItBackend
+
+        return MoveItBackend(self)
+
+    def configure(self):
+        ...
+        self.kinematics_backend = "moveit" if self._config.use_moveit else "pinocchio"
+```
+
+Keep `"pinocchio"` registered by extending `super()`'s dictionary rather than replacing it. If MoveIt plans in a frame other than the arm's base frame, also override `_motion_planning_frame()` so the command catalog describes the frame you plan in.
+
+## Status and refusals
+
+The SDK owns the contract, so a backend only reports facts:
+
+- `state/motion` carries `kinematics_backend` (the driver's default backend), `backend_available`, `backend` (the one answering the current motion), and `planner`, the planner name your backend reports (for example `pilz_ptp`, `pilz_lin` or `ompl`);
+- when `available()` is false, every planned-motion command is refused with `backend_unavailable`. Build the refusal with `backend_unavailable(name, detail)` so the detail names the backend;
+- a failed plan is `planning_failed`, a controller that didn't follow is `execution_failed`, and a stopped goal is `cancelled`;
+- guards, their order, scene revisions and the attached payload are handled by the SDK before your backend is called. A backend first used after a `scene_set` is given that scene, and any carried payload, before its first goal.
+
+Your registered name is the default when `kinematics_backend` names it. A request can always name another registered backend in `backend`, for example `"pinocchio"` to plan in-process while MoveIt is the default.
+
+## Test with fakes
+
+Every decision in a backend can run without ROS. Inject the MoveIt client into the backend, and test against a fake that records goals and answers with chosen error codes. At the driver level, register a fake `MotionBackend` through `_motion_backend_factories`, then drive the same command sequence with `kinematics_backend = "pinocchio"` and with your backend's name. The two `state/motion` payloads should match, apart from the backend and planner names and the timing.
+
+## Reference implementations
+
+- The Piper driver's MoveIt backend, `cw_piper/motion/moveit/` in `cyberwave-edge-nodes/piper/public`: configuration, the planner chain (Pilz PTP, then OMPL on failures it can route around), the grasp as Pilz sequences, `MoveItErrorCodes` classification and the rclpy client, with its tests.
+- The Kinova Gen3 driver's bridge, `cyberwave_kinova_bringup/scripts/cyberwave_bridge.py`: a guarded `moveit_msgs` import and a `MoveGroupSequence` client for Cartesian waypoint missions.

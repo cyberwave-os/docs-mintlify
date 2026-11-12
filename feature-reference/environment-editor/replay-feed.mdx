@@ -1,0 +1,110 @@
+---
+title: "Recorded data feed"
+description: "Play recorded sensor data into the twins of an environment in Live and Simulate from the Recorded data feed panel."
+icon: "play"
+---
+
+The **recorded data feed** plays channels of a [time-series dataset](/feature-reference/datasets/timeseries) into the sensors of your digital twins as if the readings were arriving now. The environment then shows the state of the facility at a chosen moment of the recorded data, at a chosen speed, in **Live** or **Simulate**. The feed runs on Cyberwave's servers: closing the browser tab does not stop it, and everyone who opens the environment sees the same values.
+
+## Before you start
+
+A sensor takes part in the feed when its twin has a data source attached and **Use recorded data** switched on (Edit mode, **Data sources** section of the twin; see [Play recorded data on digital twins](/feature-reference/datasets/timeseries#play-recorded-data-on-digital-twins)). All such sensors of the environment are fed together, whatever twin they belong to: there is one feed per environment, not one per twin or per sensor. Sensors whose switch is off, and sensors without a data source, keep their live input.
+
+The switch means "this sensor's only source is a recording". A switched-on sensor never shows what its device or the simulation reports, not even while no feed is playing: it shows recorded values while a feed plays and no fresh value otherwise. Switch on only the sensors you mean to feed, and switch them off again to hand them back to the device. A switched-on sensor whose dataset has since been deleted blocks the feed: **Play** is refused until you clear its data source or attach another channel in Edit mode. So does a switched-on sensor bound to a channel of another type than the sensor without the mismatch having been confirmed, which is only possible for bindings made before the [type check](/feature-reference/environment-editor/sensor-bindings#the-type-gate) existed: the start is refused with a message naming the sensor as `<twin>.<sensor>`. Attach the channel again in Edit mode, confirming the mismatch, or pick a channel of the sensor's type.
+
+## The panel
+
+In **Live** and **Simulate**, the right panel shows **Recorded data feed** above the selected hardware as soon as at least one sensor in the environment uses recorded data. It does not depend on what is selected in the scene.
+
+| Control | What it does |
+|---|---|
+| **Start** | Date and time in the recorded data to start from, in UTC. Defaults to the position of the last feed, or to the start of the attached data when none has run yet. |
+| **End** | Optional. Where to stop; empty means the end of the data. |
+| **Speed** | Data time per wall-clock time: 1× (the default), 5×, 60× or a custom factor. At 60×, one hour of data plays in one minute. |
+| **Loop** | Start over at **Start** when the end is reached instead of finishing. |
+| **Play** | Starts a new feed. A feed that is still running in the environment is replaced. Disabled while a switched-on sensor's dataset is missing, and refused while a switched-on sensor carries an unconfirmed type mismatch. |
+| **Pause** / **Resume** | Holds the data time; nothing is published while paused. |
+| **Stop** | Ends the feed. |
+
+The status line shows the feed's status (queued, playing, paused, stopped, finished or failed) with the reason once it has ended, its run id, the current data time in UTC, the number of messages sent, whether it plays as **edge** or **sim** data, and the error when it failed. The panel refreshes every two seconds while a feed runs.
+
+**Warnings.** Because switched-on sensors never show device values, the panel says when they are empty. While no feed is playing (none yet, or the last one has ended) it reads `Recorded data selected on N sensors, no feed playing: they show no live values until you press Play`. For each switched-on sensor whose dataset is missing it reads `Recorded data selected on <twin>.<sensor>, dataset missing: fix or clear it in Edit mode`, and **Play** stays disabled until none is left; a start sent through the API is refused the same way. A switched-on sensor bound to a channel of another type without the mismatch confirmed is refused the same way when you press **Play**: the message names it as `<twin>.<sensor>`, and the fix is in Edit mode too (see [The type gate](/feature-reference/environment-editor/sensor-bindings#the-type-gate)).
+
+**edge or sim.** The feed labels its readings `edge` when no simulation runs in the environment and `sim` while one does, so the values carry the same provenance as the device or the simulation they stand in for. The choice is made when the feed starts and rechecked while it runs.
+
+Readings are sent at most once per second, one message per twin with the sensors that got a new value. A sensor whose channel has no new reading in that second sends nothing, so slow channels do not repeat stale values. Changes to a twin's data sources while a feed runs do not affect that feed: it took a snapshot of the sensors when it started. Stop and play again to pick the changes up.
+
+## What happens to the values
+
+- **Live values** on the selected twin show them with the **replay** badge, the run id and the data time, exactly like readings from a device (see [Watch the values](/feature-reference/datasets/timeseries#play-recorded-data-on-digital-twins)).
+- They are **stored in the sensor history** of each twin, next to the real readings, tagged as **injected** with the run id, the dataset, the feed and, when a simulation was running, its id. Replay mode shows them under **Cyberwave data** with an `injected · run <run id>` label, so recorded and measured values are never confused (see [Sensor data in Replay](/feature-reference/environment-editor/replay-timeline#sensor-data-in-replay)).
+- **Device readings are dropped.** Readings the paired device or the simulation sends for a switched-on sensor are dropped, feed or no feed, so the sensor has one source: the recording. Readings for the other sensors of the same twin pass as usual. The device gets the sensor back only when you switch **Use recorded data** off. Messages that carry the recorded-data tag, the feed's own and those of the SDK player script, pass.
+- **Recordings are not touched.** The feed writes no recording and changes nothing in existing ones.
+- When the feed stops, for whatever reason, the values it wrote are removed from the twins' current readings, so a twin does not keep showing a stale recorded value. The history keeps them. The switched-on sensors then show no fresh value, and the panel says so, until the next feed.
+
+## When the feed stops
+
+A feed stops when you press **Stop**, when it reaches **End** or the end of the data (unless **Loop** is on), when another feed is started in the same environment, and when something goes wrong, which the status line reports. It also **stops by itself after two hours** of wall-clock time, so a forgotten feed does not run for days and fill the history. At 60× that is five days of data; start it again from where it stopped to continue. The limit can be changed per feed through the API.
+
+## API
+
+The panel uses these endpoints; a script can drive a feed with the same calls and the usual `Authorization: Bearer` header (see [API overview](/api-reference/overview)). Starting and controlling a feed needs edit access to the environment, like starting a simulation.
+
+```http
+POST /api/v1/environments/{environment_uuid}/replay-feeds
+```
+
+```json
+{
+  "start": "2022-02-08T05:00:00Z",
+  "end": "2022-02-08T17:00:00Z",
+  "speed": 60,
+  "loop": false,
+  "run_id": "demo-01",
+  "source_type": "auto",
+  "max_duration_s": 7200,
+  "tick_seconds": 1
+}
+```
+
+| Field | Default | Meaning |
+|---|---|---|
+| `start` | | Data time to start from, ISO-8601. Required. |
+| `end` | end of the data | Data time to stop at. Must be after `start`. |
+| `speed` | `1` | Data seconds per wall-clock second. |
+| `loop` | `false` | Start over at `start` when the end is reached. |
+| `run_id` | generated | A name for this run, stored with every value. |
+| `source_type` | `auto` | `edge`, `sim`, or `auto` to follow whether a simulation is running. |
+| `max_duration_s` | `7200` | Wall-clock seconds after which the feed stops by itself. |
+| `tick_seconds` | `1` | Wall-clock seconds between messages, at least `1`. |
+
+The response is the feed: its `uuid`, `status`, `run_id`, `data_time`, `messages_sent`, `stop_reason` (`user`, `auto_stop`, `replaced`, `end` or `error`), the sensors it plays under `bindings`, and timestamps. `422` means the request was invalid: a bad field, no sensor in the environment using recorded data, a switched-on sensor whose dataset is missing, or a switched-on sensor bound to a channel of another type without `allow_type_mismatch`; in the last two cases the message names the sensors to fix or clear, and no feed starts.
+
+| Call | What it does |
+|---|---|
+| `GET …/replay-feeds/current` | The feed that is queued, playing or paused, else the most recent one; `404` when the environment never had one. |
+| `GET …/replay-feeds/{feed_uuid}` | One feed by id. |
+| `POST …/replay-feeds/{feed_uuid}/pause` | Pause. `409` when the feed is already paused or has ended. |
+| `POST …/replay-feeds/{feed_uuid}/resume` | Resume. `409` when the feed is playing or has ended. |
+| `POST …/replay-feeds/{feed_uuid}/stop` | Stop. `409` when the feed has already ended. |
+
+```bash
+curl -X POST "https://api.cyberwave.com/api/v1/environments/$ENVIRONMENT/replay-feeds" \
+  -H "Authorization: Bearer $CYBERWAVE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"start": "2022-02-08T05:00:00Z", "speed": 60}'
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Time-series datasets" icon="chart-line" href="/feature-reference/datasets/timeseries">
+    Package sensor logs, search channels and attach them to twin sensors.
+  </Card>
+  <Card title="Replay timeline" icon="clock-rotate-left" href="/feature-reference/environment-editor/replay-timeline">
+    Sensor data days in the calendar and the Sensors tab at the playhead.
+  </Card>
+  <Card title="Sensor bindings" icon="link" href="/feature-reference/environment-editor/sensor-bindings">
+    The type check, identifiers in datasets and Bind from dataset.
+  </Card>
+</CardGroup>

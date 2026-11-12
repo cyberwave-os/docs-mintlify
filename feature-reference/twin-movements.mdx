@@ -1,0 +1,49 @@
+---
+title: "Movements"
+description: "Ordered walks between saved poses, and why some movements cannot be played"
+tags:
+  - stub
+---
+
+## What a movement is
+
+A movement is an **ordered walk between saved poses**. It stores no joint
+angles of its own — it names poses and says how long to take getting between
+them. Playback reads the angles off each named pose and interpolates.
+
+That means a movement is only as good as the poses it points at. Save the poses
+first (see [Saved poses](/feature-reference/twin-saved-poses)), then build a
+movement over them from the **Movements** section of the twin's right-hand
+panel.
+
+## Scopes
+
+Like poses, a movement is saved at asset, twin, or environment scope, and is
+listed under a scope badge. A movement can reference poses from its own scope
+and from wider ones — an environment movement can use an asset pose.
+
+## "N movements can't be played"
+
+Movements the browser cannot preview are grouped under a collapsed
+**N movements can't be played** row at the bottom of the list, so they stay out
+of the way of working ones. That is any movement with fewer than two steps, or
+with even one step whose pose no longer exists — unless its start and end poses
+both still exist, which is enough to play it. Expand it to see each one, why it cannot play, and
+to edit or delete it. Their Play button stays disabled.
+
+Common reasons:
+
+| Reason | What happened |
+| ------ | ------------- |
+| No steps and no start/end pose — nothing to play. | The record has a name and a duration but never referenced any pose. Usually an imported or hand-written placeholder. |
+| Refers to N pose(s) that no longer exist. | A pose the movement stepped through was renamed or deleted. |
+| Needs at least two steps to move between. | The movement has a single step, so there is nothing to move between. |
+| Refers to missing pose(s): … | Same, for a movement saved as a start/end pair. |
+
+To fix one, edit it and point its steps at poses that exist — or delete it if it
+was never a real motion.
+
+The Control Agent is only offered movements that can actually execute, so it will
+not suggest most of the movements in this group. The exception is a movement with
+a single step: the browser needs two poses to preview a movement, but the robot
+can still be commanded to that one pose, so the Control Agent can run it.
