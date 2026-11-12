@@ -34,8 +34,7 @@ and defaults are in [Arm motion building blocks](/feature-reference/edge/drivers
 The commands, their arguments and their refusal codes are the same whichever
 backend answers them. The Piper has two:
 
-- `moveit`: MoveIt beside the arm. The Piper's standard service graph runs it; that
-  graph is used when the twin does not define its own services.
+- `moveit`: MoveIt beside the arm, started by default when the twin does not define its own services.
 - `pinocchio`: the in-process planner.
 
 With `moveit.enabled` true, `moveit` is the default backend. Otherwise

@@ -162,7 +162,7 @@ sequenceDiagram
 1. **`CONFIGURING`** — Log `[STATE] unconfigured → configuring`. Raise lifecycle alert + twin notice *"Driver starting"*.
 2. **`_connect_cloud_async()`** — `Cyberwave(source_type="edge")` (SDK defaults + `CYBERWAVE_*` env). Connect MQTT. Resolve twin: reuse `twin=` or fetch by `robot_uuid` / asset.
 3. **`_start_driver_telemetry_session()`** — Publish `telemetry_start` + `connected` on MQTT; start debounced `driver_info` via `BaseTelemetry`.
-4. **`register_interface_on_twin()`** — If `auto_register_interface` and class `REGISTRY_ID` are set: `twin.driver.set_schema(self.manifest)` (failures are logged, driver continues). Skipped when the twin still holds what this driver last wrote: the catalog hash and the digest of the twin's `mqtt` / `zenoh` blocks are recorded under `metadata["driver_catalog_sha256"]` and compared on start, so a rollback or an edit is re-registered. Call `register_interface_on_twin(force=True)` after a backend change to how catalogs compile.
+4. **`register_interface_on_twin()`** — If `auto_register_interface` and class `REGISTRY_ID` are set: `twin.driver.set_schema(self.manifest)` (failures are logged, driver continues). Skipped when the twin still holds what this driver last wrote: the catalog hash and the digest of the twin's `mqtt` / `zenoh` blocks are recorded under `metadata["driver_catalog_sha256"]` and compared on start, so a rollback or an edit is re-registered. Call `register_interface_on_twin(force=True)` to re-register after changing how your catalog compiles.
 5. **`on_configure()`** — Your hook.
 6. **`CONNECTING`** — Twin notice *"Driver connecting to device"*. **`on_connect_to_device()`**.
 7. **`INACTIVE`** — Notice *"Driver wiring interfaces"*. **`on_register_callbacks()`** then **`_wire_interface_from_registry()`**:
@@ -311,7 +311,7 @@ Orthogonal to lifecycle state — gates which `add_listener` / `add_publisher` e
 | `TELEOP_LOCAL` | `teleop_local` | Operator at the robot (`localop` controller) |
 | `TELEOP_REMOTE` | `teleop_remote` | Remote operator (any other controller type) |
 
-**Initial mode is derived from the twin's attached controller**, not hard-coded. At the end of startup (just after `ACTIVE`), `run_async` calls `_derive_initial_operation_mode()`, which re-fetches the twin from the API (`refresh_driver_twin_from_api`) and reads its attached controller policy (`resolve_twin_attached_controller`):
+**Initial mode is derived from the twin's attached controller**, not hard-coded. At the end of startup (just after `ACTIVE`), `run_async` calls `_derive_initial_operation_mode()`, which re-fetches the twin from the API and reads its attached controller policy:
 
 | Twin controller at startup | Resulting mode |
 | -------------------------- | -------------- |
@@ -459,6 +459,7 @@ Loaded by `CyberwaveConfig` when the driver calls `Cyberwave(source_type="edge")
 | `CYBERWAVE_MQTT_PORT` | `8883` |
 | `CYBERWAVE_MQTT_USE_TLS` | `true` when port is 8883 |
 | `CYBERWAVE_MQTT_USERNAME` | Broker username. Leave unset: the SDK derives one from your API key so the broker can identify the session. Set it only for legacy broker accounts. |
+
 Edge Core also sets twin JSON path, child twin UUIDs, restart tuning — see [Writing compatible drivers](/feature-reference/edge/drivers/writing-compatible-drivers#environment-variables).
 
 ---
@@ -492,10 +493,6 @@ def edge_health_extras(self) -> dict:
 def edge_health_streams(self):
     return [("arm-joints", {"kind": "imu", "source": "joint_states", "rate_hz": 10})]
 ```
-
-<Warning>
-`cyberwave-edge-core` also runs its own `EdgeHealthCheck` per linked twin for host-level metrics (memory, CPU temp, watchdog). A driver container's `edge_health_extras()` is a stopgap reuse of the same publish mechanism for driver-specific fields — a dedicated per-driver telemetry channel is planned to replace it.
-</Warning>
 
 ---
 

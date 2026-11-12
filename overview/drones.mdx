@@ -91,16 +91,14 @@ Switching to a different drone is a **one-line change**: change `cw.twin(...)` t
   `stop` / `emergency_stop`. Targets decay to zero after 500 ms of silence,
   and the driver hands authority back to the RC after 5 s of zero-velocity. The
   same continuous verbs are fully wired on PX4-class builds and in the
-  simulator without the opt-in. See the [Cyberwave Edge for DJI
-  README](https://github.com/cyberwave-os/cyberwave/tree/main/cyberwave-edge-nodes/cyberwave-edge-dji-mini-android#off-rc-teleoperation-virtual-stick)
-  for the full safety story and pre-flight checklist.
+  simulator without the opt-in. Follow your pre-flight checklist and keep the RC within reach at all times.
 </Info>
 
 <Info>
   The Mini 4 Pro (and the rest of the Mini / Mavic Mini line) ships with a
   **pitch-only mechanical gimbal**, so `gimbal_rotate(yaw=…)` is silently
   ignored by the hardware. To rotate the camera view on those aircraft, call
-  [`FlyingTwin.pan_camera(angle_deg=…)`](https://github.com/cyberwave-os/cyberwave/tree/main/cyberwave-sdks/cyberwave-python/cyberwave/twin.py):
+  `FlyingTwin.pan_camera(angle_deg=…)`:
   it yaws the airframe via the same Virtual Stick path used by `turn_left` /
   `turn_right` and explicitly zeros the axis when the target angle is
   reached. Same opt-in flag applies.

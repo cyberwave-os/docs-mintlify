@@ -28,14 +28,13 @@ Use this page to choose how each customer system talks to Cyberwave. One table c
 
 For long-lived integrations, use a **service token** scoped to the customer's workspace, not a personal token. See [API tokens](/feature-reference/api-tokens).
 
-{/* TODO(docs): /feature-reference/docker-registry tells users to run `cyberwave auth configure-docker`; no such command exists in the CLI source. Fix that page. */}
 {/* TODO(docs): webhook trigger — URL format, authentication, payload shape, response, rate limits. Nothing is documented today. */}
 {/* TODO(docs): http_request node — methods, headers/secrets handling, timeouts, retry semantics. */}
 {/* TODO(docs): the A2A task model is store-operations specific (`storeId`). Clarify whether other task types are planned. */}
 
 ## Connecting to MQTT
 
-These values come from the Python SDK (`cyberwave/config.py`, `cyberwave/mqtt/__init__.py`, `cyberwave/mqtt_identity.py`).
+These are the values the Python SDK uses by default.
 
 | Setting | Value |
 |---|---|
@@ -46,7 +45,7 @@ These values come from the Python SDK (`cyberwave/config.py`, `cyberwave/mqtt/__
 | Username | `cwh_` followed by the SHA-256 hex digest of the token. The SDK derives it for you. The broker refuses a username that does not hash to the token. |
 | Protocol | MQTT 3.1.1 by default. MQTT 5 with `CYBERWAVE_MQTT_PROTOCOL=5`. |
 | Client ID | Must be unique per connection. Keep it within 23 bytes for MQTT 3.1.1. |
-| Topic prefix | None in production. Other deployments may prefix every topic (`CYBERWAVE_MQTT_TOPIC_PREFIX`). |
+| Topic prefix | None. |
 | Authorization | Checked per topic against the token's access to the twin or workflow. For WebRTC signaling, subscribing needs read access and publishing needs write access. |
 
 ```python

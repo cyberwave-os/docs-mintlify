@@ -575,8 +575,8 @@ project = cw.projects.create(
 )
 
 environment = cw.environments.create(
-    name="Development",
-    description="Dev environment for testing",
+    name="Warehouse Floor",
+    description="Main warehouse cell",
     project_id=project.uuid
 )
 ```
@@ -824,13 +824,13 @@ This calls `POST /api/v1/environments/{uuid}/preview` and returns attachment met
 
 ### Renderer modes
 
-- `renderer=auto` checks the browser-published Redis cache, then uses the
-  screenshot service, then falls back to a schematic preview.
-- `renderer=browser_cache` reads the latest browser-published preview frame and
-  returns a schematic fallback on cache miss.
+- `renderer=auto` uses the latest browser-rendered preview when available, then
+  tries a server-side screenshot, then falls back to a schematic preview.
+- `renderer=browser_cache` reads the latest browser-rendered preview frame and
+  returns a schematic fallback when none is available.
 - `renderer=schematic` returns a deterministic top/isometric spatial preview
   without WebGL.
-- `renderer=headless` uses only the screenshot service and preserves capture
+- `renderer=headless` uses only a server-side screenshot and preserves capture
   failures.
 
 Preview metadata includes `renderer`, `renderer_status`, and fallback details

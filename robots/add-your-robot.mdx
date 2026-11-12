@@ -520,7 +520,7 @@ twin.commands.stop()
 twin.commands.move_forward(linear_x=0.3, duration=0.5, rate_hz=10)
 ```
 
-`set_schema` compiles the file on the platform (`POST /api/v1/twins/{uuid}/driver-schema`), writes `metadata.mqtt` on the twin, refreshes the catalog cache, and re-binds `twin.commands.<name>`. Re-run it whenever you change the manifest so teleop, agents and SDK callers stay aligned with your driver. Details: [Writing compatible drivers](/feature-reference/edge/drivers/writing-compatible-drivers).
+`set_schema` compiles the file on the platform (`POST /api/v1/twins/{uuid}/driver-schema`), writes `metadata.mqtt` on the twin, and re-binds `twin.commands.<name>`. Re-run it whenever you change the manifest so teleop, agents and SDK callers stay aligned with your driver. Details: [Writing compatible drivers](/feature-reference/edge/drivers/writing-compatible-drivers).
 
 <Info>
   `set_schema` updates **this twin's** metadata, so you can iterate without

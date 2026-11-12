@@ -28,8 +28,7 @@ print(result.output)
 
 <Info>
 The catalog below is the **single source of truth** for structured
-actions. It is authored in
-`cyberwave-backend/src/lib/structured_actions.py`, mirrored in the
+actions. It is mirrored in the
 Python SDK as `cyberwave.STRUCTURED_ACTIONS`, and served live at
 `GET /api/v1/mlmodels/structured-actions` so the frontend, SDKs, and
 this doc page all agree.
@@ -129,8 +128,7 @@ The SDK mirror carries `id`, `label`, `description`, `output_format`, and
 them from `GET /api/v1/mlmodels/structured-actions` when you need the live
 contract.
 
-Rules applied server-side (see
-`src/lib/structured_actions.py::_supports_any_spatial`):
+Rules applied server-side:
 
 1. The model must take an image as input (`can_take_image_as_input: true`).
 2. Output format must be `json` (or unset).
@@ -213,40 +211,3 @@ print(meta["output_format"], len(meta["output"]))
 
 Use `embed_metadata=False` to opt out of the embedded JSON (e.g. when
 sending the image to a third party).
-
----
-
-## Extending the catalog
-
-1. Add a new `StructuredAction` to
-   `cyberwave-backend/src/lib/structured_actions.py::STRUCTURED_ACTIONS`.
-2. If the output needs a new parse branch, update
-   `MLModelPlaygroundService._parse_output`.
-3. Mirror the action in
-   `cyberwave-sdks/cyberwave-python/cyberwave/models/playground.py`
-   (`STRUCTURED_ACTIONS`). The SDK test
-   `tests/test_mlmodels_actions.py::TestBackendAlignment` will fail until
-   the two files agree.
-4. Add a frontend overlay if the new `output_format` is visual.
-5. Update this page.
-
-### Minimum path for adding a new model / provider / output format
-
-- **New model, existing output format**:
-  - Seed or create the model with backend-computed metadata
-    (`playground_kind`, `allowed_structured_tasks`, `execution_surfaces`,
-    `sdk_load_id`) and add tests.
-  - No new frontend overlay or SDK type adapter should be needed.
-- **New provider wire format, existing structured action**:
-  - Add one adapter in `cyberwave-backend/src/lib/mlmodel_output_adapters.py`.
-  - Keep provider-specific parsing out of API routers and services.
-- **New output format**:
-  - Add the backend schema/action first.
-  - Add a frontend renderer only if the format is genuinely new.
-  - Update the SDK only if the format can map cleanly onto
-    `PredictionResult`; otherwise preserve the raw structured payload.
-
-Treat the backend API response as the source of truth. Frontend and SDK
-consumers should prefer `playground_kind`, `allowed_structured_tasks`,
-`execution_surfaces`, and `sdk_load_id` from the backend instead of
-recomputing them locally.

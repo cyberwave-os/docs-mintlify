@@ -4,10 +4,10 @@ description: "Dispatch controller actuations to a twin over MQTT from workflow a
 icon: "gamepad"
 ---
 
-The **Virtual Controller** (`virtual_controller`) resolves a **command** string against the **keyboard controller policy assigned to a digital twin** and publishes the matching actuation on `cyberwave/twin/{uuid}/command`. The MQTT payload matches keyboard teleoperation (`KeyboardTeleoperationController` / `useMQTTTwin.publishCommand`) — nothing is hardcoded per robot; bindings come from the twin's policy at runtime.
+The **Virtual Controller** (`virtual_controller`) resolves a **command** string against the **keyboard controller policy assigned to a digital twin** and publishes the matching actuation on `cyberwave/twin/{uuid}/command`. The MQTT payload matches keyboard teleoperation — nothing is hardcoded per robot; bindings come from the twin's policy at runtime.
 
 <Note>
-**Palette category:** Actuation. Runs on **cloud** (Celery MQTT) and **edge** (worker `client.mqtt.publish`). Locomotion uses the MQTT command topic, not WebRTC; media streaming stays on separate channels.
+**Palette category:** Actuation. Runs on **cloud** and **edge** (worker `client.mqtt.publish`). Locomotion uses the MQTT command topic, not WebRTC; media streaming stays on separate channels.
 </Note>
 
 ## Voice-to-actuation pipeline
@@ -118,10 +118,10 @@ On resolution failure the node raises an error (unknown command, missing policy,
 
 | Target | Behavior |
 |---|---|
-| **Cloud** | `run_virtual_controller_node` → `send_update_to_mqtt.delay` |
-| **Edge** | Emitter caches policy per twin (`_CW_VC_POLICY_CACHE`) via API on first use; `client.mqtt.publish` with QoS 0 |
+| **Cloud** | Publishes the resolved actuation over MQTT |
+| **Edge** | Fetches the twin's controller policy via the API on first use; `client.mqtt.publish` with QoS 0 |
 
-Edge workers **save** the resolved controller snapshot (UUID, name, metadata, parsed `entries`) in process memory so repeat commands on the same twin do not re-fetch the policy every frame.
+Edge workers keep the resolved controller snapshot (UUID, name, metadata, parsed entries) in process memory so repeat commands on the same twin do not re-fetch the policy every frame.
 
 ## Recommended Conditional gate
 
@@ -137,9 +137,9 @@ Pass `fuzzy_matcher.match_string` into `virtual_controller.command` on the true 
 
 | Layer | Requirement |
 |---|---|
-| **Compile server** | No ML extras. `paho-mqtt` and `httpx` are base Django/SDK deps. |
 | **Edge worker** | Base `cyberwave` — `client.twins.get`, controller-policies API, `client.mqtt.publish` |
-| **edge-sync** | No `model_requirements` (no ML weights) |
+
+No ML weights are needed.
 
 `rapidfuzz` is only required on the **Fuzzy Matcher** node upstream, not on Virtual Controller.
 
@@ -158,9 +158,9 @@ Command-mode UGV policies (`control_mode: "command"`) define bindings like:
 }
 ```
 
-Virtual Controller sends `move_forward` on MQTT when the pipeline passes `"Forward"`, `"move_forward"`, or fuzzy-matched variants. See seeded policies in `seed_controllers.py` (e.g. `controller:ugv-beast:v1`).
+Virtual Controller sends `move_forward` on MQTT when the pipeline passes `"Forward"`, `"move_forward"`, or fuzzy-matched variants.
 
-Universal keyboard (`controller:keyboard-locomotion:v1`) has no per-asset bindings in seed data; the node uses built-in locomotion defaults when `supports_locomotion` is true.
+Universal keyboard policies have no per-asset bindings; the node uses built-in locomotion defaults when `supports_locomotion` is true.
 
 ## Related nodes
 
