@@ -128,8 +128,6 @@ For manipulator arms, compose SDK mixins instead of hand-wiring MQTT joint teleo
 
 #### Integration example: `PiperDriver`
 
-Reference: [`cyberwave-edge-nodes/piper/public/cw_piper/driver.py`](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-edge-nodes/piper/public/cw_piper/driver.py).
-
 ```python
 class PiperDriver(
     JointControllerMixin,
@@ -187,7 +185,7 @@ Motion shaping (trapezoidal vs passthrough): [Joint motion shaping](/feature-ref
 
 ### ROS 2 minimal example (`ursim_driver.py`)
 
-Flagship sample: [`examples/ursim_driver.py`](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-sdks/cyberwave-python/examples/ursim_driver.py) (~75 lines).
+Flagship sample: [`examples/ursim_driver.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/ursim_driver.py) (~75 lines).
 
 ```python
 from cyberwave.driver import CallbackGroup, TopicSpec
@@ -279,7 +277,7 @@ declarations never share a value. Import them from `cyberwave.constants` rather
 than spelling them inline — a string outside the enum is accepted here and
 silently coerced downstream.
 
-This single method feeds `get_manifest()` / `driver.manifest`, optional **`metadata["zenoh"]`**, and `_wire_interface_from_registry()` (MQTT subscribe/publish plus edge **DataBus** when dual specs are present). **`twin/command` stays MQTT-only** — do not set `enable_zenoh=True` on command listeners.
+This single method feeds `get_manifest()` / `driver.manifest`, optional **`metadata["zenoh"]`**, and the runtime wiring (MQTT subscribe/publish plus edge **DataBus** when dual specs are present). **`twin/command` stays MQTT-only** — do not set `enable_zenoh=True` on command listeners.
 
 ### Step 3 — Lifecycle hooks (map to `run_async` order)
 
@@ -442,7 +440,7 @@ Edge Core raises the following alerts:
 
 `CYBERWAVE_TWIN_JSON_FILE` points to a JSON file on disk that contains the digital twin instance (including its `metadata`) and the associated catalog twin data, matching the `TwinSchema` and `AssetSchema` API schemas.
 
-Drivers may read and modify this file. Edge Core syncs any changes back to the backend when connectivity is available.
+Drivers may read and modify this file. Edge Core syncs any changes back to Cyberwave when connectivity is available.
 
 ## Runtime configuration
 
@@ -523,7 +521,7 @@ Topic entries are nested as **`mqtt.<namespace>.<leaf>`**. The leaf key is the *
 
 Each leaf entry sets `direction`, `payload_schema_ref`, `description`, and optional `source_types`.
 
-**WebRTC** signaling is always on the **twin** prefix (`cyberwave/twin/{uuid}/webrtc-offer`, `webrtc-answer`, `webrtc-candidate`, and `webrtc-command` for media-service commands). Declare them under **`mqtt.twin`** with hyphenated leaf names — not as a separate top-level namespace:
+**WebRTC** signaling is always on the **twin** prefix (`cyberwave/twin/{uuid}/webrtc-offer`, `webrtc-answer`, `webrtc-candidate`, and `webrtc-command` for media service commands). Declare them under **`mqtt.twin`** with hyphenated leaf names — not as a separate top-level namespace:
 
 ```yaml
 mqtt:
@@ -649,7 +647,7 @@ Drivers normally stream state over **MQTT** (see below). These REST endpoints ar
 
 #### Runtime messaging (MQTT)
 
-Declared in `cw-driver.yml` → compiled into `metadata.mqtt.topics`. At runtime the driver (or SDK teleop) uses the **MQTT broker** (WebSocket URL in `NEXT_PUBLIC_MQTT_URL` for frontends; port `1883` / `9001` locally for edge). Topic prefix may include an environment segment in deployed stacks; slugs below are canonical.
+Declared in `cw-driver.yml` → compiled into `metadata.mqtt.topics`. At runtime the driver (or SDK teleop) uses the **MQTT broker**. The slugs below are canonical.
 
 | Catalog slug (`metadata.mqtt.topics` key) | Example topic | Typical driver role |
 | ----------------------------------------- | ------------- | ------------------- |
@@ -894,7 +892,7 @@ If you publish data over MQTT directly (rather than through the SDK's `cw.data.p
 
 If your driver currently publishes sensor data over MQTT, you can add Zenoh publishing without removing the MQTT path. The two paths serve different consumers:
 
-- **MQTT** → cloud backend (telemetry, frontend, workflows)
+- **MQTT** → Cyberwave cloud (telemetry, frontend, workflows)
 - **Zenoh** → local worker containers (zero-copy inference, fusion)
 
 ### Step 1: Set CYBERWAVE_DATA_BACKEND
@@ -948,7 +946,7 @@ Fork or read these repositories when building your own compliant driver — each
 
 - **Camera** — [cyberwave-edge-camera-driver](https://github.com/cyberwave-os/cyberwave-edge-camera-driver): USB/RTSP camera as a twin (child of a parent robot twin).
 - **SO-101 arm** — [cyberwave-edge-so101](https://github.com/cyberwave-os/cyberwave-edge-so101): joint bus + command topic pattern for a manipulator.
-- **ROS UGV** — [cyberwave-edge-ros-ugv](https://github.com/cyberwave-os/cyberwave-edge-nodes/tree/main/cyberwave-edge-ros-ugv): locomotion and onboard camera profiles under `cw-driver-profiles/`.
+- **ROS UGV** — [cyberwave-edge-ros-ugv](https://github.com/cyberwave-os/cyberwave-edge-ros-ugv): locomotion and onboard camera profiles under `cw-driver-profiles/`.
 
 ## Advanced topics
 

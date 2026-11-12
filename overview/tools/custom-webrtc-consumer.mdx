@@ -215,11 +215,8 @@ Before `setLocalDescription()`, normalize the video section to the SFU table:
 | H.264 `4d001f`, packetization mode 1 | 117 |
 | H.264 `64001f`, packetization mode 1 | 119 |
 
-The canonical implementation is
-[`normalizeVideoOfferSdp`](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-frontend/lib/video-offer-sdp.ts).
-Keep a vendored implementation in sync with that file and the media-service
-router. If maintaining this protocol is undesirable, use `get_video()` from
-the Python SDK instead.
+If maintaining this protocol is undesirable, use `get_video()` from the Python
+SDK instead.
 
 ## Cleanup
 

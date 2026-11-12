@@ -42,7 +42,7 @@ npx mint broken-links                # Mintlify link check (needs images present
 python3 scripts/gen_cli_reference.py --check   # CLI reference is in sync with the installed cyberwave-cli
 ```
 
-Both checks run in CI on every pull request (`.github/workflows/docs-checks.yml`).
+Both checks run in CI on every pull request.
 
 ## Preview
 

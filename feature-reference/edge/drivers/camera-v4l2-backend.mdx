@@ -12,7 +12,7 @@ Without V4L2, `cv2.VideoCapture("/dev/video0")` routes through FFmpeg's libavfor
 
 ## Self-test
 
-`CV2VideoTrack.__init__` calls `cv2.getBuildInformation()` on Linux startup and raises `RuntimeError` if the `V4L/V4L2: YES` row is missing. The same assertion runs at Docker build time so a future packaging accident fails CI rather than production.
+`CV2VideoTrack.__init__` calls `cv2.getBuildInformation()` on Linux startup and raises `RuntimeError` if the `V4L/V4L2: YES` row is missing.
 
 Set `CYBERWAVE_CAMERA_SKIP_V4L2_CHECK=1` to bypass the SDK check intentionally.
 

@@ -85,7 +85,7 @@ generated `src_app_api_urdf_update_twin_joint_states`). See
 - **Explicit fixed-base control for procedural primitives**: Procedural primitives (spheres, cubes, walls, etc.) now have an explicit, discoverable "fixed base" toggle instead of relying on undocumented internal parameters, matching the control twins already had (#4047).
 - **Simulation view toggle**: Added a toggle, with per-environment persistence, to show or hide the live MuJoCo render during a simulation, independent of the reconstructed 3D scene view (#4032).
 - **Configurable range-sensor self-hit handling**: Range/LiDAR-style sensors can now be configured to re-cast beams that hit the robot's own geometry, so they report what's actually behind the robot instead of a self-hit (#4039).
-- **Dynamic simulation provisioning timeout**: Simulation startup timeout now scales with scene size (twin/camera count) instead of a flat window, so larger scenes get enough time to load instead of being killed by the watchdog prematurely (#3995).
+- **Dynamic simulation provisioning timeout**: Simulation startup timeout now scales with scene size (twin/camera count) instead of a flat window, so larger scenes get enough time to load instead of timing out prematurely (#3995).
 - **Executions gallery view**: The standalone Captures tab has been folded into Executions as a "Gallery" view, so browsing captures across runs and browsing run history now live in one place (#3953).
 - **Duplicate procedural primitives**: Procedural primitives in the environment editor can now be duplicated directly (#3958).
 - **Telemetry endpoint available outside active missions**: The telemetry streaming endpoint now works even when a robot is not currently running a mission, rather than only during one (#3939).
@@ -231,7 +231,7 @@ The `controller:dji-keyboard:v1` policy carries the requirement under `metadata.
 
 ### Python SDK
 
-- **`FlyingTwin` continuous-stick verbs**: `FlyingTwin.move_forward` / `move_backward` / `turn_left` / `turn_right` / `strafe_*` / `ascend` / `descend` are now documented as driving the real DJI aircraft (given the opt-in) — the previous "DJI Mini driver currently drops them" caveat is gone. The `examples/drone_dji_mini.py` walkthrough was updated to demonstrate the live behaviour and the safety story.
+- **`FlyingTwin` continuous-stick verbs**: `FlyingTwin.move_forward` / `move_backward` / `turn_left` / `turn_right` / `strafe_*` / `ascend` / `descend` are now documented as driving the real DJI aircraft (given the opt-in) — the previous "DJI Mini driver currently drops them" caveat is gone. The DJI Mini example walkthrough was updated to demonstrate the live behaviour and the safety story.
 - **`FlyingTwin.pan_camera(angle_deg=…)`**: new high-level helper that pans the camera view by yawing the airframe. The Mini 4 Pro (and the rest of the Mini / Mavic Mini line) ships with a pitch-only mechanical gimbal, so the `yaw` axis on `gimbal_rotate` is silently ignored by the hardware — `pan_camera` is the supported way to change the camera heading on those aircraft. It re-sends `turn_left` / `turn_right` at 5 Hz inside the 500 ms command-stale watchdog and explicitly zeros the yaw axis when the target angle is reached.
 
 ## Docs
@@ -267,7 +267,7 @@ The `controller:dji-keyboard:v1` policy carries the requirement under `metadata.
 
 - **Perception/runtime correctness**: ONNX YOLO postprocessing now applies per-class NMS; MQTT topic handlers are deduped to prevent WebRTC answer/candidate storms; annotate publishes overlay payloads on a dedicated frame overlay channel; and device fingerprinting has safer hostname fallbacks (#2133, #2153, #2140).
 - **Dataset and media support**: Python SDK schemas and bindings were updated for dataset import/visualization flows, and camera streaming paths gained stronger reconnect behavior for long-lived WebRTC sessions (#2038, #2051, #2069, #2130).
-- **Internal distribution hardening**: Video-sync packaging was obfuscated, CLI/internal install scripts gained better Buildkite authentication and redaction, and `sync-assets` can filter by `--registry-vendor` for workspace-scoped catalog syncs (#2036, #2157).
+- **Distribution hardening**: Video-sync packaging and CLI install scripts were hardened, and `sync-assets` can filter by `--registry-vendor` for workspace-scoped catalog syncs (#2036, #2157).
 
 ### C++ SDK
 
@@ -278,7 +278,7 @@ The `controller:dji-keyboard:v1` policy carries the requirement under `metadata.
 - Fixed workflow execution reading stale replica data by forcing primary reads in workflow task paths.
 - Fixed missing `action_id` errors in generated `move_twin` workflow code.
 - Fixed workflow editor autosave races, Send Alert target-twin persistence, Timed Condition alias schema emission, node-title font/spacing issues, and spatial-filter inspector action layout.
-- Fixed AI environment creation hitting a shadowed backend endpoint, public template clone 403s, and wrong redirects after environment creation.
+- Fixed AI environment creation failing intermittently, public template clone 403s, and wrong redirects after environment creation.
 - Fixed attachment ACL gaps, including environment-map parent access handling.
 - Fixed long robot recordings crashing playback by streaming signed Parquet data around the seek point.
 - Fixed edge worker install/build regressions by installing the local SDK wheel with required extras and smoke-testing `ultralytics`/`zenoh`.
@@ -288,10 +288,10 @@ The `controller:dji-keyboard:v1` policy carries the requirement under `metadata.
 - Fixed camera driver WebRTC streams going silent after consumers disconnect, and fixed SDK MQTT handler accumulation that caused repeated WebRTC answers/candidates.
 - Fixed Edge Devices status drift, stale online fallbacks, cross-workspace tombstone visibility, and unresolved-edge status rendering.
 - Fixed GO2 driver dynamic-IP handling and filtering of simulated teleop commands.
-- Fixed the DJI Android smoke-test/degraded-mode path, Sentry empty-DSN startup crash, and CI emulator working-directory issues.
+- Fixed the DJI Android smoke-test/degraded-mode path, a startup crash caused by missing error-reporting configuration, and CI emulator issues.
 - Fixed live-mode hardware dialog false positives by checking MQTT, REST, and historical edge-device presence.
 - Fixed onboarding overlay dark-mode contrast and removed an exposed close button.
-- Removed a sensitive token from Terraform configuration.
+- Removed a sensitive token from an internal configuration.
 
 </Update>
 
@@ -302,8 +302,7 @@ The `controller:dji-keyboard:v1` policy carries the requirement under `metadata.
 - **Multi-runtime Edge ML inference**: Edge workers can now run models through a runtime registry covering ONNX, TFLite (including quantized/INT8 paths), OpenCV DNN, TensorRT, and PyTorch, with normalized detection publishing across runtimes.
 - **Mission orchestration foundation**: Introduced the initial Mission model/renaming and planning primitives that connect mission authoring/execution flows across backend, frontend, and runtime paths.
 - **Replay intelligence overlays**: Added timeline event APIs and UI markers for alerts + telemetry, including twin-level filtering for replay investigations.
-- **Database-backed feature flag platform**: Replaced hardcoded flags with a DB catalog and added global, organization, and user-level rollout controls with explicit precedence.
-- **Uptime Kuma infrastructure**: Added a dedicated GCP Uptime Kuma stack with dev/staging/production environments and HTTPS-only access for platform monitoring.
+- **Feature flag platform**: Replaced hardcoded flags with a managed catalog and added global, organization, and user-level rollout controls with explicit precedence.
 
 ## Feature Improvements
 
@@ -312,14 +311,14 @@ The `controller:dji-keyboard:v1` policy carries the requirement under `metadata.
 - **Shared-view performance and reliability**: Environment viewer requests now pass a dedicated view token header, isolate viewer query caches, and skip unnecessary data/subscriptions in view-only mode.
 - **Public website messaging polish**: Iterated homepage narrative and interactive hero/code showcase for a simpler, higher-clarity value proposition.
 - **Simulation and vision UX upgrades**: Improved virtual camera live-feed support and added camera FOV cone visualization in 3D environments.
-- **Catalog and seeding maintenance**: Refactored controller/model seed catalogs and updated OpenARM references for staging/prod compatibility.
+- **Catalog and seeding maintenance**: Refactored controller/model seed catalogs and updated OpenARM references.
 
 ## SDK
 
 ### Python SDK
 
 - **Regression hardening for critical paths**: Added integration coverage for `get_latest_frame()` image validity and slash-style `registry_id` twin resolution.
-- **Runtime protocol upgrades**: Backend MQTT client path moved to MQTT v5 semantics with expanded logging/reason-code handling.
+- **Runtime protocol upgrades**: Platform MQTT client moved to MQTT v5 semantics with expanded reason-code handling.
 
 ### C++ SDK
 
@@ -367,7 +366,7 @@ The `controller:dji-keyboard:v1` policy carries the requirement under `metadata.
 - **Mission authoring and execution upgrade**: Redesigned waypoint editing/ordering in UI, better waypoint visualization, drag-and-drop ordering, and waypoint-style in-scene transform gizmos for assets.
 - **Mission capture persistence + workflow integration**: Capture state and media now persist across backend, edge, and frontend; mission captures are surfaced in UI and connected to workflow attachment processing.
 - **Primitives as a first-class concept**: New public endpoint `GET /api/v1/assets/primitives`, SDK access via `cw.assets.list_primitives()`, MCP tooling, and docs updates for environment editing.
-- **Alert categories (business vs technical)**: Backend model/schema/migration/API updates, MQTT payload inclusion, Python SDK support, and docs update.
+- **Alert categories (business vs technical)**: API and schema updates, MQTT payload inclusion, Python SDK support, and docs update.
 - **GO2 runtime pipeline restoration**: End-to-end real-robot path and navigation timestamp handling updates under the new structure.
 
 ## Feature Improvements

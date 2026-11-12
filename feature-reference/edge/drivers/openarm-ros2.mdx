@@ -203,9 +203,8 @@ A twin with **no controller assigned streams telemetry but stays idle** — assi
 
 <Note>
 Set `CYBERWAVE_MQTT_USER` to your Cyberwave username — the `username` field from
-`GET /api/v1/users/@me/status/`, not your email address and not a twin UUID. The
-broker re-checks authorization periodically using only the username, so a value
-that matches no account works until that re-check and then starts failing.
+`GET /api/v1/users/@me/status/`, not your email address and not a twin UUID. A
+value that matches no account may connect at first and then start failing.
 </Note>
 
 ```bash

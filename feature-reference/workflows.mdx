@@ -27,7 +27,7 @@ Workflows are Cyberwave's automation primitive. They turn a graph of nodes (trig
 
 You connect nodes visually to build complex behaviors without writing procedural code. The graph and the Python are two views of one object, so you can open, edit, and visualize the same workflow in the workflow editor or in code.
 
-Workflows can run **on the cloud** (Celery tasks) or **on the edge device**, depending on the trigger type. Cloud triggers handle schedule, webhook, event, and manual execution. The `camera_frame` trigger runs ML inference directly on the edge, so no video leaves the device.
+Workflows can run **on the cloud** or **on the edge device**, depending on the trigger type. Cloud triggers handle schedule, webhook, event, and manual execution. The `camera_frame` trigger runs ML inference directly on the edge, so no video leaves the device.
 
 ### Three ways to build one
 
@@ -61,7 +61,7 @@ Every workflow round-trips between graph and Python, with no lock-in to either f
 
 Nodes are the building blocks of workflows. Each node performs a specific action. For every node in the palette, what it does, and where it runs, see [Workflow nodes](/overview/features/workflow-nodes).
 
-Nodes are organised into a hybrid robotics + automation taxonomy. The same categories show up in the editor palette and on `GET /api/v1/workflows/config` (`node_categories`), so the docs, the API, and the UI all read from the same `WorkflowNodeCategory` enum (see `cyberwave-backend/src/lib/node_categories.py`). Categories with no nodes today (Perception) are reserved. They appear in the API response but are hidden in the palette until they ship.
+Nodes are organised into a hybrid robotics + automation taxonomy. The same categories show up in the editor palette and on `GET /api/v1/workflows/config` (`node_categories`), so the docs, the API, and the UI all share the same categories. Categories with no nodes today (Perception) are reserved. They appear in the API response but are hidden in the palette until they ship.
 
 <CardGroup cols={2}>
   <Card title="Triggers" icon="bolt">
@@ -117,13 +117,13 @@ A trigger decides when a workflow runs and where it runs.
 
 | Trigger | Where it runs | How it fires |
 |---------|--------------|-------------|
-| **Manual** | Cloud (Celery) | User clicks "Run" in the UI or triggers via SDK/API |
-| **Schedule** | Cloud (Celery) | Cron or interval timer |
-| **Webhook** | Cloud (Celery) | HTTP POST to a webhook URL |
-| **Event** | Cloud (Celery) | Business event matching conditions |
-| **MQTT** | Cloud (Celery) | MQTT message on a topic |
+| **Manual** | Cloud | User clicks "Run" in the UI or triggers via SDK/API |
+| **Schedule** | Cloud | Cron or interval timer |
+| **Webhook** | Cloud | HTTP POST to a webhook URL |
+| **Event** | Cloud | Business event matching conditions |
+| **MQTT** | Cloud | MQTT message on a topic |
 | **Zenoh** | Edge/local data plane | Zenoh message on a key expression |
-| **Email** | Cloud (Celery) | Incoming email |
+| **Email** | Cloud | Incoming email |
 | **Camera Frame** | **Edge device** | Every camera frame, locally — never sends video to the cloud |
 
 {/* TODO(docs): sources disagree: the old "Execution modes" table described Events as "Run when sensor data matches conditions"; this table says "Business event matching conditions". */}
@@ -222,7 +222,7 @@ This is the practical version of "test before you deploy". See the [environment 
 
     All subcommands accept `--base-url` / `-u` to override the API URL. When a UUID argument is omitted, an interactive arrow-key selector is shown.
 
-    `compile` wraps `/api/v1/workflows/{uuid}/compile` and reports the artifact shape the unified edge compiler emitted (`perception` for camera-frame graphs, `navigation` for graphs with a Move Twin node), the auto-derived target twin, model requirements, and any compiler warnings — including the diagnostic from the backend's `diagnose_compilation_dispatch` helper when the workflow's graph shape isn't compilable. Reach for it when `cyberwave workflow sync` reports the cloud isn't shipping a workflow to your edge. `compile-source` is the companion download for the generated `wf_*.py`.
+    `compile` wraps `/api/v1/workflows/{uuid}/compile` and reports the artifact shape the unified edge compiler emitted (`perception` for camera-frame graphs, `navigation` for graphs with a Move Twin node), the auto-derived target twin, model requirements, and any compiler warnings — including a diagnostic when the workflow's graph shape isn't compilable. Reach for it when `cyberwave workflow sync` reports the cloud isn't shipping a workflow to your edge. `compile-source` is the companion download for the generated `wf_*.py`.
   </Tab>
   <Tab title="Python SDK">
     ```python
@@ -343,9 +343,7 @@ For programmatic recovery, two HTTP endpoints publish the same MQTT command:
 - `POST /api/v1/workflows/{uuid}/sync-edge` — per-workflow fan-out across all referenced twins. Returns `{success, workflow_uuid, command, twin_uuids[], request_ids, skipped_reason}`. `200` covers both the success case and declarative no-ops (cloud-only workflows, workflows without a twin-bound node, references that have all gone stale or cross-workspace) — `skipped_reason` pins the case. Partial broker failures also stay on `200` with `skipped_reason: "MQTT publish failed for N of M twins"`. Total broker failure surfaces as `500` so retry/back-off logic can branch on status code rather than parsing the body.
 - `POST /api/v1/twins/{uuid}/sync-workflows` — twin-wide republish covering every active workflow on that twin's edge. Surfaced in the dashboard as the twin editor's **Force-sync all workflows** menu item.
 
-All five entry points (CLI workflow sync, CLI edge sync-workflows, `/workflows/{uuid}/sync-edge`, `/twins/{uuid}/sync-workflows`, twin editor menu) publish the identical MQTT command on `cyberwave/twin/{twin_uuid}/command`, which makes Edge Core run `reconcile_worker_sync` immediately instead of waiting for the next periodic cycle.
-
-The CLI derives the MQTT topic prefix (`dev`, `staging`, empty for production) from `CYBERWAVE_ENVIRONMENT`/credentials and cross-checks it against the broker host before publishing. A mismatch (e.g. dev broker with production prefix) aborts with a clear error instead of silently shipping the command into a topic Edge Core never subscribed to. Override with `CYBERWAVE_MQTT_TOPIC_PREFIX` if you really need to.
+All five entry points (CLI workflow sync, CLI edge sync-workflows, `/workflows/{uuid}/sync-edge`, `/twins/{uuid}/sync-workflows`, twin editor menu) publish the identical MQTT command on `cyberwave/twin/{twin_uuid}/command`, which makes Edge Core sync workers immediately instead of waiting for the next periodic cycle.
 
 The edge device also syncs automatically on boot and periodically (default ~5 min, configurable via `CYBERWAVE_WORKER_SYNC_INTERVAL_LOOPS`).
 
@@ -369,7 +367,7 @@ The **Code** action node runs a user-supplied Python function on the edge. It is
 
 - **Runtime**: Python, on the edge worker container that already runs the compiled `wf_*.py` module.
 - **I/O contract**: Every Code node must define a top-level `def run(input: dict) -> dict`. The return value is fed into the next Code node's `input` via an internal `_node_output` variable.
-- **Validation**: The API parses the body with `ast.parse` on create/update and rejects syntax errors or missing `run` functions inline, before activation.
+- **Validation**: The API validates the body on create/update and rejects syntax errors or missing `run` functions inline, before activation.
 - **Activation guards**: Activating a workflow is blocked if it contains a Code node and either (a) `run_on_edge` is false, or (b) the workflow uses a `camera_frame` trigger (not yet supported by the perception path of the edge compiler).
 - **Availability**: The node is always visible in the palette; it is disabled with an "Available only on run_on_edge workflows" tooltip when the workflow is not edge-bound.
 
