@@ -53,11 +53,9 @@ cleanest way to add custom classes without retraining:
 camera_frame → call_model (YOLOE-26 Small, prompt: "helmet") → send_alert
 ```
 
-The camera worker codegen forwards the resolved prompt into the
-generated `model.predict(frame, ..., prompt=..., twin_uuid=...)` call.
-The Ultralytics runtime configures the head once via `set_classes()`
-and caches that configuration on the model handle, so subsequent
-frames at 10–30 fps don't pay the re-parameterization cost. If the
+The worker forwards the resolved prompt to the model. The runtime
+configures the class set once and caches it, so subsequent frames at
+10–30 fps don't pay the re-parameterization cost. If the
 underlying call fails (bad tokenizer state, OOM during text
 encoding), the runtime logs a warning and the previously active
 class set stays live — the worker keeps producing detections rather
@@ -65,23 +63,14 @@ than crashing, and the warning surfaces the regression.
 
 ### Camera-frame limitation: static prompts only
 
-Camera workers compile through the legacy `WorkerCodegen` path,
-which only resolves prompts that are statically known at compile
+Camera workers only resolve prompts that are statically known at compile
 time — `parameters.default_prompt` or `input_mappings.prompt` with
 `mode: "value"`. Reference-mode mappings that read from an upstream
-node's output are **accepted by the compatibility gate** (the model
-takes text, after all) but **dropped by the camera codegen** with a
-clear warning in the compile output:
-
-```
-worker_codegen: call_model <uuid> has a 'reference'-mode prompt mapping;
-camera-frame workers can only forward static literal prompts...
-```
+node's output are **dropped** with a warning in the compile output.
 
 If you need an upstream-wired prompt for a vision workflow, move
-the trigger off `camera_frame` so the assembler renders the graph
-instead — that path threads `_node_outputs` through every node and
-honors reference / expression mappings end-to-end.
+the trigger off `camera_frame` so the full graph is evaluated — that
+path honors reference / expression mappings end-to-end.
 
 ## Single class vs multi-class
 
@@ -132,7 +121,7 @@ prompt: "person wearing glasses"
 ```
 
 A comma would create two independent classes (`person` OR
-`glasses`); a single phrase keeps `set_classes` configuring **one**
+`glasses`); a single phrase keeps the model configuring **one**
 open-vocab class whose text embedding encodes the attribute. Quality
 depends on how well the phrasing matches what the model saw during
 training — try a couple of variants ("person with glasses",
@@ -141,7 +130,7 @@ training — try a couple of variants ("person with glasses",
 
 **Two-stage filter (non-camera workflows).** When you can afford a
 `code` node — i.e. the workflow is not on a `camera_frame` trigger,
-which the compiler currently blocks Code nodes on — do:
+which currently blocks Code nodes — do:
 
 1. Use `prompt` for the **object** class.
 2. Add a downstream `code` node that crops each detection's bounding
@@ -156,10 +145,10 @@ intelligence step.
 
 ## When the prompt is rejected at compile time
 
-`cyberwave workflow sync` (the backend codegen) fails with a clear
+`cyberwave workflow sync` fails with a clear
 message when a `prompt` is configured on a model whose catalog
-metadata says `can_take_text_as_input = False`. The same rule fires
-for both edge-activated and cloud-activated workflows — the model
+metadata says `can_take_text_as_input = False`. The same rule applies
+to both edge-activated and cloud-activated workflows — the model
 either accepts text or it doesn't, regardless of where the
 inference runs. The inspector mirrors the rule by hiding the prompt
 row on those models, but the backend is the source of truth: a

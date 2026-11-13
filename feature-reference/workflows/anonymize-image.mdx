@@ -25,8 +25,8 @@ trigger → call_model → anonymize → annotate → update_attachment
 ```
 
 Order matters: anonymise first, annotate second. Reversing would
-pixelate over the drawn boxes. On the edge side the codegen normalises
-this ordering automatically regardless of graph order.
+pixelate over the drawn boxes. On the edge side the ordering is normalised
+automatically regardless of graph order.
 
 ## Modes
 
@@ -58,7 +58,7 @@ these fields as `cloud_only` to make that explicit.
 
 | Field | Type | Description |
 |---|---|---|
-| `anonymized_image_bytes` | object | Raw bytes of the anonymised image, re-encoded in the source format (JPEG / PNG). Canonical handoff — wire a downstream node's `image_bytes` to this field via the InputMappingEditor. |
+| `anonymized_image_bytes` | object | Raw bytes of the anonymised image, re-encoded in the source format (JPEG / PNG). Canonical handoff — wire a downstream node's `image_bytes` to this field with an input mapping. |
 | `anonymized_image_base64` | image | Data URL (`data:image/...;base64,...`) of the anonymised image. UI preview channel — consumed by the workflow run-history thumbnail. Preserves the source MIME type, falling back to PNG when the source format can't be detected — echoing a 100 KB JPEG back as a megabyte PNG data-URL would balloon downstream storage. |
 | `source_image_url` | image | Original input URL. |
 | `detection_count` | number | Number of detection regions obscured. |
@@ -66,7 +66,7 @@ these fields as `cloud_only` to make that explicit.
 ## Edge implementation
 
 When compiled to the edge, `anonymize` uses
-[`cyberwave.vision.blank_persons`](https://github.com/cyberwave-os/cyberwave/blob/dev/cyberwave-sdks/cyberwave-python/cyberwave/vision/anonymize.py)
+`cyberwave.vision.blank_persons`
 from the Cyberwave Python SDK. The cloud and edge paths share the same
 pixel-level algorithm and emit byte-for-byte identical output for the
 same input frame + detections.
@@ -77,17 +77,11 @@ same input frame + detections.
 the active `target_classes` set. On a frame where the model returns
 *zero* matching detections (sub-threshold confidence, occluded
 subject, partial body, transient miss) the helper returns the input
-frame untouched. To prevent that frame from being published to
-[`FILTERED_FRAME_CHANNEL`](../../edge/drivers/frame-filters) and
+frame untouched. To prevent that frame from being published to the
+[frame-filter channel](../../edge/drivers/frame-filters) and
 silently substituted into the WebRTC stream, the generated edge
-worker wraps the publish:
-
-```python
-if any(d.label in {'person'} for d in results.detections):
-    cw.data.publish(FILTERED_FRAME_CHANNEL, _frame, twin_uuid=...)
-else:
-    cw.data.publish(FILTERED_FRAME_CHANNEL, np.zeros_like(frame), twin_uuid=...)
-```
+worker publishes a black frame whenever no detection in the active
+`target_classes` set is present.
 
 A missed detection therefore becomes an explicit black frame rather
 than a raw passthrough — matching the camera driver's existing
@@ -96,7 +90,7 @@ fail-closed behaviour for stale and shape-mismatched filtered frames.
 When multiple `anonymize` nodes are chained, the gate uses the
 **union** of every node's `target_classes`. An anonymize node
 authored with an empty `target_classes` list is treated as a privacy
-lockdown — the gate becomes `set()` so every frame is replaced with
+lockdown — every frame is replaced with
 black.
 
 `annotate`-only chains have no privacy contract and remain un-gated:

@@ -23,7 +23,7 @@ Create Instance
 
 Create a new Cloud Node instance.
 
-The backend is the owner of the UUID and slug:
+The platform assigns the UUID and slug:
 - If slug is provided, it must be unique within the workspace
 - If slug is not provided, an auto-generated slug will be created
 
@@ -529,7 +529,7 @@ Mark Instance Terminated
 
 Mark a Cloud Node (GPU) instance as terminated.
 
-Called by the package (cyberwave-cloud-node) once a termination is triggered OR by the GitHub Actions workflow after Terraform has successfully (when used by us)
+Called once a termination has been triggered and the instance has been shut down.
 
 ### Example
 
@@ -781,7 +781,7 @@ Save Cloud Node Instance Log
 
 Save a log entry for a Cloud Node (GPU) instance.
 
-Logs are stored asynchronously in GCS with metadata in the database.
+Logs are stored asynchronously.
 This allows Cloud Node instances to stream logs without blocking.
 
 ### Example

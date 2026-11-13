@@ -77,11 +77,11 @@ Only the wake words selected in the workflow are provisioned — not the full ca
 
 | When | What runs |
 |------|-----------|
-| **Workflow compile** (cloud) | `openwakeword.utils.download_models(model_names=[...])` + load probe. Fails compile if `openwakeword` is missing on Django or download fails. `/compile` returns `openwakeword_models`. |
-| **Worker import** (edge) | Top of `wf_*.py`: `download_models(model_names=_CW_WW_WORKFLOW_WAKE_WORDS)` then `_cw_ww_ensure_models_downloaded(...)`. |
-| **Engine init** (edge) | First audio frame: same download (idempotent) before `Model(wakeword_models=...)`. |
+| **Workflow compile** (cloud) | Selected models are downloaded and load-checked. Compile fails if the wake word runtime is unavailable or the download fails. |
+| **Worker import** (edge) | The generated worker downloads the selected models. |
+| **Engine init** (edge) | First audio frame: same download (idempotent) before the engine loads the models. |
 
-Edge-sync `model_requirements` includes `wake_word_models: ["alexa", ...]` and `edge_package: ml-wakeword`.
+The workflow's model requirements include the selected wake word models and the `ml-wakeword` extra.
 
 The official `cyberwaveos/edge-ml-worker` image also pre-bakes all built-in models at image build time for air-gapped use.
 
@@ -127,7 +127,7 @@ Both events carry the same JSON payload:
 }
 ```
 
-`source_type` is `edge` when the workflow runs on the edge (default for Wake Word Engine) and `tele` when the workflow runs on the cloud. `source_subtype` is the wake word node name (defaults to `wake_word_engine`), following the [`CwProcessor`](https://github.com/cyberwave-os) source subtype convention.
+`source_type` is `edge` when the workflow runs on the edge (default for Wake Word Engine) and `tele` when the workflow runs on the cloud. `source_subtype` is the wake word node name (defaults to `wake_word_engine`).
 
 ### Feedback target
 
@@ -135,15 +135,13 @@ A **Feedback target** sidebar toggle controls where the audio plays:
 
 | Option | Transport | Subscriber |
 |--------|-----------|------------|
-| **Desktop** (default) | MQTT — `{prefix}cyberwave/twin/{TWIN_UUID}/commands/assistant_signaling` | Environment viewer in the browser (`/sounds/assistant/start-assistant.mp3`, `end-assistant.mp3`) |
-| **Edge** | Zenoh — `{prefix}/{TWIN_UUID}/data/commands/assistant_signaling` (built via [`build_key`](https://github.com/cyberwave-os/cyberwave-sdks)) | On-edge speaker driver subscribed to the Zenoh channel |
+| **Desktop** (default) | MQTT — `{prefix}cyberwave/twin/{TWIN_UUID}/commands/assistant_signaling` | Environment viewer in the browser |
+| **Edge** | Zenoh — `{prefix}/{TWIN_UUID}/data/commands/assistant_signaling` | On-edge speaker driver subscribed to the Zenoh channel |
 | **Both** | MQTT + Zenoh | Browser and edge speaker react simultaneously |
 
 <Note>
 Edge and Both require a speaker physically connected to the edge device, plus an edge speaker driver subscribing to the Zenoh `commands/assistant_signaling` channel for the twin.
 </Note>
-
-The frontend handler is `cyberwave-frontend/lib/workflows/assistant-signaling-sounds.ts` (`handleAssistantSignalingCommand`), wired into `useMQTTTwin` for environment viewers.
 
 ## Input formats
 
@@ -181,9 +179,7 @@ Set `CYBERWAVE_WORKER_LOG_LEVEL=DEBUG` for per-frame scores above 0.15.
 
 | Layer | Requirement |
 |---|---|
-| **Compile server** | `openwakeword`, `onnxruntime` — see [models & compile](/feature-reference/workflows/wake-word-engine/models-and-compile) |
-| **Edge worker** | `cyberwave[ml-wakeword]` |
-| **edge-sync** | `edge_package: ml-wakeword`, `wake_word_models: [...]` |
+| **Edge worker** | `cyberwave[ml-wakeword]` — see [models & compile](/feature-reference/workflows/wake-word-engine/models-and-compile) |
 
 [Edge workflow dependencies](/feature-reference/workflows/edge-dependencies) lists all voice nodes and STT catalog extras.
 
@@ -194,7 +190,7 @@ Set `CYBERWAVE_WORKER_LOG_LEVEL=DEBUG` for per-frame scores above 0.15.
     Full compile + edge matrix
   </Card>
   <Card title="Models & compile" icon="cloud-arrow-down" href="/feature-reference/workflows/wake-word-engine/models-and-compile">
-    Compile-time download and edge-sync requirements
+    Compile-time download and edge requirements
   </Card>
   <Card title="Testing" icon="vial" href="/feature-reference/workflows/wake-word-engine/testing">
     WAV fixtures and offline detection tests

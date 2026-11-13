@@ -1,17 +1,17 @@
 ---
 title: "Recorder node"
-description: "Start or stop audio/video recording on a twin via the media service from a workflow."
+description: "Start or stop audio/video recording on a twin from a workflow."
 icon: "circle-dot"
 ---
 
-The **Recorder** (`recorder`) node publishes `start_recording` / `stop_recording` to a twin's `webrtc-command` MQTT topic so the media service persists the **already-running** WebRTC stream to its configured bucket. The node never carries the media itself — the camera or microphone must already be streaming.
+The **Recorder** (`recorder`) node publishes `start_recording` / `stop_recording` to a twin's `webrtc-command` MQTT topic so Cyberwave records the **already-running** WebRTC stream. The node never carries the media itself — the camera or microphone must already be streaming.
 
 <Note>
-**Palette category:** Actuation. **Edge-only.** Toggles persistence on the media service; it does not create the stream.
+**Palette category:** Actuation. **Edge-only.** Toggles recording; it does not create the stream.
 </Note>
 
 <Tip>
-The Recorder node, the audio widget's **REC** button in the environment view, and the [microphone driver's fallback relay](/feature-reference/edge/drivers/native-microphone-driver) all publish the exact same payload on `cyberwave/twin/{uuid}/webrtc-command`. The three paths converge on the same media-service handler and the same `webrtc-command/status` ACK, so you can mix and match without changing the consumer.
+The Recorder node, the audio widget's **REC** button in the environment view, and the [microphone driver's fallback relay](/feature-reference/edge/drivers/native-microphone-driver) all publish the exact same payload on `cyberwave/twin/{uuid}/webrtc-command`. The three paths converge on the same handler and the same `webrtc-command/status` ACK, so you can mix and match without changing the consumer.
 </Tip>
 
 ## Inputs
@@ -20,8 +20,8 @@ The Recorder node, the audio widget's **REC** button in the environment view, an
 |---|---|---|---|
 | `twin_uuid` | string | Yes | Twin whose stream should be recorded. Defaults to the workflow's bound twin. |
 | `command` | string | Yes | `start_recording` or `stop_recording`. Wire from an upstream Conditional / Fuzzy Matcher to toggle dynamically, or pin a literal in the inspector. |
-| `frontend_type` | string | Yes | `video` or `audio`. The media service treats this as `audio` when unset. |
-| `sensor` | string | Yes | Sensor identifier (e.g. `camera`, `mic`). Required by the media-service `start_recording` handler — commands without it are refused. |
+| `frontend_type` | string | Yes | `video` or `audio`. Treated as `audio` when unset. |
+| `sensor` | string | Yes | Sensor identifier (e.g. `camera`, `mic`). Required for `start_recording` — commands without it are refused. |
 | `stream_source` | string | No | Optional producer hint (e.g. `camera`). |
 | `stream_instance_id` | string | No | Optional disambiguator when a twin publishes multiple streams under the same sensor. |
 
@@ -40,7 +40,7 @@ Published to `{prefix}cyberwave/twin/{twin_uuid}/webrtc-command` with QoS 1:
 }
 ```
 
-To stop, send the same payload with `"command": "stop_recording"`. Status is published back by the media service on `{prefix}cyberwave/twin/{twin_uuid}/webrtc-command/status`.
+To stop, send the same payload with `"command": "stop_recording"`. Status is published back on `{prefix}cyberwave/twin/{twin_uuid}/webrtc-command/status`.
 
 ## Outputs
 
@@ -48,14 +48,14 @@ To stop, send the same payload with `"command": "stop_recording"`. Status is pub
 |---|---|---|
 | `command` | string | Recording command that was published. |
 | `topic` | string | Full MQTT topic the command was published to. |
-| `payload` | object | Payload sent to the media service. |
+| `payload` | object | Payload sent. |
 | `sent` | boolean | Whether the broker accepted the publish. |
 
 ## Execution targets
 
 | Target | Behavior |
 |---|---|
-| **Edge** | Emitter renders a `client.mqtt.publish` against the twin-scoped `webrtc-command` topic in the generated worker. |
+| **Edge** | The generated worker publishes to the twin-scoped `webrtc-command` topic. |
 | **Cloud** | Not supported — the node raises at compile time for cloud workflows. |
 
 ## Related

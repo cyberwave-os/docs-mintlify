@@ -6,7 +6,7 @@ description: "Send a specific controller command to a twin with explicit control
 The **Send Controller Command** (`send_controller_command`) node provides a direct way to dispatch controller commands to a digital twin. Unlike Virtual Controller (which resolves commands dynamically from upstream strings), this node lets you **explicitly select** the twin, controller policy, and specific command at configuration time.
 
 <Note>
-**Palette category:** Actuation. Runs on **cloud** (Celery MQTT or inference dispatch) and **edge** (worker `client.mqtt.publish`, keyboard/teleop only). Model controllers (mlmodel/vla) are cloud-only.
+**Palette category:** Actuation. Runs on **cloud** (MQTT or inference dispatch) and **edge** (worker `client.mqtt.publish`, keyboard/teleop only). Model controllers (mlmodel/vla) are cloud-only.
 </Note>
 
 ## Configuration flow
@@ -58,11 +58,11 @@ When a keyboard or teleop controller is selected:
 | `command` | Selected actuation slug | Selected actuation slug |
 | `data` | From `params` input or binding defaults | From `params` input |
 | `data.move_id` | Live only: one id per node run, the same on every retry and repeat (a `move_id` already in `params` is kept) | Not set |
-| `timestamp` | Server-side `time.time()` | Worker-side `time.time()` |
+| `timestamp` | Server-side timestamp | Worker-side timestamp |
 
 ### Delivery
 
-A cloud run keeps **one** connection to the message broker for the whole execution. If the broker stalls, a live command keeps retrying for up to 20 s (the `LIVE_COMMAND_PUBLISH_DEADLINE_S` setting) before the node fails, and the error names the actual cause (no CONNACK / no PUBACK). Retried copies carry the same `data.move_id`, so drivers that deduplicate on it (the DJI phone app does) run the command once.
+A cloud run keeps **one** connection to the message broker for the whole execution. If the broker stalls, a live command keeps retrying for up to 20 s before the node fails, and the error names the actual cause (no CONNACK / no PUBACK). Retried copies carry the same `data.move_id`, so drivers that deduplicate on it (the DJI phone app does) run the command once.
 
 ### Waiting for completion
 
@@ -84,7 +84,7 @@ When a model controller is selected:
 
 - The instruction input accepts a natural language prompt (e.g. "pick up the red block")
 - Additional parameters (max_steps, mode) can be passed via `params`
-- At runtime the node dispatches inference through `ControllerPolicyExecutionService`
+- At runtime the node dispatches inference to the model
 - Model controllers run **cloud-only** — edge compilation will fail
 
 ## Outputs

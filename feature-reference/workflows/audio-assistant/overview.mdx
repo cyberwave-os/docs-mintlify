@@ -42,7 +42,7 @@ For **SSG**, prefer accumulating at least **1–4 s** per analysis window (defau
 
 ## Edge execution
 
-Audio Assistant nodes are **edge-only**. Workflows compile to a `wf_*.py` worker module and sync to the device:
+Audio Assistant nodes are **edge-only**. Workflows compile to an edge worker and sync to the device:
 
 ```bash
 cyberwave workflow compile <workflow-uuid>    # inspect emitted source + warnings
@@ -52,7 +52,7 @@ cyberwave workflow sync <workflow-uuid>      # deploy to edge
 Typical chain:
 
 ```
-Audio Track (@cw.on_audio) → Audio Assistant → Send Alert / Call Model
+Audio Track → Audio Assistant → Send Alert / Call Model
 ```
 
 Compile checks:
