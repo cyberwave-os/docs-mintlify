@@ -1844,7 +1844,7 @@ No authorization required
 Get Public Vendors
 
 Get the list of vendors that have public assets.
-Used by frontend to whitelist vendor pages for unauthenticated access.
+Used to allow public vendor pages to be viewed without authentication.
 Results are cached for 1 hour for performance.
 
 ### Example
@@ -2379,7 +2379,7 @@ Rebuild Asset Universal Schema
 
 Trigger regeneration of an Asset's universal_schema from its URDFProject.
 
-By default, queues a Celery task and returns immediately. Pass `?sync=true`
+By default, queues the regeneration and returns immediately. Pass `?sync=true`
 to execute synchronously and block until complete (useful for local testing).
 
 Returns:
@@ -2781,7 +2781,7 @@ Vlm Generation
 
 Generate a response using a Vision Language Model (VLM) with the given prompt and image.
 
-This endpoint uses Google's Gemini 3 Pro vision model to analyze images and generate
+This endpoint uses a vision language model to analyze images and generate
 text responses based on the provided prompt.
 
 Args:
@@ -3844,7 +3844,7 @@ Get Action From Policy
 Get action from an ML model policy based on instruction and twin state.
 
 Validates that the twins exist and the camera is live, then dispatches
-the actual execution to a Celery worker.
+the actual execution to a background worker.
 
 ### Example
 
@@ -4697,7 +4697,7 @@ Discover Twins
 Discover all twins this edge device should serve.
 
 This endpoint auto-registers the edge if it does not exist and returns all
-twins that contain this edge fingerprint in Twin.metadata["edge_fingerprint"].
+twins that contain this edge fingerprint in their metadata.
 
 ### Example
 
@@ -4934,7 +4934,7 @@ CustomTokenAuthentication
 
 Restart Edge Core
 
-Publish an MQTT restart command for the target edge-core instance.
+Send a restart command to the target edge-core instance.
 
 ### Example
 
@@ -5085,7 +5085,7 @@ CustomTokenAuthentication
 
 Update Camera Config
 
-DEPRECATED: camera configs now live in Twin.metadata["edge_configs"] and
+DEPRECATED: camera configs now live in the twin metadata and
 must be updated via twin metadata writes.
 
 ### Example
@@ -7402,7 +7402,7 @@ Get Environment Twins
 
 Get twins in an environment with optional dynamic filters.
 
-Supports filtering on any field using query parameters with Django lookup syntax.
+Supports filtering on any field using query parameters with lookup syntax.
 
 Examples:
 
@@ -16460,10 +16460,9 @@ CustomTokenAuthentication
 Get Twin Latest Frame
 
 Get the latest frame from a twin's camera stream.
-Serves the frame directly from Redis without saving to permanent storage.
+Serves the latest frame directly without saving it to permanent storage.
 
-For multi-camera twins, the media service stores frames with key
-`frame:{twin*uuid}*{sensor_id}:rgb:latest`. Pass ?sensor_id=wrist_camera to get a specific camera.
+For multi-camera twins, pass ?sensor_id=wrist_camera to get a specific camera.
 
 Query params:
 
@@ -16544,7 +16543,7 @@ Get Twin Latest Metrics
 
 Get the latest metrics snapshot for a twin.
 
-Returns the most recent metrics from Twin.metadata (current state)
+Returns the most recent metrics from the twin metadata (current state)
 plus the timestamp of the last update.
 
 This is more efficient than querying historical data when you only
@@ -16702,7 +16701,7 @@ Get Twin Metrics
 Get historical metrics for a twin.
 
 Returns time-series metrics data (battery level, navigation status, etc.)
-logged via MQTT from edge devices.
+reported by edge devices.
 
 Args:
 uuid: Twin UUID
@@ -17101,7 +17100,7 @@ CustomTokenAuthentication
 Link Occupancy Map
 
 Link an occupancy-grid map to this twin, compute (or retrieve)
-the world->map transform, and send it to the edge via MQTT.
+the world->map transform, and send it to the edge.
 
 The map must have been uploaded beforehand via `POST /maps`
 (with `map_type=occupancy_grid`).
@@ -17112,9 +17111,8 @@ Flow:
 2. If the environment already has a manually-set navigation
    transform, use it. Otherwise, attempt to auto-align the
    SLAM map with the 3D scene (currently mocked as identity).
-3. Save the transform into `environment.settings.navigation`.
-4. Publish the transform on the `occupancy-map-tf` MQTT topic
-   so the edge waypoint bridge sets its `world -> map` TF.
+3. Save the transform in the environment's navigation settings.
+4. Send the transform to the edge so it can set its `world -> map` transform.
 
 ### Example
 
@@ -17363,9 +17361,9 @@ CustomTokenAuthentication
 
 Reload Twin Capabilities
 
-Get capabilities from Twin.universal_schema.
+Get capabilities from the twin's universal schema.
 
-Note: Capabilities are now derived from schema only, not cached in DB.
+Note: Capabilities are derived from the twin's schema.
 This endpoint is kept for backward compatibility.
 
 Returns:
@@ -18003,9 +18001,9 @@ CustomTokenAuthentication
 
 Fix Urdf Project Slug
 
-Fix a URDF project's slug and main_file_path to match actual storage.
+Fix a URDF project's slug and main file path to match actual storage.
 
-This is useful when files exist in storage but the DB record points to the wrong location.
+This is useful when files exist in storage but the project points to the wrong location.
 Requires staff/superuser permissions.
 
 ### Example
@@ -19914,7 +19912,7 @@ CustomTokenAuthentication
 Get Node Schemas
 
 Get all available node type schemas with their input/output definitions.
-This is used by the frontend to display available node types and their I/O.
+Used to display available node types and their inputs/outputs.
 
 ### Example
 
@@ -20758,7 +20756,7 @@ Add Organization Member By Email
 Add a member to an organization by email address.
 
 If user exists in Cyberwave, add them to the organization.
-If user doesn't exist, return user_exists=False so frontend can show contact link.
+If user doesn't exist, return user_exists=False so clients can show a contact link.
 
 ### Example
 
@@ -21676,7 +21674,7 @@ Add Workspace Member By Email
 Add a member to a workspace by email address.
 
 If user exists in Cyberwave, add them to the workspace.
-If user doesn't exist, return user_exists=False so frontend can show contact link.
+If user doesn't exist, return user_exists=False so clients can show a contact link.
 
 ### Example
 

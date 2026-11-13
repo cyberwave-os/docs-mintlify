@@ -19,9 +19,9 @@ a checksum-verified file wins.
 For each required model:
 
 1. **Pre-staged on disk.** A file already at `~/.cyberwave/models/{model_id}/` is registered as `downloaded_from: prestaged` and short-circuits the catalog entirely. Use this for air-gapped sites.
-2. **Cyberwave-hosted signed URL** (`GET /api/v1/mlmodels/{uuid}/weights`). Authenticated artefact in our private GCS bucket — preferred when we have mirrored the checkpoint.
-3. **Upstream weights URL** (`download_url` / `metadata.upstream_weights_url`). Public community mirror — used for ONNX models we publish to `static.cyberwave.com/ml_models/`.
-4. **Runtime-managed download** (new): when the catalog entry has no URL of any kind but its `edge_runtime` ships its own weight resolver (today: `ultralytics` against its GitHub releases hub), Edge Core invokes that resolver in a subprocess and caches the result as `downloaded_from: runtime_managed`. This is what lets `.pt` catalog entries (YOLO26, YOLOE-26) work without a mirrored upstream URL.
+2. **Cyberwave-hosted signed URL** (`GET /api/v1/mlmodels/{uuid}/weights`). Authenticated download — preferred when Cyberwave hosts the checkpoint.
+3. **Upstream weights URL.** A public community mirror, set on the catalog entry.
+4. **Runtime-managed download:** when the catalog entry has no URL of any kind but its runtime ships its own weight resolver (today: Ultralytics), Edge Core invokes that resolver and caches the result as `downloaded_from: runtime_managed`. This is what lets `.pt` catalog entries (YOLO26, YOLOE-26) work without a mirrored upstream URL.
 
 Bit-rot detection (SHA-256) runs on every `ensure_model` call. Pre-staged files are never auto-overwritten by catalog updates.
 
@@ -39,12 +39,12 @@ pip install 'cyberwave-edge-core[ml-tflite]'  # tflite-runtime
 pip install 'cyberwave-edge-core[ml-stt]'          # whisper.cpp catalog models only
 pip install 'cyberwave-edge-core[ml-stt-faster]'   # faster-whisper catalog models only
 pip install 'cyberwave-edge-core[ml-all-audio]'    # all speech extras (avoid on Pi)
-pip install 'cyberwave-edge-core[ml-all]'          # CI/dev fat bundle only
+pip install 'cyberwave-edge-core[ml-all]'          # all-in-one bundle (CI only)
 ```
 
 Voice workflow nodes (Audio Assistant, Wake Word, Fuzzy Matcher) use separate extras — see [Edge workflow dependencies](/feature-reference/workflows/edge-dependencies).
 
-When the required runtime is missing, the resolver raises a `RuntimeError` listing three workarounds: drop the file under `~/.cyberwave/models/{model_id}/`, upload to `/api/v1/mlmodels/{uuid}/weights`, or set `metadata.download_url` on the catalog entry.
+When the required runtime is missing, the resolver raises an error listing three workarounds: drop the file under `~/.cyberwave/models/{model_id}/`, upload to `/api/v1/mlmodels/{uuid}/weights`, or set a download URL on the catalog entry.
 
 ## Pre-staging weights (air-gapped sites)
 
@@ -57,15 +57,7 @@ Edge Core picks up the file on the next sync, infers the runtime from the extens
 
 ## Self-healing the cache
 
-A failed download leaves an empty `cache_dir/{model_id}/` behind — `mkdir` runs before the network fetch, and any error in the downloader skips the cleanup. Left alone, the SDK in the worker container would later route that directory into `torch.load` and crash with `IsADirectoryError` on every restart.
-
-Edge Core handles this in three layers:
-
-- **Per-download cleanup** (conservative). A failed `_download_model` / `_download_runtime_managed` removes the staging directory before the exception propagates, provided it contains only an `.dl_*.part` partial download, a `metadata.json` sidecar, or nothing at all. Operator-staged content blocks the prune.
-- **Startup sweep** (conservative). `ModelManager()` walks `cache_dir/` once at construction time and prunes any per-model subdirectory that is not in the manifest *and* contains only orphan cruft. This is what unsticks hosts that were already wedged before this code shipped. Operator-staged content blocks the prune.
-- **`evict_model('foo')`** (decisive). When there is no manifest entry but `cache_dir/foo/` exists on disk, the directory is removed **unconditionally**. This is the recovery hook for a remote eviction API to call without shell access to the host; an explicit `evict` is treated as a stronger operator-intent signal than the conservative auto-sweeps.
-
-The SDK has matching logic in `ModelManager._resolve_model_path` so an orphan dir that survives Edge Core (e.g., on a host that hasn't picked up this release yet but mounts a fixed SDK) is also recovered inside the worker container. The Ultralytics runtime is the defensive backstop: if a directory ever reaches it (a hand-built `UltralyticsRuntime().load(...)` call bypassing the manager), it raises a clear `FileNotFoundError` instead of letting Ultralytics call `torch.load(<dir>)`.
+A failed download can leave an empty model directory behind, which would otherwise crash the worker on every restart. Edge Core removes such leftovers automatically — after a failed download and at startup — but never touches content you staged yourself. Evicting a model removes its directory outright.
 
 ## Sidecar fields
 
@@ -74,9 +66,6 @@ Every cached weight has a `metadata.json` next to it. Fields you'll see:
 | Field | Meaning |
 |---|---|
 | `downloaded_from` | `artifact_url`, `download_url`, `runtime_managed`, or `prestaged` |
-| `source_url` | Public URL we fetched (or `null` for `artifact_url` and `runtime_managed` — neither is a re-fetchable persistent URL) |
-| `upstream_url` | Provenance hint |
+| `source_url` | Public URL fetched (or `null` for `artifact_url` and `runtime_managed`) |
 | `checksum_sha256` | SHA-256 of the on-disk bytes; re-verified on every load |
 | `runtime` | `ultralytics`, `onnxruntime`, `tflite`, `tensorrt`, `torch`, `opencv` |
-
-See the full module docstring in [`cyberwave-edge-core/cyberwave_edge_core/model_manager.py`](https://github.com/cyberwave-os/cyberwave-edge-core/blob/main/cyberwave_edge_core/model_manager.py).

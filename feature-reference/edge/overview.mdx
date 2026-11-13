@@ -60,11 +60,11 @@ Every `edge_health` heartbeat carries the host's dynamic resource pressure along
 
 Driver containers see their container's `/proc`, not the host's, and omit these fields. Only the bootstrap publisher running on the edge host populates them.
 
-Static hardware identity — total RAM, CPU model, kernel, thermal source, hardware-watchdog availability — is uploaded via `POST /api/v1/edges/discover` and stored on `Edge.metadata.host_facts`. The first POST runs synchronously at startup; a background daemon then re-POSTs every ~30 s so the backend can tell "edge daemon alive" apart from "edge daemon dead" even when no twin MQTT traffic is flowing. The Edge Devices tab renders both signals: a colour-coded pressure pill from the live heartbeat plus a "what hardware is this" row from the REST identity.
+Static hardware identity (total RAM, CPU model, kernel, thermal source, hardware-watchdog availability) is reported when Edge Core starts and refreshed periodically. The Edge Devices tab shows both the live pressure signals and a "what hardware is this" row.
 
-The REST keepalive powers a three-state liveness pill — **Online** (twin MQTT activity), **Idle** (edge alive, no twin work; `liveness_state="standby"` on the wire), **Offline** (neither signal within window). Idle is what shows up on a freshly-paired edge that hasn't had any twins bound to it yet: previously such an edge would render as "Offline" even though `edge-core` was running fine. The Edge Devices tab sorts rows by liveness — online → idle → offline → unresolved binding — so working edges land at the top and broken bindings sink to the bottom.
+The Edge Devices tab also shows a three-state liveness indicator: **Online** (twin activity), **Idle** (the edge is alive but has no twin work, as on a freshly paired edge with no twins bound yet) and **Offline** (no signal within the expected window). Rows are sorted online, then idle, then offline, so working edges appear at the top.
 
-Static facts work on both Linux and macOS: Linux reads `/proc/{meminfo,cpuinfo}` and `/sys/class/thermal`; Darwin shells out to `sysctl` for RAM, CPU model and (logical) core count. Dynamic host pressure (memory %, CPU temp) remains Linux-only for now — the dashboard hides the pressure pill on macOS edges and shows only the static identity row, and `thermal_source` is omitted on macOS so it never claims a sensor that isn't being sampled.
+Static facts are reported on both Linux and macOS. Dynamic host pressure (memory %, CPU temperature) is Linux-only for now, so macOS edges show only the static identity row.
 
 ---
 
@@ -84,18 +84,20 @@ Each entry under `streams[id]` in an `edge_health` heartbeat carries an optional
 }
 ```
 
-Drivers attach a block one of two ways:
+Drivers built with the Python SDK attach this block through the SDK's edge health helper (`EdgeHealthCheck`): `register_stream_config(stream_id, config)` for static configs known at startup, or a `stream_config_provider` callable for dynamic configs whose fields are only known after the stream starts (for example the negotiated fps or codec), so changes show up on the next heartbeat.
 
-- `EdgeHealthCheck.register_stream_config(stream_id, config)` for static configs known at startup; the publisher keeps the snapshot and merges it into every heartbeat. The Go2 `lidar_bridge.py` and `pointcloud_bridge.py` use this path because the scan rate is wired from a ROS parameter at node bootstrap.
-- `EdgeHealthCheck(..., stream_config_provider=callable)` for dynamic configs where some fields are only known after streamer startup (post-V4L2 `actual_fps`, post-handshake codec, ...). The callable is invoked on every heartbeat and its values override registered statics on key collision. `MicrophoneAudioStreamer` and `MultimediaStreamer` use this path so re-opening a mic at a different sample rate is reflected on the very next heartbeat without re-registration. `MultimediaStreamer` keys its audio block under `"audio"` rather than the legacy `"stream"` placeholder so a future video `get_stream_config` hook can slot in next to it as `"video"` without a wire-breaking rename.
+Required fields depend on the kind:
 
-`register_stream_config` enforces a per-kind required-field contract: `kind: "camera"` must carry `source`, `resolution`, `fps`; `kind: "audio"` must carry `sample_rate_hz` and `channels` (and may optionally carry `codec` and `source`); `kind: "lidar"` requires `source` and `scan_rate_hz` (`points_per_second` is optional and intentionally omitted by both Go2 bridges because the only available value is the post-downsample cap, not measured throughput); `kind: "imu"` requires `source` and `rate_hz`. Unknown kinds pass through additively. URL-shaped `source` values must have `user:pass@` stripped before they reach the wire — the SDK's `CV2CameraStreamer` does this automatically for RTSP and HTTP sources. `kind: "audio"` deliberately treats `source` as optional: across the rest of the SDK `source` is a device path / URL / ROS topic, and a WebRTC microphone has no equivalent (publishing the host ALSA / CoreAudio device path would leak operator-local filesystem state).
+- `camera`: `source`, `resolution`, `fps`
+- `audio`: `sample_rate_hz`, `channels`; optional `codec` and `source`
+- `lidar`: `source`, `scan_rate_hz`
+- `imu`: `source`, `rate_hz`
 
-Liveness — `frame_count` vs `mark_alive`. Camera and lidar publishers call `EdgeHealthCheck.update_frame_count()` per emitted frame so the wire-side `fps` / `frames_sent` numbers carry meaning to operators (frames per second is the standard quality signal for both). Audio publishers — and future IMU / encoder / GPS publishers — call `EdgeHealthCheck.mark_alive()` instead, which advances the staleness clock without bumping the counter. Reporting `fps: 50.0` for a microphone emitting 20 ms Opus packets would be terminology-correct but operationally noise; the dashboard already hides those fields for audio rows, but raw MQTT subscribers and the analytics table see the cleaner shape too. `mark_alive` still flips `ice_connection_state` to `connected` on first call so audio rows render `connected` from the first heartbeat onward.
+Unknown kinds pass through. Strip credentials (`user:pass@`) from URL-shaped `source` values before they are reported; the SDK's camera streamer does this automatically for RTSP and HTTP sources. Audio streams omit `source` because a microphone has no device path to report.
 
-A top-level `camera_config` slot remains populated for one deprecation release for out-of-tree consumers that still read the legacy single-camera shape. New consumers must read `streams[id].stream_config` instead — the legacy slot only ever covers one camera and is silent for audio / lidar / IMU streams. When more than one camera-kind `stream_config` is registered, the legacy slot deterministically reflects the lexicographically-smallest `stream_id` so multi-camera devices don't flap identities heartbeat-to-heartbeat.
+Camera and lidar publishers report `fps` and `frames_sent`. Audio and other non-frame publishers instead mark the stream alive, which keeps it from going stale without reporting a meaningless frame rate.
 
-An idle publisher that has registered no `stream_config` and has never seen a frame emits an empty `streams: {}` map, `stream_count: 0`, and `camera_config: null`. This is the wire shape the edge-core bootstrap publisher uses in the gap before a driver container starts — the dashboard's Edge details renders nothing for streams in that case, rather than a phantom `"stream"` row that flickers away the moment a real driver takes over. Once a driver starts publishing (either by registering a `stream_config` or by ticking `update_frame_count()`), the entry appears on the next heartbeat. The dashboard's per-row renderer falls back to the asset's declared `parameters.{width, height, update_rate}` for camera streams when neither the wire `stream_config` nor the legacy `camera_config` carries that data, so paired cameras still show their target resolution and fps before the live stream catches up.
+A top-level `camera_config` field is still populated for backward compatibility. New consumers should read `streams[id].stream_config` instead. An idle publisher that has registered no stream reports an empty `streams: {}` map.
 
 ---
 

@@ -7,10 +7,6 @@ description: "Complete reference for all MQTT topics and payload schemas used by
 
 The Cyberwave platform uses MQTT for real-time communication between edge drivers, the cloud backend, and the frontend. This page lists every topic and payload schema so you can write compatible drivers, simulators, or integrations without reading source code.
 
-## Topic prefix
-
-In non-production deployments the broker may be configured with an environment prefix (e.g. `local` for local dev). When a prefix is set, every topic below is written `{prefix}cyberwave/...`. The Python SDK's `topic_prefix` parameter and the `CYBERWAVE_MQTT_TOPIC_PREFIX` environment variable handle this automatically (when neither is set, the SDK derives the prefix from `CYBERWAVE_ENVIRONMENT`). The SDK logs a warning when the resolved prefix does not match a hosted broker (`staging.mqtt.cyberwave.com` expects `staging`, `mqtt.cyberwave.com` expects none), since mismatched messages are silently dropped. All topic patterns on this page omit the prefix for clarity.
-
 ## Source types
 
 Most payloads include a `source_type` field. The allowed values are:
@@ -33,7 +29,7 @@ Most payloads include a `source_type` field. The allowed values are:
 
 **Direction:** publish (edge / sim) → subscribe (backend, frontend)
 
-Reports the 3D world position of the twin. Published by edge drivers and simulators; consumed by the backend (Vector) and the frontend.
+Reports the 3D world position of the twin. Published by edge drivers and simulators; consumed by the backend and the frontend.
 
 ```json
 {
@@ -482,7 +478,7 @@ On the GO2, a `take_photo` without `upload: false` is stored as a navigation cap
 
 #### Retrieving the photo
 
-Subscribe to the topic, then base64-decode the `image` field. Remember to prepend the [topic prefix](#topic-prefix) in non-production deployments (e.g. `localcyberwave/twin/...`).
+Subscribe to the topic, then base64-decode the `image` field.
 
 ```python
 import base64, json
@@ -584,9 +580,9 @@ Rules for the topic:
 
 **Direction:** publish (edge driver, simulator) → subscribe (backend)
 
-Poses a driver or simulator reports for named frames of its own robot (a camera mount, an end effector), each tagged with how it was obtained. Optional: publish it when you know where a frame is better than the base pose and joint state alone say. Each message is recorded whole as one `twin_frame_poses` telemetry event. The backend keeps at most five messages per second per twin and drops the rest, so publish at the rate you want stored.
+Poses a driver or simulator reports for named frames of its own robot (a camera mount, an end effector), each tagged with how it was obtained. Optional: publish it when you know where a frame is better than the base pose and joint state alone say. Each message is stored whole as one telemetry event. The backend keeps at most five messages per second per twin and drops the rest, so publish at the rate you want stored.
 
-The payload is the JSON form of the `cyberwave.mqtt.twin.v1.TwinFramePosesPayload` contract (`common/protobuf/proto/cyberwave/mqtt/twin/v1/frame_poses.proto`): proto3 JSON with the field names below as keys. Enums travel as their full names (`SUBSTRATE_SIM`), never as numbers or lowercase words. There is no `source_type` field; it is derived from `header.substrate`.
+The payload is the JSON form of the `cyberwave.mqtt.twin.v1.TwinFramePosesPayload` contract: proto3 JSON with the field names below as keys. Enums travel as their full names (`SUBSTRATE_SIM`), never as numbers or lowercase words. There is no `source_type` field; it is derived from `header.substrate`.
 
 ```json
 {
@@ -663,10 +659,8 @@ The same frame can appear more than once in a message under different provenance
 Periodic health status published by the edge driver (every ~5 seconds).
 
 The frontend uses these payloads to drive the live "green dot" online
-indicator on twin tiles, the workflow-pane Edge Devices tab, and the lab
-queue heuristics. The backend additionally bumps the corresponding
-`Edge.last_heartbeat` row (debounced to ~30 s per edge) so that the REST
-`Edge.is_online` flag agrees with the live MQTT signal.
+indicator on twin tiles and the workflow-pane Edge Devices tab. The edge's
+online status in the REST API follows the same signal.
 
 ```json
 {
@@ -745,11 +739,11 @@ Structured log messages from edge drivers. Displayed in the platform UI.
 
 ## WebRTC signalling
 
-These topics set up WebRTC video between the edge and Cyberwave's media service (SFU), which forwards the stream to browsers and SDK consumers.
+These topics set up WebRTC video between the edge and Cyberwave's media service, which forwards the stream to browsers and SDK consumers.
 
 ### `cyberwave/twin/{twin_uuid}/webrtc-offer`
 
-**Direction:** publish (edge) → subscribe (backend / media-service)
+**Direction:** publish (edge) → subscribe (backend)
 
 ```json
 {
@@ -765,7 +759,7 @@ These topics set up WebRTC video between the edge and Cyberwave's media service 
 
 ### `cyberwave/twin/{twin_uuid}/webrtc-answer`
 
-**Direction:** publish (backend / media-service) → subscribe (edge)
+**Direction:** publish (backend) → subscribe (edge)
 
 ```json
 {

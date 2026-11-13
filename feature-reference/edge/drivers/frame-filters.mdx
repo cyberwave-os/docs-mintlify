@@ -48,7 +48,7 @@ The driver owns the stream lifecycle. The worker owns the policy. Toggling the f
 | `CYBERWAVE_METADATA_FRAME_FILTER_FRESHNESS_MS` | `200` | Maximum age (ms) of a worker-published frame before the driver treats it as stale and emits a blank fallback. Raise to `400`–`500` for CPU-only workers. |
 
 <Note>
-Toggling `frame_filter_enabled` from the **Sensor settings** dialog in the frontend writes it onto the twin's `metadata`. Edge Core's reconcile loop pulls that change into the local twin JSON file every ~15 seconds, and the driver picks it up on its next restart. No `edge-core` restart is required.
+Toggling `frame_filter_enabled` from the **Sensor settings** dialog in the frontend writes it onto the twin's `metadata`. Edge Core syncs that change to the edge within about 15 seconds, and the driver picks it up on its next restart. No `edge-core` restart is required.
 </Note>
 
 <Note>

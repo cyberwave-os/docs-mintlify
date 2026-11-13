@@ -15,8 +15,8 @@ workflows.
 
 <Note>
 **Backward compatibility.** Workflows authored before the rename use
-the legacy `presence_dwell` subtype. The cloud executor and edge
-codegen continue to accept that string and resolve it to this same
+the legacy `presence_dwell` subtype. The cloud and edge
+runtimes continue to accept that string and resolve it to this same
 schema, so existing zone-based intrusion alerts keep working without
 edits. New nodes created from the palette use the canonical
 `timed_condition` subtype.
@@ -48,8 +48,7 @@ state. `timed_condition` is the time-dimension counterpart:
 All three modes share the same per-node state and the same input
 predicate (active-when-truthy / above-threshold / non-empty), so
 swapping modes never requires re-wiring the upstream graph. Unknown
-modes are rejected loudly by the cloud executor and the edge codegen
-so a stale UI can't silently run the wrong shape.
+modes are rejected so a stale UI can't silently run the wrong shape.
 
 ## Inputs
 
@@ -155,32 +154,19 @@ In the workflow editor inspector for the `timed_condition` node:
 - `send_alert` — the canonical downstream: fire an alert with the
   polygon and elapsed duration baked into the payload.
 
-## Edge implementation
+## Edge and cloud behaviour
 
 `timed_condition` requires an explicit `send_alert` node downstream
-to publish anything. The legacy implicit-alert path on `call_model`
-that used to inline a dwell state machine into the generated
-`wf_*.py` worker has been retired — alert emission now lives
-entirely in `send_alert` (see [Raising alerts from detections](/feature-reference/workflows/workers/overview#raising-alerts-from-detections)).
-
-The dispatcher (`EdgeWorkflowCompiler`) routes any `camera_frame`
-workflow that contains a `send_alert` node through
-`WorkflowCodeAssembler` rather than the single-hop `WorkerCodegen`
-path, and the assembler emits the explicit alert calls.
+to publish anything (see [Raising alerts from detections](/feature-reference/workflows/workers/overview#raising-alerts-from-detections)).
 
 A `timed_condition` wired downstream of `call_model` *without* a
-trailing `send_alert` is reported as inert at compile time
-(`WorkerCodegen.warnings` carries the inert-timer text), so the
+trailing `send_alert` is reported as inert at compile time, so the
 editor can surface the dead-timer condition before the worker is
 deployed.
 
-The cloud workflow runner executes `timed_condition` via
-`_execute_timed_condition_node` in `src/lib/workflow_utils.py`,
-which is the canonical implementation of all three modes
-(`sustained`, `timeout`, `debounce`) and the source of the
-`min_duration_s` / `cooldown_s` defaults. State is keyed on
-`node.uuid` and lives in-process — restart the runtime and the
-timer resets to IDLE.
+All three modes (`sustained`, `timeout`, `debounce`) behave the same
+on the edge and in the cloud. State is keyed on `node.uuid` and lives
+in-process — restart the runtime and the timer resets to IDLE.
 
 ## End-to-end alert pipeline
 
@@ -199,6 +185,6 @@ A common pattern is "polygon → timed condition → email":
 The `timed_condition` cloud executor exists too and behaves
 identically, but it is intended for cloud-only graphs where
 detections (or boolean / number signals) are produced inside a single
-`WorkflowUtils.execute()` call (e.g. fed by a non-camera trigger). It
+workflow run (e.g. fed by a non-camera trigger). It
 is **not** designed for state to persist across separate
 alert-triggered cloud executions.

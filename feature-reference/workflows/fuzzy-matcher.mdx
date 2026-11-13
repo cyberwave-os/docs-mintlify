@@ -105,20 +105,16 @@ Use the **score** output to calibrate: if good phrases often score 75–79, lowe
 
 | Target | Notes |
 |---|---|
-| **Cloud** | `WorkflowUtils._execute_fuzzy_matcher_node` — requires `rapidfuzz` in backend deps. |
-| **Edge** | `fuzzy_matcher` code emitter — worker needs `cyberwave[fuzzy-match]` / `cyberwave-edge-core[fuzzy-match]`. |
+| **Cloud** | Runs in the cloud workflow runner. |
+| **Edge** | Worker needs `cyberwave[fuzzy-match]` / `cyberwave-edge-core[fuzzy-match]`. |
 
 ## Dependencies
 
 | Layer | Requirement |
 |---|---|
-| **Compile server** | `rapidfuzz` in `cyberwave-backend/requirements/base.txt`. `provision_fuzzy_match_for_compile()` fails compile if missing. |
 | **Edge worker** | `cyberwave[fuzzy-match]` or `cyberwave-edge-core[fuzzy-match]` |
-| **edge-sync** | `model_requirements`: `edge_package: fuzzy-match`, `edge_runtime: rapidfuzz` |
 
-Error if compile server lacks the package:
-
-> This workflow uses Fuzzy Matcher but rapidfuzz is not installed on the compile server. Install rapidfuzz (or cyberwave[fuzzy-match]) on Django before compiling for edge.
+Compiling for edge fails with a clear error if a required package is missing.
 
 See [Edge workflow dependencies](/feature-reference/workflows/edge-dependencies).
 

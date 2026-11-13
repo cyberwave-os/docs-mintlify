@@ -7,11 +7,11 @@ icon: "bolt"
 Workflows can react to twin-scoped MQTT messages with the `mqtt`
 trigger and publish twin-scoped messages with the `send_mqtt` action.
 The behaviour mirrors the alert trigger pattern (`@cw.on_alert(twin)`
-edge-side, `_dispatch_cloud_alert_workflows` cloud-side).
+on the edge).
 
 ## Edge execution
 
-The workflow code assembler emits a `@cw.on_mqtt(twin_uuid,
+The generated edge worker uses a `@cw.on_mqtt(twin_uuid,
 subtopic=..., qos=...)` decorated handler:
 
 ```python
@@ -34,12 +34,9 @@ rather than queued without bound.
 
 ## Cloud execution
 
-When the workflow is **not** flagged as `run_on_edge`, dispatch is
-handled cloud-side by
-`src.app.services.mqtt_workflow_dispatch.dispatch_cloud_mqtt_workflows`.
-The backend's existing `@mqtt_subscribe` handlers call the dispatcher
-after running their primary side-effect, so cloud workflow triggers
-fire **without adding new broker subscriptions**.
+When the workflow is **not** flagged as `run_on_edge`, the backend
+fires cloud workflow triggers for twin messages **without requiring any
+extra broker subscriptions** on your side.
 
 Wired subtopics (low-frequency / state-change channels):
 
@@ -57,18 +54,11 @@ via `@cw.on_mqtt`.
 
 User-defined subtopics outside the consumer's subscription list at
 all (`command`, `position`, `joint_states`, `alert`, custom names …)
-work end-to-end on edge only. See `cyberwave-backend/README.md` for
-the full coverage matrix.
-
-The dispatcher keeps per-message overhead bounded with a 60 s
-Redis-backed cache of the active `(twin_uuid, subtopic)` trigger
-keys; messages with no matching trigger short-circuit on the cache
-lookup.
+work end-to-end on edge only.
 
 ## Send MQTT
 
-`send_mqtt` is edge-only by design. Cloud workflows publish via the
-backend's `send_update_to_mqtt` celery task instead. The emitter:
+`send_mqtt` is edge-only by design. The generated edge code:
 
 * Validates literal `payload` parameters as JSON objects at compile
   time.

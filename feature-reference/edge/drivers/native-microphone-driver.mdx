@@ -56,19 +56,19 @@ cyberwave/twin/{twin_uuid}/webrtc-command
 { "command": "stop_recording",  "source_type": "tele", "sensor": "audio", "frontend_type": "audio", "session_id": "sdk_9314159f" }
 ```
 
-`source_type` is `"tele"` when the frontend REC button publishes the message and `"edge"` when the microphone driver relays it (fallback path). `session_id` identifies the **owner** of a recording, and the media-service keeps one set of owners per recording. A start with a new `session_id` joins a recording that is already running instead of starting a second one, and repeating a start with the same id changes nothing. A stop removes only its own owner: the recording keeps going while other owners remain, and ends when the last one leaves. A command without a `session_id` uses a shared legacy owner, and a stop without one also releases recordings started automatically (`auto_recording_audio`). So always send the stop with the same `session_id` as its start; a stop with a different id releases nothing and leaves the recording running. The `sensor` value must match a sensor `id` from `twin.capabilities.sensors` (computed from `twin.universal_schema.sensors[]`); the audio widget resolves it via `getAudioSensorConfig(twin).sensorId`.
+`source_type` is `"tele"` when the frontend REC button publishes the message and `"edge"` when the microphone driver relays it (fallback path). `session_id` identifies the **owner** of a recording, and each recording keeps a set of owners. A start with a new `session_id` joins a recording that is already running instead of starting a second one, and repeating a start with the same id changes nothing. A stop removes only its own owner: the recording keeps going while other owners remain, and ends when the last one leaves. A command without a `session_id` uses a shared legacy owner, and a stop without one also releases recordings started automatically (`auto_recording_audio`). So always send the stop with the same `session_id` as its start; a stop with a different id releases nothing and leaves the recording running. The `sensor` value must match a sensor `id` declared on the twin.
 
-The REC button is **recording-only**: it never republishes `start_audio` / `stop_audio`. The audio widget auto-publishes `start_audio` on mount and `stop_audio` on unmount, so by the time the user can click REC the WebRTC producer is already running. Re-sending `start_audio` from the REC click would just log `start_audio command received - stream already active` on the driver and add a 3 s ACK wait before the actual recording publish.
+The REC button is **recording-only**: it never republishes `start_audio` / `stop_audio`. The audio widget starts the live stream when it opens and stops it when it closes, so by the time the user can click REC the WebRTC producer is already running.
 
-The media-service SFU starts (or stops) persisting the running audio track, or on an array every channel, and replies on `cyberwave/twin/{twin_uuid}/webrtc-command/status`:
+The Cyberwave media service starts (or stops) persisting the running audio track, or on an array every channel, and replies on `cyberwave/twin/{twin_uuid}/webrtc-command/status`:
 
 ```json
 { "command": "start_recording", "status": "ok", "message": "recording started", "recording_id": "...", "source_type": "backend", "timestamp": 1716643200.123 }
 ```
 
-As a **fallback path** for callers that only know the twin command topic, the microphone driver also accepts `start_recording` / `stop_recording` on `cyberwave/twin/{twin_uuid}/command` and forwards them to `webrtc-command` with the smallest payload the media-service needs (shown under [Configuration](#configuration)). On a microphone array it forwards one command that covers every channel instead, so the whole array starts and stops together (see [Recording an array](#recording-an-array)). On the fallback path the driver does **not** publish its own status ACK — callers consume the authoritative status from `webrtc-command/status`.
+As a **fallback path** for callers that only know the twin command topic, the microphone driver also accepts `start_recording` / `stop_recording` on `cyberwave/twin/{twin_uuid}/command` and forwards them to `webrtc-command` with the smallest payload the media service needs (shown under [Configuration](#configuration)). On a microphone array it forwards one command that covers every channel instead, so the whole array starts and stops together (see [Recording an array](#recording-an-array)). On the fallback path the driver does **not** publish its own status ACK — callers consume the authoritative status from `webrtc-command/status`.
 
-`CYBERWAVE_METADATA_AUTO_RECORDING_AUDIO=true` makes the **initial** WebRTC offer carry `recording: true` so the media-service starts recording in the same negotiation. After startup, recording is controlled entirely by `start_recording` / `stop_recording`. When `CYBERWAVE_METADATA_ENABLE_RECORDING=false`, the driver drops fallback relays, logging a warning for each (the frontend publishes to `webrtc-command` itself and is not affected).
+`CYBERWAVE_METADATA_AUTO_RECORDING_AUDIO=true` makes the **initial** WebRTC offer carry `recording: true` so the media service starts recording in the same negotiation. After startup, recording is controlled entirely by `start_recording` / `stop_recording`. When `CYBERWAVE_METADATA_ENABLE_RECORDING=false`, the driver drops fallback relays, logging a warning for each (the frontend publishes to `webrtc-command` itself and is not affected).
 
 ## Setup
 
@@ -114,9 +114,9 @@ The driver publishes WebRTC offers with:
 | Offer field | Catalog value | Role |
 | --- | --- | --- |
 | `sensor` | `"audio"` | Routing key (`sensors[].name`, equal to the `id` in the catalog) |
-| `sensor_type` | `"audio"` | Matches `sensors[].type`; media-service classifies as **producer** |
-| `role` | `"producer"` | Active edge twin — publishes audio into the SFU |
-| `sender` | `"edge"` | Only edge may produce microphone traffic (TR-1.24) |
+| `sensor_type` | `"audio"` | Matches `sensors[].type`; media service classifies as **producer** |
+| `role` | `"producer"` | Active edge twin — publishes audio to Cyberwave |
+| `sender` | `"edge"` | Only edge may produce microphone traffic |
 
 Recording commands (`start_recording` / `stop_recording`) use `"sensor": "audio"` so they target the same stream identity as the live offer.
 
@@ -127,8 +127,8 @@ Recording commands (`start_recording` / `stop_recording`) use `"sensor": "audio"
 | `CYBERWAVE_METADATA_AUDIO_DEVICE` | `default` | The input to open: `default`, an index such as `0`, a device name (exact, then partial match), or a stable link such as `/dev/snd/by-id/…` or `/dev/snd/by-path/…`, which pins one physical unit. Maps from the twin's top-level `audio_device`, else from the sensor's `audio_device`. See [Choosing the device](#choosing-the-device). |
 | `CYBERWAVE_METADATA_SERIAL_NUMBER` | unset | USB serial of the unit to bind to, from the twin's top-level `serial_number`. Outranks `audio_device`. |
 | `CYBERWAVE_METADATA_ENABLE_AUDIO` | `true` | Enables WebRTC startup and reconnect. If `false`, no WebRTC audio or recording starts. Maps from `enable_audio` in the twin JSON. |
-| `CYBERWAVE_METADATA_ENABLE_RECORDING` | `false` | Gates the recording commands the driver forwards from the command topic to the media-service: the single-microphone relay and, on an array, the command for every channel. Does not affect `start_audio` / `stop_audio` (live stream is always allowed when `enable_audio=true`), and does not affect direct `webrtc-command` publishes from the frontend or Recorder node. Maps from `enable_recording` in the twin JSON; on an array, from the first audio sensor, for the whole array. When unset, it follows `CYBERWAVE_METADATA_AUTO_RECORDING_AUDIO`. The Generic Microphone asset ships with `false`. It controls what the driver forwards, not whether the microphone can be recorded. |
-| `CYBERWAVE_METADATA_AUTO_RECORDING_AUDIO` | `false` | When `true`, sets `recording: true` on the **initial** WebRTC offer so the media-service auto-starts recording at startup. After startup, recording is driven by explicit `start_recording` / `stop_recording`. An explicit `enable_recording: false` blocks it, and the driver logs a warning. Maps from `auto_recording_audio` in the twin JSON. |
+| `CYBERWAVE_METADATA_ENABLE_RECORDING` | `false` | Gates the recording commands the driver forwards from the command topic to the media service: the single-microphone relay and, on an array, the command for every channel. Does not affect `start_audio` / `stop_audio` (live stream is always allowed when `enable_audio=true`), and does not affect direct `webrtc-command` publishes from the frontend or Recorder node. Maps from `enable_recording` in the twin JSON; on an array, from the first audio sensor, for the whole array. When unset, it follows `CYBERWAVE_METADATA_AUTO_RECORDING_AUDIO`. The Generic Microphone asset ships with `false`. It controls what the driver forwards, not whether the microphone can be recorded. |
+| `CYBERWAVE_METADATA_AUTO_RECORDING_AUDIO` | `false` | When `true`, sets `recording: true` on the **initial** WebRTC offer so the media service auto-starts recording at startup. After startup, recording is driven by explicit `start_recording` / `stop_recording`. An explicit `enable_recording: false` blocks it, and the driver logs a warning. Maps from `auto_recording_audio` in the twin JSON. |
 | `CYBERWAVE_METADATA_AUDIO_CHANNEL` | `audio/<sensor key>` | Explicit Zenoh channel for raw audio chunks on a single-microphone twin. When unset it is built from the sensor id (see [Sensor ids and Zenoh keys](#sensor-ids-and-zenoh-keys)), and is `audio/default` only when there is no sensor id at all. Ignored on arrays. |
 | `CYBERWAVE_METADATA_AUDIO_MIC_NAME` | `audio` | WebRTC `sensor` routing key of a single-microphone twin, also used in the recording commands the driver forwards. Maps from the sensor's `name`, not its `id`; keep the two identical (see [Sensor ids and Zenoh keys](#sensor-ids-and-zenoh-keys)). |
 | `CYBERWAVE_METADATA_AUDIO_SAMPLE_RATE` | `48000` | Capture sample rate (catalog standard). WebRTC output is always resampled to 48 kHz Opus. |
@@ -139,7 +139,7 @@ Recording commands (`start_recording` / `stop_recording`) use `"sensor": "audio"
 
 `audio_gain_db`, `audio_high_pass_hz` and `audio_low_pass_hz` are off when missing, `null` or `0`. On a multichannel array (one sensor per `channel_index`), set them on each sensor's `parameters`; each channel uses its own values. They apply to the live stream, recordings and Zenoh alike.
 
-When relaying a fallback recording command for a single microphone, the driver publishes the smallest payload the media-service needs. A relayed REC is a command, so it carries `source_type: "tele"` like the frontend's REC button, and `source_subtype: "generic_microphone"` says the driver sent it. Arrays send a different command, described in [Recording an array](#recording-an-array).
+When relaying a fallback recording command for a single microphone, the driver publishes the smallest payload the media service needs. A relayed REC is a command, so it carries `source_type: "tele"` like the frontend's REC button, and `source_subtype: "generic_microphone"` says the driver sent it. Arrays send a different command, described in [Recording an array](#recording-an-array).
 
 ```json
 { "command": "start_recording", "source_type": "tele", "source_subtype": "generic_microphone", "sensor": "audio", "frontend_type": "audio" }
@@ -149,7 +149,7 @@ When relaying a fallback recording command for a single microphone, the driver p
 { "command": "stop_recording", "source_type": "tele", "source_subtype": "generic_microphone", "sensor": "audio", "frontend_type": "audio" }
 ```
 
-The media-service resolves the twin UUID from the MQTT topic and defaults the stream identity to `audio/live/default`. The same payload shape is used by the frontend audio widget's REC button and by the Recorder workflow node, so the three paths converge on the same media-service handler and the same ACK on `webrtc-command/status`.
+The same payload shape is used by the audio widget's REC button and by the Recorder workflow node, so all three paths get the same ACK on `webrtc-command/status`.
 
 ## Choosing the device
 
@@ -193,7 +193,7 @@ A microphone array is one twin with one sensor per microphone. The driver captur
 
 ### Declaring the channels
 
-Declare one audio sensor per microphone in the asset's universal schema (`universal_schema.sensors[]`), and set `parameters.channel_index` on each one to the device input it reads, counted from 0. The backend resolves the schema into the twin's `capabilities.sensors`, and that is where the driver reads them, like every other driver reads its sensors. Two or more sensors with a `channel_index` make the twin an array. A single sensor with a `channel_index` is an ordinary microphone: the driver logs that it ignored the index. If the twin declares several audio sensors and none has a `channel_index`, the driver logs a warning and captures one stream.
+Declare one audio sensor per microphone in the asset's universal schema (`universal_schema.sensors[]`), and set `parameters.channel_index` on each one to the device input it reads, counted from 0. The driver reads the twin's resulting sensor list. Two or more sensors with a `channel_index` make the twin an array. A single sensor with a `channel_index` is an ordinary microphone: the driver logs that it ignored the index. If the twin declares several audio sensors and none has a `channel_index`, the driver logs a warning and captures one stream.
 
 ```json
 {
@@ -213,7 +213,7 @@ Declare one audio sensor per microphone in the asset's universal schema (`univer
 }
 ```
 
-This is a sensor of `capabilities.sensors`. The backend forwards these per-sensor settings from the schema: `channel_index`, `audio_gain_db`, `audio_high_pass_hz`, `audio_low_pass_hz`, `audio_device`, `audio_channels`, `audio_sample_rate`, `audio_bit_depth`, `enable_audio`, `enable_recording` and `auto_recording_audio`. A setting outside that list does not reach the driver. Device-level values that belong to no sensor, such as `serial_number`, the `audio_device` pin and `audio_sync_marker_interval_s`, stay in the twin's top-level `metadata`.
+Cyberwave forwards these per-sensor settings from the schema: `channel_index`, `audio_gain_db`, `audio_high_pass_hz`, `audio_low_pass_hz`, `audio_device`, `audio_channels`, `audio_sample_rate`, `audio_bit_depth`, `enable_audio`, `enable_recording` and `auto_recording_audio`. A setting outside that list does not reach the driver. Device-level values that belong to no sensor, such as `serial_number`, the `audio_device` pin and `audio_sync_marker_interval_s`, stay in the twin's top-level `metadata`.
 
 <Note>
   `metadata.sensors` still works as a deprecated fallback: when a twin's `capabilities.sensors` declares no audio sensor, the driver reads the audio sensors of `metadata.sensors` and logs a warning. A `metadata.sensors` list also *replaces* the schema's sensors in the twin's `capabilities`, which hides the mounts the schema declares. Existing UMA-16 and generic-microphone twins that carried a `metadata.sensors` list were moved into their schema automatically; a list that could not be moved safely (a sensor the asset does not declare, say) stays in place and keeps working through this fallback.
@@ -298,7 +298,7 @@ Capture losses almost always mean the edge is short of CPU. Check for an `edge_c
 
 ### Media service support
 
-Array recording needs a media service that accepts it. Against an older one the array still streams live audio, but nothing is recorded, and the twin gets a `microphone_multichannel_recording_unsupported` alert ("This media-service cannot record multichannel audio; update it"). Once the media service is updated, the next connection records again and clears the alert.
+Array recording needs a media service that accepts it. Against an older one the array still streams live audio, but nothing is recorded, and the twin gets a `microphone_multichannel_recording_unsupported` alert ("This media service cannot record multichannel audio; update it"). Once the media service is updated, the next connection records again and clears the alert.
 
 ## Linux Audio Notes
 
@@ -342,7 +342,7 @@ The driver streams captured audio on two independent, parallel paths:
 
 ### WebRTC path
 
-Audio is resampled to 48 kHz (the Opus codec's internal rate) before entering the WebRTC queue. The `stream_attributes` field in the MQTT `webrtc-offer` payload includes the actual `sample_rate` used, so the media service and frontend can verify compliance. The media service router uses standard mediasoup Opus negotiation — no custom validation is needed.
+Audio is resampled to 48 kHz (the Opus codec's internal rate) before entering the WebRTC queue. The `stream_attributes` field in the MQTT `webrtc-offer` payload includes the actual `sample_rate` used, so the media service and frontend can verify compliance.
 
 An array uses one WebRTC connection per twin for everything: the single live stream described in [Listening to an array](#listening-to-an-array), and the audio of every channel for recording, which travels together in one message per 20 ms.
 
@@ -361,15 +361,9 @@ Raw PCM chunks are published at the hardware's native capture rate with **no res
 
 `@cw.on_audio` workers receive this metadata so they can correctly interpret the raw audio bytes. On an array, every channel is its own mono key, named after its sensor as described in [Sensor ids and Zenoh keys](#sensor-ids-and-zenoh-keys), so a worker can pick out a single microphone.
 
-### Parallelism
-
-The PortAudio callback only copies each block into a queue; a processing thread applies the optional filters and gain and splits the audio between the two paths. Zenoh receives it through a short queue of about half a second, so a burst of callbacks reaches Zenoh whole and in capture order, while the WebRTC side is encoded and sent from its own event loop.
-
 ### Edge health (`edge_health`)
 
-{/* TODO(docs): **STUB DOCUMENT:** CYB-2005 contract summary; a human will expand before publishing. */}
-
-A single-microphone driver delegates `edge_health` to the SDK's `MicrophoneAudioStreamer`. Once WebRTC is connected, each heartbeat includes `streams.stream.stream_config` with `kind: "audio"`, `sample_rate_hz`, `channels`, and `codec: "opus"`. The block intentionally omits `source` (no host device path on the wire). Liveness uses `mark_alive`, so `fps` and `frames_sent` stay at zero for audio rows. The dashboard renders sample rate and channel layout from this block; workflow triggers still read Zenoh PCM, not MQTT health.
+Once WebRTC is connected, each `edge_health` heartbeat includes `streams.stream.stream_config` with `kind: "audio"`, `sample_rate_hz`, `channels`, and `codec: "opus"`. The block omits the host device path. `fps` and `frames_sent` stay at zero for audio rows. Workflow triggers still read Zenoh PCM, not MQTT health.
 
 An array reports one stream per channel, keyed by sensor id, and its `stream_config` also carries the `channel_index`. Because every channel travels in every message, the rows are healthy together while the connection is up, and all turn stale about 30 seconds after it is lost.
 
@@ -381,7 +375,7 @@ The driver reads its configuration from the twin and does not write it back. The
 
 - `docker compose up` with a USB microphone streams audio to the microphone twin.
 - Frontend MQTT `start_audio` / `stop_audio` toggles the live WebRTC audio producer (no recording side effect); the driver replies with `audio_started` / `audio_stopped` on the matching status topic.
-- Frontend MQTT `start_recording` / `stop_recording` on `webrtc-command` toggles persisted recording without disturbing the live stream; the media-service replies on `webrtc-command/status`.
+- Frontend MQTT `start_recording` / `stop_recording` on `webrtc-command` toggles persisted recording without disturbing the live stream; the media service replies on `webrtc-command/status`.
 - Zenoh `audio/<sensor key>` chunks are consumable by an `on_audio` worker hook at the hardware's native sample rate.
 - Startup logs list available devices; `CYBERWAVE_METADATA_AUDIO_DEVICE` selects a specific one.
 - USB disconnect and reconnect transitions through alert, reconnect, and alert resolution; a pinned unit is waited for, never substituted.
@@ -404,7 +398,7 @@ For source-level details, see the [Generic Microphone Driver README](https://git
     icon="circle-dot"
     href="/feature-reference/workflows/recorder"
   >
-    Publishes the same `start_recording` / `stop_recording` payload on `webrtc-command` from a workflow — converges on the same media-service handler as the audio widget's REC button and the driver's fallback relay.
+    Publishes the same `start_recording` / `stop_recording` payload on `webrtc-command` from a workflow — produces the same result as the audio widget's REC button and the driver's fallback relay.
   </Card>
   <Card
     title="Audio in Workflows"

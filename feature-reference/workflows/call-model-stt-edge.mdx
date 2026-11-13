@@ -1,6 +1,6 @@
 ---
 title: "Call Model — STT on edge"
-description: "Whisper.cpp and Faster Whisper catalog models, dependencies, and compile checks"
+description: "Whisper.cpp and Faster Whisper catalog models, dependencies, and edge setup"
 icon: "microphone-lines"
 ---
 
@@ -14,7 +14,7 @@ Prompting for STT models is optional biasing — see [Prompting Call Model](/fea
 
 ## Catalog models and dependencies
 
-Each STT seed sets **one** SDK extra in `metadata.edge_package`. Edge-sync surfaces it in `model_requirements`.
+Each STT catalog model requires **one** SDK extra.
 
 | Model | Runtime | Edge extra | Install |
 |---|---|---|---|
@@ -27,18 +27,18 @@ Each STT seed sets **one** SDK extra in `metadata.edge_package`. Edge-sync surfa
 | Faster Whisper Base EN | `faster_whisper` | `ml-stt-faster` | same |
 | Faster Whisper Small EN | `faster_whisper` | `ml-stt-faster` | same |
 
-Do **not** point catalog metadata at `ml-all`. Pick the extra for the runtime you use.
+Do **not** install `ml-all`. Pick the extra for the runtime you use.
 
 ---
 
-## Weight paths (`edge_model_path`)
+## Model weights
 
-| Model family | Cache / load path | Notes |
-|---|---|---|
-| **whisper.cpp** | File path to GGML binary, e.g. `models/whisper/ggml-tiny.en-q5_1.bin` | `download_url` in metadata; first run fetches into edge model cache |
-| **faster-whisper** | Cache key = `model_external_id` (e.g. `tiny.en`); `metadata.edge_model_path` is documentation only | Edge Core pre-downloads via catalog `model_external_id`; CTranslate2 cache under `/app/models/tiny.en/` |
+| Model family | Notes |
+|---|---|
+| **whisper.cpp** | Quantized GGML binary; the first run fetches it into the edge model cache |
+| **faster-whisper** | CTranslate2 model cache, pre-downloaded by Edge Core from the catalog model id |
 
-Generated workers emit:
+Generated workers load the model on the device, for example:
 
 ```python
 model = cw.models.load(
@@ -52,27 +52,16 @@ model = cw.models.load(
 
 ---
 
-## Compile server
+## Compile checks
 
-When a workflow has `run_on_edge: true` and a Call Model node references an on-device STT model, compile verifies imports:
-
-| Runtime | Import checked | `base.txt` package |
-|---|---|---|
-| `whisper_cpp` | `pywhispercpp.model.Model` | `pywhispercpp==1.4.1` |
-| `faster_whisper` | `faster_whisper.WhisperModel` | `faster-whisper>=1.1.1` |
-
-Failure example:
-
-> This workflow uses Call Model with faster-whisper but faster-whisper is not installed on the compile server. Install faster-whisper (or cyberwave[ml-stt-faster]) on Django before compiling for edge.
-
-Rebuild Django after updating `requirements/base.txt` — see [Edge workflow dependencies](/feature-reference/workflows/edge-dependencies).
+When a workflow has `run_on_edge: true` and a Call Model node references an on-device STT model, compile verifies that the runtime package (`pywhispercpp` for whisper.cpp, `faster-whisper` for Faster Whisper) is available and fails with an actionable error if not. See [Edge workflow dependencies](/feature-reference/workflows/edge-dependencies).
 
 ---
 
 ## Edge worker
 
 1. Install the catalog model's extra (`ml-stt` or `ml-stt-faster`).
-2. Sync workflow — `edge-sync` lists `model_requirements` with `edge_model_path`.
+2. Sync the workflow.
 3. First inference downloads weights (or uses pre-staged files under `~/.cyberwave/models/`).
 
 **Audio input:** int16 PCM @ 16 kHz mono (or WAV bytes). The worker passes `sample_rate_hz`, `channels`, and optional `language` / `task` / `vad_filter` (Faster Whisper built-in VAD when enabled).
@@ -107,7 +96,7 @@ Wire Call Model **audio** input from upstream `audio` key. Wire **result** (text
 
 <CardGroup cols={2}>
   <Card title="Edge dependencies" icon="puzzle-piece" href="/feature-reference/workflows/edge-dependencies">
-    Full matrix (all nodes + compile server)
+    Full matrix (all nodes)
   </Card>
   <Card title="Audio in Workflows" icon="waveform-lines" href="/feature-reference/workflows/audio-in-workflows">
     PCM format and pipelines

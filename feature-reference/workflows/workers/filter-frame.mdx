@@ -65,7 +65,7 @@ so the workflow editor accepts both `annotate → anonymize` and
 
 <Note>
   Fan-out (a single source on a camera-frame chain wired into more than one
-  enabled `annotate` / `anonymize`) is rejected at codegen time with a clear
+  enabled `annotate` / `anonymize`) is rejected at compile time with a clear
   error — the published frame and overlay are a single artefact per twin, so
   multiple branches would be silently collapsed. Cloud-only sub-graphs in the
   same workflow are not subject to this rule.
@@ -91,9 +91,9 @@ Internally this maps onto `cyberwave.vision.blank_persons(frame, results.detecti
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `black` (default) | A `np.zeros_like(frame)` black frame. **Privacy fail-closed.**                                                                                                                                       | The default. Pick this whenever the camera scene contains anything sensitive that a model miss would reveal.                                                                                      |
 | `raw`             | The raw camera frame, un-anonymized. **Operator opt-in privacy regression.**                                                                                                                         | The camera scene is non-sensitive on its own and "always show the live scene" is a product requirement (e.g. a kiosk that pixelates passersby but should never go black when the lobby is empty). |
-| `hold_last`       | Nothing — the worker skips the publish. The camera driver's freshness window (`frame_filter.py`) holds the last filtered frame until staleness, then falls back to its own black on the driver side. | You want a brief "stick" on the last anonymized frame across a transient miss without giving up the privacy contract on extended ones.                                                            |
+| `hold_last`       | Nothing — the worker skips the publish. The camera driver's freshness window holds the last filtered frame until staleness, then falls back to its own black on the driver side. | You want a brief "stick" on the last anonymized frame across a transient miss without giving up the privacy contract on extended ones.                                                            |
 
-When multiple anonymize nodes are chained on the same frame, the **most-restrictive `fallback` wins** (`black` > `hold_last` > `raw`) so a downstream `raw` can't silently weaken an upstream `black`. Resolution lives in `worker_codegen.py::_resolve_anonymize_fallback`.
+When multiple anonymize nodes are chained on the same frame, the **most-restrictive `fallback` wins** (`black` > `hold_last` > `raw`) so a downstream `raw` can't silently weaken an upstream `black`.
 
 ### Annotate parameters
 
@@ -101,7 +101,7 @@ When multiple anonymize nodes are chained on the same frame, the **most-restrict
 | ---------------- | ---------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `target_classes` | `string[]` | `[]`        | Class labels to annotate. **Empty means "draw every detection"** (matches the SDK helper's `labels=None` default).                                                                                                |
 | `line_width`     | `int`      | `2`         | Bounding box stroke width in pixels.                                                                                                                                                                              |
-| `font_size`      | `int`      | `14`        | Caption font size in pixels (cloud convention). On the edge the codegen translates it into OpenCV's `font_scale` automatically (14 px → ~0.5 scale at `FONT_HERSHEY_SIMPLEX`).                                    |
+| `font_size`      | `int`      | `14`        | Caption font size in pixels (cloud convention). On the edge it is translated into the equivalent font scale automatically.                                    |
 | `mask_alpha`     | `float`    | `0.35`      | Translucency of the segmentation mask fill (`0` disables fill, `1` is opaque). Used only when the upstream model emits per-detection masks (e.g. YOLO-seg).                                                       |
 | `mask_outline`   | `bool`     | `true`      | Trace the segmentation contour on top of the fill. Independent of `line_width`, which still controls the axis-aligned bbox.                                                                                       |
 | `mask_format`    | `string`   | `"polygon"` | Wire format for masks. `polygon` (default) is compact and renders natively on the edge driver; `png` matches the cloud structured-action contract; `polygon+png` emits both for downstream cloud post-processing. |
@@ -117,43 +117,17 @@ segmentation overlay rendering is v1. The polygon path emits each detection's la
 On a camera-frame chain, an `annotate` / `anonymize` node MUST have a `Call Model` somewhere in its upstream lineage. The workflow editor enforces this in two places:
 
 - **Connection-time:** dragging a `Camera Frame` trigger directly onto a non-`Call Model` target shows an "Invalid connection" toast and refuses the edge.
-- **Graph-level:** any `annotate` / `anonymize` node on a camera-frame chain whose ancestors don't include a `Call Model` (e.g. because the upstream model was deleted later) is decorated with a yellow warning triangle in the canvas, and the worker codegen rejects the workflow with a `WorkerCodegenError`.
+- **Graph-level:** any `annotate` / `anonymize` node on a camera-frame chain whose ancestors don't include a `Call Model` (e.g. because the upstream model was deleted later) is decorated with a yellow warning triangle in the canvas, and the compiler rejects the workflow.
 
 The cloud variant (e.g. `webhook → call_model → annotate`) does not require a `call_model` ancestor at all — any image-producing upstream is accepted because the cloud runner takes an explicit `image_url`.
 
-## What gets generated
+## How the worker behaves
 
-When the workflow contains a camera-frame edge filter chain, the backend's `worker_codegen` adds the imports it needs (`blank_persons` + `FILTERED_FRAME_CHANNEL` for anonymize, `build_overlay_payload` + `FRAME_OVERLAY_CHANNEL` for annotate) and emits one block per filter inside the per-trigger hook, after the `model.predict(...)` call:
-
-```python
-from cyberwave.vision import blank_persons, build_overlay_payload
-from cyberwave.data import FILTERED_FRAME_CHANNEL, FRAME_OVERLAY_CHANNEL
-
-@cw.on_frame(twin_uuid="...", sensor="front")
-def _hook(frame, ctx):
-    results = _model_yolov8n.predict(frame, confidence=0.4, twin_uuid="...")
-
-    # anonymize: substitute pixels (gated on frame_filter_enabled)
-    _frame = blank_persons(frame, results.detections,
-                           labels=['person'], mode='pixelate')
-    cw.data.publish(FILTERED_FRAME_CHANNEL, _frame, twin_uuid="...")
-
-    # annotate: publish overlay metadata (always composited)
-    cw.data.publish(
-        FRAME_OVERLAY_CHANNEL,
-        build_overlay_payload(results.detections,
-                              line_width=2, font_size=14),
-        twin_uuid="...",
-    )
-```
-
-`anonymize` mutates `_frame` and publishes once on `FILTERED_FRAME_CHANNEL`. `annotate` does **not** touch `_frame` — it only publishes a JSON overlay spec on `FRAME_OVERLAY_CHANNEL`, which the camera driver composites onto every frame at WebRTC encode time, regardless of the privacy flag. If the chain has zero edge-filter nodes, neither the imports nor the publishes are emitted.
-
-The vision helpers are imported lazily so workflows that don't use an edge-filter node don't pull in OpenCV.
+`anonymize` rewrites the frame and publishes it once on `FILTERED_FRAME_CHANNEL`. `annotate` does **not** touch the frame — it only publishes a JSON overlay spec on `FRAME_OVERLAY_CHANNEL`, which the camera driver composites onto every frame at WebRTC encode time, regardless of the privacy flag. If the chain has zero edge-filter nodes, nothing is published.
 
 ## Frame-filter wire contract
 
-The published frame ends up on the worker container's `cyberwave.data.FILTERED_FRAME_CHANNEL` (`"frames/filtered"`). The camera driver subscribes to this channel and substitutes the frame into the WebRTC stream it serves to the frontend, provided two preconditions hold:
+The published frame ends up on `cyberwave.data.FILTERED_FRAME_CHANNEL` (`"frames/filtered"`). The camera driver subscribes to this channel and substitutes the frame into the WebRTC stream it serves to the frontend, provided two preconditions hold:
 
 1. The driver's `CYBERWAVE_METADATA_FRAME_FILTER_ENABLED` flag is `true` for the twin.
 2. The published frame matches the raw frame's `shape` and `dtype` (the helpers preserve both by default — don't downscale or convert colour space).
@@ -183,7 +157,7 @@ If you previously dropped a hand-written `~/.cyberwave/workers/my_anon_workflow.
 
 1. Open the workflow editor in the UI.
 2. Build `Camera Frame trigger → Call Model (your YOLO model) → Anonymize`.
-3. Save and activate the workflow — the backend syncs the generated `wf_<uuid>.py` to the worker.
+3. Save and activate the workflow — the generated worker is synced to the device.
 4. Delete the hand-written file.
 
-The hotfix workarounds you may have inlined (`runtime='onnxruntime'`, custom `_pixelate_persons`, manual `_bus_for(twin_uuid)`) are no longer needed against a worker container built on top of the current SDK — the codegen output uses the helpers directly.
+The hotfix workarounds you may have inlined (`runtime='onnxruntime'`, custom `_pixelate_persons`, manual `_bus_for(twin_uuid)`) are no longer needed with the current SDK.

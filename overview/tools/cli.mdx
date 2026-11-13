@@ -134,8 +134,7 @@ sudo cyberwave pair --token <api-token> -e acme/envs/production-floor -y
 | `-y, --yes` | Skip confirmation prompts |
 | `-e, --environment` | Existing environment to attach to: UUID or full slug (acme/envs/production-floor) |
 | `--token` | API token to pair with, instead of stored credentials or an interactive login |
-| `--channel` | Which edge-core package channel to install (one of `stable`, `dev`, `staging`; default `stable`) |
-| `--version` | Exact edge-core version to install from the selected channel |
+| `--version` | Exact edge-core version to install |
 | `--force-reinstall` | Tear down and reinstall the USB/IP server from scratch (macOS only) |
 | `--reconfigure-camera` | Re-run camera detection and save to cameras.json |
 | `--reconfigure-microphone` | Re-run macOS microphone bridge setup (ffmpeg + audio\_streams.json) |
@@ -198,7 +197,7 @@ Manage the Edge Core service on this device: lifecycle, logs, cameras, drivers, 
 | `cyberwave edge cameras` | List cameras detected on this edge device. | `--json` Output as JSON<br/>`--save` Save results to cameras.json |
 | `cyberwave edge driver …` | Manage edge driver containers. | Subcommands, see the table below. |
 | `cyberwave edge health` | Deprecated. Edge Core now runs this health check itself. | `-t, --twin-uuid` Twin UUID to check health for (required)<br/>`--timeout` Timeout in seconds to wait for response (default `5`)<br/>`-w, --watch` Continuously watch health status |
-| `cyberwave edge install` | Install cyberwave-edge-core and register it as a boot service. | `-y, --yes` Skip confirmation prompts<br/>`-e, --environment` Existing environment to attach to: UUID or full slug (acme/envs/production-floor)<br/>`--token` API token to pair with, instead of stored credentials or an interactive login<br/>`--channel` Which edge-core package channel to install (one of `stable`, `dev`, `staging`; default `stable`)<br/>`--version` Exact edge-core version to install from the selected channel<br/>`--force-reinstall` Tear down and reinstall the USB/IP server from scratch (macOS only)<br/>`--reconfigure-camera` Re-run camera detection and save to cameras.json<br/>`--reconfigure-microphone` Re-run macOS microphone bridge setup (ffmpeg + audio\_streams.json)<br/>`--reconfigure-speaker` Re-run macOS speaker playback sink setup (HTTP PCM + audio\_streams.json)<br/>`--microphone-index` AVFoundation microphone index for `--reconfigure-microphone` (skips prompt) |
+| `cyberwave edge install` | Install cyberwave-edge-core and register it as a boot service. | `-y, --yes` Skip confirmation prompts<br/>`-e, --environment` Existing environment to attach to: UUID or full slug (acme/envs/production-floor)<br/>`--token` API token to pair with, instead of stored credentials or an interactive login<br/>`--version` Exact edge-core version to install<br/>`--force-reinstall` Tear down and reinstall the USB/IP server from scratch (macOS only)<br/>`--reconfigure-camera` Re-run camera detection and save to cameras.json<br/>`--reconfigure-microphone` Re-run macOS microphone bridge setup (ffmpeg + audio\_streams.json)<br/>`--reconfigure-speaker` Re-run macOS speaker playback sink setup (HTTP PCM + audio\_streams.json)<br/>`--microphone-index` AVFoundation microphone index for `--reconfigure-microphone` (skips prompt) |
 | `cyberwave edge install-deps` | Install edge ML dependencies. | `-r, --runtime` Specific runtime to install (ultralytics, opencv) (repeatable) |
 | `cyberwave edge list-models` | List model bindings loaded on the edge node. | `--twin-uuid` Twin UUID to query (required) |
 | `cyberwave edge logs` | Show edge node logs. | `-f, --follow` Follow log output<br/>`-n, --lines` Number of lines to show (default `50`) |
@@ -209,7 +208,7 @@ Manage the Edge Core service on this device: lifecycle, logs, cameras, drivers, 
 | `cyberwave edge status` | Check edge node status. | None |
 | `cyberwave edge stop` | Stop the edge node service. | None |
 | `cyberwave edge sync-workflows` | Sync workflow workers on the edge node. | `--twin-uuid` Twin UUID to trigger workflow sync for via MQTT |
-| `cyberwave edge uninstall` | Stop and remove the cyberwave-edge-core service. | `-y, --yes` Skip confirmation prompts<br/>`--channel` Release channel the edge was installed from (one of `stable`, `dev`, `staging`) |
+| `cyberwave edge uninstall` | Stop and remove the cyberwave-edge-core service. | `-y, --yes` Skip confirmation prompts |
 | `cyberwave edge whoami` | Show device fingerprint and info. | None |
 
 {/* cli-gen:end */}
@@ -268,7 +267,7 @@ Manage [workflows](/feature-reference/workflows) from the terminal. Commands tha
 | `cyberwave workflow sync [UUID]` | Sync a workflow to its edge node(s). | `--force` Skip the cloud-side preflight check and publish the MQTT sync command anyway<br/>`--dry-run` Run the preflight diagnostic and print what would be synced, but don't publish the MQTT command<br/>`--edge-active` Restrict the interactive selector to workflows that are both active (is\_active=true) and target edge execution (run\_on\_edge=true) — i.e. the only workflows `sync` will actually ship to an edge node |
 | `cyberwave workflow templates` | List available workflow templates. | None |
 
-Every `cyberwave workflow` subcommand except `templates` also accepts `-u, --base-url`: Backend API URL (e.g. http://192.168.10.101:8000). Defaults to CYBERWAVE\_BASE\_URL or https://api.cyberwave.com.
+Every `cyberwave workflow` subcommand except `templates` also accepts `-u, --base-url`: Backend API URL (for example, a self-hosted URL). Defaults to CYBERWAVE\_BASE\_URL or https://api.cyberwave.com.
 
 {/* cli-gen:end */}
 
@@ -336,7 +335,7 @@ Run a [cloud node](/overview/tools/cloud-node) on a GPU machine. The commands mi
 
 | Command | What it does | Options |
 |---|---|---|
-| `cyberwave compute install` | Install cyberwave-cloud-node and register it as a boot service. | `-y, --yes` Skip confirmation prompts<br/>`--channel` Which cloud-node package channel to install (one of `stable`, `dev`, `staging`; default `stable`)<br/>`--version` Exact version to install from the selected channel<br/>`--config` Path to cyberwave.yml to use when the service starts |
+| `cyberwave compute install` | Install cyberwave-cloud-node and register it as a boot service. | `-y, --yes` Skip confirmation prompts<br/>`--version` Exact version to install<br/>`--config` Path to cyberwave.yml to use when the service starts |
 | `cyberwave compute logs` | Show cloud node logs. | `-f, --follow` Follow log output<br/>`-n, --lines` Number of lines to show (default `50`) |
 | `cyberwave compute restart` | Restart the cloud node service. | `--config` Path to cyberwave.yml (persisted in the service override) |
 | `cyberwave compute start` | Start the cloud node service. | `--config` Path to cyberwave.yml (persisted in the service override)<br/>`-f, --foreground` Run in foreground (don't daemonize) |
@@ -432,10 +431,8 @@ The CLI and Edge Core share one config directory: `$CYBERWAVE_EDGE_CONFIG_DIR` i
 | `CYBERWAVE_BASE_URL` | API URL. Defaults to the backend saved in `credentials.json`, else `https://api.cyberwave.com`. `cyberwave logout` clears the saved one. |
 | `CYBERWAVE_API_KEY` | Token that `edge install` / `pair` falls back to when no login is saved. Also what the Python SDK reads. |
 | `CYBERWAVE_EDGE_CONFIG_DIR` | Overrides the config directory. |
-| `CYBERWAVE_ENVIRONMENT` | Backend stage, such as `dev`. Defaults to production. |
 | `CYBERWAVE_MQTT_HOST` | MQTT broker host. Defaults to `mqtt.cyberwave.com`. |
 
-`cyberwave workflow sync` and other commands that publish over MQTT refuse to run when the saved `CYBERWAVE_ENVIRONMENT` doesn't match the broker host. To fix it, run `cyberwave login` again against the right backend.
 
 ## Next steps
 
