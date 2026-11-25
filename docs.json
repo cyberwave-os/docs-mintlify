@@ -14,10 +14,10 @@
         "tab": "Docs",
         "groups": [
           {
-            "group": "Get started",
+            "group": "Welcome",
             "icon": "rocket",
             "pages": [
-              "overview/index",
+              "overview",
               "get-started/quickstart",
               "get-started/choose-your-path",
               "get-started/core-concepts",
@@ -47,7 +47,7 @@
                 "icon": "brain",
                 "pages": [
                   "ai/models",
-                  "feature-reference/ml-models/index",
+                  "feature-reference/ml-models",
                   "feature-reference/ml-models/structured-actions",
                   "feature-reference/ml-models/playground",
                   "feature-reference/ml-models/uploading-your-model",
@@ -100,7 +100,7 @@
                 "icon": "map",
                 "pages": [
                   "overview/features/environment",
-                  "feature-reference/environment-editor/index",
+                  "feature-reference/environment-editor",
                   "feature-reference/environment-editor/assistant-asset-generation",
                   "feature-reference/environment-editor/environment-templates",
                   "feature-reference/environment-editor/fixed-base-objects",
@@ -324,7 +324,7 @@
             "group": "All tutorials",
             "icon": "grip",
             "pages": [
-              "tutorials/index"
+              "tutorials"
             ]
           },
           {
@@ -529,7 +529,7 @@
             "icon": "life-ring",
             "pages": [
               "support/troubleshooting",
-              "support/index"
+              "support"
             ]
           }
         ]
@@ -836,7 +836,12 @@
         "label": "Status",
         "href": "https://status.cyberwave.com"
       }
-    ]
+    ],
+    "primary": {
+      "type": "github",
+      "label": "official sdk",
+      "href": "https://github.com/cyberwave-os/cyberwave-python"
+    }
   },
   "contextual": {
     "options": [
@@ -1818,6 +1823,26 @@
     {
       "source": "/tutorials/bring-your-own-hardware",
       "destination": "/robots/add-your-robot"
+    },
+    {
+      "source": "/feature-reference/ml-models/index",
+      "destination": "/feature-reference/ml-models"
+    },
+    {
+      "source": "/feature-reference/environment-editor/index",
+      "destination": "/feature-reference/environment-editor"
+    },
+    {
+      "source": "/support/index",
+      "destination": "/support"
+    },
+    {
+      "source": "/tutorials/index",
+      "destination": "/tutorials"
+    },
+    {
+      "source": "/overview/index",
+      "destination": "/overview"
     }
   ]
 }

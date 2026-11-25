@@ -4,3 +4,142 @@
   opacity: 0.5;
   cursor: default;
 }
+
+/* Keep the top navigation links distinct, including before the GitHub CTA. */
+.navbar-link {
+  margin-inline-end: 1rem;
+}
+
+/* Explicit row spacing prevents stacked cards from sharing a border. */
+.card-group {
+  gap: 1rem;
+  margin-block: 1.5rem;
+}
+
+.card-group > .card {
+  margin-block: 0;
+}
+
+/* Wide tables scroll within the article instead of widening the whole page. */
+#content [data-table-wrapper] {
+  width: 100%;
+  max-width: 100%;
+  margin-inline: 0;
+}
+
+#content [data-table-wrapper] [data-component-part="scroll-area-content"] > div {
+  padding-inline: 0;
+}
+
+/* Keep navigation controls separated when the desktop sidebar is collapsed. */
+@media (max-width: 1023px) {
+  #navbar .h-16:has(.nav-logo) {
+    margin-inline: 1.25rem;
+  }
+
+  #navbar button:has(> .ml-4) {
+    gap: 1rem;
+  }
+
+  #navbar button > .ml-4,
+  #navbar button > .ml-4 > .shrink-0 {
+    gap: 0.75rem;
+    margin-inline-start: 0;
+  }
+}
+
+/* Shared reading rhythm across documentation pages, excluding card titles. */
+#header {
+  padding-block-start: 1.5rem;
+  line-height: 1.5;
+}
+
+#header > div > div + div {
+  margin-block-start: 0.75rem;
+}
+
+#content {
+  margin-block-start: 2rem;
+  overflow-wrap: anywhere;
+}
+
+/* Long generated API identifiers must wrap inside flex heading labels. */
+#content :is(h1, h2, h3, h4) > span,
+#content blockquote > span {
+  min-width: 0;
+}
+
+#content :is(h2, h3, h4):not(.not-prose):not([data-component-part]) {
+  line-height: 1.3;
+  margin-block-end: 1rem;
+}
+
+#content h2:not(.not-prose):not([data-component-part]) {
+  margin-block-start: 3rem;
+}
+
+#content :is(h3, h4):not(.not-prose):not([data-component-part]) {
+  margin-block-start: 2rem;
+}
+
+#content > p {
+  margin-block: 1.25rem;
+  line-height: 1.75;
+}
+
+#content .card [data-component-part="card-title"] {
+  margin-block: 1rem 0.5rem;
+  line-height: 1.4;
+}
+
+/* Give adjacent interactive blocks their own space, including inside tabs. */
+#content :is(.callout, details, [data-component-part="code-block-root"], video) {
+  margin-block: 1.5rem;
+}
+
+#content [data-component-part="tab-content"] {
+  padding-block-start: 1rem;
+}
+
+#content [data-component-part="accordion-button"] {
+  gap: 0.75rem;
+}
+
+/* Video embeds keep their proportions on narrow screens. */
+#content iframe[src*="youtube.com/embed/"] {
+  display: block;
+  width: 100%;
+  /* Mintlify converts the MDX height attribute into an inline style. */
+  height: auto !important;
+  aspect-ratio: 16 / 9;
+  margin-block: 1.5rem;
+}
+
+/* Previous/next links must remain distinct, even with long page titles. */
+#pagination {
+  justify-content: space-between;
+  gap: 2rem;
+  margin-block-start: 2rem;
+}
+
+#pagination > a {
+  gap: 0.75rem;
+  min-width: 0;
+  max-width: calc(50% - 1rem);
+  overflow-wrap: anywhere;
+}
+
+#pagination > a.ml-auto {
+  margin-inline-start: auto;
+  text-align: end;
+}
+
+#pagination > a > svg {
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  #content h2:not(.not-prose):not([data-component-part]) {
+    margin-block-start: 2.25rem;
+  }
+}

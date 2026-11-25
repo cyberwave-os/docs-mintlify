@@ -57,7 +57,7 @@ through `/dev/v4l/by-id`. It similarly exposes `/dev/snd` to the generic audio
 drivers. Custom launchers must provide those mounts themselves.
 
 <Info>
-  **stub** — `cyberwave edge install` does not ask you to pick a `/dev/videoN`
+  `cyberwave edge install` does not ask you to pick a `/dev/videoN`
   for a camera twin that already sets `serial_number`; it matches the serial
   against the attached cameras and binds them for you. Twins without one are
   still asked, and the camera you pick is saved back as that twin's
@@ -68,7 +68,7 @@ drivers. Custom launchers must provide those mounts themselves.
 </Info>
 
 <Info>
-  **stub** — Cameras that publish no USB serial (the Logitech C920 is one) can
+  Cameras that publish no USB serial (the Logitech C920 is one) can
   never be pinned with `serial_number`. Set `metadata.video_device` to a udev
   stable name instead — `/dev/v4l/by-id/...` or `/dev/v4l/by-path/...` — and
   the installer binds the twin without asking, exactly as it does for a serial.
