@@ -143,3 +143,26 @@
     margin-block-start: 2.25rem;
   }
 }
+
+/* Welcome uses quiet, consistently sized icons; accent only on interaction. */
+#content .welcome-card [data-component-part="card-icon"],
+#content .welcome-card [data-component-part="card-icon"] > svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+#content .welcome-card [data-component-part="card-icon"] > svg {
+  background-color: #626b73;
+}
+
+html.dark #content .welcome-card [data-component-part="card-icon"] > svg {
+  background-color: #a1a9ae;
+}
+
+#content .welcome-card:is(:hover, :focus-visible) [data-component-part="card-icon"] > svg {
+  background-color: #007b96;
+}
+
+html.dark #content .welcome-card:is(:hover, :focus-visible) [data-component-part="card-icon"] > svg {
+  background-color: #33cfef;
+}
