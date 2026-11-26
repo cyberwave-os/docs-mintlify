@@ -4,6 +4,8 @@ description: "Copy-ready prompts for building scenes, controlling robots and dra
 icon: "message-lines"
 ---
 
+import AgentStartPrompt from "/snippets/agent-start-prompt.mdx";
+
 These prompts work with the built-in assistants in the dashboard and with any agent [connected through MCP](/ai/connect-your-ai-tool). Each one names the robot, states limits, and asks the agent to check before it acts. Keep those parts when you adapt them.
 
 {/* TODO(docs): run each prompt 20 times against the hosted agents before publishing, and record pass rates. */}
@@ -11,6 +13,14 @@ These prompts work with the built-in assistants in the dashboard and with any ag
 <Tip>
   Good prompts say what to build or do, what not to do yet, and how to verify the result. "Do not start simulation" and "show me the plan before execution" keep the agent from spending credits or moving anything early.
 </Tip>
+
+## Start with your AI agent
+
+Copy this prompt into Codex or Claude to get started. Change **My goal** to match
+what you want to build. Your agent will check setup first; you may need to finish
+account and credential setup yourself. See [Connect your AI tool](/ai/connect-your-ai-tool).
+
+<AgentStartPrompt />
 
 ## Check your connection
 
