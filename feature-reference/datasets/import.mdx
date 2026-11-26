@@ -5,7 +5,7 @@ icon: "file-import"
 ---
 
 <Info>
-**Robot datasets first.** Cyberwave currently focuses on robot manipulation and navigation datasets (LeRobot, RLDS, and similar time-series formats). Zip upload supports LeRobot only; HuggingFace Hub import detects any dataset repository, but only robotics datasets are correctly displayed today. Full support for non-robotics formats — playback, conversion, and training — is coming in a future release.
+**Robot datasets first.** Cyberwave currently focuses on robot manipulation and navigation datasets (LeRobot, RLDS, and similar time-series formats). For robot episode datasets, zip upload supports LeRobot; HuggingFace Hub import detects any dataset repository, but only robotics datasets are correctly displayed today. Full support for non-robotics formats — playback, conversion, and training — is coming in a future release.
 </Info>
 
 ## Overview
@@ -21,9 +21,12 @@ Format detection happens automatically on the server side and sets the `source_f
 
 The two import sources have different levels of format support today.
 
-### Zip upload — LeRobot only
+### Zip upload — robot episodes and sensor time series
 
-Zip upload currently supports **LeRobot v2.1 and v3 only**. Other dataset formats are not yet supported via zip upload.
+For robot episode datasets, zip upload supports **LeRobot v2.1 and v3**.
+Sensor time-series archives use a separate recipe-based format; see
+[Import sensor time series](/feature-reference/datasets/timeseries) for the ZIP
+structure, required recipe, and supported data files.
 
 | Format | `source_format` value | Description |
 |---|---|---|
@@ -65,7 +68,9 @@ For private HuggingFace repositories, ensure your organisation has configured th
 3. Select your zip file (max 10 GB)
 4. Click **Upload**
 
-The system automatically detects the format after the upload completes. Zip upload only supports **LeRobot** (v2.1/v3) today (see [Supported formats](#supported-formats)); other formats should be imported from HuggingFace Hub instead.
+The system automatically detects the format after the upload completes. For LeRobot (v2.1/v3), follow the archive structure below. For sensor data, follow
+[Import sensor time series](/feature-reference/datasets/timeseries). See
+[Supported formats](#supported-formats) before uploading another format.
 
 ## Monitor progress
 
