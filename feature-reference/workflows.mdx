@@ -138,16 +138,15 @@ You can also trigger a workflow from external systems through the REST API or MC
 
 A workflow can span both sides of your stack. Trigger and ML nodes that run [on the cloud](/overview/tools/cloud-node) coordinate with the same workflow's edge half through the [edge worker runtime](/feature-reference/workflows/workers/overview).
 
-A common shape:
+An edge vision chain detects objects before anonymizing their regions:
 
 ```mermaid
 flowchart LR
-    A[Camera Frame trigger<br/><i>edge</i>] --> B[Anonymize node<br/><i>edge</i>]
-    B --> C[Call Model · VLM<br/><i>cloud</i>]
-    C --> D[Send Email<br/><i>cloud</i>]
+    A[Camera Frame trigger<br/><i>edge</i>] --> B[Call Model · detection<br/><i>edge</i>]
+    B --> C[Anonymize node<br/><i>edge</i>]
 ```
 
-The video frame never leaves the device unanonymized, the VLM runs on a GPU in the cloud, and an email goes out, all from a single workflow definition. The [unified edge compiler](#environment-bound-workflows) decides what runs where based on the graph itself.
+The detection model supplies the regions that [Anonymize](/feature-reference/workflows/anonymize-image) processes on the edge. Choose downstream nodes and their execution context for the rest of your workflow. The [unified edge compiler](#environment-bound-workflows) decides what runs where based on the graph itself.
 
 You don't manage model downloads, hardware compatibility, or reconnects. Cyberwave provisions the right model into the right runtime (edge YOLO for [`camera_frame`](#edge-workflows-camera-frame), cloud VLMs for [`call_model`](#nodes)) and keeps it healthy when the network blinks.
 

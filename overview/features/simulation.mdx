@@ -217,7 +217,7 @@ camera = cw.twin("cyberwave/standard-cam")
 cw.affect("simulation")               # starts MuJoCo, logs ~0.6 credits/hour
 frame = camera.get_frame()            # reads from the running sim
 ...
-cw.environments.simulations.get_active(robot.environment_id).stop()
+cw.environments.simulations.get_active(camera.environment_id).stop()
 ```
 
 What each runtime serves:
