@@ -16,7 +16,7 @@ Mac host (CoreAudio / AVFoundation)
   └─ ffmpeg LaunchAgent  com.cyberwave.audio-stream*
        └─ HTTP PCM  :8101+  (host.docker.internal from container)
             └─ generic-microphone driver (Docker)
-                 └─ WebRTC + Zenoh  →  twin / media-service
+                 └─ WebRTC + Zenoh  →  twin / Cyberwave
 ```
 
 | Layer | Artifact |
@@ -85,7 +85,7 @@ cat ~/.cyberwave/audio_streams.json
 cyberwave edge logs -f
 ```
 
-**Healthy container logs** (MQTT/backend errors aside):
+**Healthy container logs** (MQTT errors aside):
 
 ```text
 Resolved macOS host audio bridge for microphone capture: http://host.docker.internal:8101
@@ -99,7 +99,7 @@ Using host HTTP audio bridge
 | --- | --- |
 | `Discovered 0 input devices` | Bridge URL not injected — re-run `--reconfigure-microphone` and `edge restart` |
 | `PortAudio not initialized` | Driver probed ALSA inside Docker — fixed when bridge URL is set (recent driver) |
-| Connection refused to backend/MQTT | Cloud stack not running — start your Cyberwave backend; audio bridge can still be correct |
+| Connection refused to MQTT | No connection to Cyberwave — check the edge's network; the audio bridge can still be correct |
 
 ## `audio_streams.json` shape
 
@@ -118,10 +118,10 @@ Edge-core reads this file (and TCP-probes the port) when launching each `generic
 
 ## Local debugging without Docker
 
-Run the driver on the host with direct PortAudio (no HTTP bridge):
+Run the [driver](https://github.com/cyberwave-os/generic-microphone-driver) on the host with direct PortAudio (no HTTP bridge):
 
 ```bash
-cd cyberwave-edge-runtime/runtime-services/drivers/native/cyberwave/generic-microphone
+# from the generic-microphone driver directory
 ./run-local.sh
 ```
 

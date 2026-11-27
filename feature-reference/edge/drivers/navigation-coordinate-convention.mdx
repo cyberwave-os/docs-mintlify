@@ -102,7 +102,7 @@ For `geodetic`, latitude and longitude use standard GPS/WGS84 decimal degrees.
 For the first DJI implementation, altitude is measured relative to the takeoff
 point. `orientation.heading` is clockwise from true north (`0` = north,
 `90` = east). `yaw` remains accepted as a legacy input alias during migration,
-but the backend publishes the canonical `orientation` object.
+but Cyberwave publishes the canonical `orientation` object.
 
 ### Single-target `goto`
 
@@ -170,12 +170,3 @@ This is a static hardware profile, not an availability result. The separate
 Wayline probe reports whether the connected aircraft/firmware is currently
 `READY`, `NOT_SUPPORTED`, or `INCONCLUSIVE`. A UI should expose only the
 commandable fields; the driver remains the final validation boundary.
-
-## Implementation scope
-
-Implementing this convention requires coordinated changes to the backend
-navigation schema and service, driver capability metadata, and each supporting
-driver. Workflow authoring is intentionally separate: a future workflow node
-can select a coordinate representation based on the target driver's declared
-capabilities while continuing to use the same navigation topic and action
-lifecycle.

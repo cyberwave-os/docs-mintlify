@@ -1,0 +1,187 @@
+---
+title: "Buffer node"
+description: "Collect live items, such as MQTT events or camera frames, and pass them on together as one run."
+icon: "inbox"
+---
+
+A workflow run usually handles one MQTT message or one camera frame. The
+**Buffer** (`buffer`) node keeps the items that reach it and passes them on
+together, so the nodes after it run **once per batch** instead of once per item.
+Use it to react once to a burst of events, or to give a model several items at
+a time.
+
+```text
+MQTT event (bursts)
+  → Buffer       [batch · max 64 · max wait 30 s · quiet 2 s]
+  → Send Alert   [one alert per burst, count = Buffer.count]
+```
+
+<Note>
+The Buffer runs on **edge only**: turn on **Run on edge** for the workflow. Its
+items live in the edge worker's memory. To work on data that is already stored,
+such as twin metrics or a dataset, use a [Data window](/feature-reference/workflows/data-windows)
+instead; it works on cloud and edge.
+</Note>
+
+## How a batch is passed on
+
+In batch mode (the default), the first item opens a batch. The batch is passed
+on at the first of these limits:
+
+| Limit | Passed on when |
+| ----- | -------------- |
+| **Max items** | The batch holds this many items: 2, 4, 8, 16, 32 or 64 |
+| **Max wait** | This long has passed since the first item: 5, 10, 30 s, 1, 2 or 5 min |
+| **Quiet time** | Optional: no item arrived for this long: 1, 2, 5, 10 or 30 s |
+
+Every size is a fixed value. A value outside these lists fails activation,
+naming the allowed values. A size wired from another node fails activation
+too: it must be a fixed value.
+
+## Event mode: items around a moment
+
+Set **Mode** to **Event** to keep what happened just before and after
+something, for example the frames around a detection.
+
+- The Buffer always holds the newest **Items before**: 0, 1, 2, 3, 4, 8 or 16.
+- **Capture when** must be wired to an upstream output, usually a detector's
+  count, where any non-zero count counts; Event mode without it fails
+  activation. When an item arrives with it on, that item is the event. The
+  Buffer then collects **Items after** (0, 1, 2, 3, 5, 8, 16 or 32) and passes
+  them all on.
+- With the defaults, a batch is 2 + 1 + 5 = 8 items.
+- If the items after don't all arrive within **Max wait**, the Buffer passes on
+  what it has. A capture while one is already running is ignored.
+- In event mode, **Max wait** counts from the event; **Max items** and **Quiet
+  time** don't apply.
+- `event_index` in the output is the event item's position.
+
+```text
+Camera Frame (1 fps)
+  → Call Model   [person detector]
+  → Buffer       [event · 2 before · 5 after · capture = detection_count]
+  → Call Model   [VLM · "What is the person doing?"]
+```
+
+An item is the output of the nodes wired into the Buffer. When it has no image
+of its own, such as a detector's output, the Buffer keeps the frame of the
+Camera Frame run that produced it.
+
+A cloud model after the Buffer is allowed on a Camera Frame path: it runs once
+per batch. Before the Buffer, Camera Frame paths still need edge models.
+
+## Frames
+
+With **Keep frames** on, each item's image is stored as JPEG, with the longest
+side at most 1280 px. An item's image comes from the nodes wired into the
+Buffer; after a Camera Frame trigger, an item without one takes the frame of
+its run. Images that arrive as JPEG are scaled down too. Keep frames is on by
+default after a Camera Frame trigger. When it is off, images and other binary
+values are dropped from the items.
+
+- `frames` lists the kept images as `{image_base64, timestamp, camera_id,
+  item_index}`, oldest first, with `timestamp` in milliseconds.
+- Each item gets `frame_index`: its position in `frames`, or `null` when it had
+  no image. With Keep frames off, an item's own `frame_index` field is kept as
+  it is.
+- The chosen single item's frame is also restored as `image_bytes`, so a
+  single-image model after the Buffer works without any mapping.
+
+Call Model takes one image today: `image_bytes`, the frame of the single item
+(the event item in event mode, the first item in batch mode, or the one
+**Single item** names). It does not read `frames`.
+
+A model's prompt takes text, not a list. To send a whole batch, turn it into
+text first, for example in a Code node (`return {"prompt": json.dumps(input["items"])}`),
+and wire that into the prompt. Wiring `items` straight into a text input shows a
+warning in the editor.
+
+## Executions
+
+- **A run that only stores an item is not recorded.** At one message a second,
+  that would be 3,600 executions an hour. A run in which a node before the
+  Buffer acts (Send Alert, Send MQTT, Twin Control and so on) is still recorded,
+  and so is any run that fails.
+- A **Run now** is always recorded, whatever the workflow's log mode, even when
+  it only stores an item.
+- **Each batch is one execution.** It starts at the Buffer, whose step shows
+  `count`, `flush_reason`, the time span and what was dropped, then runs the
+  nodes after it. It lists only the Buffer and the nodes after it, and a run
+  that stores an item lists only the nodes up to the Buffer. The nodes after
+  the Buffer record each frame by size, timestamp, camera and item, not the
+  image itself. If a batch fails, its execution shows the error and the worker
+  raises a **Worker runtime error** alert, as for a node before the Buffer (at
+  most once a minute per Buffer).
+- **One batch at a time.** While the nodes after the Buffer run, new items fill
+  the next batch. If another batch is ready before the run ends, it waits; if a
+  third is ready, it replaces the waiting one and `dropped_batches` counts it.
+  This also holds for a **Timer** after the Buffer: it is allowed after a Buffer
+  fed by Camera Frame (it waits once per batch, not per frame), and batches that
+  get ready during its wait are replaced and counted the same way. A Timer before
+  the Buffer on a Camera Frame path is still refused.
+- The inspector shows **Buffered n / max** while the workflow runs on an edge
+  device.
+
+## Output
+
+The Buffer's output exists only in a batch's execution.
+
+| Field | Content |
+| ----- | ------- |
+| `items` | The items in the batch, oldest first |
+| `first`, `last` | The first and last item |
+| `count` | Items in the batch |
+| `dropped` | Items lost to the 32 MB memory limit: the oldest go first, but never the event item |
+| `dropped_batches` | Ready batches replaced while a slow batch was running |
+| `window_start`, `window_end` | When the first item arrived, and when the batch was passed on |
+| `flush_reason` | `max_items`, `max_wait`, `quiet` or `event` |
+| `frames` | With Keep frames: the kept images (see [Frames](#frames)) |
+| `event_index` | Event mode: the event item's position in `items` |
+| `batch_ready` | Always `true` in a batch's execution |
+
+One item's fields are also copied to the top level of the output, so a node
+built for one item keeps working after a Buffer: the event item in event mode,
+the first item in batch mode. Set **Single item** to **First**, **Last**,
+**Event item** or **None** to choose.
+
+## Reading one item of a batch
+
+A reference can point inside an output with a dot path, on cloud and on edge:
+
+| Reference | Reads |
+| --------- | ----- |
+| `first.payload` | `payload` of the first item |
+| `items.0.payload` | the same, by index |
+| `items.-1` | the last item (negative indices count from the end) |
+
+When you wire a list output, such as `items` or `frames`, into an input that
+takes one item, the output menu also offers **→ first item** and **→ last
+item** (not for a Buffer's `items` or `frames` into an image, video or audio
+input: their items are objects), and warns if the whole list is picked. Inputs
+that take a list or JSON receive the whole list.
+
+## What the nodes after a Buffer can read
+
+They can read the Buffer's output and the outputs of the nodes before it. Those
+outputs come from the run that added the batch's **last** item.
+
+The editor refuses a workflow where:
+
+- a node after the Buffer also reads a node on another branch;
+- a Buffer follows another Buffer;
+- a Buffer is inside a Loop, or followed by a Loop or a node that runs on any
+  input;
+- a node that reads the live camera frame (OpenCV, Barcode Reader, Spatial
+  Filter, Anonymize) follows a Buffer fed by Camera Frame: put it before the
+  Buffer, or use the Buffer's `image_bytes` after it;
+- the workflow has more than one trigger.
+
+## Recipe: one alert per burst
+
+1. Turn on **Run on edge** for the workflow.
+2. **MQTT trigger** on the event topic.
+3. **Buffer**: Max items 64, Max wait 30 s, Quiet time 2 s.
+4. **Send Alert**, with the description mapped to the Buffer's `count`.
+
+When 12 messages arrive within a second and a half, one alert is raised about
+2 seconds after the last one, and one execution is recorded.

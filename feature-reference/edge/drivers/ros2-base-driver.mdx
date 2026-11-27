@@ -19,7 +19,7 @@ Import:
 from cyberwave.driver.ros2 import BaseROS2Driver, Ros2TopicSpec
 ```
 
-**Typical goal:** stream ROS topics (joint states, odometry, custom msgs) into Cyberwave MQTT with **minimal driver code** — often **under 100 lines** for a forward-only bridge. Reference: [`ursim_driver.py`](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-sdks/cyberwave-python/examples/ursim_driver.py).
+**Typical goal:** stream ROS topics (joint states, odometry, custom msgs) into Cyberwave MQTT with **minimal driver code** — often **under 100 lines** for a forward-only bridge. Reference: [`ursim_driver.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/ursim_driver.py).
 
 {/* TODO(docs): add the "UR Sim → Cyberwave: build a ROS 2 driver in minutes" video link */}
 
@@ -163,7 +163,7 @@ Event hooks **keep** `on_` where there is no conflict: **`on_topic_name_changed(
 | **`define_interface`** with `add_publisher(..., from_ros=Ros2TopicSpec(...))` | Yes |
 | **`CallbackGroup()`** with **no** callback for auto `JointState` serialize | Typical for joints |
 | **`configure` / `connect_to_device` / `activate`** | May be empty `pass` / log only |
-| **`CW_ROS2_AUTO_ACTIVATE=true`** | Strongly recommended in dev |
+| **`CW_ROS2_AUTO_ACTIVATE=true`** | Strongly recommended during development |
 | **`CYBERWAVE_API_KEY`**, **`CYBERWAVE_TWIN_UUID`** | Yes at runtime |
 | ROS graph publishing the topic (e.g. `/joint_states`) | Yes |
 
@@ -240,7 +240,7 @@ Logs (throttled ~5s):
 
 ### Joint `/update` payload shape (default)
 
-**Flat** keys for Vector / twin telemetry compatibility:
+**Flat** keys for twin telemetry compatibility:
 
 ```json
 {
@@ -267,7 +267,7 @@ A topic registered as **both** a `from_ros` publisher (`edge`) and a command lis
 
 ### Arm drivers: mixin listener + `from_ros` publisher
 
-For a full manipulator stack, **do not** register `joint/update` yourself. Compose [driver mixins](/feature-reference/edge/drivers/driver-mixins). The **[Piper driver](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-edge-nodes/piper/public/cw_piper/driver.py)** shows the full integration.
+For a full manipulator stack, **do not** register `joint/update` yourself. Compose [driver mixins](/feature-reference/edge/drivers/driver-mixins). The Piper driver shows the full integration.
 
 | Registration | Owner |
 | ------------ | ----- |
@@ -473,7 +473,7 @@ Node name / namespace can be overridden via ROS env helpers (`node_name_from_env
 | `CYBERWAVE_BASE_URL` | API base |
 | `CYBERWAVE_MQTT_*` | Broker connection |
 
-Backend lifecycle alerts are **always** synced after connect (not env-configurable). Set **`REGISTRY_ID`** on the driver class (not via env).
+Lifecycle alerts are **always** enabled after connect (not env-configurable). Set **`REGISTRY_ID`** on the driver class (not via env).
 
 ### ROS 2 driver specific
 
@@ -569,7 +569,7 @@ This keeps all rclpy calls on the thread that owns the node and avoids cross-thr
 
 ## Reference driver: UR Sim (`ursim_driver.py`)
 
-Full listing (~75 lines) in the monorepo. Structure:
+Full listing (~75 lines) in the SDK examples. Structure:
 
 ```python
 class UrSimDriver(BaseROS2Driver):
@@ -627,7 +627,7 @@ Protocol layers (TCP, ROS DDS, MQTT): **[Custom integrations](/robots/add-your-r
 | Vendor launch fails or msgs won't import | Read `CW_MANAGED_LAUNCH_LOG`; set `ros_setup`/`ros_overlay` (or `ROS_SETUP`/`ROS_SETUP_OVERLAY`) |
 | `discovering type for /topic` then error | Topic not published on graph within `discovery_timeout_s` |
 | MQTT connected but flat joints empty | `JointState.name` / `position` length mismatch — SDK returns `None`, skips publish |
-| No twin UI alerts | Twin not bound yet, or connect failed before `_enable_backend_alerts` |
+| No twin UI alerts | Twin not bound yet, or connect failed before alerts were enabled |
 | `TimeoutError` after 300s | ROS never reached active — check executor spinning and lifecycle |
 
 ---

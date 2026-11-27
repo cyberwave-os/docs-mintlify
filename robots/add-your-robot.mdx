@@ -296,7 +296,15 @@ Capabilities decide which UI panels and SDK classes your twin gets. They live in
 
 The full table is in the [feature-to-capability matrix](/feature-reference/digital-twins).
 
-Fix them on the asset page's onboarding checklist, in the JSON editor ([Editing a universal schema](/feature-reference/edit-universal-schema)), or from the SDK:
+The asset page's **Capabilities** tab shows what is declared. When a declaration that a live feature needs is missing, the tab gets a ⚠ marker and lists **Compatibility notes** at the top. Each note says what stays available (preview, simulation) and what is disabled until you declare the value. Example: a flight altitude limit, or a sensor's maximum range.
+
+![Capabilities tab with compatibility notes](/images/asset-capabilities-tab.png)
+
+Editors see a **Fix** button on each note: it opens **Edit Capabilities** on the section that needs the value. Obstacle avoidance shows **Review** instead, because it is a safety claim: turn it on only if the robot or its driver really provides it. Notes about the live runtime (navigation commands, image capture) can't be fixed by editing the asset: the deployed driver or edge has to advertise them.
+
+**Suggest values** looks up the missing numbers (flight altitude limit, sensor range and field of view) in public specs, searching the web when the configured model supports it. Each value shows its source, a link when there is one, and a confidence level; low-confidence values start unticked. **Fill in editor** puts the values you keep into Edit Capabilities, and nothing is saved until you save there. Safety declarations such as obstacle avoidance are never suggested.
+
+You can also fix them in the JSON editor ([Editing a universal schema](/feature-reference/edit-universal-schema)), or from the SDK:
 
 ```python
 asset = cw.assets.get("acme/catalog/my-arm")
@@ -520,7 +528,7 @@ twin.commands.stop()
 twin.commands.move_forward(linear_x=0.3, duration=0.5, rate_hz=10)
 ```
 
-`set_schema` compiles the file on the platform (`POST /api/v1/twins/{uuid}/driver-schema`), writes `metadata.mqtt` on the twin, refreshes the catalog cache, and re-binds `twin.commands.<name>`. Re-run it whenever you change the manifest so teleop, agents and SDK callers stay aligned with your driver. Details: [Writing compatible drivers](/feature-reference/edge/drivers/writing-compatible-drivers).
+`set_schema` compiles the file on the platform (`POST /api/v1/twins/{uuid}/driver-schema`), writes `metadata.mqtt` on the twin, and re-binds `twin.commands.<name>`. Re-run it whenever you change the manifest so teleop, agents and SDK callers stay aligned with your driver. Details: [Writing compatible drivers](/feature-reference/edge/drivers/writing-compatible-drivers).
 
 <Info>
   `set_schema` updates **this twin's** metadata, so you can iterate without

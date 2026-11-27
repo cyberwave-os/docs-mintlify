@@ -45,6 +45,18 @@ handler can disambiguate multi-sensor twins at runtime.
   `depth_camera`, etc.).
 </Note>
 
+## Several cameras on one twin
+
+When one twin has several camera sensors (one driver with `CAMERAS`), the twin is the same for all of them; the **sensor** decides which camera draws the boxes. Pass the frame's sensor as `stream`:
+
+```python
+@cw.on_frame(ROBOT_TWIN)
+def on_frame(frame, ctx):
+    model.predict(frame, confidence=0.5, stream=ctx.sensor_name)
+```
+
+The detections payload then names `sensor`, and the camera driver draws the boxes on that camera only. Detections that name no sensor are drawn only by a driver with a single camera; a driver with several never guesses.
+
 ## Cross-twin synchronized hooks
 
 For stereo vision or cross-camera fusion, use `@cw.on_synchronized` with `twin_channels` to synchronize frames from different twins:
@@ -70,6 +82,7 @@ The single-twin `@cw.on_synchronized(twin_uuid, channels)` API continues to work
 | API | Change |
 | --- | --- |
 | `model.predict(..., twin_uuid=)` | Route detections to a specific twin |
+| `model.predict(..., stream=)` | Name the camera sensor, so a multi-camera driver draws the boxes on that camera |
 | `DataBus.publish(..., twin_uuid=)` | Override the default twin for a publish |
 | `DataBus.publish_raw(..., twin_uuid=)` | Override the default twin for raw publish |
 | `@cw.on_synchronized(twin_channels=)` | Cross-twin synchronized hook mode |

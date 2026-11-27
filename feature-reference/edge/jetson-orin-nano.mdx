@@ -226,7 +226,7 @@ ping 192.168.123.161
 
 ## Step 9: ML worker image (JetPack 7.2+)
 
-Cyberwave ships a Jetson-native ML worker image (`cyberwaveos/edge-ml-worker:<channel>-jetson`). On any host where the Cyberwave edge stack detects Jetson hardware, it pulls the `-jetson` tag automatically — no configuration required.
+Cyberwave ships a Jetson-native ML worker image (`cyberwaveos/edge-ml-worker:<version>-jetson`). On any host where the Cyberwave edge stack detects Jetson hardware, it pulls the `-jetson` tag automatically — no configuration required.
 
 The `-jetson` image runs on the entire Jetson Orin family (all `sm_87`), with GPU-accelerated YOLOE, YOLO-World, and ONNX Runtime out of the box. Ultralytics fused-attention ops execute on native sm_87 kernels — no CPU fallback.
 
@@ -262,7 +262,7 @@ On a Jetson host, the Cyberwave edge stack:
 - Passes `--runtime nvidia -e NVIDIA_VISIBLE_DEVICES=all -e NVIDIA_DRIVER_CAPABILITIES=all` so the nvidia-container-runtime injects the Tegra iGPU device files and the CUDA driver into the container.
 - Skips Hailo and discrete-GPU device passthrough.
 
-If the `-jetson` tag can't be pulled (e.g. an ad-hoc branch build), the edge stack falls back to the base CPU tag and logs the demotion. Everything keeps running, just on CPU.
+If the `-jetson` tag can't be pulled (e.g. a custom build), the edge stack falls back to the base CPU tag and logs the demotion. Everything keeps running, just on CPU.
 
 ### Verifying it's using the Jetson image
 
@@ -283,7 +283,7 @@ You should see `True` and a Tegra device name (for example `Orin`).
 
 ### Overriding the auto-selection
 
-If you need to pin a specific tag (custom build, hot-fix loop), set `CYBERWAVE_WORKER_IMAGE` in `~/.cyberwave/credentials.json` and restart the edge service:
+If you need to pin a specific tag (custom build), set `CYBERWAVE_WORKER_IMAGE` in `~/.cyberwave/credentials.json` and restart the edge service:
 
 ```json
 {

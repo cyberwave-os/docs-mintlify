@@ -14,10 +14,10 @@
         "tab": "Docs",
         "groups": [
           {
-            "group": "Welcome",
+            "group": "Get started",
             "icon": "rocket",
             "pages": [
-              "overview",
+              "overview/index",
               "get-started/quickstart",
               "get-started/choose-your-path",
               "get-started/core-concepts",
@@ -28,10 +28,17 @@
             "group": "Build with AI",
             "icon": "wand-magic-sparkles",
             "pages": [
-              "ai/overview",
-              "overview/first-ai-loop",
-              "ai/connect-your-ai-tool",
-              "ai/prompt-library",
+              {
+                "group": "Start here",
+                "icon": "flag",
+                "pages": [
+                  "ai/overview",
+                  "overview/first-ai-loop",
+                  "ai/connect-your-ai-tool",
+                  "ai/prompt-library",
+                  "ai/control"
+                ]
+              },
               {
                 "group": "Agents",
                 "icon": "comments",
@@ -39,7 +46,8 @@
                   "ai/agents",
                   "ai/environment-assistant",
                   "ai/control-agent",
-                  "ai/workflow-assistant"
+                  "ai/workflow-assistant",
+                  "ai/safety"
                 ]
               },
               {
@@ -47,14 +55,13 @@
                 "icon": "brain",
                 "pages": [
                   "ai/models",
-                  "feature-reference/ml-models",
+                  "feature-reference/ml-models/index",
                   "feature-reference/ml-models/structured-actions",
                   "feature-reference/ml-models/playground",
                   "feature-reference/ml-models/uploading-your-model",
                   "feature-reference/ml-models/speech-to-text"
                 ]
               },
-              "ai/control",
               {
                 "group": "Workflows",
                 "icon": "diagram-project",
@@ -64,6 +71,7 @@
                   "feature-reference/workflows/call-model-prompt",
                   "feature-reference/workflows/call-model-tracking",
                   "feature-reference/workflows/reusing-chains",
+                  "feature-reference/workflows/expressions",
                   "feature-reference/workflows/edge-dependencies",
                   {
                     "group": "Voice commands",
@@ -83,24 +91,29 @@
                     ]
                   }
                 ]
-              },
-              "ai/safety"
+              }
             ]
           },
           {
             "group": "Simulate & test",
             "icon": "cube",
             "pages": [
-              "overview/hello-robot",
-              "overview/features/simulation",
-              "feature-reference/environment-editor/simulation-view",
-              "feature-reference/environment-editor/simulation-timing",
+              {
+                "group": "Simulation",
+                "icon": "play",
+                "pages": [
+                  "overview/hello-robot",
+                  "overview/features/simulation",
+                  "feature-reference/environment-editor/simulation-view",
+                  "feature-reference/environment-editor/simulation-timing"
+                ]
+              },
               {
                 "group": "Environments & editor",
                 "icon": "map",
                 "pages": [
                   "overview/features/environment",
-                  "feature-reference/environment-editor",
+                  "feature-reference/environment-editor/index",
                   "feature-reference/environment-editor/assistant-asset-generation",
                   "feature-reference/environment-editor/environment-templates",
                   "feature-reference/environment-editor/fixed-base-objects",
@@ -156,9 +169,15 @@
             "group": "Connect hardware",
             "icon": "plug",
             "pages": [
-              "robots/overview",
-              "overview/supported-hardware",
-              "overview/develop-remote-hardware",
+              {
+                "group": "Start here",
+                "icon": "flag",
+                "pages": [
+                  "robots/overview",
+                  "overview/supported-hardware",
+                  "overview/develop-remote-hardware"
+                ]
+              },
               {
                 "group": "Robot arms",
                 "icon": "robot",
@@ -234,8 +253,14 @@
             "group": "Train & improve",
             "icon": "chart-line",
             "pages": [
-              "overview/features/models-and-datasets",
-              "overview/features/replay-and-historical-data",
+              {
+                "group": "Start here",
+                "icon": "flag",
+                "pages": [
+                  "overview/features/models-and-datasets",
+                  "overview/features/replay-and-historical-data"
+                ]
+              },
               {
                 "group": "Datasets",
                 "icon": "database",
@@ -280,9 +305,16 @@
             "group": "Deploy & operate",
             "icon": "server",
             "pages": [
-              "feature-reference/workflows/workers/overview",
               {
-                "group": "Vision pipelines on the edge",
+                "group": "Workers & cloud nodes",
+                "icon": "server",
+                "pages": [
+                  "feature-reference/workflows/workers/overview",
+                  "overview/tools/cloud-node"
+                ]
+              },
+              {
+                "group": "Vision pipelines",
                 "icon": "filter",
                 "pages": [
                   "feature-reference/edge/drivers/frame-filters",
@@ -292,7 +324,6 @@
                   "feature-reference/edge/drivers/security-pipeline"
                 ]
               },
-              "overview/tools/cloud-node",
               {
                 "group": "Fleet and alerts",
                 "icon": "bell",
@@ -321,73 +352,73 @@
         "tab": "Tutorials",
         "groups": [
           {
-            "group": "All tutorials",
-            "icon": "grip",
+            "group": "Tutorials",
+            "icon": "graduation-cap",
             "pages": [
-              "tutorials"
-            ]
-          },
-          {
-            "group": "No hardware",
-            "icon": "laptop",
-            "pages": [
-              "tutorials/ur-sim-cyberwave-driver",
-              "tutorials/train-rl-policy",
-              "feature-reference/rl-task-walkthrough"
-            ]
-          },
-          {
-            "group": "Laptop camera only",
-            "icon": "camera",
-            "pages": [
-              "tutorials/edge-to-cloud-vlm",
-              "tutorials/intrusion-detection"
-            ]
-          },
-          {
-            "group": "SO-101 arm",
-            "icon": "robot",
-            "pages": [
-              "tutorials/train-vla-cyberwave",
-              "tutorials/so101-natural-language-agent",
-              "tutorials/so101-voice-agent-workflows",
-              "tutorials/so101-voice-pick-and-place"
-            ]
-          },
-          {
-            "group": "Mobile robots & drones",
-            "icon": "truck-monster",
-            "pages": [
-              "tutorials/ugv-voice-controlled",
-              "tutorials/ugv-beast-workflows",
-              "tutorials/dji-mini-workflows",
-              "tutorials/dji-mini-3-site-sweep",
-              "tutorials/agilex-piper-workflows"
-            ]
-          },
-          {
-            "group": "Built by the community",
-            "icon": "users",
-            "pages": [
-              "tutorials/sandwich-robot-smolvla",
-              "tutorials/cloth-folding-so101",
-              "tutorials/so101-zero-shot-picking-cell"
-            ]
-          },
-          {
-            "group": "Demos (video)",
-            "icon": "film",
-            "pages": [
-              "tutorials/rover-ai-mission",
-              "tutorials/go2-digital-to-physical"
-            ]
-          },
-          {
-            "group": "Ideas",
-            "icon": "lightbulb",
-            "pages": [
-              "overview/idea-cookbook",
-              "overview/starter-kit-builders"
+              "tutorials/index",
+              {
+                "group": "No hardware",
+                "icon": "laptop",
+                "pages": [
+                  "tutorials/ur-sim-cyberwave-driver",
+                  "tutorials/train-rl-policy",
+                  "feature-reference/rl-task-walkthrough"
+                ]
+              },
+              {
+                "group": "Laptop camera only",
+                "icon": "camera",
+                "pages": [
+                  "tutorials/edge-to-cloud-vlm",
+                  "tutorials/intrusion-detection"
+                ]
+              },
+              {
+                "group": "SO-101 arm",
+                "icon": "robot",
+                "pages": [
+                  "tutorials/train-vla-cyberwave",
+                  "tutorials/so101-natural-language-agent",
+                  "tutorials/so101-voice-agent-workflows",
+                  "tutorials/so101-voice-pick-and-place"
+                ]
+              },
+              {
+                "group": "Mobile robots & drones",
+                "icon": "truck-monster",
+                "pages": [
+                  "tutorials/ugv-voice-controlled",
+                  "tutorials/ugv-beast-workflows",
+                  "tutorials/dji-mini-workflows",
+                  "tutorials/dji-mini-3-site-sweep",
+                  "tutorials/agilex-piper-workflows"
+                ]
+              },
+              {
+                "group": "Built by the community",
+                "icon": "users",
+                "pages": [
+                  "tutorials/sandwich-robot-smolvla",
+                  "tutorials/cloth-folding-so101",
+                  "tutorials/so101-zero-shot-picking-cell"
+                ]
+              },
+              {
+                "group": "Demos (video)",
+                "icon": "film",
+                "pages": [
+                  "tutorials/rover-ai-mission",
+                  "tutorials/go2-digital-to-physical"
+                ]
+              },
+              {
+                "group": "Ideas",
+                "icon": "lightbulb",
+                "pages": [
+                  "overview/idea-cookbook",
+                  "overview/starter-kit-builders"
+                ]
+              }
             ]
           }
         ]
@@ -396,21 +427,27 @@
         "tab": "Reference",
         "groups": [
           {
-            "group": "SDKs & CLI",
+            "group": "SDKs & tools",
             "icon": "code",
             "pages": [
-              "overview/tools/python-sdk",
-              "overview/tools/models/overview",
-              "overview/tools/cli",
-              "overview/tools/cpp-sdk"
-            ]
-          },
-          {
-            "group": "MCP & agent skill",
-            "icon": "plug",
-            "pages": [
-              "overview/tools/mcp-server",
-              "overview/tools/claude-skill"
+              {
+                "group": "SDKs & CLI",
+                "icon": "code",
+                "pages": [
+                  "overview/tools/python-sdk",
+                  "overview/tools/models/overview",
+                  "overview/tools/cli",
+                  "overview/tools/cpp-sdk"
+                ]
+              },
+              {
+                "group": "MCP & agent skill",
+                "icon": "plug",
+                "pages": [
+                  "overview/tools/mcp-server",
+                  "overview/tools/claude-skill"
+                ]
+              }
             ]
           },
           {
@@ -425,6 +462,8 @@
                   "feature-reference/workflows/mqtt-trigger",
                   "feature-reference/workflows/audio-track/overview",
                   "feature-reference/workflows/twin",
+                  "feature-reference/workflows/data-windows",
+                  "feature-reference/workflows/buffer",
                   "feature-reference/workflows/get-pose"
                 ]
               },
@@ -470,58 +509,70 @@
             ]
           },
           {
-            "group": "Driver SDK",
+            "group": "Drivers & edge",
             "icon": "gears",
             "pages": [
-              "feature-reference/edge/drivers/base-driver-class",
-              "feature-reference/edge/drivers/ros2-base-driver",
-              "feature-reference/edge/drivers/driver-mixins",
-              "feature-reference/edge/drivers/arm-motion-building-blocks",
-              "feature-reference/edge/drivers/integrating-moveit",
-              "feature-reference/edge/drivers/stress-testing-your-driver",
-              "feature-reference/edge/drivers/joint-motion-shaping",
-              "feature-reference/edge/drivers/data-wire-format",
-              "feature-reference/edge/drivers/data-fusion",
-              "feature-reference/edge/drivers/data-synchronized-hooks",
-              "feature-reference/edge/drivers/navigation-coordinate-convention"
+              {
+                "group": "Driver SDK",
+                "icon": "gears",
+                "pages": [
+                  "feature-reference/edge/drivers/base-driver-class",
+                  "feature-reference/edge/drivers/ros2-base-driver",
+                  "feature-reference/edge/drivers/driver-mixins",
+                  "feature-reference/edge/drivers/arm-motion-building-blocks",
+                  "feature-reference/edge/drivers/integrating-moveit",
+                  "feature-reference/edge/drivers/stress-testing-your-driver",
+                  "feature-reference/edge/drivers/joint-motion-shaping",
+                  "feature-reference/edge/drivers/data-wire-format",
+                  "feature-reference/edge/drivers/data-fusion",
+                  "feature-reference/edge/drivers/data-synchronized-hooks",
+                  "feature-reference/edge/drivers/navigation-coordinate-convention"
+                ]
+              },
+              {
+                "group": "Edge internals",
+                "icon": "microchip",
+                "pages": [
+                  "feature-reference/workflows/workers/bench",
+                  "feature-reference/workflows/workers/model-cache",
+                  "feature-reference/edge/drivers/camera-v4l2-backend",
+                  "feature-reference/edge/drivers/camera-hardware-h264-encoding",
+                  "feature-reference/workflows/wake-word-engine/models-and-compile"
+                ]
+              }
             ]
           },
           {
-            "group": "Edge internals",
-            "icon": "microchip",
-            "pages": [
-              "feature-reference/workflows/workers/bench",
-              "feature-reference/workflows/workers/model-cache",
-              "feature-reference/edge/drivers/camera-v4l2-backend",
-              "feature-reference/edge/drivers/camera-hardware-h264-encoding",
-              "feature-reference/workflows/wake-word-engine/models-and-compile"
-            ]
-          },
-          {
-            "group": "Asset & config files",
-            "icon": "file-code",
-            "pages": [
-              "feature-reference/manifest",
-              "feature-reference/catalog/upload-asset",
-              "feature-reference/asset-schema-variants",
-              "feature-reference/concepts/slug-system"
-            ]
-          },
-          {
-            "group": "Accounts & access",
-            "icon": "key",
-            "pages": [
-              "feature-reference/api-tokens",
-              "billing/credits"
-            ]
-          },
-          {
-            "group": "Architecture & glossary",
+            "group": "Platform",
             "icon": "sitemap",
             "pages": [
-              "feature-reference/architecture/architecture",
-              "feature-reference/architecture/core-data-hierarchy",
-              "feature-reference/architecture/key-concepts"
+              {
+                "group": "Asset & config files",
+                "icon": "file-code",
+                "pages": [
+                  "feature-reference/manifest",
+                  "feature-reference/catalog/upload-asset",
+                  "feature-reference/asset-schema-variants",
+                  "feature-reference/concepts/slug-system"
+                ]
+              },
+              {
+                "group": "Accounts & access",
+                "icon": "key",
+                "pages": [
+                  "feature-reference/api-tokens",
+                  "billing/credits"
+                ]
+              },
+              {
+                "group": "Architecture & glossary",
+                "icon": "sitemap",
+                "pages": [
+                  "feature-reference/architecture/architecture",
+                  "feature-reference/architecture/core-data-hierarchy",
+                  "feature-reference/architecture/key-concepts"
+                ]
+              }
             ]
           },
           {
@@ -529,7 +580,7 @@
             "icon": "life-ring",
             "pages": [
               "support/troubleshooting",
-              "support"
+              "support/index"
             ]
           }
         ]
@@ -836,12 +887,7 @@
         "label": "Status",
         "href": "https://status.cyberwave.com"
       }
-    ],
-    "primary": {
-      "type": "github",
-      "label": "official sdk",
-      "href": "https://github.com/cyberwave-os/cyberwave-python"
-    }
+    ]
   },
   "contextual": {
     "options": [
@@ -1823,26 +1869,6 @@
     {
       "source": "/tutorials/bring-your-own-hardware",
       "destination": "/robots/add-your-robot"
-    },
-    {
-      "source": "/feature-reference/ml-models/index",
-      "destination": "/feature-reference/ml-models"
-    },
-    {
-      "source": "/feature-reference/environment-editor/index",
-      "destination": "/feature-reference/environment-editor"
-    },
-    {
-      "source": "/support/index",
-      "destination": "/support"
-    },
-    {
-      "source": "/tutorials/index",
-      "destination": "/tutorials"
-    },
-    {
-      "source": "/overview/index",
-      "destination": "/overview"
     }
   ]
 }

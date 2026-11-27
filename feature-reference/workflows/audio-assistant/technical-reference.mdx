@@ -1,6 +1,6 @@
 ---
 title: "Audio assistant technical reference"
-description: "Audio Assistant I/O schema, buffering, and runtime architecture."
+description: "Audio Assistant I/O schema, buffering, and runtime behavior."
 icon: "book"
 ---
 
@@ -19,7 +19,7 @@ Stored in `node.parameters` unless wired from upstream:
 | `event_cooldown_s` | — | ✓ | SSG seconds between alerts |
 | `custom_event_labels` | — | ✓ | SSG custom scenario label list |
 
-Runtime audio is resolved automatically from upstream `audio` via `_CwAudioIngress` (no manual `sample_rate_hz` input).
+Runtime audio is resolved automatically from upstream `audio` (no manual `sample_rate_hz` input).
 
 ## VA outputs
 
@@ -50,26 +50,26 @@ Runtime audio is resolved automatically from upstream `audio` via `_CwAudioIngre
 
 ## Audio ingress (shared)
 
-All modalities use `_CwAudioIngress.adapt_safe()`:
+All modalities share the same audio ingress:
 
 - **Canonical format:** numpy `int16`, 16000 Hz, mono, key `audio`
 - **Accepted inputs:** int16/float32 numpy, raw PCM bytes, WAV bytes
 - **Passthrough:** int16 @ 16 kHz mono is zero-copy
 
-## VA architecture
+## VA behavior
 
-`_CwAudioStreamProcessor` + Silero `VADIterator`:
+Silero VAD:
 
 1. Incoming chunks reframed to **512 samples** (32 ms @ 16 kHz)
 2. Ring buffer stores float32 audio; indices from VAD mark utterance bounds
 3. On speech end: slice buffer → int16 segment → emit
 
-## SSG architecture
+## SSG behavior
 
-`_CwAaAstGuard` + Hugging Face AST:
+Hugging Face AST:
 
 1. Accumulate int16 chunks until `window_samples` (from buffer preset, default 4 s)
-2. Convert to float32, run `ASTFeatureExtractor` + `ASTForAudioClassification`
+2. Convert to float32 and run the AST model
 3. Multi-label sigmoid over 527 classes; filter by active scenario labels only
 4. If `max(matching_probs) >= confidence_threshold` → emit alert + audio window
 5. Slide buffer by `hop_samples` (50% overlap); enforce `event_cooldown_s`
@@ -89,7 +89,7 @@ screaming        → Screaming, Yell, Shout, Children shouting
 custom           → user-provided substrings
 ```
 
-Matching is case-insensitive substring: `target in class_label.lower()`.
+Matching is case-insensitive substring.
 
 ## Buffer presets (shared field)
 
@@ -104,7 +104,7 @@ SSG enforces a minimum analysis window of **1.0 s**.
 
 ## Alert attribution
 
-On SSG alert, `_source_summary` includes `kind: audio_assistant`, `modality: sound_security_guard`, `sub_modality`, `event_label`, and `event_confidence` for Send Alert `source_chain` metadata.
+On SSG alert, the Send Alert `source_chain` metadata includes `kind: audio_assistant`, `modality: sound_security_guard`, `sub_modality`, `event_label`, and `event_confidence`.
 
 ## Edge cases
 

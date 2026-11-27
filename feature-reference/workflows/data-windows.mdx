@@ -1,0 +1,174 @@
+---
+title: "Data windows"
+description: "Give a model the last minute of a twin's readings, or a slice of a dataset, from a Data Source node."
+icon: "chart-line"
+---
+
+A workflow run usually sees one message or one camera frame. Models that need
+context, such as an anomaly detector over the last minute of readings, need a
+**window** instead. The **Data Source** node has two window types:
+
+| Type | Reads | The window ends at |
+| ---- | ----- | ------------------ |
+| **Metrics window** | One twin's last readings per metric, live or replayed | Now, or the replay playhead |
+| **Dataset window** | Channels of an imported time-series dataset, with no twin | A time you choose (default: the last reading) |
+
+Both return the same shape, so the model and the nodes after it do not care
+where the readings came from.
+
+```text
+Schedule (every 10 s)
+  → Data Source  [Metrics window · twin = node-12 · inlet_temp, cpu_temp · last 60]
+  → Call Model   [your anomaly model · window = series]
+  → Conditional  [score > 0.7]
+  → Send Alert
+```
+
+## Metrics window
+
+Pick a twin, then choose its **metrics** one of three ways:
+
+| Metrics | Reads |
+| ------- | ----- |
+| **Pick** | Up to 32 metrics by name. The list shows the sensor slots bound to a dataset first (marked **replay**), then the metrics the twin reported lately. A name the twin has not reported yet can be typed in. |
+| **All** | Every metric of the twin, looked up when the workflow runs (up to 32) |
+| **By type** | The twin's sensors of one type, such as all temperature sensors, looked up when the workflow runs |
+
+When the twin is **From loop item**, **All** is preselected: each twin of the
+Loop then reads its own metrics, even when the Loop mixes assets, and a twin
+without any, such as a rack among its servers, reads an empty window. **Pick**
+lists what the Loop's twins report, each name with how many of them have it
+(for example `20/20`).
+
+| Setting | Options |
+| ------- | ------- |
+| **Window** | The last 10, 30, 60 or 100 readings per metric, or every reading of the last 1, 5, 15 or 60 minutes (up to 100 each). **Custom**: 1 to 100 readings, or a span from 10 seconds to 24 hours. With **Since last run**, a number of readings only: the most each metric reads per run |
+| **Max age** | 1, 5, 15, 60 minutes or 1 day, counted back from the window's end. **Custom**: 10 seconds to 30 days. Not used with **Since last run** |
+| **Source** | **Auto**, **Live** or **Recorded** (below) |
+| **Read** | **Newest readings** on every run, or **Since last run** (see [Consecutive windows](#consecutive-windows)) |
+| **Ready after** | Optional, 1 to 1000: report `ready` once this many new readings arrived since the node was last ready. The first run is always ready |
+
+### Live and replayed readings
+
+Each metric is resolved on its own, at every run:
+
+- A metric **not bound** to a dataset is read live.
+- A **bound** metric is read from its dataset while a replay that covers it is
+  playing or paused, and the window ends at the replay's playhead. Otherwise it
+  is read live, unless the slot is set to always use recorded data.
+- **Recorded** forces the dataset (the window ends at the playhead, or at the
+  dataset's last reading when nothing is replaying). **Live** forces live data.
+  With **All** or **By type**, **Recorded** reads only the twin's sensors bound
+  to a dataset.
+
+So the same workflow scores a live rack and a rack replaying a dataset, without
+changes. `sources` in the output says where each list came from.
+
+## Dataset window
+
+Pick a time-series dataset. Its signature shows what it covers: time range,
+readings, channels, signals and things, and types. Datasets of other kinds are
+listed but greyed out: they can't be read from workflows yet.
+
+Choose channels in one of two ways:
+
+- **Pick**: search for channels, or open **Browse** for large datasets. The
+  browser narrows by type, signal and thing, and shows a signal × thing grid;
+  click a signal or thing name to take its whole row or column. Up to 32
+  channels.
+- **Filter**: take every channel that matches a signal, thing, type or text. The
+  filter is resolved again on every run, so a re-imported dataset with new
+  things is picked up. It must match 1 to 32 channels.
+
+| Range | Each run reads |
+| ----- | -------------- |
+| **Last N readings** | The newest readings per channel up to **Ends at** |
+| **Between** | Every reading from **Start** to **Ends at** (at most 24 hours) |
+| **Step through** | The next step of data time (10 s, 1 min, 10 min, 1 h or 1 day), from **Start at** (default: the first reading) |
+| **Follow replay** | What the environment's replay played since the previous run, up to **Window** readings per channel; the rest on the next run |
+
+**Last N readings** takes **Window** and **Max age** as the Metrics window
+does, with one difference: a time window returns every reading of the span, up
+to 100,000 rows in all, not 100 per channel.
+
+**Ends at** is usually a reference, for example a Loop item stepping through a
+day, which backfills a model over a dataset without any twin.
+
+With **Step through**, a channel reads at most 10,000 readings per step and
+catches up on the next runs, with `truncated`. **At the end** of the data,
+**Stop** (the default) returns empty windows with `cursor.exhausted`, and
+**Loop** starts again at **Start at**.
+
+**Follow replay** needs a replay playing or paused in the environment. While
+there is none, the run fails with "No replay is playing or paused in this
+environment."
+
+## Output
+
+| Field | Content |
+| ----- | ------- |
+| `series` | `{name: [oldest … newest]}`, per metric or channel. Map it to your model's input. |
+| `timestamps` | `{name: [ISO-8601 …]}` in data time, aligned with `series` |
+| `units` | `{name: unit}` |
+| `counts`, `complete` | Readings per name, and whether every name got a full window |
+| `sources` | `{name: "live" \| "recorded" \| "dataset"}` |
+| `window_end`, `newest_at` | Where the window ends, and its newest reading |
+| `columns` | Dataset and recorded names: the channel's signal, thing, type, unit and label |
+| `truncated` | A row cap stopped the read |
+| `cursor` | Consecutive windows only: `{from, to, exhausted, seq}` |
+| `ready`, `new_readings` | Only with **Ready after** |
+| `sensor_uuid` | Metrics window: the twin read (cloud and edge) |
+
+A short window is not an error: it comes back shorter, with `complete: false`.
+
+## Consecutive windows
+
+**Since last run** (Metrics window), **Step through** and **Follow replay**
+(Dataset window) read the next slice on every run: each reading once, with no
+overlap and no gap, however late a run starts. A retried run gets the same
+slice back. Each run records the span it read in the run history.
+
+The inspector shows where the node is ("At 14 Feb 2022 10:50 · read 42"), with
+**Reset** to start over. Each twin of a Loop keeps its own position. A node
+reads at most one window per run (one per twin in a Loop over twins), however
+often it fires in that run: Loop iterations whose items don't change the twin
+or dataset, and re-activations of a node set to run on any input, get the same
+window back, and the stream doesn't advance.
+
+**Ready after** separates *how much* the model sees from *how often* it scores:
+with a window of the last 60 readings, a 10-second schedule and Ready after 60,
+`ready` is true on the first run, then about once a minute when each metric
+reports once a second. Put a Conditional on `ready` before the model. A
+metric read from a replay counts what the replay played, from the dataset, so
+a replay faster than the window still gets to `ready` on time.
+
+## Recipe: anomaly detection on a rack
+
+1. **Schedule** every 10 seconds.
+2. **Loop** over the rack's servers: under **Select twins**, **By name**, press
+   **All** on the rack. (**By type** picks every twin of the server asset in
+   the environment, on every rack.)
+3. **Data Source**, Metrics window, twin **From loop item**, the sensors you
+   model, last 60 readings, Read **Newest readings**, Ready after 60.
+4. **Conditional** on `ready`.
+5. **Call Model** with your model; map its inputs, for example `window` to the
+   Data Source's `series` and `units` to `units`.
+6. **Conditional** on the score, then **Send Alert**. Its **Target Twin** is
+   the same for every server, so map the alert's **Description** to the Loop's
+   `item` to say which server it is.
+
+It works on live racks and on racks replaying a dataset. To test a model on
+history first, use a second workflow without the Loop: **Schedule** → **Data
+Source**, Dataset window with one server's channels, Range **Step through** →
+**Call Model**. Each run scores the next step of the data.
+
+## Limits
+
+- Up to 32 metrics or channels; window sizes are the presets or custom values
+  inside the ranges above, step sizes are the presets.
+- Live readings are read from what the twin's metrics stored. Readings from a
+  replay are read from the dataset, at the playhead.
+- On edge, the window is read through the platform API, so the edge device needs
+  network access to it.
+- On edge, a Loop compiles one copy of its steps per item, at most 64 in all: a
+  rack or room with more twins needs the cloud.
