@@ -82,7 +82,7 @@ sequenceDiagram
     for missing in plan.get("missing_requirements", []):
         print("missing:", missing)
     ```
-    `plan()` never executes anything. Read `warnings` and `missing_requirements` before you go on. `dispatchable_actions` holds the actions you can send. Each one is a dict with a `kind`, a `target_twin_uuid` and a `payload`.
+    `plan()` never executes anything. Read `warnings` and `missing_requirements` before you go on. `dispatchable_actions` holds the actions you can send, in the order they run. Each one is a dict with a `kind`, a `target_twin_uuid`, a `payload` and a `stage`. Actions that share a `stage` are on different robots and may start together; start the next stage only after all of them have finished.
   </Step>
   <Step title="Have a human approve one action">
     ```python
@@ -157,11 +157,20 @@ When the twin's controller is the **Agentic controller**, its settings shape eve
 |---|---|
 | **Model** | The LLM that plans for this robot |
 | **Allowed actions** | The action kinds the agent may use. Leave all unchecked to allow every action the robot supports. |
+| **Skills** | The skills the agent may run, such as pick and place. Leave all unchecked to let it use every skill that fits the robot. The agent can run skills only while **Run skills** is allowed. |
 | **Instructions** | Added to the agent's fixed safety rules; they never override them |
 
 Open the controller's settings from the twin's **Controller** section and save them for **This twin** or **All twins in this environment**. **Reset to defaults** goes back to the next layer: twin, then environment, then robot, then the controller's defaults.
 
 A model saved in the Agentic controller's settings for the twin or the environment wins over an `llm_model_uuid` or `llm_model_name` passed to `plan()`. The request model applies only when neither sets one. A model saved on the robot model itself is only a recommendation. The chat model you pick in the assistant panel is a separate environment setting, not the Agentic controller's model: when the agent plans for a robot, the robot's Agentic model wins, and the chat model is used only if the robot has none.
+
+### A skill's decision model
+
+A skill such as **Pick and lift** asks a model for each step it takes. When a skill is the twin's controller, its card in the **Controller** section has a **Decision model** picker:
+
+- It lists only the models that can choose a robot's steps, best first. The default is the skill's own model.
+- Save the choice for **This robot** or the whole **Environment**. It is the Agentic controller's **Model** setting, so the planner uses it too. Saving it keeps the skill as the twin's controller.
+- The card's run panel shows the skill's last run on the twin: how many decisions it made and how long they took. A skill run's card in the chat names the model that made its decisions.
 
 
 ## Skip the LLM: resolve a route directly

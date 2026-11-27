@@ -101,6 +101,7 @@ Use `cw_list_control_surfaces` and `cw_plan_control_action` for twin control; fo
 | `cw_update_asset_actuator` | Merge fields into one of an asset's actuators, by name |
 | `cw_set_asset_livery` | Set or read an asset's livery, the part colours of its viewer model and thumbnail |
 | `cw_set_area_image` | Attach or remove a background image on an area (via URL or Base64) |
+| `cw_set_primitive_texture` | Put a built-in texture preset or an uploaded image on a ground, box, table or other texture-capable primitive, restyle it, or remove it |
 
 ### Procedural Primitives
 
@@ -403,6 +404,7 @@ The result lists the links each rule colours, the rules that colour nothing, and
 |---|---|
 | `cw_list_environment_entities` | `environment_slug?`, `entity_type` (`all`/`area`/`waypoint`/`twin`/`procedural_primitive`, default `all`), `name?`, `entity_id?`, `offset`, `limit?`, `include_spatial_feedback` |
 | `cw_set_area_image` | `area_id` (required), `environment_slug?`, `image_url?`, `image_base64?`, `image_mime_type`, `keep_proportions?`, `remove_image?` (exactly one of remove/url/base64), `execute=false` |
+| `cw_set_primitive_texture` | `primitive_id` (required), `environment_slug?`, `preset?` (`concrete`, `asphalt`, `painted_block`, `brick`, `floor_tiles`, `wood_planks`, `grass`), `image_base64?`, `image_mime_type`, `mapping?` (`tile`/`stretch`), `tile_size_m?` (`[x, y]` meters), `rotation_deg?`, `tint?`, `remove_texture?`, `execute=false`. Needs `preset`, `image_base64`, a style field, or `remove_texture` |
 
 Area images can be attached via a direct `image_url` (recommended for large images) or inline as `image_base64` bytes with `image_mime_type`. Images are stored in environment settings.
 

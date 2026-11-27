@@ -19,8 +19,8 @@ The **Twin** (`twin`) node reads a digital twin and its **assigned controller po
 
 The node resolves the active policy from:
 
-1. Twin `controller_policy` FK, or
-2. `twin.metadata.controller_policy_uuid`
+1. The twin's assigned controller policy, or
+2. A controller policy UUID stored in the twin's metadata
 
 If neither is set, execution fails with a clear error.
 
@@ -52,5 +52,5 @@ If neither is set, execution fails with a clear error.
 
 | Target | Notes |
 |---|---|
-| **Cloud** | `WorkflowUtils._execute_twin_node` — reads twin + policy from Postgres |
+| **Cloud** | Reads the twin and its policy in the cloud workflow runner |
 | **Edge** | Code emitter calls `client.twins.get` + controller-policies API |

@@ -31,7 +31,7 @@ Both the hardware nodes and the MQTT bridge use the same namespace, so topics
 stay connected. **MQTT topics are unaffected** — they remain keyed by the full
 twin UUID (`cyberwave/twin/{twin_uuid}/...`).
 
-- **Single robot / dev:** with no twin UUID the namespace is empty and topics are
+- **Single robot:** with no twin UUID the namespace is empty and topics are
   global (`/cmd_vel`, `/image_raw`, ...).
 - **Override:** set `CYBERWAVE_ROS_NAMESPACE` to a valid ROS 2 name to force a
   specific namespace for both the hardware nodes and the bridge.

@@ -73,7 +73,7 @@ no raw video ever leaves the edge.
    on `business`. The edge worker compiles this into a
    `cw.publish_alert(...)` call wired to the dwell-fired frame.
 8. **Activate** the workflow. The edge runtime will pull the
-   generated worker (`wf_<uuid8>.py`) on its next sync, and the
+   generated worker on its next sync, and the
    polygon will appear as a read-only overlay on the twin's WebRTC
    stream so operators can see which zones are armed.
 
@@ -89,8 +89,8 @@ alert_trigger(twin = camera-1, alert_type = intrusion)
 ```
 
 This cloud-side workflow wakes on every edge-emitted intrusion alert
-(no per-frame cost) and uses Django's email backend to deliver the
-message. See [`timed_condition`](/feature-reference/workflows/timed-condition#end-to-end-alert-pipeline)
+(no per-frame cost) and delivers the
+email. See [`timed_condition`](/feature-reference/workflows/timed-condition#end-to-end-alert-pipeline)
 for the full two-workflow shape.
 
 ## Operator experience
@@ -105,7 +105,7 @@ for the full two-workflow shape.
 
 ## Privacy boundary
 
-The Zenoh→MQTT bridge does **not** forward raw frames. Only the
+The edge runtime does **not** forward raw frames. Only the
 alert payload (with optional anonymised snapshot) crosses the WAN.
 See the [Security Pipeline](/feature-reference/edge/drivers/security-pipeline) page
 for the deeper privacy contract.

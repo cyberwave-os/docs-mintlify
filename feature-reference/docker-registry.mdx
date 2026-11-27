@@ -111,12 +111,12 @@ To push, your workspace role must grant at least WRITER access.
     docker push registry.cyberwave.com/my-workspace/my-driver:v0.1.0
     ```
 
-    If the credential helper is configured, no separate login step is needed. The Cyberwave Token Service validates your API key, checks your workspace role, and authorizes the push.
+    If the credential helper is configured, no separate login step is needed. Cyberwave validates your API key, checks your workspace role, and authorizes the push.
   </Step>
 </Steps>
 
 <Warning>
-Version tags (e.g. `v1.2.3`) are immutable — once pushed, they cannot be overwritten. Use mutable tags like `dev` or `latest` during development.
+Version tags (e.g. `v1.2.3`) are immutable — once pushed, they cannot be overwritten. Use mutable tags like `latest` while iterating.
 </Warning>
 
 ---
@@ -140,7 +140,6 @@ Edge Core pulls the image automatically when the twin connects. If the image is 
 |-------------|---------|----------|
 | `v1.2.3` | Release version | No (immutable) |
 | `latest` | Most recent release | Yes |
-| `dev` | Development build | Yes |
 | `<branch>-<sha>` | CI build | Yes |
 
 ---
@@ -165,23 +164,6 @@ The CI API key is a normal Cyberwave API key whose workspace membership grants W
 
 ---
 
-## Architecture
+## Authentication
 
-The registry uses [Harbor](https://goharbor.io/) with a Cyberwave-managed token service. When Docker needs to authenticate, the flow is:
-
-```mermaid
-sequenceDiagram
-    participant D as Docker Client
-    participant H as Harbor (registry.cyberwave.com)
-    participant T as Cyberwave Token Service
-
-    D->>H: 1. docker pull / push
-    H-->>D: 2. 401 + token endpoint URL
-    D->>T: 3. Request token with CYBERWAVE_API_KEY
-    T->>T: 4. Validate key & resolve workspace role
-    T-->>D: 5. Scoped JWT (pull, push, delete)
-    D->>H: 6. Retry with JWT
-    H-->>D: 7. Serve the request
-```
-
-The token service is a standard Docker Registry v2 token endpoint backed by the Cyberwave auth and ACL system. Harbor handles image storage, vulnerability scanning, replication, and retention policies.
+When Docker needs to authenticate, it exchanges your `CYBERWAVE_API_KEY` for a short-lived token scoped to your workspace role (pull, push, delete) and retries the request with it. You don't need to manage these tokens yourself; the credential helper and `docker login` handle the exchange.

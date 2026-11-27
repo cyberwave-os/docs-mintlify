@@ -74,6 +74,9 @@ You need an account for everything. You need an API key only when something outs
 | `CYBERWAVE_ENVIRONMENT_ID` | Default environment UUID. Skips auto-creating a Quickstart Environment. |
 | `CYBERWAVE_BASE_URL` | API base URL. Default `https://api.cyberwave.com`. |
 | `CYBERWAVE_MQTT_HOST` / `CYBERWAVE_MQTT_PORT` | MQTT broker. Default `mqtt.cyberwave.com`, port `8883` with TLS. |
+| `CYBERWAVE_MQTT_MAX_PAYLOAD_BYTES` | Largest MQTT payload the SDK publishes, in bytes. Default `33554432` (32 MiB); `0` for no limit. |
+
+Cyberwave's MQTT brokers drop larger messages without telling the sender, so the Python and C++ SDKs refuse them before sending: the refusal is logged and, in Python, `publish()` returns `False`. Raise the limit only for a broker configured to accept more. A value that is not a byte count is logged and the default is used.
 
 ## If something fails
 

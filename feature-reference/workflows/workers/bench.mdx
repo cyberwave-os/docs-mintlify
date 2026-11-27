@@ -33,34 +33,13 @@ cyberwave edge bench --no-compare
 ```
 
 The device class is auto-detected (`jetson-orin-nano`, `rpi-5`, `x86-laptop`,
-`apple-silicon-m4`, ...) from `/proc/device-tree/model`,
-`/etc/nv_tegra_release`, `sysctl -n machdep.cpu.brand_string` (macOS), and
-`platform.machine()`. On Apple Silicon the chip generation is parsed from the
+`apple-silicon-m4`, ...) from the host hardware. On Apple Silicon the chip generation is parsed from the
 brand string and emitted as `apple-silicon-m1` … `apple-silicon-m4` (Pro / Max
 / Ultra variants share a tier).
 
-Baselines are shipped inside the CLI package, and the loader walks from the
-specific slug up to a generic fallback — e.g. `apple-silicon-m4` tries
-`apple-silicon-m4.json` → `apple-silicon.json` → `generic-arm64.json`, so new
-generations degrade gracefully. Use `--baseline <path>` to override.
-
-## Bless a baseline for a new device class
-
-Run the bench on real reference hardware and write a baseline file the CLI
-will pick up:
-
-```bash
-cyberwave edge bench \
-    --rounds 500000 --warmup 20000 --repeat 5 --pin \
-    --save-baseline ./jetson-orin-nano.json
-```
-
-The file name must match the `device_class` slug the fingerprint reports —
-e.g. `apple-silicon-m4.json` on an M4 / M4 Pro / M4 Max MacBook. Ship the
-file inside the CLI package's `bench_baselines/` directory and flip
-`"provisional": false` once you're happy with the numbers. On macOS the
-`--pin` flag is a no-op; plug in power, disable Low Power Mode, and close
-background apps before blessing to avoid thermal throttling.
+Baselines are shipped with the CLI and fall back from the specific device
+class to a generic one, so new hardware generations degrade gracefully. Use
+`--baseline <path>` to override.
 
 ## Key flags
 

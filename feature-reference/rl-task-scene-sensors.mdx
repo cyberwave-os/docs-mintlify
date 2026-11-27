@@ -4,17 +4,17 @@ description: "Configure cameras, depth cameras, and contact sensors on RL task s
 icon: "camera"
 ---
 
-The RL Composer's **Sensors** subsection lets you opt schema-defined cameras into the mjlab `SceneCfg.sensors` tuple and author MuJoCo contact sensors. Each entry lives on a single `RLTaskSceneEntity` row and is persisted as a JSON object on the entity's `sensors` field. The backend aggregates every entity's `sensors` list when it regenerates `scene_cfg.py`, so a contact sensor on the `robot` entity referencing the `cube` entity ends up as one `ContactSensorCfg` in the SceneCfg with both `ContactMatch` blocks pointed at the right entities.
+The RL Composer's **Sensors** subsection lets you opt schema-defined cameras into the mjlab `SceneCfg.sensors` tuple and author MuJoCo contact sensors. Each entry belongs to a single scene entity and is stored as a JSON object in the entity's `sensors` list. Cyberwave aggregates every entity's `sensors` list when it regenerates `scene_cfg.py`, so a contact sensor on the `robot` entity referencing the `cube` entity ends up as one `ContactSensorCfg` in the SceneCfg with both `ContactMatch` blocks pointed at the right entities.
 
 ## Supported sensor types
 
 
-- **Camera** (RGB / depth) — schema-derived. One UI card per *physical* device, even when the schema lists separate `color_camera` + `depth_camera` entries: Cyberwave groups them by the stripped parent-link key so a single Orbbec Gemini surfaces one logical entry with `RGB` and `Depth` toggles. The composer reads `Twin.universal_schema.sensors` for the host twin *and* every twin docked to it.
+- **Camera** (RGB / depth) — schema-derived. One UI card per *physical* device, even when the schema lists separate `color_camera` + `depth_camera` entries: Cyberwave groups them by the stripped parent-link key so a single Orbbec Gemini surfaces one logical entry with `RGB` and `Depth` toggles. The composer reads the sensors from the universal schema of the host twin *and* every twin docked to it.
 - **Contact** — user-authored. Each row maps directly to one `mjlab.sensor.ContactSensorCfg(primary=ContactMatch(...), secondary=ContactMatch(...) | None, ...)`. The primary side defaults to the host entity; the secondary side picks any sibling RL task scene entity by name (or stays empty for an "any-contact" detector).
 
-## Persisted JSON shape
+## Sensor JSON shape
 
-The `RLTaskSceneEntity.sensors` field stores one of two row shapes.
+The entity's `sensors` field holds rows in one of two shapes.
 
 Camera (one row per logical device):
 
@@ -49,7 +49,7 @@ Contact:
 
 ## Codegen mapping
 
-`scene_codegen.py` walks every entity's `sensors` list and emits one `ContactSensorCfg` per contact-sensor row into `SceneCfg.sensors=(...)`. Camera sensors are **not** emitted as `CameraSensorCfg` entries in `SceneCfg.sensors`; instead, the packager preserves camera metadata (MJCF camera name, width, height, data_types) in `scene_bindings.CAMERA_SENSORS`. At runtime, `env_cfg.py` wires each camera observation term via `standard_camera_resolver(camera_sensors=bindings.CAMERA_SENSORS, ...)` from `task_export.standard_resolvers`, which routes depth terms to `mdp.observations.DepthCameraObservationCfg` and RGB terms to `mdp.observations.ColorCameraObservationCfg`. The merged MJCF prefixes every camera body with `<entity>/<source_twin_hex>__<bind_mjcf_camera>`, so a camera bound to a docked twin stays addressable inside the host entity's subtree. When no entity carries any sensor the codegen falls back to the no-op default `sensors=()` and drops the `mjlab.sensor` import.
+Scene generation walks every entity's `sensors` list and emits one `ContactSensorCfg` per contact-sensor row into `SceneCfg.sensors=(...)`. Camera sensors are **not** emitted as `CameraSensorCfg` entries in `SceneCfg.sensors`; instead, the exported task preserves camera metadata (MJCF camera name, width, height, data_types) in `scene_bindings.CAMERA_SENSORS`. At runtime, `env_cfg.py` wires each camera observation term via `standard_camera_resolver(camera_sensors=bindings.CAMERA_SENSORS, ...)` from `task_export.standard_resolvers`, which routes depth terms to `mdp.observations.DepthCameraObservationCfg` and RGB terms to `mdp.observations.ColorCameraObservationCfg`. The merged MJCF prefixes every camera body with `<entity>/<source_twin_hex>__<bind_mjcf_camera>`, so a camera bound to a docked twin stays addressable inside the host entity's subtree. When no entity carries any sensor the codegen falls back to the no-op default `sensors=()` and drops the `mjlab.sensor` import.
 
 ## Docked-twin caveat (contact subtrees)
 
@@ -57,4 +57,4 @@ When a host twin has docked twins (e.g. a wrist camera attached to a robot arm),
 
 ## SDK
 
-The Python SDK exposes `make_camera_sensor(...)` and `make_contact_sensor(...)` convenience builders alongside a new `sensors=` keyword on `assign_articulation_entity` / `assign_rigid_entity`. See `cyberwave-sdks/cyberwave-python/cyberwave/rl_tasks.py` for the full signatures.
+The Python SDK exposes `make_camera_sensor(...)` and `make_contact_sensor(...)` convenience builders alongside a new `sensors=` keyword on `assign_articulation_entity` / `assign_rigid_entity`. See the `cyberwave.rl_tasks` module for the full signatures.

@@ -327,12 +327,10 @@ continue with the SDK motion example below.
     Copy these prompts into your agent, one at a time:
 
     ```text
-    Find my Quickstart Environment and reuse its Unitree Go2 if present.
-    If several environments match, ask me which one; create only what is missing.
-    Use simulation only. Inspect readiness, available controls and credit
-    requirements before starting a five-minute MuJoCo session. If one is
-    already running, report its status before changing it. Give me the
-    environment link and reuse its resource references in later calls.
+    Create a new Quickstart Environment in my workspace with a Unitree Go2.
+    Use simulation only. Start a MuJoCo simulation for five minutes, inspect
+    its readiness and available controls, and give me the environment link.
+    Discover resource references yourself and reuse them in later calls.
     ```
 
     Open that link, then ask:
@@ -374,11 +372,9 @@ continue with the SDK motion example below.
     Use the same setup, then ask:
 
     ```text
-    Find my Quickstart Environment and reuse its the-robot-studio/so101 if present.
-    If several environments match, ask me which one; create only what is missing.
-    Inspect readiness, controllable joints, limits and credit requirements
-    before starting a five-minute MuJoCo simulation. If one is already running,
-    report its status before changing it. Plan and execute a small
+    Create a new Quickstart Environment with the-robot-studio/so101 and start
+    a five-minute MuJoCo simulation. Discover resource references yourself.
+    Inspect the arm's controllable joints and limits. Plan and execute a small
     bounded movement of one joint in simulation, then run a saved motion pose
     if one is available. Verify actual joint telemetry and render a preview.
     Give me the environment link. Do not substitute editor transforms for motion.
@@ -407,15 +403,6 @@ continue with the SDK motion example below.
   bounded command. If a command is accepted without observed movement, ask your
   agent to inspect simulation control readiness and telemetry; an accepted
   command alone does not prove motion. [Ask for help on Discord](https://discord.gg/dfGhNrawyF).
-
-  To resume after an interruption, give your agent the environment link and ask:
-
-  ```text
-  Inspect this existing environment, its twins, simulation status and actual
-  telemetry. Summarize what completed and the first unfinished step.
-  Do not create duplicates or repeat a movement whose outcome is unknown.
-  Explain any missing permission or readiness requirement before proceeding.
-  ```
 </Accordion>
 
 ## 5. Capture a camera frame

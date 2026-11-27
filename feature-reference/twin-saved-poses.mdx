@@ -39,12 +39,7 @@ from where the robot actually is rather than pulling it back.
 A running controller can override a snap on its next tick — pause it first.
 With MuJoCo, MuJoCo Warp or Isaac Sim, start the simulation before snapping:
 those engines apply the snap, and nothing moves while none is running.
-
-<Info>
-Snap is behind a feature flag during rollout. If you don't see it, ask your
-Cyberwave contact to enable it for your organization. Move and Trajectory are
-always available.
-</Info>
+Snap needs edit access to the twin; without it the button is shown disabled.
 
 ## Scopes
 
@@ -67,3 +62,24 @@ saved pose in that mode: **Snap**, **Move** and **Trajectory** in
 Simulate/Playground, **Move** and **Trajectory** in Live. Edit has no such
 row — there the twin's current pose *is* its authored home. See
 [Joint home positions](/feature-reference/twin-joint-home-positions).
+
+In a MuJoCo or Isaac Sim simulation, **Snap** on this row also moves a
+floating-base twin (one not docked on another twin) back to its authored
+placement in the environment, not just its joints.
+
+## Custom snap
+
+In Simulate, the **Custom snap** section snaps the twin to values you type:
+
+1. Click **Use current** to fill in the twin's current body pose or joint
+   values.
+2. Edit the values. Body position is in metres; joints are in degrees, or
+   metres for sliding joints.
+3. Click **Snap body** or **Snap joints**.
+
+- Each joint value must stay within that joint's limits. A value that rounds
+  just past a limit is sent as the limit.
+- **Snap body** needs a MuJoCo or Isaac Sim simulation. Playground runs in the
+  browser and can only snap joints.
+- A fixed-base twin's body can't be moved while MuJoCo Warp is running. Current
+  Isaac Sim images refuse the move too; move the twin in Edit instead.

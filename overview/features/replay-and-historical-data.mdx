@@ -4,7 +4,7 @@ description: "Record video, joints, point clouds and audio from every twin, repl
 icon: "clock-rotate-left"
 ---
 
-Cyberwave records what your robots and sensors do, so you can re-watch any run from your browser, days or weeks later. Open **Replay** in an [environment](/feature-reference/environment-editor), pick a run or a date, and the 3D scene, video, audio and workflow runs rewind together on one timeline. From Python, `twin.recordings.list()` and `twin.recordings.get()` fetch the same recordings for local analysis.
+Cyberwave records what your robots and sensors do, so you can re-watch any run from your browser, days or weeks later. Open **Replay** in an [environment](/feature-reference/environment-editor/index), pick a run or a date, and the 3D scene, video, audio and workflow runs rewind together on one timeline. From Python, `twin.recordings.list()` and `twin.recordings.get()` fetch the same recordings for local analysis.
 
 In the lab, recordings become [training episodes and datasets](/feature-reference/datasets/playground) for your custom [VLAs](/feature-reference/ml-models/smolvla-training). In production, they let you learn from real-world data and improve your [workflows](/feature-reference/workflows) and [automations](/feature-reference/environment-editor/teleoperation) over time.
 
@@ -83,7 +83,7 @@ When a recording loads, the whole scene rewinds together:
 - **Live video tiles** scrub frame-accurately alongside the 3D view.
 - **Point clouds** render at the right pose for every frame.
 - **Audio** plays back in sync with the timeline.
-- **Workflow runs** that fired during the window show up as markers. Click one to see node-level inputs, outputs and errors ([env editor reference](/feature-reference/environment-editor#workflow-executions-in-an-environment)).
+- **Workflow runs** that fired during the window show up as markers. Click one to see node-level inputs, outputs and errors ([env editor reference](/feature-reference/environment-editor/index#workflow-executions-in-an-environment)).
 
 ### Camera and audio sidebar
 
@@ -432,6 +432,8 @@ Availability does not sign media URLs or probe object storage.
 
 `GET /api/v1/environments/{uuid}/recordings/{recording_uuid}/data` can return `202 Accepted` when the recording is known but its playback files are not ready yet. The response includes `retry_after_seconds`. Wait about that long and retry the same request, instead of treating it as a missing recording.
 
+In Python, `recordings.get(item, wait=120)` does this for you: it retries for up to `wait` seconds and raises if the files are still not ready. Not every server sends `202` yet. One that does not answers `404` for a finished recording whose files are not ready, so `get` raises at once, and returns only the parts converted so far for a recording still being captured.
+
 ---
 
 ## Lab loop or production loop, same primitive
@@ -455,7 +457,7 @@ Availability does not sign media URLs or probe object storage.
     Review what happened the last time the line went down, find the failure mode
     in the timeline, and ship a fix to your
     [workflows](/feature-reference/workflows) or
-    [policies](/feature-reference/ml-models) the same day.
+    [policies](/feature-reference/ml-models/index) the same day.
   </Card>
 </CardGroup>
 

@@ -1,42 +1,39 @@
 ---
 title: "Edge workflow dependencies"
-description: "Python packages and SDK extras for voice pipelines — compile server, edge worker, and catalog STT models"
+description: "Python packages and SDK extras for voice pipelines — edge worker and catalog STT models"
 icon: "puzzle-piece"
 ---
 
-Edge voice workflows use **three layers** of dependencies. Each layer must be satisfied or compile/sync fails with an actionable error (for example: *"… is not installed on the compile server"*).
+Edge voice workflows need the right SDK extras on the edge worker. If a package is missing, compile/sync fails with an actionable error (for example: *"… is not installed"*).
 
 | Layer | Where | Purpose |
 |---|---|---|
-| **1. Compile server** | Django / `cyberwave-backend` | Validates imports and (for Wake Word) downloads weights **before** shipping `wf_*.py` |
-| **2. Edge worker image** | `cyberwaveos/edge-ml-worker` | Runs generated Python; install matching `cyberwave[...]` extras |
-| **3. Catalog / emitters** | `edge-sync` → `model_requirements` | Tells operators which **one** SDK extra to install per node or STT model |
+| **1. Edge worker image** | `cyberwaveos/edge-ml-worker` | Runs the generated workflow; install matching `cyberwave[...]` extras |
+| **2. Catalog** | Node and STT model requirements | Tells you which **one** SDK extra to install per node or STT model |
 
 <Warning>
-**Do not install `ml-all` on Raspberry Pi** unless you need every vision + STT + VAD runtime in one image. Catalog entries declare **one minimal extra** each (`ml-stt`, `ml-stt-faster`, …). Use `ml-all` only for CI/dev fat images.
+**Do not install `ml-all` on Raspberry Pi** unless you need every vision + STT + VAD runtime in one image. Catalog entries declare **one minimal extra** each (`ml-stt`, `ml-stt-faster`, …). Use `ml-all` only for CI or all-in-one images.
 </Warning>
 
 ---
 
 ## Workflow nodes
 
-| Node | Compile server (`base.txt`) | Edge SDK extra | `model_requirements` |
-|---|---|---|---|
-| [Audio Track](/feature-reference/workflows/audio-track/overview) | — (no ML import) | `zenoh` on worker; `microphone` on capture host | — |
-| [Audio Assistant](/feature-reference/workflows/audio-assistant/overview) | `silero-vad` (+ torch transitive) | `ml-audio` | `edge_package: ml-audio` |
-| [Wake Word Engine](/feature-reference/workflows/wake-word-engine/overview) | `openwakeword`, `onnxruntime` | `ml-wakeword` | `edge_package: ml-wakeword` |
-| [Call Model — STT](/feature-reference/workflows/call-model-stt-edge) | `pywhispercpp` and/or `faster-whisper` | From catalog metadata | Per selected ML model |
-| [Fuzzy Matcher](/feature-reference/workflows/fuzzy-matcher) | `rapidfuzz` | `fuzzy-match` | `edge_package: fuzzy-match` |
-| [Twin](/feature-reference/workflows/twin) | `httpx` (base) | Base `cyberwave` | — |
-| [Virtual Controller](/feature-reference/workflows/virtual-controller) | `paho-mqtt` (base) | Base `cyberwave` | — |
-
-Compile checks mirror the [Wake Word](/feature-reference/workflows/wake-word-engine/models-and-compile) pattern: `WorkflowCodeAssembler` calls `provision_*_for_compile()` before emitting edge worker source.
+| Node | Edge SDK extra |
+|---|---|
+| [Audio Track](/feature-reference/workflows/audio-track/overview) | `zenoh` on worker; `microphone` on capture host |
+| [Audio Assistant](/feature-reference/workflows/audio-assistant/overview) | `ml-audio` |
+| [Wake Word Engine](/feature-reference/workflows/wake-word-engine/overview) | `ml-wakeword` |
+| [Call Model — STT](/feature-reference/workflows/call-model-stt-edge) | `ml-stt` or `ml-stt-faster`, per catalog model |
+| [Fuzzy Matcher](/feature-reference/workflows/fuzzy-matcher) | `fuzzy-match` |
+| [Twin](/feature-reference/workflows/twin) | Base `cyberwave` |
+| [Virtual Controller](/feature-reference/workflows/virtual-controller) | Base `cyberwave` |
 
 ---
 
 ## SDK extras (`cyberwave-python`)
 
-Defined in `cyberwave-sdks/cyberwave-python/pyproject.toml`. Install on edge with `pip install 'cyberwave[<extra>]'` or `pip install 'cyberwave-edge-core[<extra>]'` (thin passthrough).
+Install on edge with `pip install 'cyberwave[<extra>]'` or `pip install 'cyberwave-edge-core[<extra>]'` (thin passthrough).
 
 | Extra | Packages | Used by |
 |---|---|---|
@@ -47,67 +44,36 @@ Defined in `cyberwave-sdks/cyberwave-python/pyproject.toml`. Install on edge wit
 | `fuzzy-match` | `rapidfuzz` | Fuzzy Matcher |
 | `zenoh` | `eclipse-zenoh` | Audio Track worker hook |
 | `microphone` | `sounddevice`, `av`, … | Host mic capture (driver side) |
-| `ml-all` | `ml-all-vision` + `ml-all-audio` (includes `torchaudio`) | **CI/dev only** |
+| `ml-all` | `ml-all-vision` + `ml-all-audio` (includes `torchaudio`) | **CI / all-in-one only** |
 | `ml-all-audio` | `openwakeword`, `onnxruntime`, `pywhispercpp`, `faster-whisper`, `silero-vad`, `torchaudio`, `rapidfuzz` | Fat audio image (avoid on Pi) |
 | `ml-all-vision` | `ultralytics`, `onnxruntime`, `opencv-python`, `tflite-runtime` | Vision-only fat image |
 
 ---
 
-## Catalog STT models (`edge_package`)
+## Catalog STT models
 
-Each public STT catalog entry sets `metadata.edge_package` to **one** extra (never `ml-all`).
+Each public STT catalog entry requires **one** extra (never `ml-all`).
 
-| Catalog model | `edge_runtime` | `edge_package` | Weight path (`edge_model_path`) |
-|---|---|---|---|
-| Whisper Tiny EN Q5_1 | `whisper_cpp` | `ml-stt` | `models/whisper/ggml-tiny.en-q5_1.bin` |
-| Whisper Base EN Q5_1 | `whisper_cpp` | `ml-stt` | `models/whisper/ggml-base.en-q5_1.bin` |
-| Whisper Small EN Q5_1 | `whisper_cpp` | `ml-stt` | `models/whisper/ggml-small.en-q5_1.bin` |
-| Whisper Tiny Multilingual Q5_1 | `whisper_cpp` | `ml-stt` | `models/whisper/ggml-tiny-q5_1.bin` |
-| Whisper Base Multilingual Q5_1 | `whisper_cpp` | `ml-stt` | `models/whisper/ggml-base-q5_1.bin` |
-| Faster Whisper Tiny EN | `faster_whisper` | `ml-stt-faster` | `models/whisper/faster-whisper-tiny.en` |
-| Faster Whisper Base EN | `faster_whisper` | `ml-stt-faster` | `models/whisper/faster-whisper-base.en` |
-| Faster Whisper Small EN | `faster_whisper` | `ml-stt-faster` | `models/whisper/faster-whisper-small.en` |
+| Catalog model | Extra |
+|---|---|
+| Whisper Tiny EN Q5_1 | `ml-stt` |
+| Whisper Base EN Q5_1 | `ml-stt` |
+| Whisper Small EN Q5_1 | `ml-stt` |
+| Whisper Tiny Multilingual Q5_1 | `ml-stt` |
+| Whisper Base Multilingual Q5_1 | `ml-stt` |
+| Faster Whisper Tiny EN | `ml-stt-faster` |
+| Faster Whisper Base EN | `ml-stt-faster` |
+| Faster Whisper Small EN | `ml-stt-faster` |
 
-Faster Whisper also sets `faster_whisper_model_id` (`tiny.en`, `base.en`, `small.en`) for CTranslate2. Hybrid models may fall back to the cloud whisper node when not running on edge.
+Hybrid models may fall back to the cloud whisper node when not running on edge.
 
 See [Call Model STT on edge](/feature-reference/workflows/call-model-stt-edge).
 
 ---
 
-## Compile server setup (Django)
-
-Packages are listed in `cyberwave-backend/requirements/base.txt`:
-
-```text
-openwakeword>=0.6.0
-onnxruntime>=1.16.0
-rapidfuzz>=3.0.0
-silero-vad>=6.0
-pywhispercpp==1.4.1
-faster-whisper>=1.1.1
-```
-
-After changing `base.txt`, **rebuild the Django Docker image**:
-
-```bash
-cd cyberwave-backend
-docker compose -f local.yml build django
-docker compose -f local.yml up -d django
-```
-
-Without rebuild, compile fails with errors like:
-
-- *"Wake Word Engine but openwakeword is not installed on the compile server"*
-- *"Fuzzy Matcher but rapidfuzz is not installed …"*
-- *"Audio Assistant but silero-vad (or torch) is not installed …"*
-- *"whisper.cpp but pywhispercpp is not installed …"*
-- *"faster-whisper is not installed …"*
-
----
-
 ## Edge worker image
 
-Default `cyberwaveos/edge-ml-worker` installs a **fat** extra set for dev:
+Default `cyberwaveos/edge-ml-worker` installs a **fat** extra set:
 
 `ml,ml-onnx,ml-stt,ml-stt-faster,ml-audio,ml-tracking,microphone,fuzzy-match,barcode,zenoh,image,schedule` plus `openwakeword` via `--no-deps` (Python 3.12).
 
@@ -117,14 +83,14 @@ For **Raspberry Pi**, rebuild a slim image with only what your workflow uses:
 # whisper.cpp Tiny + VAD + wake word + fuzzy (no faster-whisper, no YOLO)
 docker build \
   --build-arg CYBERWAVE_SDK_EXTRAS=ml-stt,ml-audio,fuzzy-match,zenoh,schedule \
-  -f cyberwave-edge-runtime/runtime-services/workers/edge-ml-worker/Dockerfile .
+  -f <edge-ml-worker Dockerfile> .
 ```
 
 ```bash
 # Faster Whisper STT only
 docker build \
   --build-arg CYBERWAVE_SDK_EXTRAS=ml-stt-faster,ml-audio,zenoh,schedule \
-  -f cyberwave-edge-runtime/runtime-services/workers/edge-ml-worker/Dockerfile .
+  -f <edge-ml-worker Dockerfile> .
 ```
 
 ---

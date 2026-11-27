@@ -23,7 +23,7 @@ flowchart LR
 | **Agentic** | An LLM that plans from your goal, using only the actions the robot supports | "Move to waypoint A", "run the pick skill" | [Control agent](/ai/control-agent) |
 | **Policy** | A trained model, such as a VLA from camera frames and an instruction, or an RL policy trained in simulation | Manipulation learned from demonstrations, locomotion | [Fine-tune SmolVLA](/feature-reference/ml-models/smolvla-training), [RL tasks](/feature-reference/rl-tasks) |
 
-[Skills](/feature-reference/arm-commands) (a saved pose, a standard command, a trained skill) and [workflows](/feature-reference/workflows) are not controllers: a person, a workflow or the Agentic controller calls them.
+[Actions](/feature-reference/arm-commands) (a saved pose, a standard command), skills and [workflows](/feature-reference/workflows) are not controllers: a person, a workflow or the Agentic controller calls them. A skill is a bounded behaviour such as pick and place, built on a harness, a VLA, an RL policy or code. The Agentic controller uses skills as tools, and you choose which in its [settings](/ai/control-agent#the-agentic-controllers-settings).
 
 ## Assign a controller
 

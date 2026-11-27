@@ -33,6 +33,17 @@ In **Simple** mode, choose a **Type** and then pick the items:
 - **Twin** — "do this to each of these robots."
 - **Waypoint** — "send this robot to each of these places."
 
+For twins, **Select twins** picks them one of two ways:
+
+- **By name**: the twins nested as in the scene tree, each rack folded with its
+  servers inside. A checkbox picks that one twin; a rack's **All** button picks
+  every twin docked in it, and **Clear** takes them out again.
+- **By type**: one row per asset, such as "Server 2U · 20 twins". Picking it
+  picks every twin of that asset.
+
+The search filters either list. The list is fixed when you save, so add twins
+created later by hand.
+
 **Advanced** mode hands you the raw `array_data` input, so you can fan out over
 a list computed by an upstream node.
 
@@ -65,7 +76,9 @@ the same step.
 ## Limits
 
 - **Edge workflows** compile one copy of the body per item, so the list has to
-  be a fixed value. With nested loops the copies multiply, and the total is
-  capped — shorten one of the lists if you hit the limit.
+  be a fixed value of at most 64 items. With nested loops the copies multiply,
+  and the total is capped at 64 — shorten one of the lists if you hit the
+  limit. Over the limit, the inspector says so and doesn't save the list; the
+  Loop keeps its last saved one. Cloud workflows take any number of items.
 - A list computed at run time works in the cloud, where the loop iterates as it
   runs. Set the workflow to run in the cloud for that shape.

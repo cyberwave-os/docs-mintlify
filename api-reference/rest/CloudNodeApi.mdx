@@ -1,6 +1,4 @@
----
-title: "cyberwave.rest.CloudNodeApi"
----
+# cyberwave.rest.CloudNodeApi
 
 All URIs are relative to *http://localhost*
 
@@ -18,14 +16,14 @@ Method | HTTP request | Description
 [**src_app_api_cloud_nodes_save_cloud_node_instance_log**](#src_app_api_cloud_nodes_save_cloud_node_instance_log) | **POST** `/api/v1/cloud-node/{uuid}/log` | Save Cloud Node Instance Log
 
 
-## **src_app_api_cloud_nodes_create_instance**
+# **src_app_api_cloud_nodes_create_instance**
 > CloudNodeInstanceSchema src_app_api_cloud_nodes_create_instance(cloud_node_instance_create_request)
 
 Create Instance
 
 Create a new Cloud Node instance.
 
-The backend is the owner of the UUID and slug:
+The platform assigns the UUID and slug:
 - If slug is provided, it must be unique within the workspace
 - If slug is not provided, an auto-generated slug will be created
 
@@ -101,7 +99,7 @@ CustomTokenAuthentication
 **200** | OK |  -  |
 
 
-## **src_app_api_cloud_nodes_get_instance_logs**
+# **src_app_api_cloud_nodes_get_instance_logs**
 > CloudNodeInstanceLogsResponse src_app_api_cloud_nodes_get_instance_logs(instance_uuid, log_type=log_type, limit=limit)
 
 Get Instance Logs
@@ -191,7 +189,7 @@ CustomTokenAuthentication
 **200** | OK |  -  |
 
 
-## **src_app_api_cloud_nodes_get_instance_metadata**
+# **src_app_api_cloud_nodes_get_instance_metadata**
 > Dict[str, object] src_app_api_cloud_nodes_get_instance_metadata(instance_uuid)
 
 Get Instance Metadata
@@ -274,7 +272,7 @@ CustomTokenAuthentication
 **200** | OK |  -  |
 
 
-## **src_app_api_cloud_nodes_get_instance_status**
+# **src_app_api_cloud_nodes_get_instance_status**
 > CloudNodeInstanceStatusResponse src_app_api_cloud_nodes_get_instance_status(instance_uuid)
 
 Get Instance Status
@@ -355,7 +353,7 @@ CustomTokenAuthentication
 **200** | OK |  -  |
 
 
-## **src_app_api_cloud_nodes_list_instances**
+# **src_app_api_cloud_nodes_list_instances**
 > List[CloudNodeInstanceSchema] src_app_api_cloud_nodes_list_instances(profile_slug=profile_slug, status=status, workspace_slug=workspace_slug)
 
 List Instances
@@ -440,7 +438,7 @@ CustomTokenAuthentication
 **200** | OK |  -  |
 
 
-## **src_app_api_cloud_nodes_mark_instance_failed**
+# **src_app_api_cloud_nodes_mark_instance_failed**
 > CloudNodeFailedResponse src_app_api_cloud_nodes_mark_instance_failed(uuid, cloud_node_failed_request)
 
 Mark Instance Failed
@@ -524,14 +522,14 @@ CustomTokenAuthentication
 **200** | OK |  -  |
 
 
-## **src_app_api_cloud_nodes_mark_instance_terminated**
+# **src_app_api_cloud_nodes_mark_instance_terminated**
 > CloudNodeTerminatedResponse src_app_api_cloud_nodes_mark_instance_terminated(uuid, cloud_node_terminated_request)
 
 Mark Instance Terminated
 
 Mark a Cloud Node (GPU) instance as terminated.
 
-Called by the package (cyberwave-cloud-node) once a termination is triggered OR by the GitHub Actions workflow after Terraform has successfully (when used by us)
+Called once a termination has been triggered and the instance has been shut down.
 
 ### Example
 
@@ -607,7 +605,7 @@ CustomTokenAuthentication
 **200** | OK |  -  |
 
 
-## **src_app_api_cloud_nodes_record_heartbeat**
+# **src_app_api_cloud_nodes_record_heartbeat**
 > CloudeNodeHeartbeatResponse src_app_api_cloud_nodes_record_heartbeat(uuid)
 
 Record Heartbeat
@@ -688,7 +686,7 @@ CustomTokenAuthentication
 **200** | OK |  -  |
 
 
-## **src_app_api_cloud_nodes_register_gpu_instance**
+# **src_app_api_cloud_nodes_register_gpu_instance**
 > CloudeNodeInstanceRegisterResponse src_app_api_cloud_nodes_register_gpu_instance(uuid, cloud_node_instance_register_request)
 
 Register Gpu Instance
@@ -776,14 +774,14 @@ CustomTokenAuthentication
 **200** | OK |  -  |
 
 
-## **src_app_api_cloud_nodes_save_cloud_node_instance_log**
+# **src_app_api_cloud_nodes_save_cloud_node_instance_log**
 > CloudNodeLogResponse src_app_api_cloud_nodes_save_cloud_node_instance_log(uuid, cloud_node_log_request)
 
 Save Cloud Node Instance Log
 
 Save a log entry for a Cloud Node (GPU) instance.
 
-Logs are stored asynchronously in GCS with metadata in the database.
+Logs are stored asynchronously.
 This allows Cloud Node instances to stream logs without blocking.
 
 ### Example
