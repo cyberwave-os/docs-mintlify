@@ -1,0 +1,85 @@
+---
+title: "Expressions and node handles"
+description: "Feed one node's output into another node's input with {handle.output.field}, using the editor's autocomplete or the API."
+icon: "brackets-curly"
+---
+
+An **expression** is an input whose value is text with references to earlier nodes
+in braces. Use it when one node's result belongs inside another node's input:
+
+```text
+https://api.example.com/users/{http_request.response.userId}
+```
+
+A reference is `{handle.output.path}`:
+
+| Part | Meaning | Example |
+| --- | --- | --- |
+| `handle` | The node. Every node has one. | `http_request` |
+| `output` | One of the node's outputs. | `response`, `status_code` |
+| `path` | A field inside the output. Dots go into objects, numbers pick list items. | `userId`, `items.0.sku` |
+
+<Note>
+Expressions work on cloud workflows and on workflows that run on an edge device. If an
+input is exactly one reference and that output does not exist when the node runs, the
+node fails with "Could not resolve expression".
+</Note>
+
+## Node handles
+
+A node's **handle** is a short name such as `http_request` or `send_alert`, made from
+the node's name when the node is created. Handles are unique within a workflow and
+**do not change when you rename the node**, so an expression keeps working after a
+rename. Two nodes with the same name get `fetch` and `fetch_2`. Handles use lowercase
+letters, digits and underscores, and a handle cannot be `params`, `caller`, `self`,
+`input` or `trigger`.
+
+Behind the scenes the workflow stores the node's uuid, not the handle. You can still
+write a uuid in an expression; both forms resolve to the same node.
+
+## Autocomplete in the editor
+
+In an expression field, type `{`:
+
+1. **Pick a node.** The list shows the nodes that run before this one.
+2. **Pick an output.** The list shows the outputs the node declares. Type `.` and the
+   field path yourself, for example `response.items.0.sku`.
+
+Use the arrow keys and **Enter** (or **Tab**) to insert, **Escape** to close. Under the
+box the editor flags a handle that does not exist (with a suggestion), an output the
+node does not declare, and text in braces that is not a reference.
+
+## Through the API and MCP
+
+Create or update a node with an expression input and use handles:
+
+```json
+{
+  "input_mappings": {
+    "message": {
+      "mode": "expression",
+      "expression": "User {http_request.response.userId} got status {http_request.status_code}"
+    }
+  }
+}
+```
+
+- A handle no node has is **rejected** with a suggestion, for example
+  `No node 'http_requst' in this workflow. Did you mean 'http_request'?`.
+- A node cannot reference itself.
+- An output the node does not declare, or text in braces that is not a reference, is
+  accepted and reported as a warning.
+- The MCP `cw_edit_workflow_graph` tool uses handles too. `cw_get_workflow` lists each
+  node's handle, and `insert_nodes` returns it; an inserted node's `ref` becomes its
+  handle when that is valid and free.
+
+## Run parameters
+
+`params` is a reserved handle: `{params.speed}` reads the run's parameter `speed`, in
+the same single-brace form as a node reference. Declare parameters on the workflow
+(`params_schema`); the editor then completes `params` and the declared names after
+`{`. A parameter that is not declared is still accepted when a run starts, so an
+unknown name only warns. Nested values work as for nodes: `{params.route.waypoints.0}`.
+
+The old double-brace form, `{{params.name}}`, is no longer read. The editor and the MCP
+tool warn when they see it, and the text is left as written.

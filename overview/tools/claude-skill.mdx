@@ -17,15 +17,27 @@ It chooses the execution plane for the operation:
 
 ## Installation
 
-Follow [Connect your AI tool](/ai/connect-your-ai-tool) to install the skill
-for Claude Code or Codex, configure the hosted MCP server, and verify access to
-your workspace. Installing the skill alone does not connect your account.
+Clone the canonical public skill directly into Claude Code's global skill directory:
+
+```bash
+git clone https://github.com/cyberwave-os/cyberwave-skill ~/.claude/skills/cyberwave
+```
+
+For project-local discovery:
+
+```bash
+git clone https://github.com/cyberwave-os/cyberwave-skill .claude/skills/cyberwave
+```
 
 ## Usage
 
-After setup, invoke `/cyberwave` in Claude Code or `$cyberwave` in Codex.
-Describe what you want to build; the agent will guide you through environment
-setup, interface selection, and implementation.
+In any Claude Code session, run:
+
+```
+/cyberwave
+```
+
+Describe what you want to build and Claude will guide you through environment setup, interface selection, and implementation.
 
 ## Requirements
 

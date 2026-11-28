@@ -90,7 +90,8 @@ The [`cyberwave`](https://pypi.org/project/cyberwave/) package provides **base c
 
 | Base class | Use when |
 | ---------- | -------- |
-| **[`BaseDriver`](/feature-reference/edge/drivers/base-driver-class)** | Serial, vendor SDK, WebRTC, cameras, custom polling loops |
+| **[`BaseDriver`](/feature-reference/edge/drivers/base-driver-class)** | Serial, vendor SDK, WebRTC, custom polling loops |
+| **[`BaseCameraDriver`](/feature-reference/edge/drivers/driver-mixins#camera-drivers)** | A driver whose device is one or more cameras: USB/V4L2, RealSense, a network stream, or H.264 a vendor SDK hands over |
 | **[`BaseROS2Driver`](/feature-reference/edge/drivers/ros2-base-driver)** | ROS 2 Humble+ — subscribe on ROS topics and forward to Cyberwave with **`from_ros=`** |
 
 ### What you declare vs what the SDK runs
@@ -126,9 +127,30 @@ For manipulator arms, compose SDK mixins instead of hand-wiring MQTT joint teleo
 
 **Bidirectional `joint/update`:** call `super().define_interface(iface)` first (mixins register the **teleop listener**); then add your **edge publisher** with `from_ros`. Clients use `twin.joints.set()` for commands and `twin.joints.get()` to read feedback — drivers use the registry, not `twin.joints.set()`.
 
-#### Integration example: `PiperDriver`
+### Cameras {#cameras}
 
-Reference: [`cyberwave-edge-nodes/piper/public/cw_piper/driver.py`](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-edge-nodes/piper/public/cw_piper/driver.py).
+Do not hand-write capture loops, WebRTC signalling or Zenoh frame publishing. Use the camera mixin, which handles every camera of the driver; each one streams, fails and recovers on its own:
+
+| You have | Write |
+| -------- | ----- |
+| A camera device (the twin *is* the camera) | `class MyCamera(BaseCameraDriver): ...` then `MyCamera.main()`. The source comes from twin metadata, or from `CAMERA_SOURCE` |
+| A robot with cameras among its sensors | Add `CameraStreamMixin` to the robot driver and list the cameras in `CAMERAS`, one `CameraSourceConfig` per sensor (`camera_name` = sensor id) |
+
+Then connect each camera with the factory for how it reaches the edge device ([full guide](/feature-reference/edge/drivers/driver-mixins#connect-a-camera)):
+
+| Camera | `CameraSourceConfig` | Needs |
+| ------ | -------------------- | ----- |
+| USB | `.usb("/dev/v4l/by-id/…", camera_name)` or `.usb(serial_number="…", camera_name=…)` | The device in the container: `--device /dev/videoN`, `-v /dev/v4l:/dev/v4l:ro` |
+| RTP over UDP (H.264) | `.from_url("rtp://0.0.0.0:5600", camera_name)` | The `-gstreamer` image; the UDP port reachable (host networking on Linux) |
+| IP camera, RTSP H.264 | `.from_url(os.environ["CAMERA_URL"], camera_name)` with `rtsp://user:pass@ip:554/…` | The `-gstreamer` image; codec set to H.264 on the camera |
+| IP camera, MJPEG/HTTP or H.265 | `.from_url(url, camera_name, decode=True)` | The standard image; CPU to decode and re-encode |
+| H.264 from the vendor SDK | `.push(camera_name)` and `self.push_h264(frame, camera=...)` in the SDK callback | The `-gstreamer` image |
+
+Forwarded sources (RTP, RTSP, push) reach the twin without being decoded or re-encoded. Pin USB cameras by `by-id` link or serial, never by index: an index moves when cameras are replugged.
+
+A failing camera raises its own alert and is retried; it never stops the driver or the other cameras. Override `on_camera_status(camera, status, reason)` when the robot should react, for example by pausing grasping while the wrist camera is down. Full reference: [Camera drivers](/feature-reference/edge/drivers/driver-mixins#camera-drivers).
+
+#### Integration example: `PiperDriver`
 
 ```python
 class PiperDriver(
@@ -187,7 +209,7 @@ Motion shaping (trapezoidal vs passthrough): [Joint motion shaping](/feature-ref
 
 ### ROS 2 minimal example (`ursim_driver.py`)
 
-Flagship sample: [`examples/ursim_driver.py`](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-sdks/cyberwave-python/examples/ursim_driver.py) (~75 lines).
+Flagship sample: [`examples/ursim_driver.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/ursim_driver.py) (~75 lines).
 
 ```python
 from cyberwave.driver import CallbackGroup, TopicSpec
@@ -279,7 +301,7 @@ declarations never share a value. Import them from `cyberwave.constants` rather
 than spelling them inline — a string outside the enum is accepted here and
 silently coerced downstream.
 
-This single method feeds `get_manifest()` / `driver.manifest`, optional **`metadata["zenoh"]`**, and `_wire_interface_from_registry()` (MQTT subscribe/publish plus edge **DataBus** when dual specs are present). **`twin/command` stays MQTT-only** — do not set `enable_zenoh=True` on command listeners.
+This single method feeds `get_manifest()` / `driver.manifest`, optional **`metadata["zenoh"]`**, and the runtime wiring (MQTT subscribe/publish plus edge **DataBus** when dual specs are present). **`twin/command` stays MQTT-only** — do not set `enable_zenoh=True` on command listeners.
 
 ### Step 3 — Lifecycle hooks (map to `run_async` order)
 
@@ -291,7 +313,7 @@ This single method feeds `get_manifest()` / `driver.manifest`, optional **`metad
 | `on_activate` | Log IMU topic active; `emit_driver_info` |
 | `on_shutdown` | `pass` |
 
-For a real camera driver, `on_connect_to_device` opens the device SDK and `on_register_callbacks` attaches frame callbacks.
+For a camera, do not write these hooks yourself: `BaseCameraDriver` and `CameraStreamMixin` open the device, stream it and publish its frames (see [Cameras](#cameras)).
 
 ### Step 4 — Publisher callback (MQTT stream)
 
@@ -417,7 +439,7 @@ When Edge Core starts a driver container it injects the following environment va
 | `CYBERWAVE_TWIN_JSON_FILE`   | Absolute path to a writable JSON file containing the twin's current state (see [Twin JSON file](#twin-json-file)) |
 | `CYBERWAVE_CHILD_TWIN_UUIDS` | _(optional)_ Comma-separated UUIDs of child twins (e.g. cameras) attached to this driver                          |
 
-`CYBERWAVE_CHILD_TWIN_UUIDS` is set when child twins are attached to the driver twin. Drivers can use this to coordinate child devices (for example, multiple cameras) without additional configuration.
+`CYBERWAVE_CHILD_TWIN_UUIDS` is set when child twins are attached to the driver twin. Drivers can use this to coordinate child devices without additional configuration. A camera that is its own child twin gets its own camera driver from Edge Core; cameras that are sensors of this twin are streamed by this driver (`CAMERAS`, see [Cameras](#cameras)).
 
 ### Restart behavior tuning
 
@@ -442,7 +464,7 @@ Edge Core raises the following alerts:
 
 `CYBERWAVE_TWIN_JSON_FILE` points to a JSON file on disk that contains the digital twin instance (including its `metadata`) and the associated catalog twin data, matching the `TwinSchema` and `AssetSchema` API schemas.
 
-Drivers may read and modify this file. Edge Core syncs any changes back to the backend when connectivity is available.
+Drivers may read and modify this file. Edge Core syncs any changes back to Cyberwave when connectivity is available.
 
 ## Runtime configuration
 
@@ -523,7 +545,7 @@ Topic entries are nested as **`mqtt.<namespace>.<leaf>`**. The leaf key is the *
 
 Each leaf entry sets `direction`, `payload_schema_ref`, `description`, and optional `source_types`.
 
-**WebRTC** signaling is always on the **twin** prefix (`cyberwave/twin/{uuid}/webrtc-offer`, `webrtc-answer`, `webrtc-candidate`, and `webrtc-command` for media-service commands). Declare them under **`mqtt.twin`** with hyphenated leaf names — not as a separate top-level namespace:
+**WebRTC** signaling is always on the **twin** prefix (`cyberwave/twin/{uuid}/webrtc-offer`, `webrtc-answer`, `webrtc-candidate`, and `webrtc-command` for media service commands). Declare them under **`mqtt.twin`** with hyphenated leaf names — not as a separate top-level namespace:
 
 ```yaml
 mqtt:
@@ -538,7 +560,7 @@ mqtt:
       payload_schema_ref: WebRTCAnswerPayload
 ```
 
-Only list WebRTC leaves when **this twin** participates in signaling (e.g. onboard camera or gimbal stream). Arm-only or joint-bus drivers (such as SO-101) should omit them; camera video uses **child camera twins** and the media service, not WebRTC topics on the arm twin.
+Only list WebRTC leaves when **this twin** participates in signaling, that is when this driver streams a camera that is a sensor of this twin (an onboard or wrist camera, a gimbal stream, any `CameraStreamMixin` camera). Drivers without cameras, and arms whose cameras are **child camera twins** (such as SO-101), should omit them: each child camera twin signals on its own topics.
 
 <Note>
   In some first-party Cyberwave profiles you may see a legacy `mqtt.webrtc.offer` shorthand (`offer` → `webrtc-offer` under the twin prefix). For **new** drivers, use `mqtt.twin.webrtc-*` only.
@@ -649,7 +671,7 @@ Drivers normally stream state over **MQTT** (see below). These REST endpoints ar
 
 #### Runtime messaging (MQTT)
 
-Declared in `cw-driver.yml` → compiled into `metadata.mqtt.topics`. At runtime the driver (or SDK teleop) uses the **MQTT broker** (WebSocket URL in `NEXT_PUBLIC_MQTT_URL` for frontends; port `1883` / `9001` locally for edge). Topic prefix may include an environment segment in deployed stacks; slugs below are canonical.
+Declared in `cw-driver.yml` → compiled into `metadata.mqtt.topics`. At runtime the driver (or SDK teleop) uses the **MQTT broker**. The slugs below are canonical.
 
 | Catalog slug (`metadata.mqtt.topics` key) | Example topic | Typical driver role |
 | ----------------------------------------- | ------------- | ------------------- |
@@ -894,7 +916,7 @@ If you publish data over MQTT directly (rather than through the SDK's `cw.data.p
 
 If your driver currently publishes sensor data over MQTT, you can add Zenoh publishing without removing the MQTT path. The two paths serve different consumers:
 
-- **MQTT** → cloud backend (telemetry, frontend, workflows)
+- **MQTT** → Cyberwave cloud (telemetry, frontend, workflows)
 - **Zenoh** → local worker containers (zero-copy inference, fusion)
 
 ### Step 1: Set CYBERWAVE_DATA_BACKEND
@@ -948,7 +970,7 @@ Fork or read these repositories when building your own compliant driver — each
 
 - **Camera** — [cyberwave-edge-camera-driver](https://github.com/cyberwave-os/cyberwave-edge-camera-driver): USB/RTSP camera as a twin (child of a parent robot twin).
 - **SO-101 arm** — [cyberwave-edge-so101](https://github.com/cyberwave-os/cyberwave-edge-so101): joint bus + command topic pattern for a manipulator.
-- **ROS UGV** — [cyberwave-edge-ros-ugv](https://github.com/cyberwave-os/cyberwave-edge-nodes/tree/main/cyberwave-edge-ros-ugv): locomotion and onboard camera profiles under `cw-driver-profiles/`.
+- **ROS UGV** — [cyberwave-edge-ros-ugv](https://github.com/cyberwave-os/cyberwave-edge-ros-ugv): locomotion and onboard camera profiles under `cw-driver-profiles/`.
 
 ## Advanced topics
 

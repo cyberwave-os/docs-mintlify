@@ -5,7 +5,7 @@ icon: "file-import"
 ---
 
 <Info>
-**Robot datasets first.** Cyberwave currently focuses on robot manipulation and navigation datasets (LeRobot, RLDS, and similar time-series formats). For robot episode datasets, zip upload supports LeRobot; HuggingFace Hub import detects any dataset repository, but only robotics datasets are correctly displayed today. Full support for non-robotics formats — playback, conversion, and training — is coming in a future release.
+**Robot datasets first.** Cyberwave currently focuses on robot manipulation and navigation datasets (LeRobot, RLDS, and similar time-series formats). Zip upload supports LeRobot only; HuggingFace Hub import detects any dataset repository, but only robotics datasets are correctly displayed today. Full support for non-robotics formats — playback, conversion, and training — is coming in a future release.
 </Info>
 
 ## Overview
@@ -21,12 +21,9 @@ Format detection happens automatically on the server side and sets the `source_f
 
 The two import sources have different levels of format support today.
 
-### Zip upload — robot episodes and sensor time series
+### Zip upload — LeRobot only
 
-For robot episode datasets, zip upload supports **LeRobot v2.1 and v3**.
-Sensor time-series archives use a separate recipe-based format; see
-[Import sensor time series](/feature-reference/datasets/timeseries) for the ZIP
-structure, required recipe, and supported data files.
+Zip upload currently supports **LeRobot v2.1 and v3 only**. Other dataset formats are not yet supported via zip upload.
 
 | Format | `source_format` value | Description |
 |---|---|---|
@@ -68,9 +65,7 @@ For private HuggingFace repositories, ensure your organisation has configured th
 3. Select your zip file (max 10 GB)
 4. Click **Upload**
 
-The system automatically detects the format after the upload completes. For LeRobot (v2.1/v3), follow the archive structure below. For sensor data, follow
-[Import sensor time series](/feature-reference/datasets/timeseries). See
-[Supported formats](#supported-formats) before uploading another format.
+The system automatically detects the format after the upload completes. Zip upload only supports **LeRobot** (v2.1/v3) today (see [Supported formats](#supported-formats)); other formats should be imported from HuggingFace Hub instead.
 
 ## Monitor progress
 
@@ -138,11 +133,11 @@ The `meta/info.json` file must include:
 
 After upload, Cyberwave automatically:
 
-1. **Downloads** the zip to processing workers
+1. **Retrieves** the uploaded zip
 2. **Extracts** and validates the archive structure
 3. **Detects** the format version (v2.1 or v3.0)
 4. **Validates** data integrity and required files
-5. **Persists** metadata and creates dataset records
+5. **Creates** the dataset and its metadata
 
 You can monitor progress in real-time through the upload dialog.
 

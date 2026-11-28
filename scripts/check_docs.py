@@ -20,7 +20,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(ROOT)
 
 # Pages that intentionally live outside the sidebar.
-ALLOWED_UNLISTED = {"README", "REFACTOR_PLAN"}
+ALLOWED_UNLISTED = {"README"}
 SKIP_PREFIXES = ("api-reference/rest/", "snippets/", "scripts/", "node_modules/")
 
 errors = []

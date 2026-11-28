@@ -1,12 +1,12 @@
 ---
 title: "Drivers"
-description: "A Cyberwave driver is a Docker image that interacts with device hardware and the Cyberwave backend."
+description: "A Cyberwave driver is a Docker image that interacts with device hardware and Cyberwave."
 icon: "gears"
 ---
 
 {/* TODO(docs): **STUB DOCUMENT:** This page is intentionally minimal and will be expanded with deeper technical details in a future update. */}
 
-A Cyberwave driver is a Docker image that interacts with device hardware and the Cyberwave backend.
+A Cyberwave driver is a Docker image that interacts with device hardware and Cyberwave.
 
 ## How to use drivers
 
@@ -57,7 +57,7 @@ through `/dev/v4l/by-id`. It similarly exposes `/dev/snd` to the generic audio
 drivers. Custom launchers must provide those mounts themselves.
 
 <Info>
-  `cyberwave edge install` does not ask you to pick a `/dev/videoN`
+  **stub** — `cyberwave edge install` does not ask you to pick a `/dev/videoN`
   for a camera twin that already sets `serial_number`; it matches the serial
   against the attached cameras and binds them for you. Twins without one are
   still asked, and the camera you pick is saved back as that twin's
@@ -68,7 +68,7 @@ drivers. Custom launchers must provide those mounts themselves.
 </Info>
 
 <Info>
-  Cameras that publish no USB serial (the Logitech C920 is one) can
+  **stub** — Cameras that publish no USB serial (the Logitech C920 is one) can
   never be pinned with `serial_number`. Set `metadata.video_device` to a udev
   stable name instead — `/dev/v4l/by-id/...` or `/dev/v4l/by-path/...` — and
   the installer binds the twin without asking, exactly as it does for a serial.
@@ -80,9 +80,14 @@ drivers. Custom launchers must provide those mounts themselves.
 
 ### GPU passthrough
 
-Drivers can opt-in to GPU acceleration by setting `"prefer_gpu": true` in their metadata. When the host has the NVIDIA container runtime available **and** configured as the default in `/etc/docker/daemon.json`, Edge Core passes `--gpus` to the driver container.
+Drivers can opt-in to GPU acceleration by setting `"prefer_gpu": true` in their metadata. When the host has the NVIDIA container runtime (`docker info` reports `nvidia`):
 
-The optional `"gpu"` field controls which GPUs are exposed:
+- **`nvidia` is the default runtime** in `/etc/docker/daemon.json`: Edge Core passes `--runtime nvidia --gpus <gpu>` for every `prefer_gpu` driver.
+- **The default is `runc`**: Edge Core passes `--runtime nvidia` only when the container is GPU-capable, meaning `NVIDIA_VISIBLE_DEVICES` is set (and not `void`) in the image `ENV` or in the service's `environment`. CUDA and L4T base images set it. Other drivers keep starting on `runc`, so a host with a broken NVIDIA toolkit still runs them. `--gpus` is added only for an explicit device selection; the implicit `all` is left to the runtime hook, which Jetson's CSV mode needs.
+
+Without the NVIDIA runtime, no GPU flags are passed.
+
+The optional `"gpu"` field controls which GPUs are exposed (as `--gpus`, see above):
 
 | `gpu` value | Docker flag | Use case |
 |---|---|---|

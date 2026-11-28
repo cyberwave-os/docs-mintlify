@@ -42,8 +42,7 @@ npx mint broken-links                # Mintlify link check (needs images present
 python3 scripts/gen_cli_reference.py --check   # CLI reference is in sync with the installed cyberwave-cli
 ```
 
-Run these checks locally before opening a pull request. This repository does not
-currently define a `docs-checks.yml` pull-request workflow.
+Both checks run in CI on every pull request.
 
 ## Preview
 

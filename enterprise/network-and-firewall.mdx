@@ -37,7 +37,7 @@ files.pythonhosted.org        TCP 443    pip installs
 static.cyberwave.com          TCP 443    Cyberwave-hosted ONNX weights
 ```
 
-{/* TODO(docs): add the storage host used for signed URLs (model weights, recording uploads). The edge-core README says a private GCS bucket; confirm the hostname. */}
+{/* TODO(docs): add the storage host used for signed URLs (model weights, recording uploads). Confirm the hostname. */}
 {/* TODO(docs): add the host(s) the CLI install script (cyberwave.com/install.sh) and the Linux Docker auto-install contact (Docker's apt repository). */}
 
 ## Edge node
@@ -58,8 +58,6 @@ static.cyberwave.com          TCP 443    Cyberwave-hosted ONNX weights
 
 The SDK uses exactly one TURN server. It picks TLS on port 443 on purpose, because that port gets through corporate and industrial firewalls that block 3478 and outbound high UDP ports. The trade-off is that relayed media runs over TCP, which adds latency under packet loss. If the site allows UDP, set `CYBERWAVE_WEBRTC_TURN_URL=turn:turn.cyberwave.com:3478` on the edge and open the UDP relay range instead.
 
-{/* TODO(docs): CYBERWAVE_WEBRTC_TURN_URL is named in an SDK source comment (sensor/ice.py) that points to edge_driver_env.resolve_ice_servers in Edge Core. Confirm the variable name and where to set it (systemd drop-in or credentials.json envs). */}
-
 {/* TODO(docs): document the SaaS media service (SFU) endpoint and whether edges can reach it directly over UDP, and on which ports. */}
 
 ### Model weights
@@ -77,7 +75,7 @@ To avoid all three, pre-stage the weight files. Edge Core then never contacts th
 | Destination | Port | Purpose |
 |---|---|---|
 | `cyberwave.com` | TCP 443 | `install.sh` for the CLI. `install-cloud-node.sh` for cloud nodes. |
-| `packages.buildkite.com` | TCP 443 | apt repository and GPG key for `cyberwave-edge-core` (and `cyberwave-cloud-node`). Prerelease `dev` and `staging` channels come from the same host. |
+| `packages.buildkite.com` | TCP 443 | apt repository and GPG key for `cyberwave-edge-core` (and `cyberwave-cloud-node`). |
 | `pypi.org`, `files.pythonhosted.org` | TCP 443 | `pip install cyberwave-cli`. `cyberwave-edge-core` on platforms without apt. |
 | Docker's package repository and your OS mirrors | TCP 443 / 80 | On Linux, the installer installs Docker through `apt-get` if it is missing. |
 | `static.cyberwave.com` | TCP 443 | Raspberry Pi OS images, if you flash the [Cyberwave Pi image](/feature-reference/edge/raspberry-pi) |
@@ -123,14 +121,14 @@ A [cloud node](/overview/tools/cloud-node) connects outbound to the MQTT broker 
 
 The cloud node page lists `1883` as the default MQTT port. The SDK default is `8883` with TLS. Check which port your cloud node version uses (`CYBERWAVE_MQTT_PORT`) before you request firewall changes, and prefer TLS.
 
-{/* TODO(docs): /overview/tools/cloud-node says the default MQTT port is 1883, but the SDK default (config.py) is 8883 with TLS. Confirm the cloud node default and whether mqtt.cyberwave.com accepts plaintext 1883 at all. */}
+{/* TODO(docs): /overview/tools/cloud-node says the default MQTT port is 1883, but the SDK default is 8883 with TLS. Confirm the cloud node default and whether mqtt.cyberwave.com accepts plaintext 1883 at all. */}
 {/* TODO(docs): confirm the cloud node calls api.cyberwave.com directly (REST reference has CloudNode register/log endpoints). */}
 
 ## Self-hosted server
 
-The self-hosted package exposes these services on the server: web frontend, REST API, MQTT for edges, MQTT over WebSocket for browsers, the media service, and a UDP range for WebRTC media (50000–50100). The reference configuration serves them without TLS. Put a TLS-terminating proxy in front and agree the final port plan with Cyberwave. Keep the task monitor (Celery Flower) off any customer-facing network.
+The self-hosted package exposes these services on the server: web frontend, REST API, MQTT for edges, MQTT over WebSocket for browsers, the media service, and a UDP range for WebRTC media (50000–50100). The reference configuration serves them without TLS. Put a TLS-terminating proxy in front and agree the final port plan with Cyberwave. Keep administrative and monitoring interfaces off any customer-facing network.
 
-Even when self-hosted, the media service's ICE configuration points at Cyberwave's hosted STUN/TURN (`turn.cyberwave.com`) and a public Google STUN server. A self-hosted server therefore still needs egress for video unless you replace them. It also pulls images from Docker Hub, and syncing the catalog from production needs internet access.
+Even when self-hosted, the video configuration points at Cyberwave's hosted STUN/TURN (`turn.cyberwave.com`) and a public Google STUN server. A self-hosted server therefore still needs egress for video unless you replace them. It also pulls images from Docker Hub, and syncing the catalog from production needs internet access.
 
 {/* TODO(docs): TLS-first port plan for self-hosted, and how to point edges at it (CYBERWAVE_BASE_URL, CYBERWAVE_MQTT_HOST, CYBERWAVE_MQTT_PORT, CYBERWAVE_MQTT_USE_TLS). */}
 {/* TODO(docs): how to run a self-hosted TURN server so video works without Cyberwave-hosted relays. */}
