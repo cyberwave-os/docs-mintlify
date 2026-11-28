@@ -7,8 +7,8 @@ Workflows that run outside the backend (on edges, in workers, or via
 the SDK) can report their execution progress back to Cyberwave so that
 the UI and API expose a live timeline. Ingress is MQTT-only; both the
 SDK reporter and generated edge workers publish to the topics below,
-which the backend consumer funnels into the `WorkflowExecution` +
-`WorkflowNodeExecution` tables.
+which the backend records as the workflow's execution and per-node
+execution history.
 
 Ingress requires an **environment-bound** workflow. Cloud-owned executions
 keep using their existing task runner; selecting a model or a Control service
@@ -36,12 +36,11 @@ existing lifecycle events without requiring a coordinated device upgrade.
 
 Publishers should set `source_type` to one of `edge`, `sim`, `tele`,
 or `edit` for lineage. Authentication is broker-level (consistent with
-other Cyberwave MQTT ingress such as
-`cyberwave/twin/{uuid}/navigate/status`).
+other Cyberwave MQTT ingress).
 
 Idempotency is enforced on the backend:
 - Repeat `started` with the same `execution_uuid` returns the existing
-  row without re-seeding node children.
+  execution without re-seeding its nodes.
 - Node events for a node already in a terminal state (`success` /
   `error` / `skipped`) are ignored — first terminal write wins.
 - `finished` on an already-terminal execution is a no-op.
@@ -90,12 +89,8 @@ blip doesn't poison a running workflow).
 
 ## Generated worker modules
 
-Mission workflows compiled with `run_on_edge=true` ship a generated
-`wf_*.py` that already wires the reporter around every emitted node.
-Each step in `compiled_payload.steps` carries the emitting node's
-`node_uuid` so runners that consume the payload directly (cloud-side
-or custom edge runners) can produce the same events without parsing
-the generated Python source.
+Workflows compiled with `run_on_edge=true` ship a generated worker
+that already wires the reporter around every emitted node.
 
 The generated worker holds its node events until the end of a tick, so
 that a frame-driven trigger stays quiet on idle frames, and timestamps

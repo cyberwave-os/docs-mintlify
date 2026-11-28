@@ -59,7 +59,6 @@ This page covers what a system integrator needs to roll out more than a handful 
     sudo cyberwave edge install \
       --token "$CW_SERVICE_TOKEN" \
       -e acme/envs/line-3-cell-2 \
-      --channel stable \
       --yes
     ```
     </CodeGroup>
@@ -85,8 +84,7 @@ All options are listed by `cyberwave edge install --help`.
 | `-y`, `--yes` | Skips confirmation prompts | Picks the first edge-compatible twin. It does not skip the Linux multi-camera question. |
 | `-e`, `--environment` | Environment to attach to, as a UUID or full slug (`acme/envs/production-floor`) | The name on its own is not enough. An unknown environment, or one in another workspace, stops the install before anything is installed. |
 | `--token` | API token to pair with | Overrides stored credentials and `CYBERWAVE_API_KEY`. An empty value (`--token "$UNSET"`) fails instead of falling back. A rejected token stops the install. |
-| `--channel` | `stable` (default), `dev` or `staging` | Selects the edge-core package channel |
-| `--version` | Exact edge-core version from the selected channel | Use it to pin a fleet to one tested version |
+| `--version` | Exact edge-core version | Use it to pin a fleet to one tested version |
 | `--reconfigure-camera` | Re-runs camera detection only | Cannot be combined with `-e` or `--token` |
 | `--reconfigure-microphone`, `--reconfigure-speaker`, `--microphone-index` | Re-run macOS audio bridge setup | macOS only |
 | `--force-reinstall` | Rebuilds the USB/IP server | macOS only |
@@ -136,7 +134,6 @@ hostnamectl set-hostname "$DEVICE_HOSTNAME"
 cyberwave edge install \
   --token "$CW_SERVICE_TOKEN" \
   -e "$ENV_SLUG" \
-  --channel stable \
   --version "$EDGE_CORE_VERSION" \
   --yes
 ```
@@ -182,10 +179,9 @@ The API publishes `{"command": "restart_edge_core"}` on the MQTT topic `edges/{e
 
 ## Updates and version pinning
 
-- **Channels.** `stable` installs tagged releases. `dev` and `staging` install separate prerelease packages (`cyberwave-edge-core-dev`, `cyberwave-edge-core-staging`) that conflict with each other. Use `stable` for customer sites.
-- **Pinning.** `--version` installs an exact version from the channel. Running the installer again with a new `--version` installs or upgrades to that version. Check the running version with `cyberwave-edge-core --version`, or read it from host facts.
+- **Pinning.** `--version` installs an exact version. Running the installer again with a new `--version` installs or upgrades to that version. Check the running version with `cyberwave-edge-core --version`, or read it from host facts.
 - **Rollout.** Automatic Edge Core updates, fleet-wide staged rollouts and rollback are not documented. Drive upgrades from your own configuration management, canary first.
-- **Worker image.** Mutable tags (`latest`, `dev`, `staging`, `nightly` and similar) are pulled on every worker restart. Immutable tags (versions, digests) are pulled only when missing. To pin one, set `CYBERWAVE_WORKER_IMAGE` in a systemd drop-in (`sudo systemctl edit cyberwave-edge-core`) and restart the service.
+- **Worker image.** Mutable tags (`latest` and similar) are pulled on every worker restart. Immutable tags (versions, digests) are pulled only when missing. To pin one, set `CYBERWAVE_WORKER_IMAGE` in a systemd drop-in (`sudo systemctl edit cyberwave-edge-core`) and restart the service.
 
 {/* TODO(docs): document how to pin driver image versions per twin, and the SDK/CLI/edge-core compatibility policy. */}
 

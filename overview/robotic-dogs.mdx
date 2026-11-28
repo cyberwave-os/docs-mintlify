@@ -9,7 +9,6 @@ import { EdgeSetup } from "/snippets/edge-setup.mdx";
 Cyberwave treats every quadruped the same: drop a digital twin into an [environment](/feature-reference/architecture/key-concepts#environment), pair the hardware, and start sending commands from the dashboard, the [Python SDK](/overview/tools/python-sdk), or an AI controller. The same workflow scales from the affordable [Unitree Go2](https://cyberwave.com/unitree/go2) all the way up to industrial platforms like the [Boston Dynamics Spot](https://cyberwave.com/boston-dynamics/spot).
 
 <iframe
-  loading="lazy"
   width="100%"
   height="400"
   src="https://www.youtube.com/embed/Ap5VDNGbvR8"
@@ -47,7 +46,7 @@ Every catalog page bundles the **bill of materials**, supported drivers, and **t
   </Step>
 
   <Step title="Stream sensors automatically">
-    Cyberwave already knows what's on your dog. As soon as `sudo cyberwave pair` completes, the dashboard lights up with the **video feed**, **LiDAR point cloud**, **audio**, and any other sensor the platform exposes, with no per-sensor configuration required.
+    Once pairing completes and the driver is running, supported sensors such as video and LiDAR stream to Cyberwave. Go2 microphone streaming is off by default: set the twin metadata `enable_audio` to `true` and restart `cyberwave-edge-core` to enable it. The Go2 live dashboard audio card is not currently exposed by the driver, even when microphone streaming is enabled.
   </Step>
 </Steps>
 

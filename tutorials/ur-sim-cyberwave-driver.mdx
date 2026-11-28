@@ -9,7 +9,7 @@ icon: "robot"
 This tutorial is the **full hands-on path**. For **protocols and Docker topology**, see [Custom integrations](/robots/add-your-robot). For **what the SDK automates**, see [Writing compatible drivers — Python SDK drivers](/feature-reference/edge/drivers/writing-compatible-drivers#python-sdk-drivers) and [BaseROS2Driver](/feature-reference/edge/drivers/ros2-base-driver).
 </Note>
 
-Connect a **simulated Universal Robots arm** to a Cyberwave twin using [`ursim_driver.py`](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-sdks/cyberwave-python/examples/ursim_driver.py) (~75 lines). No physical robot required.
+Connect a **simulated Universal Robots arm** to a Cyberwave twin using [`ursim_driver.py`](https://github.com/cyberwave-os/cyberwave-python/blob/main/examples/ursim_driver.py) (~75 lines). No physical robot required.
 
 | Step | What you do |
 | ---- | ----------- |
@@ -79,11 +79,13 @@ If `/joint_states` is flat later, the arm is probably idle — run the program f
 
 ---
 
-## 4. Start ROS 2 with your repo mounted
+## 4. Start ROS 2 with the SDK repo mounted
 
 ```bash
+git clone https://github.com/cyberwave-os/cyberwave-python.git ~/git/cyberwave-python
+
 docker run -it --rm --name ros2_env --network ur_net \
-  -v ~/git/cyberwave:/app \
+  -v ~/git/cyberwave-python:/app \
   osrf/ros:humble-desktop bash
 ```
 
@@ -132,7 +134,7 @@ export CYBERWAVE_TWIN_UUID=<your-twin-uuid>
 export CW_ROS2_AUTO_ACTIVATE=true
 export ROS_DOMAIN_ID=0
 
-cd /app/cyberwave-sdks/cyberwave-python
+cd /app
 PYTHONPATH=. python examples/ursim_driver.py
 ```
 
