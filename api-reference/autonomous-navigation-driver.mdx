@@ -31,8 +31,6 @@ docker pull cyberwaveos/ros2-elevation-mapping:jazzy
 
 When connected to the Cyberwave platform, the **Edge Core** service automatically pulls and starts all required containers based on the asset metadata configured for your twin.
 
-For local development with Docker Compose, see the driver [README](https://github.com/cyberwave-os/cyberwave/tree/main/cyberwave-edge-runtime/runtime-services/drivers/ros2/robots/unitree/go2).
-
 ## ROS 2 Topics
 
 The driver publishes standard ROS 2 topics that any ROS 2 node can consume independently:
@@ -281,8 +279,8 @@ See [Drivers overview](/feature-reference/edge/drivers/overview) for the full me
 
 ## Stream Recording
 
-The Go2 driver streams video to the Cyberwave media service via WebRTC. Each
-stream can request server-side recording (producing MP4 artifacts for later
+The Go2 driver streams video to Cyberwave via WebRTC. Each
+stream can request cloud-side recording (producing MP4 artifacts for later
 replay).
 
 | Variable                             | Default | Applies to                                                   |
@@ -310,7 +308,7 @@ CYBERWAVE_ENABLE_RECORDING=false
 ```
 
 <Info>
-  Recording is handled by the media service SFU, not on the edge device.
+  Recording is handled in the cloud, not on the edge device.
   Enabling recording adds negligible load to the robot's hardware.
 </Info>
 

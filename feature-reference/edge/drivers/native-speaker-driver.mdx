@@ -13,28 +13,22 @@ import EarlyAccess from '/snippets/early-access.mdx';
 
 ## What It Provides
 
-The native speaker driver runs on the edge device that has the speaker attached. It is the downstream/playback counterpart of the microphone driver — it **consumes** a WebRTC audio stream from the media-service, hands the decoded PCM to `sounddevice` / PortAudio, and plays it through the configured output device. It also subscribes to the workflow-emitted Zenoh cue channels so the device can play short status chimes from a bundled MP3 library.
+The native speaker driver runs on the edge device that has the speaker attached. It is the downstream/playback counterpart of the microphone driver — it **consumes** a WebRTC audio stream from Cyberwave, hands the decoded PCM to `sounddevice` / PortAudio, and plays it through the configured output device. It also subscribes to the workflow-emitted Zenoh cue channels so the device can play short status chimes from a bundled MP3 library.
 
-The driver lives at:
-
-```
-cyberwave-edge-runtime/runtime-services/drivers/native/cyberwave/generic-speaker/
-```
-
-It mirrors the layout of `generic-microphone` and reuses the same `BaseAudioTrack` / `BaseAudioStreamer` SDK base classes — the speaker subclasses are `SpeakerAudioTrack(BaseAudioTrack)` and `SpeakerAudioStreamer(BaseAudioStreamer)` in `cyberwave.sensor.speaker`.
+It mirrors the microphone driver and reuses the same `BaseAudioTrack` / `BaseAudioStreamer` SDK base classes — the speaker subclasses are `SpeakerAudioTrack(BaseAudioTrack)` and `SpeakerAudioStreamer(BaseAudioStreamer)` in `cyberwave.sensor.speaker`.
 
 ## Quick start
 
 ```bash
-cd cyberwave-edge-runtime/runtime-services/drivers/native/cyberwave/generic-speaker
+# from the generic-speaker driver directory
 cp .env.example .env
 # fill in CYBERWAVE_TWIN_UUID and (optionally) CYBERWAVE_SPEAKER_DEVICE
 docker compose -f docker-compose.local.yml up
 ```
 
-On macOS, run bare-metal with `./run-local.sh` from the driver directory — Docker Desktop on macOS runs in LinuxKit and cannot expose `/dev/snd`, so playback must happen on the host so PortAudio can talk to CoreAudio.
+On macOS, run bare-metal with `./run-local.sh` — Docker Desktop on macOS runs in LinuxKit and cannot expose `/dev/snd`, so playback must happen on the host so PortAudio can talk to CoreAudio.
 
-## MQTT command surface (TR-1.26)
+## MQTT command surface
 
 | Topic | Payload | Notes |
 | --- | --- | --- |
@@ -45,7 +39,7 @@ On macOS, run bare-metal with `./run-local.sh` from the driver directory — Doc
 
 The driver also mirrors the legacy `start_audio` / `stop_audio` verbs so existing integrations keep working.
 
-## Zenoh cue contract (TR-1.17 / TR-1.18)
+## Zenoh cue contract
 
 The driver subscribes to two cue channels with `policy="latest"`:
 
@@ -55,7 +49,7 @@ The driver subscribes to two cue channels with `policy="latest"`:
 | `commands/assistant_signaling` | `start_assistant` | `sounds/assistant/start-assistant.mp3` |
 | `commands/assistant_signaling` | `stop_assistant` | `sounds/assistant/end-assistant.mp3` |
 
-Payloads are the standard Cyberwave envelope (`HeaderTemplate` + JSON body). The driver dedups identical `(channel, command)` pairs inside a 250 ms window, matching the browser-side handler.
+Payloads are the standard Cyberwave envelope. The driver ignores identical `(channel, command)` pairs that arrive within 250 ms of each other.
 
 ## Standard catalog sensor configuration
 
@@ -87,22 +81,20 @@ Edge-core maps `parameters` → `CYBERWAVE_METADATA_*` env vars. The driver publ
 | Offer field | Catalog value | Role |
 | --- | --- | --- |
 | `sensor` | `"audio"` | Routing key (`sensors[].id`) — shared with mic twins |
-| `sensor_type` | `"speaker"` | Matches `sensors[].type`; media-service classifies as **consumer** |
-| `role` | `"consumer"` | Passive twin — receives audio from the SFU |
+| `sensor_type` | `"speaker"` | Matches `sensors[].type`; classified as a **consumer** |
+| `role` | `"consumer"` | Passive twin — receives audio from Cyberwave |
 | `sender` | `"edge"` | Edge driver consumes the mixed downstream leg |
 
-## Media-service contract (TR-1.21 / TR-1.22 / TR-1.24)
+## Audio roles
 
-WebRTC offers carry `sensor` (routing id), `sensor_type` (catalog `type`), and `role`. The media-service classifies offers before dispatch:
+WebRTC offers carry `sensor` (routing id), `sensor_type` (catalog `type`), and `role`. Microphones are producers and speakers are consumers; both use `sensor: "audio"`:
 
 | Sensor type | Role | Allowed sender |
 | --- | --- | --- |
 | `audio`, `mic`, `microphone`, `audio_in`, `audio_mono`, `audio_stereo` | Producer (upstream) | `edge` only |
 | `speaker`, `loudspeaker`, `speakerphone`, `audio_out` | Consumer (downstream) | `edge` (driver) or `frontend` (preview) |
 
-Catalog standard pairs: microphone `sensor_type: "audio"` + `role: "producer"`; speaker `sensor_type: "speaker"` + `role: "consumer"`. Both use `sensor: "audio"`.
-
-Offers that conflict with this contract are rejected (error answer on `webrtc-answer`). Raw microphone traffic stays inside the media-service — only the speaker consumer leg is fanned out to edge/frontend peers.
+Offers that conflict with this contract are rejected (error answer on `webrtc-answer`).
 
 ## Configuration (`CYBERWAVE_*` env vars)
 
@@ -127,9 +119,9 @@ Nothing about the device, sample rate, channel count, or routing target is hard-
 - **Linux** — ALSA direct pass-through via `/dev/snd` and `--group-add audio`. All discovery uses `sounddevice.query_devices()`; on `pyudev`-capable hosts, hot-plug events come from udev.
 - **macOS** — Bare-metal CoreAudio (no Docker), with full in-container DSP (volume, per-channel gain, channel routing matrix) applied before audio leaves the Python process. PulseAudio-CoreAudio bridging is a documented fallback for power users.
 
-## Hot-plug (TR-1.11 – TR-1.13)
+## Hot-plug
 
-Disconnecting the speaker triggers `AudioDeviceMonitor`, which reopens the SFU consumer leg + `sounddevice.OutputStream` against the new device — even when the replacement reports a different channel count or sample rate. The driver re-resolves the selected device against twin metadata on every recovery cycle and publishes `SPEAKER_FAILURE` / resolution alerts as the hardware comes and goes.
+Disconnecting the speaker makes the driver reopen the audio stream and the output device against the new device — even when the replacement reports a different channel count or sample rate. The driver re-resolves the selected device against twin metadata on every recovery cycle and publishes `SPEAKER_FAILURE` / resolution alerts as the hardware comes and goes.
 
 ## SDK helpers
 
@@ -138,6 +130,6 @@ The driver delegates everything to `cyberwave.sensor.speaker`:
 - `SpeakerAudioStreamer` — WebRTC + MQTT lifecycle (subclasses `BaseAudioStreamer`)
 - `SpeakerAudioTrack` — minimal upstream track required by the WebRTC SDP contract
 - `HostSpeakerCapture` — host `sounddevice.OutputStream` wrapper with file / queue / Zenoh sources
-- `play_file(...)`, `associate_speaker_to_microphone(...)`, `associate_speaker_to_microphones(...)` — high-level helpers from TR-1.25
+- `play_file(...)`, `associate_speaker_to_microphone(...)`, `associate_speaker_to_microphones(...)` — high-level helpers
 
 See the [native microphone driver](/feature-reference/edge/drivers/native-microphone-driver) page for the upstream producer counterpart and the shared `sensor: "audio"` routing contract.

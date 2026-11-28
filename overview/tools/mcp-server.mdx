@@ -57,7 +57,7 @@ The MCP server exposes environment, catalog, workflow, AI model, dataset, contro
 |---|---|
 | `cw_list_workspaces` | List available workspaces |
 | `cw_list_projects` | List projects, optionally filtered by workspace |
-| `cw_list_environments` | List environments, optionally filtered by project |
+| `cw_list_environments` | List environments 20 at a time (`limit` up to 50, page with `offset`/`next_offset`), your own first; filter by `project_uuid` or `workspace_uuid`, or `search` by name or description |
 | `cw_search_catalog` | Search asset catalog and procedural primitive templates by text query |
 | `cw_list_control_surfaces` | List twins and available controls before planning a control intent |
 | `cw_get_control_setup` | Inspect an asset or twin’s saved control configuration and compatible input/policy choices |
@@ -101,6 +101,7 @@ Use `cw_list_control_surfaces` and `cw_plan_control_action` for twin control; fo
 | `cw_update_asset_actuator` | Merge fields into one of an asset's actuators, by name |
 | `cw_set_asset_livery` | Set or read an asset's livery, the part colours of its viewer model and thumbnail |
 | `cw_set_area_image` | Attach or remove a background image on an area (via URL or Base64) |
+| `cw_set_primitive_texture` | Put a built-in texture preset or an uploaded image on a ground, box, table or other texture-capable primitive, restyle it, or remove it |
 
 ### Procedural Primitives
 
@@ -172,7 +173,9 @@ Robot actions go through the same plan and dispatch path as the Cyberwave app: j
 
 ## Session Context
 
-The MCP server maintains session context to reduce verbosity. When you interact with a workspace, environment, or twin, the server remembers your last selection.
+The local `stdio` server, which serves one client, maintains session context to reduce verbosity: when you interact with a workspace, environment, or twin, it remembers your last selection. The hosted endpoint does not. Each request there stands alone: name the twin, environment or workspace in every call, or send the `X-Cyberwave-Environment-Slug` header to scope every call to one environment.
+
+Over `stdio`:
 
 - **Twins:** If `twin_slug` is omitted, the server uses the last twin from session context set by a previous `cw_get_twin` or any action tool call. If no twin has been used yet, the tool returns an `AMBIGUOUS_TARGET` error prompting the agent to resolve the twin first.
 - **Environments:** If `environment_slug` is omitted, it falls back to session context or the `CYBERWAVE_ENVIRONMENT_ID` env var. Some tools (like `cw_list_environment_entities` and `cw_render_environment_preview`) additionally auto-resolve when only one environment is visible to the user.
@@ -401,8 +404,9 @@ The result lists the links each rule colours, the rules that colour nothing, and
 
 | Tool | Parameters |
 |---|---|
-| `cw_list_environment_entities` | `environment_slug?`, `entity_type` (`all`/`area`/`waypoint`/`twin`/`procedural_primitive`, default `all`), `name?`, `entity_id?`, `offset`, `limit?`, `include_spatial_feedback` |
+| `cw_list_environment_entities` | `environment_slug?`, `entity_type` (`all`/`area`/`waypoint`/`twin`/`procedural_primitive`, default `all`), `name?`, `entity_id?`, `offset`, `limit?`, `include_spatial_feedback`, `detail` (`summary`/`full`, default `summary`; `full` adds compiled geometry, full physics, twin file URLs and the spatial `objects`/`relationships`) |
 | `cw_set_area_image` | `area_id` (required), `environment_slug?`, `image_url?`, `image_base64?`, `image_mime_type`, `keep_proportions?`, `remove_image?` (exactly one of remove/url/base64), `execute=false` |
+| `cw_set_primitive_texture` | `primitive_id` (required), `environment_slug?`, `preset?` (`concrete`, `asphalt`, `painted_block`, `brick`, `floor_tiles`, `wood_planks`, `grass`), `image_base64?`, `image_mime_type`, `mapping?` (`tile`/`stretch`), `tile_size_m?` (`[x, y]` meters), `rotation_deg?`, `tint?`, `remove_texture?`, `execute=false`. Needs `preset`, `image_base64`, a style field, or `remove_texture` |
 
 Area images can be attached via a direct `image_url` (recommended for large images) or inline as `image_base64` bytes with `image_mime_type`. Images are stored in environment settings.
 

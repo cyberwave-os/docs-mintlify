@@ -93,28 +93,14 @@ A tool response that names your workspace means you're connected.
   <Accordion title="401 or AUTH_ERROR">
     The key is wrong or revoked. Create a new key and update the client's credential.
   </Accordion>
-  <Accordion title="403 or permission denied">
-    Check the selected workspace, your workspace role and the API key's scope.
-    Ask a workspace administrator for the missing permission if needed, then
-    repeat the workspace-list check before continuing.
-  </Accordion>
   <Accordion title="The Cyberwave tools don't appear">
     Reconnect the MCP server in your client and restart the agent session.
   </Accordion>
   <Accordion title="workspace_required">
     The key covers several workspaces. Create a key scoped to one workspace.
   </Accordion>
-  <Accordion title="The connection times out">
-    Check the configured endpoint and your network connection, reconnect the
-    MCP server, then repeat the workspace-list check. If a later create or
-    control request times out, inspect the environment and execution status
-    before retrying: a timeout does not prove the operation failed.
-  </Accordion>
   <Accordion title="The skill folder already exists">
-    Reuse it. To update a global installation, use
-    `git -C ~/.claude/skills/cyberwave pull` for Claude Code or
-    `git -C ~/.agents/skills/cyberwave pull` for Codex. For a project-local
-    installation, use the directory where you installed the skill.
+    Reuse it, or update it with `git -C ~/.claude/skills/cyberwave pull`.
   </Accordion>
 </AccordionGroup>
 

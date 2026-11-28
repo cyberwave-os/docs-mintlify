@@ -3,7 +3,9 @@ title: "Piper Collision-Aware Motion"
 description: "Plan and execute collision-free arm moves on the AgileX Piper with scene primitives, straight-line approaches, and payload attachment"
 ---
 
-{/* TODO(docs): This page will be curated before publishing. Content below reflects the current implementation. */}
+<Note>
+**stub** — This page will be curated before publishing. Content below reflects the current implementation.
+</Note>
 
 ## What it gives you
 
@@ -32,8 +34,7 @@ and defaults are in [Arm motion building blocks](/feature-reference/edge/drivers
 The commands, their arguments and their refusal codes are the same whichever
 backend answers them. The Piper has two:
 
-- `moveit`: MoveIt beside the arm. The Piper's standard service graph runs it; that
-  graph is used when the twin does not define its own services.
+- `moveit`: MoveIt beside the arm, started by default when the twin does not define its own services.
 - `pinocchio`: the in-process planner.
 
 With `moveit.enabled` true, `moveit` is the default backend. Otherwise

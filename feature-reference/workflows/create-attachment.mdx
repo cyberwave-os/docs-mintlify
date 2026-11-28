@@ -38,7 +38,7 @@ For `data:<mime>;base64,...` URLs the bytes are decoded inline; for `http(s)://.
 | `prompt`, `result`, `detections` | no | Capture-time hints saved under `metadata.analysis`. The analysis-enrichment surface (`status` overrides, `error`, `model_name`, `model_uuid`, annotated frames) lives on `update_attachment` so the two nodes have non-overlapping responsibilities. `analysis.status` is always `completed` on create — downstream `update_attachment` overwrites it once async analysis finishes. |
 | `metadata` | no | Extra dict merged into attachment metadata. Reserved keys (`workflow_*`, `environment_uuid`, `capture_type`, `analysis`) are never overridable. |
 
-When `source_url` resolves to a `dict` or `list` (for example `call_model.model_result`, a detections array, or a telemetry row), the node JSON-encodes it (`json.dumps(..., indent=2, default=str)`) and stores it as a `.json` attachment — no explicit serialize step required.
+When `source_url` resolves to a `dict` or `list` (for example `call_model.model_result`, a detections array, or a telemetry row), the node JSON-encodes it and stores it as a `.json` attachment — no explicit serialize step required.
 
 ### Anchor rules
 

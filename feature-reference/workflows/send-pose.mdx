@@ -18,12 +18,12 @@ The twin must expose independently commandable joints and have a runtime that ac
 ## Configuration flow
 
 1. **Target Twin** — pick the twin to control. Joint data from another robot does not change this selection. Only **joint-controllable** twins (robots with movable joints) appear in the list. **Required.**
-2. Choose a command source: **Twin Poses** for a saved/custom pose, or **Connected joint values** to map positions, velocities or efforts from another workflow node. Use **Clear pose** to use connected values alone.
+2. Choose a command source: **Twin Poses** for a saved/custom pose, or **Connected joint values** to map positions, velocities, efforts or accelerations from another workflow node. Use **Clear pose** to use connected values alone.
 
 <Note>
 A target and at least one enabled command source are required. A manual trigger alone does not supply joint values. Connected values override matching joints in a selected pose; they can also be used without a pose. Runtime validation rejects an empty command after filtering invalid values and unsupported joints.
 </Note>
-3. **Advanced** (optional) — under **Control Settings**, choose which channels to send with the **Positions / Velocities / Efforts** checkboxes (and set per-joint velocity/effort values); under **Explicit Joint Update**, restrict the message to specific joints.
+3. **Advanced** (optional) — under **Control Settings**, choose which channels to send with the **Positions / Velocities / Efforts / Accelerations** checkboxes (and set per-joint velocity/effort/acceleration values); under **Explicit Joint Update**, restrict the message to specific joints.
 
 The **Message Preview** shows the configured static values. Connected values are resolved when the workflow runs.
 
@@ -35,9 +35,15 @@ Poses are named joint snapshots stored on the twin/asset. The dropdown lists eac
 - Values are validated against each joint's real limits — out-of-range values turn red and block saving.
 - Give the pose a name and save; it's stored on the twin and can be reused (and edited later) from the dropdown.
 
-## Velocities & efforts
+## Velocities, efforts & accelerations
 
-By default a Send Pose message carries just the pose's **positions**. Velocities and efforts are included automatically **only when the pose/inputs already provide those values**; otherwise you enable them explicitly under **Advanced → Control Settings** (**Velocities** / **Efforts**). When a channel is enabled, set per-joint values (validated against the joint's limits); any joint you leave unset is **omitted** from the channel ("not commanded"), **not** sent as `0`. This keeps "no velocity/effort command" distinct from an explicit command of zero. Turning a channel off (or leaving it off) omits it from the message entirely.
+By default a Send Pose message carries just the pose's **positions**. Velocities, efforts and accelerations are included automatically **only when the pose/inputs already provide those values**; otherwise you enable them explicitly under **Advanced → Control Settings** (**Velocities** / **Efforts** / **Accelerations**). When a channel is enabled, set per-joint values (validated against the joint's limits); any joint you leave unset is **omitted** from the channel ("not commanded"), **not** sent as `0`. This keeps "no velocity/effort/acceleration command" distinct from an explicit command of zero. Turning a channel off (or leaving it off) omits it from the message entirely.
+
+Accelerations are in rad/s² (revolute/continuous joints) or m/s² (prismatic joints). URDF declares no acceleration limit, so these values are only checked for being numbers. Accelerations are never derived from efforts: a message has an `accelerations` channel only when you supply acceleration values. Like the other channels, a live workflow publishes them as `accelerations` and a simulation workflow as `target_accelerations`.
+
+<Note>
+Accelerations cannot be sent on their own yet: no simulator or driver acts on an acceleration command. Send them alongside positions, velocities or efforts. A Send Pose that would carry only accelerations is flagged as not ready in the editor and fails when it runs, rather than reporting a send that moves nothing.
+</Note>
 
 ## Explicit (partial) joint update
 
@@ -52,9 +58,11 @@ By default the node sends a **full joint update** — every joint of the pose is
 | `positions` | object | No | Per-joint target positions (radians/metres). Set by the pose/custom editor or wired from upstream. |
 | `velocities` | object | No | Per-joint target velocities. Sent only when **Send velocities** is enabled; unset joints are omitted, not `0`. |
 | `efforts` | object | No | Per-joint target efforts. Sent only when **Send efforts** is enabled; unset joints are omitted, not `0`. |
+| `accelerations` | object | No | Per-joint target accelerations (rad/s² or m/s²). Sent only when **Send accelerations** is enabled; unset joints are omitted, not `0`. |
 | `include_positions` | boolean | No | Send the positions channel. Defaults on. |
 | `include_velocities` | boolean | No | Send the velocities channel. Unset = auto (on only when velocity values are present); set to override. |
 | `include_efforts` | boolean | No | Send the efforts channel. Unset = auto (on only when effort values are present); set to override. |
+| `include_accelerations` | boolean | No | Send the accelerations channel. Unset = auto (on only when acceleration values are present); set to override. |
 | `explicit_joints_enabled` | boolean | No | Send only the joints in `explicit_joints` (partial update). Default `false` = full joint update. |
 | `explicit_joints` | array | No | Joint names to include when explicit update is on; all others are omitted. |
 
@@ -63,7 +71,7 @@ By default the node sends a **full joint update** — every joint of the pose is
 | Field | Type | Description |
 |---|---|---|
 | `twin_uuid` | string | Twin that received the command. |
-| `positions` / `velocities` / `efforts` | object | The commanded values. |
+| `positions` / `velocities` / `efforts` / `accelerations` | object | The commanded values (`null` for a channel that was not sent). |
 | `pose_name` | string | The pose that was sent, if any. |
 | `sent` | boolean | Whether the publish was attempted. |
 | `topic` | string | The joint topic published to. |

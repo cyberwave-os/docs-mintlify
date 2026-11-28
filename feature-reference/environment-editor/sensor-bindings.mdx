@@ -17,7 +17,7 @@ An entry in the asset's `sensors` list carries a `type` from the scalar vocabula
   "name": "inlet_temperature",
   "type": "temperature",
   "parent_link": "server_2u_link",
-  "offset": {"position": {"x": 0.275, "y": 0, "z": 0}, "rotation": {"x": 0, "y": 0, "z": 0, "w": 1}},
+  "pose": {"position": {"x": 0.275, "y": 0, "z": 0}, "orientation": {"x": 0, "y": 0, "z": 0, "w": 1}},
   "parameters": {"id": "inlet_temperature", "unit": "°C"}
 }
 ```
@@ -34,7 +34,34 @@ The catalog asset **`cyberwave/server-2u`**, a generic two-unit rack server, dec
 | `fan_speed` | fan_speed | rpm |
 | `psu0_input_power`, `psu1_input_power` | power | W |
 
-The names are generic on purpose: they say what a server measures, not what a vendor calls it. A twin made from the asset lists all fourteen slots in its **Data sources** and **Live values** sections from the start; the translation from a dataset's channel names to these slots happens in the binding (see [Bind from dataset](#bind-from-dataset)). A twin can still add slots of its own in `metadata.sensors` for readings its asset does not declare (see [Declare sensor slots on the twin](/feature-reference/datasets/timeseries#play-recorded-data-on-digital-twins)); both sets are merged into the twin's sensor list.
+The names are generic on purpose: they say what a server measures, not what a vendor calls it. A twin made from the asset lists all fourteen slots in its **Data sources** and **Live values** sections from the start; the translation from a dataset's channel names to these slots happens in the binding (see [Bind from dataset](#bind-from-dataset)). A twin can still add slots of its own for readings its asset does not declare (see [Sensors added on a twin](#sensors-added-on-a-twin)). Don't list them in the twin's `metadata.sensors` when its asset declares slots: that list replaces the asset's slots in the twin's sensor list, so they drop out of **Data sources** and **Live values**.
+
+For one reading on its own, such as a room's humidity, a power meter or a door contact, the catalog asset **`cyberwave/generic-sensor`** is a small box with a single slot, `value`, of type `generic` and without a unit. A `generic` slot accepts a channel of any type (see [The type gate](#the-type-gate)), and each reading keeps the unit it arrives with. The slot has no default operating range: set one on the twin to get the out-of-range flag. To give the readings a unit, set it on the twin's `value` sensor, e.g. `twin.set_sensor_unit("value", "°C")` (see below). For more slots, add them to the twin (see below), or dock another Generic Sensor onto it. A scalar slot never keeps a twin from simulating, so a twin of it never blocks a MuJoCo start.
+
+## Sensors added on a twin
+
+A sensor can also be added to one twin instead of its asset: a temperature probe on a robot dog's body, a humidity reading on a rack. It has no body and is not drawn; it is a slot on one of the twin's links, filled by whoever publishes to it, exactly like an asset's slot. The twin's own schema holds it, and the twin records it as its own (`extensions.cyberwave.added_sensors`), so **Sync with asset** and **Change asset** keep it as long as its link exists on the asset. When the link is gone, or the asset now has a sensor on the same slot id, the sensor is dropped and the sync response names it in `dropped_sensors`. A sensor added through **Schema JSON** counts too, but renaming one the asset declares does not make it the twin's own: the sync brings the asset's sensor back under its old name.
+
+**In the app.** In Edit mode, the twin's **Sensors** section lists its sensors, each marked **from asset** or **added**, and the devices docked on it. **Add sensor** asks what the sensor measures:
+
+- **A number** (temperature, humidity, power, …) becomes a sensor on this twin: a name (the slot id readings are sent to), a type, the body part it sits on, its position and rotation (a quaternion), a unit and an optional range.
+- **A camera or microphone** becomes its own twin: pick a model from the Catalog (filtered to sensors, cameras, microphones and lidars; **Show all assets** lifts the filter), the body part and the position, and leave **Hide body** ticked to make it invisible and collision-free. Being its own twin, it gets its own driver once it is linked to an edge device.
+
+A sensor inherited from the asset can get a unit and a range on this twin, which Sync with asset keeps; its body part and position stay the asset's. Only added sensors can be removed. Each row of **Data sources** also has a **Unit** field: the common units of the sensor's type, or **Custom…** for any other text.
+
+| Request | What it does |
+|---|---|
+| `GET /api/v1/twins/{uuid}/sensors` | The twin's sensors, each with `origin`: `asset` (inherited) or `twin` (added on this twin), plus `schema_hash`. |
+| `POST /api/v1/twins/{uuid}/sensors` | Add one. Body `{"sensor": {"name", "type", "parent_link"?, "pose"?, "parameters"?: {"unit"?, "operating_range"?}}}`. `parameters.id` (the slot id) defaults to the name, `pose` to the link origin, `parent_link` to the root link when the twin has exactly one. Refused (400) for a duplicate name, a name or slot id with characters other than letters, digits, `_` and `-`, a slot id another sensor on the twin uses, an unknown type or link, or a position under `offset` instead of `pose`. |
+| `PATCH /api/v1/twins/{uuid}/sensors/{name}` | A JSON merge patch on one sensor, e.g. `{"patch": {"parameters": {"unit": "°C"}}}`; `null` removes a key. Works on inherited sensors too, and the changed fields are kept through **Sync with asset**. Renaming, or changing the slot id (`parameters.id`), is refused. |
+| `DELETE /api/v1/twins/{uuid}/sensors/{name}` | Remove a sensor added on the twin, with the binding, range override and last reading of its slot. A sensor inherited from the asset is refused, because the next sync would bring it back. |
+| `POST /api/v1/twins` with `attach_to_twin_uuid`, `attach_to_link` and `metadata: {"appearance_override": {"opacity": 0}, "physics_override": {"disable_collision": true}}` | Create a device docked on a body part with its body hidden, in one request. Of the request's `metadata`, only these two keys are taken; the rest of a new twin's metadata comes from its asset. |
+
+The write requests take an optional `expected_schema_hash` (the `schema_hash` of the last read) and answer 409 when the schema changed in between.
+
+**Units.** A sensor's `parameters.unit` is the unit its readings are expected in. Data sources and Live values show it, and a reading that arrives without a unit is shown in it. A reading that carries its own unit is shown in that unit; units are free text and are never converted.
+
+**Live values.** Publish a reading to the twin under the slot id: `twin.publish_reading("body_temperature", 41.2)`, or several at once with `twin.publish_readings({...})`. Both send one MQTT message on `cyberwave/twin/{uuid}/metrics` with the values under `metrics.readings`, which the backend stores as the slot's latest value and checks against its range. Send every slot that changed in one message: the backend drops a second metrics message for the same twin that arrives within 5 ms of the first.
 
 ## The type gate
 
@@ -156,6 +183,8 @@ The [Python SDK](/overview/tools/python-sdk) wraps the calls above. Twins, datas
 | `cw.twins.bind_sensor(twin_id, slot, dataset_id, channel_id, use_recorded=True, allow_type_mismatch=False, label=None, unit=None, type=None)` | Attach one channel. Reads the map and writes it back whole, so the other bindings stay. |
 | `cw.twins.unbind_sensor(twin_id, slot)` | Detach a channel. |
 | `cw.twins.set_thing_id(twin_id, thing_id)` | Set the identifier in datasets. |
+| `cw.twins.list_sensors(twin_id)`, `cw.twins.add_sensor(twin_id, name, sensor_type, parent_link=None, position=None, orientation=None, unit=None, operating_range=None, update_rate=None, parameters=None)`, `cw.twins.update_sensor(twin_id, name, patch)`, `cw.twins.set_sensor_unit(twin_id, name, unit)`, `cw.twins.remove_sensor(twin_id, name)` | [Sensors added on a twin](#sensors-added-on-a-twin). The same methods exist on a twin object without `twin_id`, e.g. `twin.add_sensor("probe", "temperature", unit="°C")`. |
+| `twin.publish_reading(slot, value, unit=None, at=None)`, `twin.publish_readings(readings, timestamp=None)`, `cw.mqtt.publish_readings(twin_id, readings, timestamp=None, source_type=None)` | Send live values to slots; `readings` maps slot id to a number or `{"value", "unit", "at"}`. |
 | `cw.environments.sensor_sources(env_id)` | The sensor-sources report. |
 | `cw.environments.auto_bind(env_id, dataset_id, twin_ids=None, include_docked_children=False, template=None, use_recorded=True, overwrite=False)` | **Bind from dataset**; returns the report. |
 | `cw.replay_feeds.start(env_id, start, end=None, speed=1.0, loop=False, run_id=None, source_type="auto")`, `.current(env_id)`, `.get(env_id, feed_id)`, `.pause(env_id, feed_id)`, `.resume(env_id, feed_id)`, `.stop(env_id, feed_id)` | Drive the [recorded data feed](/feature-reference/environment-editor/replay-feed#api). |

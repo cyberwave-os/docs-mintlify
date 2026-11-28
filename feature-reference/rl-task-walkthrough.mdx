@@ -37,14 +37,13 @@ Four twins make up the task. Each maps to one mjlab scene entity:
 | `wrist_cam` | `intel/realsensed455` | Wrist depth camera, docked to the arm | Docked |
 
 <Note>
-The catalog assets (`enactic/openarm`, `cyberwave/generic_cube`, `intel/realsensed455`) must already exist in your workspace's catalog. On a local stack they are added by `make seed`.
+The catalog assets (`enactic/openarm`, `cyberwave/generic_cube`, `intel/realsensed455`) must already exist in your workspace's catalog.
 </Note>
 
 ## Prerequisites
 
 ```bash
 pip install cyberwave
-export CYBERWAVE_BASE_URL=http://localhost:8000
 export CYBERWAVE_API_KEY=<your-api-key>   # the SDK reads this; `cyberwave login` does not configure the SDK
 ```
 

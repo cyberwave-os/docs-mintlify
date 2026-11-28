@@ -37,7 +37,7 @@ Readings are sent at most once per second, one message per twin with the sensors
 ## What happens to the values
 
 - **Live values** on the selected twin show them with the **replay** badge, the run id and the data time, exactly like readings from a device (see [Watch the values](/feature-reference/datasets/timeseries#play-recorded-data-on-digital-twins)).
-- They are **stored in the sensor history** of each twin, next to the real readings, tagged as **injected** with the run id, the dataset, the feed and, when a simulation was running, its id. Replay mode shows them under **Cyberwave data** with an `injected · run <run id>` label, so recorded and measured values are never confused (see [Sensor data in Replay](/overview/features/replay-and-historical-data#the-replay-timeline)).
+- They are **stored in the sensor history** of each twin, next to the real readings, tagged as **injected** with the run id, the dataset, the feed and, when a simulation was running, its id. Replay mode shows them under **Cyberwave data** with an `injected · run <run id>` label, so recorded and measured values are never confused (see [Sensor data in Replay](/feature-reference/environment-editor/replay-timeline#sensor-data-in-replay)).
 - **Device readings are dropped.** Readings the paired device or the simulation sends for a switched-on sensor are dropped, feed or no feed, so the sensor has one source: the recording. Readings for the other sensors of the same twin pass as usual. The device gets the sensor back only when you switch **Use recorded data** off. Messages that carry the recorded-data tag, the feed's own and those of the SDK player script, pass.
 - **Recordings are not touched.** The feed writes no recording and changes nothing in existing ones.
 - When the feed stops, for whatever reason, the values it wrote are removed from the twins' current readings, so a twin does not keep showing a stale recorded value. The history keeps them. The switched-on sensors then show no fresh value, and the panel says so, until the next feed.
@@ -101,7 +101,7 @@ curl -X POST "https://api.cyberwave.com/api/v1/environments/$ENVIRONMENT/replay-
   <Card title="Time-series datasets" icon="chart-line" href="/feature-reference/datasets/timeseries">
     Package sensor logs, search channels and attach them to twin sensors.
   </Card>
-  <Card title="Replay timeline" icon="clock-rotate-left" href="/overview/features/replay-and-historical-data#the-replay-timeline">
+  <Card title="Replay timeline" icon="clock-rotate-left" href="/feature-reference/environment-editor/replay-timeline">
     Sensor data days in the calendar and the Sensors tab at the playhead.
   </Card>
   <Card title="Sensor bindings" icon="link" href="/feature-reference/environment-editor/sensor-bindings">

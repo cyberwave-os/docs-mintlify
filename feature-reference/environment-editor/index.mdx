@@ -103,6 +103,28 @@ Select a procedural object to edit its **Template** section in the right inspect
 
 Parameter edits preserve the ground anchor. Use position/rotation to place these structures; use their parameters to change dimensions. Terrain creation alone does not train or validate a robot policy.
 
+### Image textures
+
+Select a **Ground**, **Cube**, **Cylinder**, **Wall**, **Wall Path**, **Wall Loop**, **Partition Panel**, **Structural Beam**, **Ceiling Panel**, **Staircase**, **Work Table**, **Counter Run**, **Storage Cabinet**, **Utility Cart**, **Cart Dolly**, **Pallet Stack**, **Material Stack**, **Conveyor Path**, **Robot Charging Dock**, **Floor Marker**, **Spill Marker**, **Cleanroom Airlock** or **Cooling Unit**. The right panel has an **Appearance** section with its **Color** and **Material**, and under them a **Texture** block where you can show your own image on it, for example a carpet on a floor or a label on a cabinet. Other objects, such as spheres, ladders and shelves, do not take a texture yet.
+
+- **Upload image** accepts PNG, JPEG or WebP files up to 10 MB and up to 25 megapixels (for example 5000 x 5000 pixels); a larger image is rejected with a message saying so. Accepted images are reduced to 2048 pixels on the longest side.
+- **Tile (repeat)** repeats the image every *Tile width* by *Tile depth* meters. It stays sharp on a large floor, but the image edges must match or you will see seams. Use a seamless texture.
+- **Stretch (once)** covers the whole surface with one copy. It is fine for small objects, but a small image on a large floor looks blurry. The editor warns you when it will.
+- **Rotation** turns the pattern on the surface.
+- **Tint with the object color** multiplies the image by the object's color. Leave it off to see the image unchanged.
+
+The image covers every face of the object, or wraps around a cylinder and covers its two ends, in the 3D editor and in MuJoCo simulations (including simulated camera views). An object made of several parts, such as a table or a staircase, repeats the pattern from the start on each part, so a bold pattern such as stripes or a logo jumps where two parts meet; a uniform texture such as concrete or wood looks continuous. Only the base color is used: normal and roughness maps are ignored. Duplicating an environment keeps the texture. The texture is not yet part of the USD / Isaac Sim export.
+
+### Lamps
+
+Three lamps light the scene in the 3D viewer. Add them like any procedural object, from the object list or the catalog:
+
+- **Round Lamp:** a disc lamp for ceilings that shines in every direction. Set **Drop** to hang it as a pendant on a cable.
+- **Spot Lamp:** a lamp head on a short stem that casts a cone of light. **Tilt (°)** swings the head from straight down (0°) toward the lamp's +Y axis; rotate the lamp to pan it. **Beam angle (°)** sets the cone width and **Softness** its edge.
+- **Linear Lamp:** a long batten or tube lamp, flush or hung on two cables (**Drop**), that lights a strip below it.
+
+Each lamp has **Light on**, **Light color**, **Brightness (cd)** and, for round and spot lamps, **Range (m)**, the distance where the light fades out. The diffuser or lens glows in the light color while the light is on. Lamp light shows in the 3D viewer only: simulation camera renders don't include it, and lamps cast no shadows. In simulation, a lamp's round parts (the round lamp's disc, the spot lamp's head) are boxes. The viewer lights at most 8 lamps at once, in scene order; further lamps still glow but light nothing.
+
 ### Catalog primitives
 
 The **Add** menu (or the **+** button in the editor toolbar) includes a **Primitives** section. Primitives are curated public catalog assets with a short alias — things like cameras, lidars, and common generic objects — that you can drop into any environment in one click.
