@@ -44,6 +44,38 @@ the dashboard address) is rejected with a message naming the API URL to use.
 
 <Update label="Unreleased">
 
+## Smaller `cw_edit_environment` results over MCP
+
+Each step of a `cw_edit_environment` batch repeated a full-scene snapshot, copies of the edited object and the preview image, so a 24-operation batch returned about 1 MB and overflowed most MCP clients. It now returns about 35 KB. Each step keeps its outcome, identity, pose, revision and warnings, and the `parameters` of an object it created or resized. The batch keeps `spatial_feedback` without its `objects` and `relationships` listing, plus `placement_warnings`, `post_mutation_audit` and `created_entities`. Previews come back once, as `preview_url`. `omitted_fields` names every dropped field. Read the scene listing with `cw_analyze_environment_layout` and full object records with `cw_list_environment_entities` and `detail: "full"`.
+
+## Smaller `cw_list_environment_entities` results
+
+Each entity came back with its full compiled geometry, so a page of five solar tables was about 185 KB. Entities now carry their pose, size, parameters, revision and world `bbox`, which brings a simple box from 2.8 KB to under 1 KB. Primitives drop their compiled geometry, mass and physics material. Twins drop `glb_file`, `splat_file`, `urdf_file` and `environment_uuid`, and keep only each sensor's `id`, `name`, `type`, `model` and `parent_link`. Unpaged results no longer repeat every entity in `areas`, `waypoints`, `procedural_primitives` and `twins`, and `spatial_feedback` leaves out its `objects` and `relationships` listing; `cw_analyze_environment_layout` returns both. Pass `detail: "full"` for the previous result.
+
+## Lamps that light the environment
+
+The environment catalog has three lamps: **Round Lamp** (flush or pendant), **Spot Lamp** (an aimable head with beam angle and softness) and **Linear Lamp** (a long batten or tube, flush or suspended). Each one lights the scene in the 3D viewer, with its own color, brightness and on/off setting in the properties panel. Agents find them with `cw_search_catalog` and tune them with `cw_edit_environment`. Lamps cast no shadows. In simulation they have no light yet, and their round parts are boxes.
+
+## Camera drivers on the Python SDK
+
+`cyberwave.driver.BaseCameraDriver` is a complete camera driver: subclass it and call `main()`. Declare the source with `CAMERA_SOURCE`, or let twin metadata choose it: USB, RealSense, a camera already streaming H.264 on the network (`CameraSourceConfig.from_url`: RTSP, RTP over UDP, MPEG-TS over UDP or TCP), or H.264 a robot SDK hands over (`CameraSourceConfig.push` and `push_h264()`). USB cameras use `CameraSourceConfig.usb()`, pinned by `/dev/v4l/by-id` link or serial; streams OpenCV should decode (MJPEG, H.265) use `from_url(..., decode=True)`. Pre-encoded video is forwarded without decoding or re-encoding and needs the new `cyberwave[gstreamer]` extra. Robot drivers compose `CameraStreamMixin` with `BaseDriver` or `BaseROS2Driver`; one driver can run several cameras (`CAMERAS`), each with its own stream, retries, alert and status (`on_camera_status`), and a camera that fails to open is retried without stopping the driver or the other cameras. `model.predict(..., stream=<sensor>)` now names the sensor in its detections, so a driver with several cameras draws the boxes on the right camera.
+
+## Deprecated camera APIs (removed in Python SDK 1.0.0)
+
+`Cyberwave.video_stream()`, `CameraStreamManager`, `EdgeCameraConfig` and the `cyberwave.camera` module now emit a `DeprecationWarning`. Use the twin's streaming methods or `BaseCameraDriver` (one driver per camera, frames shared over the Zenoh data bus), `CameraSourceConfig`, and `cyberwave.sensor`.
+
+## Fewer spontaneous WebRTC reconnects from edge streams
+
+Camera, multimedia and microphone streams no longer drop when a few ICE consent checks go unanswered. Each check now retransmits its STUN request, and consent expires after 12 failed checks in a row (about a minute) instead of 6. The streams log a warning naming the twin and camera when consent expires or an ICE socket is lost while connected, and the reconnect warning says which of the two preceded the close. Camera streams also warn when the event loop wakes more than 250 ms late, at most once every 30 seconds. The SDK marks the media service's ICE-lite answers as complete (`a=end-of-candidates`), so with aioice 0.11 and later a stream whose ICE checks all fail reports `failed` and reconnects instead of staying in `checking`. The camera driver v2 image pins aioice 0.12.1.
+
+## Python SDK backs off when the broker rejects its credentials
+
+When the MQTT broker refuses the credentials ("bad user name or password" or "not authorized", usually a revoked or deleted API key), the Python SDK logs one error that names the key to check, and `connect()` raises `MQTTCredentialsRejectedError` at the first refusal instead of retrying. A client that keeps reconnecting in the background waits 1, then 5, then 15 minutes between tries until the broker accepts it. Other refusals, such as "server unavailable" during a backend outage, and dropped connections keep the usual retry.
+
+## `get_latest_frame()` raises on HTTP errors
+
+`cw.twins.get_latest_frame()` now raises `CyberwaveAPIError` when the backend answers with an error, with the HTTP status in `status_code`. Previously it returned the JSON error body as if it were frame bytes, so `twin.capture_frames()` could save a 404 body as a `.jpg`. The usual case is a 404 while no frame is cached for the twin; code that waits for a first frame should catch it and retry. The `Twin` methods (`get_latest_frame()`, `capture_frames()`) raise `CyberwaveError` as they do for other failures.
+
 ## Joint-state writes reject unknown joint names
 
 `PUT /api/v1/twins/{uuid}/joint_states` now returns `400` when none of the
@@ -56,6 +88,130 @@ payload. MQTT joint-state topics are unaffected. Before deploying, check
 scripts that call this endpoint directly (for example through the Python SDK's
 generated `src_app_api_urdf_update_twin_joint_states`). See
 [Twin joint home positions](/feature-reference/twin-joint-home-positions).
+
+## API-token workspace scope on asset and twin reads
+
+Asset reads that also accept anonymous callers (`GET /api/v1/assets/{uuid}`,
+`/by-slug`, `/by-registry-id`, the schema, joints, kinematics, controllers,
+control-profile and export reads), `GET /api/v1/datasets/by-slug`, and the twin
+schema, latest-frame, latest-track and recording reads now enforce the API token's
+workspace scope. A token scoped to one workspace gets `404` for another
+workspace's non-public asset, dataset or twin, the same response as for one that
+does not exist. `PUBLIC` objects stay
+readable. A non-public asset from another workspace is still readable when a live
+twin in the token's workspaces uses it. That exception does not cover the paid
+`llm-generation` and `vlm-generation` calls.
+
+Creating a twin (`POST /api/v1/twins`) or swapping a twin's asset
+(`PUT /api/v1/twins/{uuid}`) with a scoped token now requires the asset to be in
+the token's workspaces or `PUBLIC`.
+
+The scene imports (`POST /api/v1/environments/{uuid}/import/universal-schema`,
+`/import/mujoco-scene` and `/import/urdf`) now apply the same rule to every asset
+they build a twin from. For every caller, that includes read access to the asset,
+which the imports did not check before. If any asset fails it, the import answers
+`403` before it writes anything, and `replace_existing` removes no twins. An asset
+that does not exist is still skipped and reported, as before.
+
+`POST /api/v1/environments/{uuid}/clone` with a scoped token now requires the source
+environment to be in the token's workspaces. A `PUBLIC` template can still be
+cloned from any workspace, as long as its twins' assets pass the check described
+under "Environment clone checks every twin's asset".
+
+`GET /api/v1/assets/{uuid}` now answers `404` instead of `403` for an asset the
+caller cannot read, for every caller. Clients that branched on `403` there should
+treat `404` as "not found or not accessible". Apart from that and the scene imports'
+read check, requests without an API token are unchanged.
+
+## ChArUco board primitive and marker id registry
+
+A new `cyberwave/charuco_board` scene primitive is a flat, static plate printed
+with an OpenCV ChArUco board. Edge devices read its world pose and layout from
+three new endpoints:
+
+- `GET /api/v1/environments/{uuid}/charuco-boards` lists every board's pose
+  (on the printed face), layout, `marker_id_range`, `id_conflicts` and
+  `reserved_overlap`. It supports ETag polling (`If-None-Match` returns `304`),
+  as `GET /environments/{uuid}/fiducial-markers` now does too.
+- `.../charuco-boards/{primitive_id}/texture.png` is the plate texture the
+  editor and the MuJoCo export use.
+- `.../charuco-boards/{primitive_id}/print.png` is a true-scale PNG with its
+  DPI embedded. `dpi` is optional (50-600); without it the server picks one
+  that fits the 50 Mpx cap and keeps every marker readable.
+
+Every ChArUco board and fiducial tag of an environment now shares one marker id
+registry:
+
+- A board or tag whose id parameter (`first_marker_id` / `marker_id`) is
+  missing or `null` gets the lowest free ids. Ids 0-16 of the ArUco families
+  are reserved for the DJI drone app's base-station board (7x5 `4X4_50`, first
+  id 0), so auto-numbering starts at 17. An explicit id in 0-16 is still
+  accepted, with a `marker_ids_reserved` validation warning, and is reported in
+  `reserved_overlap`. AprilTag ids are not reserved.
+- Writes that carry `settings.procedural_primitives`
+  (`POST /api/v1/environments`, `POST /api/v1/projects/{uuid}/environments` and
+  the matching `PUT`s) return `409` when they introduce a marker id clash.
+  Clashes the environment already has are kept. Pass
+  `?marker_id_conflicts=flag` to store the ids as given and report each clash
+  in `id_conflicts` instead.
+- On those writes, a board or tag that shares its `id` with another primitive,
+  or whose parameters do not compile into marker ids, returns `422`. One
+  without its own non-empty string `id` also returns `422`, unless
+  `?marker_id_conflicts=flag` is passed, in which case it is dropped and
+  logged. A stored object written back unchanged is accepted.
+- The marker ids stored and listed come from the board's or tag's parameters.
+  A `compiled.summary` sent by the client is no longer trusted for them.
+
+Before deploying, check scripts that copy an environment by posting another
+environment's `settings`: when the source already holds overlapping boards or
+tags, the copy now returns `409` unless it passes `?marker_id_conflicts=flag`.
+Copies of an environment (`POST /environments/{uuid}/clone`, snapshot
+restores) keep the ids and flag the clashes.
+
+Bulk scene writes also move objects attached to a primitive (`attached_to`)
+with their parent.
+
+## Environment clone checks every twin's asset
+
+`POST /api/v1/environments/{uuid}/clone`, which the "Use template" action also
+calls, now checks every twin's asset the same way `POST /api/v1/twins` and the
+scene imports do. The caller must be able to read the asset. With a scoped API
+token, the asset must also be in the token's workspaces or `PUBLIC`. If any asset
+fails, the clone answers `403` ("You do not have access to this asset") and
+creates nothing. This applies to every caller, with or without an API token, and
+to templates and plain copies alike.
+
+Before, cloning a `PUBLIC` template also copied twins built from private assets of
+the template's workspace, and the copies gave the cloner access to those assets.
+A `PUBLIC` template now clones only when every one of its assets is `PUBLIC` or
+readable by the cloner. Public assets, and assets the caller can already read,
+clone as before.
+
+This includes someone an environment was shared with as an Editor (or through a
+share link) without joining its workspace. Their copy goes to their own
+workspace, so they can copy the environment only when every twin's asset is
+readable to them. Otherwise the copy is refused, because it would carry the
+owner's private asset into their workspace.
+
+The clone also checks each twin's controller the way `POST /api/v1/twins` checks
+`controller_policy_uuid`. If the caller cannot read a twin's controller, the clone
+answers `403` ("You do not have access to this controller policy") and creates
+nothing.
+
+In the app, "Use template" and "Make a copy" now show the server's reason for a
+refused clone instead of asking you to try again.
+
+## Templates list omits non-public asset names
+
+`GET /api/v1/environments/templates` now returns `asset_name` and `asset_uuid` for
+a template's twin only when the asset is publicly readable, and `null` for both
+otherwise. The template card's fallback image (the first twin's asset thumbnail,
+used while the template has no image of its own) also skips such assets. This
+only tidies the gallery list; it is not an access control.
+
+Publishing a template as `PUBLIC` makes the assets its twins use viewable by anyone
+who can view the template, because rendering the template needs them. Cloning the
+template still requires read access to each of those assets.
 
 </Update>
 
@@ -85,7 +241,7 @@ generated `src_app_api_urdf_update_twin_joint_states`). See
 - **Explicit fixed-base control for procedural primitives**: Procedural primitives (spheres, cubes, walls, etc.) now have an explicit, discoverable "fixed base" toggle instead of relying on undocumented internal parameters, matching the control twins already had (#4047).
 - **Simulation view toggle**: Added a toggle, with per-environment persistence, to show or hide the live MuJoCo render during a simulation, independent of the reconstructed 3D scene view (#4032).
 - **Configurable range-sensor self-hit handling**: Range/LiDAR-style sensors can now be configured to re-cast beams that hit the robot's own geometry, so they report what's actually behind the robot instead of a self-hit (#4039).
-- **Dynamic simulation provisioning timeout**: Simulation startup timeout now scales with scene size (twin/camera count) instead of a flat window, so larger scenes get enough time to load instead of being killed by the watchdog prematurely (#3995).
+- **Dynamic simulation provisioning timeout**: Simulation startup timeout now scales with scene size (twin/camera count) instead of a flat window, so larger scenes get enough time to load instead of timing out prematurely (#3995).
 - **Executions gallery view**: The standalone Captures tab has been folded into Executions as a "Gallery" view, so browsing captures across runs and browsing run history now live in one place (#3953).
 - **Duplicate procedural primitives**: Procedural primitives in the environment editor can now be duplicated directly (#3958).
 - **Telemetry endpoint available outside active missions**: The telemetry streaming endpoint now works even when a robot is not currently running a mission, rather than only during one (#3939).
@@ -231,7 +387,7 @@ The `controller:dji-keyboard:v1` policy carries the requirement under `metadata.
 
 ### Python SDK
 
-- **`FlyingTwin` continuous-stick verbs**: `FlyingTwin.move_forward` / `move_backward` / `turn_left` / `turn_right` / `strafe_*` / `ascend` / `descend` are now documented as driving the real DJI aircraft (given the opt-in) — the previous "DJI Mini driver currently drops them" caveat is gone. The `examples/drone_dji_mini.py` walkthrough was updated to demonstrate the live behaviour and the safety story.
+- **`FlyingTwin` continuous-stick verbs**: `FlyingTwin.move_forward` / `move_backward` / `turn_left` / `turn_right` / `strafe_*` / `ascend` / `descend` are now documented as driving the real DJI aircraft (given the opt-in) — the previous "DJI Mini driver currently drops them" caveat is gone. The DJI Mini example walkthrough was updated to demonstrate the live behaviour and the safety story.
 - **`FlyingTwin.pan_camera(angle_deg=…)`**: new high-level helper that pans the camera view by yawing the airframe. The Mini 4 Pro (and the rest of the Mini / Mavic Mini line) ships with a pitch-only mechanical gimbal, so the `yaw` axis on `gimbal_rotate` is silently ignored by the hardware — `pan_camera` is the supported way to change the camera heading on those aircraft. It re-sends `turn_left` / `turn_right` at 5 Hz inside the 500 ms command-stale watchdog and explicitly zeros the yaw axis when the target angle is reached.
 
 ## Docs
@@ -267,7 +423,7 @@ The `controller:dji-keyboard:v1` policy carries the requirement under `metadata.
 
 - **Perception/runtime correctness**: ONNX YOLO postprocessing now applies per-class NMS; MQTT topic handlers are deduped to prevent WebRTC answer/candidate storms; annotate publishes overlay payloads on a dedicated frame overlay channel; and device fingerprinting has safer hostname fallbacks (#2133, #2153, #2140).
 - **Dataset and media support**: Python SDK schemas and bindings were updated for dataset import/visualization flows, and camera streaming paths gained stronger reconnect behavior for long-lived WebRTC sessions (#2038, #2051, #2069, #2130).
-- **Internal distribution hardening**: Video-sync packaging was obfuscated, CLI/internal install scripts gained better Buildkite authentication and redaction, and `sync-assets` can filter by `--registry-vendor` for workspace-scoped catalog syncs (#2036, #2157).
+- **Distribution hardening**: Video-sync packaging and CLI install scripts were hardened, and `sync-assets` can filter by `--registry-vendor` for workspace-scoped catalog syncs (#2036, #2157).
 
 ### C++ SDK
 
@@ -278,7 +434,7 @@ The `controller:dji-keyboard:v1` policy carries the requirement under `metadata.
 - Fixed workflow execution reading stale replica data by forcing primary reads in workflow task paths.
 - Fixed missing `action_id` errors in generated `move_twin` workflow code.
 - Fixed workflow editor autosave races, Send Alert target-twin persistence, Timed Condition alias schema emission, node-title font/spacing issues, and spatial-filter inspector action layout.
-- Fixed AI environment creation hitting a shadowed backend endpoint, public template clone 403s, and wrong redirects after environment creation.
+- Fixed AI environment creation failing intermittently, public template clone 403s, and wrong redirects after environment creation.
 - Fixed attachment ACL gaps, including environment-map parent access handling.
 - Fixed long robot recordings crashing playback by streaming signed Parquet data around the seek point.
 - Fixed edge worker install/build regressions by installing the local SDK wheel with required extras and smoke-testing `ultralytics`/`zenoh`.
@@ -288,10 +444,10 @@ The `controller:dji-keyboard:v1` policy carries the requirement under `metadata.
 - Fixed camera driver WebRTC streams going silent after consumers disconnect, and fixed SDK MQTT handler accumulation that caused repeated WebRTC answers/candidates.
 - Fixed Edge Devices status drift, stale online fallbacks, cross-workspace tombstone visibility, and unresolved-edge status rendering.
 - Fixed GO2 driver dynamic-IP handling and filtering of simulated teleop commands.
-- Fixed the DJI Android smoke-test/degraded-mode path, Sentry empty-DSN startup crash, and CI emulator working-directory issues.
+- Fixed the DJI Android smoke-test/degraded-mode path, a startup crash caused by missing error-reporting configuration, and CI emulator issues.
 - Fixed live-mode hardware dialog false positives by checking MQTT, REST, and historical edge-device presence.
 - Fixed onboarding overlay dark-mode contrast and removed an exposed close button.
-- Removed a sensitive token from Terraform configuration.
+- Removed a sensitive token from an internal configuration.
 
 </Update>
 
@@ -302,8 +458,7 @@ The `controller:dji-keyboard:v1` policy carries the requirement under `metadata.
 - **Multi-runtime Edge ML inference**: Edge workers can now run models through a runtime registry covering ONNX, TFLite (including quantized/INT8 paths), OpenCV DNN, TensorRT, and PyTorch, with normalized detection publishing across runtimes.
 - **Mission orchestration foundation**: Introduced the initial Mission model/renaming and planning primitives that connect mission authoring/execution flows across backend, frontend, and runtime paths.
 - **Replay intelligence overlays**: Added timeline event APIs and UI markers for alerts + telemetry, including twin-level filtering for replay investigations.
-- **Database-backed feature flag platform**: Replaced hardcoded flags with a DB catalog and added global, organization, and user-level rollout controls with explicit precedence.
-- **Uptime Kuma infrastructure**: Added a dedicated GCP Uptime Kuma stack with dev/staging/production environments and HTTPS-only access for platform monitoring.
+- **Feature flag platform**: Replaced hardcoded flags with a managed catalog and added global, organization, and user-level rollout controls with explicit precedence.
 
 ## Feature Improvements
 
@@ -312,14 +467,14 @@ The `controller:dji-keyboard:v1` policy carries the requirement under `metadata.
 - **Shared-view performance and reliability**: Environment viewer requests now pass a dedicated view token header, isolate viewer query caches, and skip unnecessary data/subscriptions in view-only mode.
 - **Public website messaging polish**: Iterated homepage narrative and interactive hero/code showcase for a simpler, higher-clarity value proposition.
 - **Simulation and vision UX upgrades**: Improved virtual camera live-feed support and added camera FOV cone visualization in 3D environments.
-- **Catalog and seeding maintenance**: Refactored controller/model seed catalogs and updated OpenARM references for staging/prod compatibility.
+- **Catalog and seeding maintenance**: Refactored controller/model seed catalogs and updated OpenARM references.
 
 ## SDK
 
 ### Python SDK
 
 - **Regression hardening for critical paths**: Added integration coverage for `get_latest_frame()` image validity and slash-style `registry_id` twin resolution.
-- **Runtime protocol upgrades**: Backend MQTT client path moved to MQTT v5 semantics with expanded logging/reason-code handling.
+- **Runtime protocol upgrades**: Platform MQTT client moved to MQTT v5 semantics with expanded reason-code handling.
 
 ### C++ SDK
 
@@ -367,7 +522,7 @@ The `controller:dji-keyboard:v1` policy carries the requirement under `metadata.
 - **Mission authoring and execution upgrade**: Redesigned waypoint editing/ordering in UI, better waypoint visualization, drag-and-drop ordering, and waypoint-style in-scene transform gizmos for assets.
 - **Mission capture persistence + workflow integration**: Capture state and media now persist across backend, edge, and frontend; mission captures are surfaced in UI and connected to workflow attachment processing.
 - **Primitives as a first-class concept**: New public endpoint `GET /api/v1/assets/primitives`, SDK access via `cw.assets.list_primitives()`, MCP tooling, and docs updates for environment editing.
-- **Alert categories (business vs technical)**: Backend model/schema/migration/API updates, MQTT payload inclusion, Python SDK support, and docs update.
+- **Alert categories (business vs technical)**: API and schema updates, MQTT payload inclusion, Python SDK support, and docs update.
 - **GO2 runtime pipeline restoration**: End-to-end real-robot path and navigation timestamp handling updates under the new structure.
 
 ## Feature Improvements

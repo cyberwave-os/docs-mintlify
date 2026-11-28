@@ -138,15 +138,16 @@ You can also trigger a workflow from external systems through the REST API or MC
 
 A workflow can span both sides of your stack. Trigger and ML nodes that run [on the cloud](/overview/tools/cloud-node) coordinate with the same workflow's edge half through the [edge worker runtime](/feature-reference/workflows/workers/overview).
 
-An edge vision chain detects objects before anonymizing their regions:
+A common shape:
 
 ```mermaid
 flowchart LR
-    A[Camera Frame trigger<br/><i>edge</i>] --> B[Call Model · detection<br/><i>edge</i>]
-    B --> C[Anonymize node<br/><i>edge</i>]
+    A[Camera Frame trigger<br/><i>edge</i>] --> B[Anonymize node<br/><i>edge</i>]
+    B --> C[Call Model · VLM<br/><i>cloud</i>]
+    C --> D[Send Email<br/><i>cloud</i>]
 ```
 
-The detection model supplies the regions that [Anonymize](/feature-reference/workflows/anonymize-image) processes on the edge. Choose downstream nodes and their execution context for the rest of your workflow. The [unified edge compiler](#environment-bound-workflows) decides what runs where based on the graph itself.
+The video frame never leaves the device unanonymized, the VLM runs on a GPU in the cloud, and an email goes out, all from a single workflow definition. The [unified edge compiler](#environment-bound-workflows) decides what runs where based on the graph itself.
 
 You don't manage model downloads, hardware compatibility, or reconnects. Cyberwave provisions the right model into the right runtime (edge YOLO for [`camera_frame`](#edge-workflows-camera-frame), cloud VLMs for [`call_model`](#nodes)) and keeps it healthy when the network blinks.
 
@@ -156,7 +157,7 @@ Workflows run unchanged against [simulation](/overview/features/simulation) or l
 
 Failed simulation runs show their runtime alerts in **Simulate**. Open the execution details to inspect the failure.
 
-This is the practical version of "test before you deploy". See the [environment editor](/feature-reference/environment-editor#workflow-executions-in-an-environment) for replaying past runs and inspecting per-node executions.
+This is the practical version of "test before you deploy". See the [environment editor](/feature-reference/environment-editor/index#workflow-executions-in-an-environment) for replaying past runs and inspecting per-node executions.
 
 ---
 
@@ -364,13 +365,28 @@ Custom worker code runs only on your own edge runtime.
 
 ## Code node
 
-The **Code** action node runs a user-supplied Python function on the edge. It is only valid on workflows with `run_on_edge: true` — Cyberwave never executes user-authored code on its own infrastructure.
+The **Code** action node runs a user-supplied Python function in a generated worker of its own: the edge worker of a workflow with `run_on_edge: true`, or a cloud runner container (the organization's `cloud_runner` feature). Cyberwave never executes user-authored code in its own backend processes.
 
-- **Runtime**: Python, on the edge worker container that already runs the compiled `wf_*.py` module.
-- **I/O contract**: Every Code node must define a top-level `def run(input: dict) -> dict`. The return value is fed into the next Code node's `input` via an internal `_node_output` variable.
+- **Runtime**: Python, in the worker that runs the compiled `wf_*.py` module: the edge worker container, or one cloud runner container per run.
+- **I/O contract**: Every Code node must define a top-level `def run(input: dict) -> dict`. `input` merges the outputs of the nodes wired into the Code node; the returned dict is the node's output for the nodes after it (anything else becomes `{}`).
+- **State between runs**: Add a second parameter, `def run(input: dict, state: dict) -> dict`, to keep data from one run to the next, for example the last kept frame's embedding when choosing keyframes. `state` is a dict that the edge worker keeps per node. It is lost when the worker restarts or the workflow is redeployed, and it is never stored in executions. Keep it under about 1 MB: the worker logs a warning above that (arrays count by their size in bytes). A Code node that takes `state` needs **Run on edge**: a cloud runner starts a new container per run, so activation and cloud compiles refuse it.
+
+  ```python
+  def run(input: dict, state: dict) -> dict:
+      now = input["frame_ts"]
+      last = state.get("last_kept")
+      keep = last is None or now - last > 30
+      if keep:
+          state["last_kept"] = now
+      return {"keep": keep}
+  ```
+
+  The example reads `frame_ts` from a Camera Frame trigger; when an embedding
+  model sits between them, connect Camera Frame to the Code node too.
+
 - **Validation**: The API parses the body with `ast.parse` on create/update and rejects syntax errors or missing `run` functions inline, before activation.
-- **Activation guards**: Activating a workflow is blocked if it contains a Code node and either (a) `run_on_edge` is false, or (b) the workflow uses a `camera_frame` trigger (not yet supported by the perception path of the edge compiler).
-- **Availability**: The node is always visible in the palette; it is disabled with an "Available only on run_on_edge workflows" tooltip when the workflow is not edge-bound.
+- **Activation guards**: Activating a workflow with a Code node is blocked unless it runs on the edge (`run_on_edge`) or on the cloud runner (the organization's `cloud_runner` feature), where the generated code runs in a container of its own.
+- **Availability**: The node is always visible in the palette, but the editor offers it on edge workflows only: elsewhere it is disabled with an "Only available for edge workflows" tooltip, and a Code node already in a cloud workflow is flagged. Add one to a cloud-runner workflow through the API.
 
 ---
 

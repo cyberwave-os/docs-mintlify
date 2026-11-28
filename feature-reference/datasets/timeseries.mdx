@@ -377,7 +377,7 @@ Once the import has finished, the channels of the dataset can drive the sensors 
 
 <Steps>
   <Step title="Declare sensor slots on the twin">
-    Twins made from an asset that declares scalar sensors, such as `cyberwave/server-2u`, have their slots from the start (see [Sensors declared on an asset](/feature-reference/environment-editor/sensor-bindings#sensors-declared-on-an-asset)). Any twin can add slots of its own: a sensor slot is an entry of `metadata.sensors` on the twin with an `id`, a `name`, a scalar `type` from the vocabulary above and, optionally, a unit.
+    Twins made from an asset that declares scalar sensors, such as `cyberwave/server-2u`, have their slots from the start (see [Sensors declared on an asset](/feature-reference/environment-editor/sensor-bindings#sensors-declared-on-an-asset)). Any twin can add slots of its own: a sensor slot is an entry of `metadata.sensors` on the twin with an `id`, a `name`, a scalar `type` from the vocabulary above and, optionally, a unit. On a twin whose asset already declares slots, add the extra ones to the twin itself instead (see [Sensors added on a twin](/feature-reference/environment-editor/sensor-bindings#sensors-added-on-a-twin)): a `metadata.sensors` list replaces the asset's slots in the twin's sensor list.
 
     ```json
     {
@@ -401,7 +401,7 @@ Once the import has finished, the channels of the dataset can drive the sensors 
     | **Edit** | Set up slots and data sources; nothing plays. | Same. | Same. |
     | **Live** | Readings come from the paired device. | Readings come from the paired device. | The device is muted for this slot. The [recorded data feed](/feature-reference/environment-editor/replay-feed) plays the channel; while no feed plays, the slot shows no fresh value. |
     | **Simulate** | Readings come from the simulation. | Readings come from the simulation. | The simulation is muted for this slot. The feed plays the channel; while no feed plays, the slot shows no fresh value. |
-    | **Replay** | Only what the sensor reported through Cyberwave can be shown. | The channel is available as **Imported data** in the [Sensors tab](/overview/features/replay-and-historical-data#the-replay-timeline). | Same as with the switch off. |
+    | **Replay** | Only what the sensor reported through Cyberwave can be shown. | The channel is available as **Imported data** in the [Sensors tab](/feature-reference/environment-editor/replay-timeline#sensors-tab). | Same as with the switch off. |
 
     Saving writes `metadata.data_sources` on the twin, one entry per attached slot:
 
@@ -425,7 +425,7 @@ Once the import has finished, the channels of the dataset can drive the sensors 
   <Step title="Play the data">
     Switch to **Live** or **Simulate**. As soon as one sensor in the environment has **Use recorded data** switched on, the right panel shows the **Recorded data feed**: choose a start time and a speed and press **Play**. The feed runs on Cyberwave's servers and plays every switched-on sensor of the environment together; see [Recorded data feed](/feature-reference/environment-editor/replay-feed). Until you press Play, the switched-on sensors get no fresh values at all, not even the device's, and the panel says so: "Recorded data selected on N sensors, no feed playing". A switched-on sensor whose dataset is missing is listed there too, and **Play** stays disabled until you fix or clear it in Edit mode.
 
-    To look at the data without feeding it into the live scene, use **Replay** mode: the calendar marks the days the attached datasets cover, and the **Sensors** tab shows the values at the playhead; see [Sensor data in Replay](/overview/features/replay-and-historical-data#the-replay-timeline).
+    To look at the data without feeding it into the live scene, use **Replay** mode: the calendar marks the days the attached datasets cover, and the **Sensors** tab shows the values at the playhead; see [Sensor data in Replay](/feature-reference/environment-editor/replay-timeline#sensor-data-in-replay).
   </Step>
   <Step title="Watch the values">
     In **Live** or **Simulate**, select the twin. The **Live values** section lists every slot with its current value, unit and age, a sparkline of the last values, and a badge that names the source: **replay** with the run id and the data time while the feed plays, otherwise **edge** or **sim**. A switched-on slot gets values from the feed only: while no feed plays, or when its dataset is missing, it shows no fresh value, its age reads **stale** (a dash when it never had one), and it never falls back to a device reading. The values are stored in the sensor history like device readings, tagged as injected so that Replay mode can tell them apart later. The twin's `metadata.readings` holds the latest value per slot, and `metadata.replay` the run id, the dataset and the data time currently playing, so other tools see the same state.
@@ -457,7 +457,7 @@ The SDK examples folder `cyberwave-python/examples/timeseries_replay/` still shi
   <Card title="Recorded data feed" icon="play" href="/feature-reference/environment-editor/replay-feed">
     Play attached channels into the twins in Live and Simulate.
   </Card>
-  <Card title="Replay timeline" icon="clock-rotate-left" href="/overview/features/replay-and-historical-data#the-replay-timeline">
+  <Card title="Replay timeline" icon="clock-rotate-left" href="/feature-reference/environment-editor/replay-timeline">
     Sensor data days in the calendar and the Sensors tab at the playhead.
   </Card>
 </CardGroup>

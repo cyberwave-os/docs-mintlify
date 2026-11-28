@@ -54,13 +54,13 @@ This means edge drivers and operator UIs can safely call resolve without checkin
 
 ## Workflow-scoped alerts
 
-Alerts produced by a workflow's `send_alert` node carry a `workflow_uuid`, and `Alert.workflow` is set on the backend. List alerts for a single workflow with:
+Alerts produced by a workflow's `send_alert` node carry a `workflow_uuid`. List alerts for a single workflow with:
 
 ```text
 GET /api/v1/alerts?workflow_uuid={workflow_uuid}
 ```
 
-Generated edge workers call `client.publish_alert(..., workflow_uuid=WORKFLOW_UUID, workflow_node_uuid=..., workflow_execution_uuid=...)`. The SDK forwards `workflow_uuid` as a top-level field (sets the FK) and merges `workflow_node_uuid` / `workflow_execution_uuid` into `metadata` for full provenance.
+Generated edge workers call `client.publish_alert(..., workflow_uuid=WORKFLOW_UUID, workflow_node_uuid=..., workflow_execution_uuid=...)`. The SDK forwards `workflow_uuid` as a top-level field (linking the alert to the workflow) and merges `workflow_node_uuid` / `workflow_execution_uuid` into `metadata` for full provenance.
 
 When an alert is attributable to one node, the alert card also shows a `Node: <name> (<type>)` badge (from `metadata.workflow_node_name` / `metadata.workflow_node_type`), and a `POST /activate` rejection returns that same node identity in the response body so the editor can highlight the offending node directly instead of showing a generic failure message.
 
@@ -68,7 +68,7 @@ When an alert is attributable to one node, the alert card also shows a `Node: <n
 
 {/* TODO(docs): **STUB:** Behavior is implemented; this section will be expanded with screenshots and the full kind catalogue. */}
 
-Every alert raised by a workflow's `send_alert` node carries an ordered `source_chain` under `metadata` describing each upstream node that fed into the decision. The chain is built generically — any node emitter that opts in by parking a `_source_summary` on its output dict contributes an entry, so the mechanism works equally well for camera-perception, audio-track, alert-triggered, manual, scheduled, or any future trigger source.
+Every alert raised by a workflow's `send_alert` node carries an ordered `source_chain` under `metadata` describing each upstream node that fed into the decision. The chain works equally well for camera-perception, audio-track, alert-triggered, manual, scheduled, or any future trigger source.
 
 Each entry includes:
 
@@ -111,7 +111,7 @@ Example payload for a `camera_frame → call_model → send_alert` workflow:
 
 Notes:
 
-- The chain is purely additive. Adding `_source_summary` does not change `dedupe_hash` (computed over `name + description + alert_type + severity + status + twin_uuid`), so dedupe behavior is unchanged.
+- The chain is purely additive and does not change alert deduplication behavior.
 - `detections_sample` is capped to keep alert metadata bounded; the original `detections_total` is preserved.
 - User-supplied static `metadata` keys always win on conflict — the source chain only fills in `metadata['source_chain']` when not already provided.
 
@@ -147,8 +147,8 @@ The current phase is carried on `metadata.phase`:
 | `requested` | Backend, on accepting the API call | MQTT restart command queued |
 | `in_progress` | Edge-core, when it picks the command off MQTT | Restart actually running |
 | `completed` | Edge-core, after a successful relaunch | Happy path; alert is resolved |
-| `failed` | Edge-core, if `_perform_edge_core_restart` raises | Restart attempt failed; alert resolved with `phase: failed` |
-| `timed_out` | Backend reaper (`reap_stuck_edge_core_restart_alerts`) | Alert stuck in `requested` / `in_progress` past 5 min — typically the MQTT command never landed or edge-core crashed mid-restart |
+| `failed` | Edge-core, if the restart raises an error | Restart attempt failed; alert resolved with `phase: failed` |
+| `timed_out` | Backend, automatically | Alert stuck in `requested` / `in_progress` past 5 min — typically the MQTT command never landed or edge-core crashed mid-restart |
 
 The same `alert_uuid` is returned in the API response **and** included in the MQTT command payload, so edge-core can transition the alert without a lookup.
 
@@ -173,21 +173,21 @@ This keeps the workbench from carrying stale failure noise that the operator's r
 
 and the `edge_core_restart` alert's own metadata gets `pre_resolved_alert_uuids: [...]` so the audit trail links both ways.
 
-Other alert types are deliberately **not** pre-resolved (a restart doesn't actually fix them, and silently closing them would lie to the operator). The authoritative allow-list and excluded set live on [`EDGE_CORE_RESTART_RESOLVABLE_ALERT_TYPES`](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-backend/src/app/api/edge_nodes.py) — change the constant and this section together.
+Other alert types are deliberately **not** pre-resolved (a restart doesn't actually fix them, and silently closing them would lie to the operator). Only the alert types listed above are pre-resolved.
 
 The response schema is [`EdgeCoreRestartResponseSchema`](/api-reference/rest/EdgeCoreRestartResponseSchema). Note that `alert_uuid` is `null` when no environment can be resolved for the edge (typically: no bound twin yet); the restart still happens, just untracked.
 
-## Frontend display contract
+## Alert display
 
 <Warning>
-**Read this before adding a new `alert_type`.** Every alert that the backend or an edge driver can raise must either render correctly with the generic alert card, or have a documented specialised renderer linked from this section. Skipping this step is how we end up with overlapping alert types that nobody can untangle six months later.
+**Read this before adding a new `alert_type`.** Every alert that an edge driver can raise must render correctly with the generic alert card.
 </Warning>
 
-The workbench renders every alert through a single `AlertCard` ([`cyberwave-frontend/components/alerts/alert.tsx`](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-frontend/components/alerts/alert.tsx)). The generic path uses **only** these fields and needs nothing else from the producer:
+The workbench renders every alert through a single generic alert card, which uses **only** these fields and needs nothing else from the producer:
 
 | Field | Display |
 | --- | --- |
-| `severity` | Left border colour + leading icon (`info` / `warning` / `error` / `critical` — see [`alert-display.ts`](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-frontend/components/alerts/alert-display.ts)) |
+| `severity` | Left border colour + leading icon (`info` / `warning` / `error` / `critical`) |
 | `status` | Status pill (`Active` / `Acknowledged` / `Resolved` / `Silenced`). `resolved` and `silenced` also dim the card to 60% opacity. |
 | `source_type` | Small outline badge |
 | `alert_type` | Small mono-font outline badge — this is what tells the operator which producer raised the alert, so make it specific and stable. |
@@ -197,9 +197,9 @@ The workbench renders every alert through a single `AlertCard` ([`cyberwave-fron
 | `created_at` | Relative timestamp with absolute on hover. |
 | `metadata.buttons` | Generic action buttons that publish back on `cyberwave/twin/{twin_uuid}/command` as a `button` command. |
 
-The new `edge_core_restart` alert deliberately uses **only** the generic path. The lifecycle is encoded in `metadata.phase`, so any UI that wants to surface "Restart in progress vs. completed vs. failed" can read that field without a dedicated component, and the audit trail (`request_id`, `pre_resolved_alert_uuids`, `previous_phase`, `timed_out_at`) is plain JSON.
+The `edge_core_restart` alert uses **only** the generic path. The lifecycle is encoded in `metadata.phase`, so any UI that wants to surface "Restart in progress vs. completed vs. failed" can read that field, and the audit trail (`request_id`, `pre_resolved_alert_uuids`, `previous_phase`, `timed_out_at`) is plain JSON.
 
-Specialised renderers exist for a handful of historical alert types that need bespoke interactions; each one is a known cost, not a pattern to copy:
+A handful of built-in alert types get a specialised display:
 
 | `alert_type` | Specialised behaviour |
 | --- | --- |
@@ -215,12 +215,11 @@ Before you introduce a new `alert_type`:
 
 1. **Check this page.** If an existing type fits — even loosely — extend its `metadata` instead of forking a new code.
 2. **Default to the generic path.** Pick a sensible `severity`, write a clear `name` + `description`, and put any structured state on `metadata`. The generic card will render it correctly.
-3. **Only add a specialised renderer when the interaction itself is novel** (e.g. a calibration step that needs custom MQTT commands). Generic `metadata.buttons` cover most operator-confirms-something flows without new code.
-4. **Document the type in this page** before merging — both the catalog row above and, if specialised, the table in this section. A new `alert_type` constant that does not have a row here should not pass review.
+3. **Use `metadata.buttons`** for operator-confirms-something flows.
 
 ### `driver_starting` progress metadata
 
-Edge-core writes `docker pull` progress directly onto the active `driver_starting` alert's `metadata`, so the workbench renders a live `"Downloading driver image (cyberwaveos/ugv-driver:dev) — 745 MB of 1.55 GB (47%)"` line without any extra round-trip. The fields are:
+Edge-core writes `docker pull` progress directly onto the active `driver_starting` alert's `metadata`, so the workbench can render a live `"Downloading driver image (cyberwaveos/ugv-driver:latest) — 745 MB of 1.55 GB (47%)"` line without any extra round-trip. The fields are:
 
 | Field | Type | Meaning |
 | --- | --- | --- |
@@ -236,8 +235,6 @@ Edge-core writes `docker pull` progress directly onto the active `driver_startin
 | `layers_total` / `layers_complete` | int | Number of layers seen so far and number with `Pull complete`. Drives the caption and the percentage through the `installing` phase, which on a multi-GB image outlasts the download. |
 | `layers_active` | int | Layers currently in flight (downloading, verifying or extracting). |
 | `last_docker_pull_line` | string | Most recent raw `docker pull` line (truncated to 500 chars), kept for debugging. |
-
-The frontend renderer is in [`cyberwave-frontend/components/alerts/alert.tsx`](https://github.com/cyberwave-os/cyberwave/blob/main/cyberwave-frontend/components/alerts/alert.tsx) — search for `getDriverStartingDisplayText`.
 
 ## MQTT
 

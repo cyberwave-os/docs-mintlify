@@ -41,7 +41,7 @@ resolver derives the mode from the graph:
 
 - **Caller-mode mapping on the node** → fires **once per inbound
   activation** (`"any"`). Each upstream firing produces an
-  independent execution row.
+  independent execution record.
 - **Single direct upstream that resolves to `"any"`** → inherits
   `"any"` to avoid the silent-coalescing trap where a downstream
   node would otherwise dedupe N upstream activations to one firing.
@@ -77,18 +77,16 @@ changes — and the runtime semantics are the same.
 
 ## Where the primitive runs
 
-- **Cloud interpreter** (`run_on_edge=false`): supports caller-mode
-  mappings natively today.
-- **Edge codegen** (`run_on_edge=true`): supports `caller`-mode
-  mappings on linear chains. Multi-trigger workflows that include a
-  caller-mode (any-derived) node are **rejected at compile time**
-  with a clear error pointing at the offending node; full
-  activation-helper lowering is the subject of a follow-up. The cloud
-  interpreter handles the same workflow today.
+- **Cloud** (`run_on_edge=false`): supports caller-mode mappings
+  natively.
+- **Edge** (`run_on_edge=true`): supports `caller`-mode mappings on
+  linear chains. Multi-trigger workflows that include a caller-mode
+  node are **rejected at compile time** with a clear error pointing at
+  the offending node. The cloud handles the same workflow today.
 
 ## Recording
 
-Each `WorkflowNodeExecution` row records `caller_uuid` and
-`activation_index` under `metadata`, so timeline replay can group runs
-by `(node_uuid, activation_index)` and reproduce the per-activation
-flow deterministically.
+Each node execution records `caller_uuid` and `activation_index` under
+`metadata`, so timeline replay can group runs by
+`(node_uuid, activation_index)` and reproduce the per-activation flow
+deterministically.

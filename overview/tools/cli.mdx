@@ -134,8 +134,7 @@ sudo cyberwave pair --token <api-token> -e acme/envs/production-floor -y
 | `-y, --yes` | Skip confirmation prompts |
 | `-e, --environment` | Existing environment to attach to: UUID or full slug (acme/envs/production-floor) |
 | `--token` | API token to pair with, instead of stored credentials or an interactive login |
-| `--channel` | Which edge-core package channel to install (one of `stable`, `dev`, `staging`; default `stable`) |
-| `--version` | Exact edge-core version to install from the selected channel |
+| `--version` | Exact edge-core version to install |
 | `--force-reinstall` | Tear down and reinstall the USB/IP server from scratch (macOS only) |
 | `--reconfigure-camera` | Re-run camera detection and save to cameras.json |
 | `--reconfigure-microphone` | Re-run macOS microphone bridge setup (ffmpeg + audio\_streams.json) |
@@ -198,7 +197,7 @@ Manage the Edge Core service on this device: lifecycle, logs, cameras, drivers, 
 | `cyberwave edge cameras` | List cameras detected on this edge device. | `--json` Output as JSON<br/>`--save` Save results to cameras.json |
 | `cyberwave edge driver …` | Manage edge driver containers. | Subcommands, see the table below. |
 | `cyberwave edge health` | Deprecated. Edge Core now runs this health check itself. | `-t, --twin-uuid` Twin UUID to check health for (required)<br/>`--timeout` Timeout in seconds to wait for response (default `5`)<br/>`-w, --watch` Continuously watch health status |
-| `cyberwave edge install` | Install cyberwave-edge-core and register it as a boot service. | `-y, --yes` Skip confirmation prompts<br/>`-e, --environment` Existing environment to attach to: UUID or full slug (acme/envs/production-floor)<br/>`--token` API token to pair with, instead of stored credentials or an interactive login<br/>`--channel` Which edge-core package channel to install (one of `stable`, `dev`, `staging`; default `stable`)<br/>`--version` Exact edge-core version to install from the selected channel<br/>`--force-reinstall` Tear down and reinstall the USB/IP server from scratch (macOS only)<br/>`--reconfigure-camera` Re-run camera detection and save to cameras.json<br/>`--reconfigure-microphone` Re-run macOS microphone bridge setup (ffmpeg + audio\_streams.json)<br/>`--reconfigure-speaker` Re-run macOS speaker playback sink setup (HTTP PCM + audio\_streams.json)<br/>`--microphone-index` AVFoundation microphone index for `--reconfigure-microphone` (skips prompt) |
+| `cyberwave edge install` | Install cyberwave-edge-core and register it as a boot service. | `-y, --yes` Skip confirmation prompts<br/>`-e, --environment` Existing environment to attach to: UUID or full slug (acme/envs/production-floor)<br/>`--token` API token to pair with, instead of stored credentials or an interactive login<br/>`--version` Exact edge-core version to install<br/>`--force-reinstall` Tear down and reinstall the USB/IP server from scratch (macOS only)<br/>`--reconfigure-camera` Re-run camera detection and save to cameras.json<br/>`--reconfigure-microphone` Re-run macOS microphone bridge setup (ffmpeg + audio\_streams.json)<br/>`--reconfigure-speaker` Re-run macOS speaker playback sink setup (HTTP PCM + audio\_streams.json)<br/>`--microphone-index` AVFoundation microphone index for `--reconfigure-microphone` (skips prompt) |
 | `cyberwave edge install-deps` | Install edge ML dependencies. | `-r, --runtime` Specific runtime to install (ultralytics, opencv) (repeatable) |
 | `cyberwave edge list-models` | List model bindings loaded on the edge node. | `--twin-uuid` Twin UUID to query (required) |
 | `cyberwave edge logs` | Show edge node logs. | `-f, --follow` Follow log output<br/>`-n, --lines` Number of lines to show (default `50`) |
@@ -209,7 +208,7 @@ Manage the Edge Core service on this device: lifecycle, logs, cameras, drivers, 
 | `cyberwave edge status` | Check edge node status. | None |
 | `cyberwave edge stop` | Stop the edge node service. | None |
 | `cyberwave edge sync-workflows` | Sync workflow workers on the edge node. | `--twin-uuid` Twin UUID to trigger workflow sync for via MQTT |
-| `cyberwave edge uninstall` | Stop and remove the cyberwave-edge-core service. | `-y, --yes` Skip confirmation prompts<br/>`--channel` Release channel the edge was installed from (one of `stable`, `dev`, `staging`) |
+| `cyberwave edge uninstall` | Stop and remove the cyberwave-edge-core service. | `-y, --yes` Skip confirmation prompts |
 | `cyberwave edge whoami` | Show device fingerprint and info. | None |
 
 {/* cli-gen:end */}
@@ -268,7 +267,7 @@ Manage [workflows](/feature-reference/workflows) from the terminal. Commands tha
 | `cyberwave workflow sync [UUID]` | Sync a workflow to its edge node(s). | `--force` Skip the cloud-side preflight check and publish the MQTT sync command anyway<br/>`--dry-run` Run the preflight diagnostic and print what would be synced, but don't publish the MQTT command<br/>`--edge-active` Restrict the interactive selector to workflows that are both active (is\_active=true) and target edge execution (run\_on\_edge=true) — i.e. the only workflows `sync` will actually ship to an edge node |
 | `cyberwave workflow templates` | List available workflow templates. | None |
 
-Every `cyberwave workflow` subcommand except `templates` also accepts `-u, --base-url`: Backend API URL (e.g. http://192.168.10.101:8000). Defaults to CYBERWAVE\_BASE\_URL or https://api.cyberwave.com.
+Every `cyberwave workflow` subcommand except `templates` also accepts `-u, --base-url`: Backend API URL (for example, a self-hosted URL). Defaults to CYBERWAVE\_BASE\_URL or https://api.cyberwave.com.
 
 {/* cli-gen:end */}
 
@@ -283,7 +282,7 @@ Manage the Python [edge workers](/feature-reference/workflows/workers/overview) 
 | Command | What it does | Options |
 |---|---|---|
 | `cyberwave worker add SOURCE` | Add a worker file to the workers directory. | `-n, --name` Override the destination filename (must end with .py)<br/>`-f, --force` Overwrite existing worker without confirmation |
-| `cyberwave worker doctor` | Diagnose why a worker may not receive frames. | `-v, --verbose` Show hints for passing checks too<br/>`--runtime / --no-runtime` Run the live-bus probe: subscribe to Zenoh for a few seconds and compare actual traffic against worker hook key-expressions (default `on`)<br/>`--window` Seconds to listen on the Zenoh bus during the runtime probe (default `3.0`) |
+| `cyberwave worker doctor` | Diagnose why a worker may not receive frames. | `-v, --verbose` Show hints for passing checks too<br/>`--runtime / --no-runtime` Also run the live-bus probe (off by default): subscribe to Zenoh for a few seconds and compare actual traffic against worker hook key-expressions<br/>`--window` Seconds to listen on the Zenoh bus; only used with `--runtime` (default `3.0`) |
 | `cyberwave worker health` | Show detailed worker health: restart history and circuit-breaker state. | None |
 | `cyberwave worker list` | List installed worker files. | `--json` Output as JSON |
 | `cyberwave worker logs` | Stream worker container logs. | `-f, --follow` Follow log output (default `on`)<br/>`-n, --tail` Number of lines to show from the end of the logs (default `50`)<br/>`-c, --container` Explicit container name (auto-detected if omitted) |
@@ -296,7 +295,7 @@ Manage the Python [edge workers](/feature-reference/workflows/workers/overview) 
 
 {/* cli-gen:end */}
 
-If a worker reports `frames: 0`, start with `cyberwave worker doctor`. It checks file permissions, the driver containers, and environment variables, then listens on the data bus to compare live traffic with your worker's hooks.
+If a worker reports `frames: 0`, start with `cyberwave worker doctor`. It checks file permissions, the driver containers, and environment variables. Add `--runtime` to also listen on the data bus and compare live traffic with your worker's hooks; the runtime probe connects only to a running driver or worker container on this device and does not use network discovery.
 
 ## `cyberwave model`
 
@@ -336,7 +335,7 @@ Run a [cloud node](/overview/tools/cloud-node) on a GPU machine. The commands mi
 
 | Command | What it does | Options |
 |---|---|---|
-| `cyberwave compute install` | Install cyberwave-cloud-node and register it as a boot service. | `-y, --yes` Skip confirmation prompts<br/>`--channel` Which cloud-node package channel to install (one of `stable`, `dev`, `staging`; default `stable`)<br/>`--version` Exact version to install from the selected channel<br/>`--config` Path to cyberwave.yml to use when the service starts |
+| `cyberwave compute install` | Install cyberwave-cloud-node and register it as a boot service. | `-y, --yes` Skip confirmation prompts<br/>`--version` Exact version to install<br/>`--config` Path to cyberwave.yml to use when the service starts |
 | `cyberwave compute logs` | Show cloud node logs. | `-f, --follow` Follow log output<br/>`-n, --lines` Number of lines to show (default `50`) |
 | `cyberwave compute restart` | Restart the cloud node service. | `--config` Path to cyberwave.yml (persisted in the service override) |
 | `cyberwave compute start` | Start the cloud node service. | `--config` Path to cyberwave.yml (persisted in the service override)<br/>`-f, --foreground` Run in foreground (don't daemonize) |
@@ -352,11 +351,13 @@ Run a [cloud node](/overview/tools/cloud-node) on a GPU machine. The commands mi
 
 | Command | What it does | Options |
 |---|---|---|
-| `cyberwave scan` | Scan the network for IP cameras and NVRs. | `-s, --subnet` Subnet to scan (e.g., 192.168.1)<br/>`-t, --timeout` Connection timeout in seconds (default: 1.0)<br/>`--no-ports` Disable TCP port scanning<br/>`--no-onvif` Disable ONVIF WS-Discovery<br/>`--no-upnp` Disable UPnP/SSDP discovery<br/>`--json` Output results as JSON |
+| `cyberwave scan` | Inspect local network configuration, or verify one known endpoint. | `--target` One numeric unicast IPv4 address; no DNS or ranges<br/>`--port` One documented TCP service port<br/>`--verify` Explicitly request one TCP connection, at most five seconds<br/>`--interface` Enforce this interface or skip the requested check<br/>`--tls` Validate TLS on the same connection<br/>`--server-name` Expected TLS server identity/SNI; does not resolve DNS<br/>`--ca-file` Trusted private CA bundle<br/>`--certificate-sha256` Independently supplied device certificate fingerprint<br/>`--wired` Show local wired inventory only; never discover devices<br/>`--json` Output results as JSON |
 | `cyberwave camera [PATH]` | Set up camera edge software for streaming to Cyberwave. | `-e, --environment-uuid` UUID of an existing environment to use<br/>`-n, --environment-name` Name for a new environment (creates one if `--environment-uuid` not provided)<br/>`-t, --twin-uuid` UUID of an existing twin to use (skips twin creation)<br/>`--twin-name` Name for the camera twin (default: prompted or auto-generated)<br/>`-c, --camera-id` Local camera device index (default: 0)<br/>`-f, --camera-fps` Frames per second (default: 10)<br/>`-u, --camera-url` IP camera URL (RTSP/HTTP)<br/>`--camera-user` Username for IP camera authentication<br/>`--camera-pass` Password for IP camera authentication<br/>`--local-edge` Path to local edge code (skips git clone)<br/>`--env-only` Only generate .env file (use with `--local-edge`)<br/>`-y, --yes` Skip confirmation prompts (non-interactive mode) |
 | `cyberwave so101 [PATH]` | Bootstrap a new SO-101 robot arm project. | None |
 
 {/* cli-gen:end */}
+
+`cyberwave scan` does not discover devices. With no options it lists this device's interfaces and cached neighbors; with `--target` it also shows the kernel route to that address. Neither makes a network connection. To check one known service, pass its address and documented port, for example `cyberwave scan --target 192.168.1.100 --port 554 --verify`: the CLI makes a single TCP connection (optionally TLS) with a five-second deadline. Get device addresses from the device itself, your inventory, or your router's DHCP leases. The earlier discovery options (`-s`, `-t`, `--no-ports`, `--no-onvif`, `--no-upnp`) now exit with an error. Local inspection uses the Linux `ip` tool; on other platforms only `--verify` returns a result.
 
 `cyberwave so101` clones the [SO-101 starter template](https://github.com/cyberwave-os/so101-starter) into `./so101-project` (or the path you give) and runs its setup script. It needs `git`. To pair a real arm, follow [Get started with the SO-101 arm](/tutorials/so101-teleop-dataset).
 
@@ -432,10 +433,8 @@ The CLI and Edge Core share one config directory: `$CYBERWAVE_EDGE_CONFIG_DIR` i
 | `CYBERWAVE_BASE_URL` | API URL. Defaults to the backend saved in `credentials.json`, else `https://api.cyberwave.com`. `cyberwave logout` clears the saved one. |
 | `CYBERWAVE_API_KEY` | Token that `edge install` / `pair` falls back to when no login is saved. Also what the Python SDK reads. |
 | `CYBERWAVE_EDGE_CONFIG_DIR` | Overrides the config directory. |
-| `CYBERWAVE_ENVIRONMENT` | Backend stage, such as `dev`. Defaults to production. |
 | `CYBERWAVE_MQTT_HOST` | MQTT broker host. Defaults to `mqtt.cyberwave.com`. |
 
-`cyberwave workflow sync` and other commands that publish over MQTT refuse to run when the saved `CYBERWAVE_ENVIRONMENT` doesn't match the broker host. To fix it, run `cyberwave login` again against the right backend.
 
 ## Next steps
 
@@ -449,7 +448,7 @@ The CLI and Edge Core share one config directory: `$CYBERWAVE_EDGE_CONFIG_DIR` i
   <Card title="Get started with the SO-101 arm" icon="microchip" href="/tutorials/so101-teleop-dataset">
     Use `cyberwave pair` on a real arm, end to end.
   </Card>
-  <Card title="Tutorials" icon="book-open" href="/tutorials">
+  <Card title="Tutorials" icon="book-open" href="/tutorials/index">
     Builds that use the CLI, grouped by the hardware you have.
   </Card>
 </CardGroup>

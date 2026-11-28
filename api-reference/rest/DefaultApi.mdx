@@ -1,6 +1,4 @@
----
-title: "cyberwave.rest.DefaultApi"
----
+# cyberwave.rest.DefaultApi
 
 All URIs are relative to _http://localhost_
 
@@ -301,7 +299,7 @@ All URIs are relative to _http://localhost_
 | [**src_users_api_workspaces_update_workspace**](#src_users_api_workspaces_update_workspace)                                               | **PUT** `/api/v1/users/workspaces/{uuid}`                                             | Update Workspace                        |
 | [**src_users_api_workspaces_update_workspace_member_role**](#src_users_api_workspaces_update_workspace_member_role)                       | **PUT** `/api/v1/users/workspaces/{uuid}/members/{user_uuid}/role`                    | Update Workspace Member Role            |
 
-## **src_app_api_alerts_acknowledge_alert**
+# **src_app_api_alerts_acknowledge_alert**
 
 > AlertSchema src_app_api_alerts_acknowledge_alert(uuid)
 
@@ -377,7 +375,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_alerts_create_alert**
+# **src_app_api_alerts_create_alert**
 
 > AlertSchema src_app_api_alerts_create_alert(create_alert_schema)
 
@@ -454,7 +452,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_alerts_delete_alert**
+# **src_app_api_alerts_delete_alert**
 
 > src_app_api_alerts_delete_alert(uuid)
 
@@ -527,7 +525,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_alerts_get_alert**
+# **src_app_api_alerts_get_alert**
 
 > AlertSchema src_app_api_alerts_get_alert(uuid)
 
@@ -603,7 +601,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_alerts_list_alerts**
+# **src_app_api_alerts_list_alerts**
 
 > List[AlertSchema] src_app_api_alerts_list_alerts(workspace_uuid=workspace_uuid, twin_uuid=twin_uuid, environment_uuid=environment_uuid, status=status, severity=severity, limit=limit)
 
@@ -698,7 +696,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_alerts_resolve_alert**
+# **src_app_api_alerts_resolve_alert**
 
 > AlertSchema src_app_api_alerts_resolve_alert(uuid)
 
@@ -774,7 +772,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_alerts_silence_alert**
+# **src_app_api_alerts_silence_alert**
 
 > AlertSchema src_app_api_alerts_silence_alert(uuid)
 
@@ -850,7 +848,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_alerts_update_alert**
+# **src_app_api_alerts_update_alert**
 
 > AlertSchema src_app_api_alerts_update_alert(uuid, update_alert_schema)
 
@@ -929,7 +927,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_check_registry_id_availability**
+# **src_app_api_assets_check_registry_id_availability**
 
 > src_app_api_assets_check_registry_id_availability(registry_id)
 
@@ -992,7 +990,7 @@ No authorization required
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_complete_large_glb_upload**
+# **src_app_api_assets_complete_large_glb_upload**
 
 > AssetSchema src_app_api_assets_complete_large_glb_upload(uuid, complete_large_upload_schema)
 
@@ -1072,7 +1070,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_create_asset**
+# **src_app_api_assets_create_asset**
 
 > AssetSchema src_app_api_assets_create_asset(asset_create_schema)
 
@@ -1147,7 +1145,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_create_asset_from_prompt_or_image**
+# **src_app_api_assets_create_asset_from_prompt_or_image**
 
 > DeferredTaskExecutionResponseSchema src_app_api_assets_create_asset_from_prompt_or_image(asset_name, prompt=prompt, image_url=image_url, image_bytes=image_bytes, description=description, workspace_uuid=workspace_uuid, visibility=visibility)
 
@@ -1236,7 +1234,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_create_asset_with_urdf**
+# **src_app_api_assets_create_asset_with_urdf**
 
 > src_app_api_assets_create_asset_with_urdf(asset_create_with_urdf_schema)
 
@@ -1308,7 +1306,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_delete_asset**
+# **src_app_api_assets_delete_asset**
 
 > src_app_api_assets_delete_asset(uuid)
 
@@ -1379,7 +1377,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_export_asset**
+# **src_app_api_assets_export_asset**
 
 > src_app_api_assets_export_asset(uuid)
 
@@ -1450,7 +1448,7 @@ No authorization required
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_get_asset**
+# **src_app_api_assets_get_asset**
 
 > AssetSchema src_app_api_assets_get_asset(uuid)
 
@@ -1515,7 +1513,7 @@ No authorization required
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_get_asset_controllers**
+# **src_app_api_assets_get_asset_controllers**
 
 > List[ControllerPolicySchema] src_app_api_assets_get_asset_controllers(uuid)
 
@@ -1577,7 +1575,7 @@ No authorization required
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_get_asset_kinematics**
+# **src_app_api_assets_get_asset_kinematics**
 
 > Dict[str, object] src_app_api_assets_get_asset_kinematics(uuid)
 
@@ -1641,7 +1639,7 @@ No authorization required
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_get_asset_universal_schema**
+# **src_app_api_assets_get_asset_universal_schema**
 
 > Dict[str, object] src_app_api_assets_get_asset_universal_schema(uuid)
 
@@ -1705,7 +1703,7 @@ No authorization required
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_get_asset_universal_schema_at_path**
+# **src_app_api_assets_get_asset_universal_schema_at_path**
 
 > Dict[str, object] src_app_api_assets_get_asset_universal_schema_at_path(uuid, path=path)
 
@@ -1777,7 +1775,7 @@ No authorization required
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_get_popular_tags**
+# **src_app_api_assets_get_popular_tags**
 
 > PopularTagsResponseSchema src_app_api_assets_get_popular_tags()
 
@@ -1839,14 +1837,14 @@ No authorization required
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_get_public_vendors**
+# **src_app_api_assets_get_public_vendors**
 
 > List[Optional[str]] src_app_api_assets_get_public_vendors()
 
 Get Public Vendors
 
 Get the list of vendors that have public assets.
-Used by frontend to whitelist vendor pages for unauthenticated access.
+Used to allow public vendor pages to be viewed without authentication.
 Results are cached for 1 hour for performance.
 
 ### Example
@@ -1901,7 +1899,7 @@ No authorization required
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_import_asset_package**
+# **src_app_api_assets_import_asset_package**
 
 > AssetSchema src_app_api_assets_import_asset_package(file, workspace_uuid=workspace_uuid, custom_registry_id=custom_registry_id)
 
@@ -1992,7 +1990,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_import_catalog_asset**
+# **src_app_api_assets_import_catalog_asset**
 
 > AssetSchema src_app_api_assets_import_catalog_asset(asset_catalog_import_schema)
 
@@ -2067,7 +2065,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_initiate_large_glb_upload**
+# **src_app_api_assets_initiate_large_glb_upload**
 
 > InitiateLargeUploadResponse src_app_api_assets_initiate_large_glb_upload(uuid, initiate_large_upload_schema)
 
@@ -2147,7 +2145,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_list_assets**
+# **src_app_api_assets_list_assets**
 
 > List[AssetListSchema] src_app_api_assets_list_assets()
 
@@ -2206,7 +2204,7 @@ No authorization required
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_llm_generation**
+# **src_app_api_assets_llm_generation**
 
 > LLMResponseSchema src_app_api_assets_llm_generation(uuid, llm_generation_schema)
 
@@ -2271,7 +2269,7 @@ No authorization required
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_patch_asset_universal_schema**
+# **src_app_api_assets_patch_asset_universal_schema**
 
 > Dict[str, object] src_app_api_assets_patch_asset_universal_schema(uuid, universal_schema_patch_schema)
 
@@ -2373,7 +2371,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_rebuild_asset_universal_schema**
+# **src_app_api_assets_rebuild_asset_universal_schema**
 
 > Dict[str, object] src_app_api_assets_rebuild_asset_universal_schema(uuid, sync=sync)
 
@@ -2381,7 +2379,7 @@ Rebuild Asset Universal Schema
 
 Trigger regeneration of an Asset's universal_schema from its URDFProject.
 
-By default, queues a Celery task and returns immediately. Pass `?sync=true`
+By default, queues the regeneration and returns immediately. Pass `?sync=true`
 to execute synchronously and block until complete (useful for local testing).
 
 Returns:
@@ -2463,7 +2461,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_set_glb_from_attachment**
+# **src_app_api_assets_set_glb_from_attachment**
 
 > AssetSchema src_app_api_assets_set_glb_from_attachment(uuid, asset_glb_from_attachment_schema)
 
@@ -2544,7 +2542,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_update_asset**
+# **src_app_api_assets_update_asset**
 
 > AssetSchema src_app_api_assets_update_asset(uuid, asset_update_schema)
 
@@ -2623,7 +2621,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_upload_glb**
+# **src_app_api_assets_upload_glb**
 
 > AssetSchema src_app_api_assets_upload_glb(uuid, file)
 
@@ -2699,7 +2697,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_upload_thumbnail_file**
+# **src_app_api_assets_upload_thumbnail_file**
 
 > AssetSchema src_app_api_assets_upload_thumbnail_file(uuid, file)
 
@@ -2775,7 +2773,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_assets_vlm_generation**
+# **src_app_api_assets_vlm_generation**
 
 > VLMResponseSchema src_app_api_assets_vlm_generation(uuid, vlm_generation_schema)
 
@@ -2783,7 +2781,7 @@ Vlm Generation
 
 Generate a response using a Vision Language Model (VLM) with the given prompt and image.
 
-This endpoint uses Google's Gemini 3 Pro vision model to analyze images and generate
+This endpoint uses a vision language model to analyze images and generate
 text responses based on the provided prompt.
 
 Args:
@@ -2853,7 +2851,7 @@ No authorization required
 | **200**     | OK          | -                |
 
 
-## **src_app_api_attachments_complete_large_attachment_upload**
+# **src_app_api_attachments_complete_large_attachment_upload**
 
 > AttachmentSchema src_app_api_attachments_complete_large_attachment_upload(uuid, complete_large_upload_schema)
 
@@ -2933,7 +2931,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_attachments_create_attachment**
+# **src_app_api_attachments_create_attachment**
 
 > AttachmentSchema src_app_api_attachments_create_attachment(attachment_create_schema)
 
@@ -3008,7 +3006,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_attachments_delete_attachment**
+# **src_app_api_attachments_delete_attachment**
 
 > src_app_api_attachments_delete_attachment(uuid)
 
@@ -3079,7 +3077,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_attachments_download_attachment**
+# **src_app_api_attachments_download_attachment**
 
 > src_app_api_attachments_download_attachment(uuid)
 
@@ -3152,7 +3150,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_attachments_get_attachment**
+# **src_app_api_attachments_get_attachment**
 
 > AttachmentSchema src_app_api_attachments_get_attachment(uuid)
 
@@ -3226,7 +3224,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_attachments_initiate_large_attachment_upload**
+# **src_app_api_attachments_initiate_large_attachment_upload**
 
 > InitiateLargeUploadResponse src_app_api_attachments_initiate_large_attachment_upload(uuid, initiate_large_upload_schema)
 
@@ -3306,7 +3304,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_attachments_list_attachments**
+# **src_app_api_attachments_list_attachments**
 
 > List[AttachmentSchema] src_app_api_attachments_list_attachments()
 
@@ -3377,7 +3375,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_attachments_update_attachment**
+# **src_app_api_attachments_update_attachment**
 
 > AttachmentSchema src_app_api_attachments_update_attachment(uuid, attachment_create_schema)
 
@@ -3454,7 +3452,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_attachments_upload_attachment**
+# **src_app_api_attachments_upload_attachment**
 
 > AttachmentSchema src_app_api_attachments_upload_attachment(uuid, file)
 
@@ -3530,7 +3528,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_controller_policies_clone_controller_policy**
+# **src_app_api_controller_policies_clone_controller_policy**
 
 > ControllerPolicySchema src_app_api_controller_policies_clone_controller_policy(uuid, workspace_uuid=workspace_uuid)
 
@@ -3608,7 +3606,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_controller_policies_create_controller_policy**
+# **src_app_api_controller_policies_create_controller_policy**
 
 > ControllerPolicySchema src_app_api_controller_policies_create_controller_policy(controller_policy_create_schema)
 
@@ -3685,7 +3683,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_controller_policies_delete_controller_policy**
+# **src_app_api_controller_policies_delete_controller_policy**
 
 > Dict[str, Optional[bool]] src_app_api_controller_policies_delete_controller_policy(uuid)
 
@@ -3760,7 +3758,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_controller_policies_execute_controller_policy**
+# **src_app_api_controller_policies_execute_controller_policy**
 
 > ControllerPolicyExecuteResponseSchema src_app_api_controller_policies_execute_controller_policy(uuid, controller_policy_execute_schema)
 
@@ -3837,7 +3835,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_controller_policies_get_action_from_policy**
+# **src_app_api_controller_policies_get_action_from_policy**
 
 > str src_app_api_controller_policies_get_action_from_policy(uuid, instruction, twin_uuid, camera_twin_uuid)
 
@@ -3846,7 +3844,7 @@ Get Action From Policy
 Get action from an ML model policy based on instruction and twin state.
 
 Validates that the twins exist and the camera is live, then dispatches
-the actual execution to a Celery worker.
+the actual execution to a background worker.
 
 ### Example
 
@@ -3921,7 +3919,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_controller_policies_get_controller_policy**
+# **src_app_api_controller_policies_get_controller_policy**
 
 > ControllerPolicySchema src_app_api_controller_policies_get_controller_policy(uuid)
 
@@ -3997,7 +3995,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_controller_policies_list_controller_policies**
+# **src_app_api_controller_policies_list_controller_policies**
 
 > List[ControllerPolicySchema] src_app_api_controller_policies_list_controller_policies(asset_uuid=asset_uuid, workspace_uuid=workspace_uuid)
 
@@ -4075,7 +4073,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_controller_policies_update_controller_policy**
+# **src_app_api_controller_policies_update_controller_policy**
 
 > ControllerPolicySchema src_app_api_controller_policies_update_controller_policy(uuid, controller_policy_update_schema)
 
@@ -4154,7 +4152,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_datasets_create_dataset**
+# **src_app_api_datasets_create_dataset**
 
 > Dict[str, object] src_app_api_datasets_create_dataset(dataset_create_schema)
 
@@ -4230,7 +4228,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_datasets_delete_dataset**
+# **src_app_api_datasets_delete_dataset**
 
 > Dict[str, Optional[bool]] src_app_api_datasets_delete_dataset(uuid)
 
@@ -4305,7 +4303,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_datasets_get_dataset**
+# **src_app_api_datasets_get_dataset**
 
 > DatasetSchema src_app_api_datasets_get_dataset(uuid)
 
@@ -4381,7 +4379,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_datasets_get_dataset_zip_url**
+# **src_app_api_datasets_get_dataset_zip_url**
 
 > DatasetZipUrlSchema src_app_api_datasets_get_dataset_zip_url(uuid)
 
@@ -4457,7 +4455,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_datasets_list_datasets**
+# **src_app_api_datasets_list_datasets**
 
 > List[DatasetSchema] src_app_api_datasets_list_datasets()
 
@@ -4533,7 +4531,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_datasets_remove_episode_from_dataset**
+# **src_app_api_datasets_remove_episode_from_dataset**
 
 > DatasetSchema src_app_api_datasets_remove_episode_from_dataset(uuid, episode_uuid)
 
@@ -4611,7 +4609,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_datasets_update_dataset**
+# **src_app_api_datasets_update_dataset**
 
 > DatasetSchema src_app_api_datasets_update_dataset(uuid, dataset_update_schema)
 
@@ -4690,7 +4688,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_edge_nodes_discover_twins**
+# **src_app_api_edge_nodes_discover_twins**
 
 > DiscoveryResponseSchema src_app_api_edge_nodes_discover_twins(edge_register_schema)
 
@@ -4699,7 +4697,7 @@ Discover Twins
 Discover all twins this edge device should serve.
 
 This endpoint auto-registers the edge if it does not exist and returns all
-twins that contain this edge fingerprint in Twin.metadata["edge_fingerprint"].
+twins that contain this edge fingerprint in their metadata.
 
 ### Example
 
@@ -4770,7 +4768,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_edge_nodes_get_edge_twins**
+# **src_app_api_edge_nodes_get_edge_twins**
 
 > List[TwinBindingSchema] src_app_api_edge_nodes_get_edge_twins(uuid)
 
@@ -4846,7 +4844,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_edge_nodes_pair_twin_to_edge**
+# **src_app_api_edge_nodes_pair_twin_to_edge**
 
 > TwinBindingSchema src_app_api_edge_nodes_pair_twin_to_edge(uuid, pair_twin_schema)
 
@@ -4930,13 +4928,13 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_edge_nodes_restart_edge_core**
+# **src_app_api_edge_nodes_restart_edge_core**
 
 > EdgeCoreRestartResponseSchema src_app_api_edge_nodes_restart_edge_core(uuid)
 
 Restart Edge Core
 
-Publish an MQTT restart command for the target edge-core instance.
+Send a restart command to the target edge-core instance.
 
 ### Example
 
@@ -5006,7 +5004,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_edge_nodes_unpair_twin_from_edge**
+# **src_app_api_edge_nodes_unpair_twin_from_edge**
 
 > src_app_api_edge_nodes_unpair_twin_from_edge(uuid, twin_uuid)
 
@@ -5081,13 +5079,13 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_edge_nodes_update_camera_config**
+# **src_app_api_edge_nodes_update_camera_config**
 
 > src_app_api_edge_nodes_update_camera_config(uuid, twin_uuid, camera_config_update_schema)
 
 Update Camera Config
 
-DEPRECATED: camera configs now live in Twin.metadata["edge_configs"] and
+DEPRECATED: camera configs now live in the twin metadata and
 must be updated via twin metadata writes.
 
 ### Example
@@ -5160,7 +5158,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_edges_create_edge**
+# **src_app_api_edges_create_edge**
 
 > EdgeSchema src_app_api_edges_create_edge(edge_create_schema)
 
@@ -5235,7 +5233,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_edges_delete_edge**
+# **src_app_api_edges_delete_edge**
 
 > src_app_api_edges_delete_edge(uuid)
 
@@ -5306,7 +5304,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_edges_get_edge**
+# **src_app_api_edges_get_edge**
 
 > EdgeSchema src_app_api_edges_get_edge(uuid)
 
@@ -5380,7 +5378,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_edges_get_edges**
+# **src_app_api_edges_get_edges**
 
 > List[EdgeSchema] src_app_api_edges_get_edges()
 
@@ -5451,7 +5449,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_edges_update_edge**
+# **src_app_api_edges_update_edge**
 
 > EdgeSchema src_app_api_edges_update_edge(uuid, edge_create_schema)
 
@@ -5528,7 +5526,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_cancel_environment_invitation**
+# **src_app_api_environments_cancel_environment_invitation**
 
 > Dict[str, object] src_app_api_environments_cancel_environment_invitation(invitation_uuid)
 
@@ -5603,7 +5601,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_create_environment_for_project**
+# **src_app_api_environments_create_environment_for_project**
 
 > EnvironmentSchema src_app_api_environments_create_environment_for_project(uuid, environment_create_schema)
 
@@ -5680,7 +5678,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_create_environment_link**
+# **src_app_api_environments_create_environment_link**
 
 > Dict[str, object] src_app_api_environments_create_environment_link(uuid)
 
@@ -5755,7 +5753,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_create_environment_simulation**
+# **src_app_api_environments_create_environment_simulation**
 
 > Dict[str, object] src_app_api_environments_create_environment_simulation(uuid, simulation_start_schema=simulation_start_schema)
 
@@ -5831,7 +5829,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_create_environment_snapshot**
+# **src_app_api_environments_create_environment_snapshot**
 
 > EnvironmentSnapshotSchema src_app_api_environments_create_environment_snapshot(uuid, environment_snapshot_create_schema)
 
@@ -5910,7 +5908,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_add_environment_waypoints**
+# **src_app_api_environments_add_environment_waypoints**
 
 > EnvironmentWaypointSchema[] src_app_api_environments_add_environment_waypoints(uuid, environment_waypoint_bulk_create_schema)
 
@@ -5945,7 +5943,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_delete_environment_waypoint**
+# **src_app_api_environments_delete_environment_waypoint**
 
 > EnvironmentWaypointSchema[] src_app_api_environments_delete_environment_waypoint(uuid, waypoint_id)
 
@@ -5980,7 +5978,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_get_environment_waypoints**
+# **src_app_api_environments_get_environment_waypoints**
 
 > EnvironmentWaypointSchema[] src_app_api_environments_get_environment_waypoints(uuid)
 
@@ -6014,7 +6012,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_create_standalone_environment**
+# **src_app_api_environments_create_standalone_environment**
 
 > EnvironmentSchema src_app_api_environments_create_standalone_environment(environment_create_schema)
 
@@ -6089,7 +6087,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_delete_environment**
+# **src_app_api_environments_delete_environment**
 
 > src_app_api_environments_delete_environment(uuid)
 
@@ -6160,7 +6158,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_delete_environment_for_project**
+# **src_app_api_environments_delete_environment_for_project**
 
 > src_app_api_environments_delete_environment_for_project(project_uuid, uuid)
 
@@ -6233,7 +6231,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_delete_environment_snapshot**
+# **src_app_api_environments_delete_environment_snapshot**
 
 > Dict[str, object] src_app_api_environments_delete_environment_snapshot(uuid, snapshot_uuid)
 
@@ -6310,7 +6308,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_delete_recording**
+# **src_app_api_environments_delete_recording**
 
 > Dict[str, object] src_app_api_environments_delete_recording(uuid, recording_uuid)
 
@@ -6387,7 +6385,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_generate_telemetry_recording**
+# **src_app_api_environments_generate_telemetry_recording**
 
 > RecordingGenerationResponseSchema src_app_api_environments_generate_telemetry_recording(uuid, payload)
 
@@ -6472,7 +6470,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_get_environment**
+# **src_app_api_environments_get_environment**
 
 > EnvironmentSchema src_app_api_environments_get_environment(uuid)
 
@@ -6546,7 +6544,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_get_environment_dirty_twins**
+# **src_app_api_environments_get_environment_dirty_twins**
 
 > List[Dict[str, object]] src_app_api_environments_get_environment_dirty_twins(uuid)
 
@@ -6624,7 +6622,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_get_environment_invitations**
+# **src_app_api_environments_get_environment_invitations**
 
 > Dict[str, object] src_app_api_environments_get_environment_invitations(uuid)
 
@@ -6699,7 +6697,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_get_environment_mujoco_scene**
+# **src_app_api_environments_get_environment_mujoco_scene**
 
 > src_app_api_environments_get_environment_mujoco_scene(uuid)
 
@@ -6779,7 +6777,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_get_environment_mujoco_scene_xml**
+# **src_app_api_environments_get_environment_mujoco_scene_xml**
 
 > src_app_api_environments_get_environment_mujoco_scene_xml(uuid)
 
@@ -6856,7 +6854,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_get_environment_mujoco_scene_zip_direct**
+# **src_app_api_environments_get_environment_mujoco_scene_zip_direct**
 
 > src_app_api_environments_get_environment_mujoco_scene_zip_direct(uuid)
 
@@ -6936,7 +6934,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_get_environment_recordings**
+# **src_app_api_environments_get_environment_recordings**
 
 > Dict[str, object] src_app_api_environments_get_environment_recordings(uuid)
 
@@ -7017,7 +7015,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_get_environment_sessions**
+# **src_app_api_environments_get_environment_sessions**
 
 > Dict[str, object] src_app_api_environments_get_environment_sessions(uuid)
 
@@ -7095,7 +7093,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_get_environment_sharing_info_endpoint**
+# **src_app_api_environments_get_environment_sharing_info_endpoint**
 
 > Dict[str, object] src_app_api_environments_get_environment_sharing_info_endpoint(uuid)
 
@@ -7170,7 +7168,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_get_environment_simulations**
+# **src_app_api_environments_get_environment_simulations**
 
 > Dict[str, object] src_app_api_environments_get_environment_simulations(uuid)
 
@@ -7243,7 +7241,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_get_environment_snapshot**
+# **src_app_api_environments_get_environment_snapshot**
 
 > EnvironmentSnapshotSchema src_app_api_environments_get_environment_snapshot(uuid, snapshot_uuid)
 
@@ -7321,7 +7319,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_get_environment_snapshot_hash**
+# **src_app_api_environments_get_environment_snapshot_hash**
 
 > Dict[str, Optional[str]] src_app_api_environments_get_environment_snapshot_hash(uuid)
 
@@ -7396,7 +7394,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_get_environment_twins**
+# **src_app_api_environments_get_environment_twins**
 
 > List[TwinSchema] src_app_api_environments_get_environment_twins(uuid)
 
@@ -7404,7 +7402,7 @@ Get Environment Twins
 
 Get twins in an environment with optional dynamic filters.
 
-Supports filtering on any field using query parameters with Django lookup syntax.
+Supports filtering on any field using query parameters with lookup syntax.
 
 Examples:
 
@@ -7483,7 +7481,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_get_environment_universal_schema**
+# **src_app_api_environments_get_environment_universal_schema**
 
 > src_app_api_environments_get_environment_universal_schema(uuid)
 
@@ -7561,7 +7559,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_get_environment_universal_schema_json**
+# **src_app_api_environments_get_environment_universal_schema_json**
 
 > src_app_api_environments_get_environment_universal_schema_json(uuid)
 
@@ -7636,7 +7634,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_get_environment_urdf_bundle**
+# **src_app_api_environments_get_environment_urdf_bundle**
 
 > src_app_api_environments_get_environment_urdf_bundle(uuid)
 
@@ -7715,7 +7713,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_get_environment_urdf_scene**
+# **src_app_api_environments_get_environment_urdf_scene**
 
 > src_app_api_environments_get_environment_urdf_scene(uuid)
 
@@ -7793,7 +7791,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_get_environment_urdf_scene_zip_direct**
+# **src_app_api_environments_get_environment_urdf_scene_zip_direct**
 
 > src_app_api_environments_get_environment_urdf_scene_zip_direct(uuid)
 
@@ -7873,7 +7871,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_get_my_environment_permissions**
+# **src_app_api_environments_get_my_environment_permissions**
 
 > PermissionsSchema src_app_api_environments_get_my_environment_permissions(uuid)
 
@@ -7949,7 +7947,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_get_recording_data**
+# **src_app_api_environments_get_recording_data**
 
 > Dict[str, object] src_app_api_environments_get_recording_data(uuid, recording_uuid, sample_rate_hz=sample_rate_hz)
 
@@ -8029,7 +8027,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_import_environment_mujoco_scene**
+# **src_app_api_environments_import_environment_mujoco_scene**
 
 > ImportResultSchema src_app_api_environments_import_environment_mujoco_scene(uuid, file, replace_existing=replace_existing)
 
@@ -8120,7 +8118,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_import_environment_universal_schema**
+# **src_app_api_environments_import_environment_universal_schema**
 
 > ImportResultSchema src_app_api_environments_import_environment_universal_schema(uuid, file, replace_existing=replace_existing)
 
@@ -8206,7 +8204,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_import_environment_urdf**
+# **src_app_api_environments_import_environment_urdf**
 
 > ImportResultSchema src_app_api_environments_import_environment_urdf(uuid, file, replace_existing=replace_existing, asset_uuid=asset_uuid, asset_registry_id=asset_registry_id, position_x=position_x, position_y=position_y, position_z=position_z, rotation_x=rotation_x, rotation_y=rotation_y, rotation_z=rotation_z, rotation_w=rotation_w)
 
@@ -8314,7 +8312,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_invite_user_to_environment**
+# **src_app_api_environments_invite_user_to_environment**
 
 > Dict[str, object] src_app_api_environments_invite_user_to_environment(uuid)
 
@@ -8389,7 +8387,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_list_all_environments**
+# **src_app_api_environments_list_all_environments**
 
 > List[EnvironmentSchema] src_app_api_environments_list_all_environments()
 
@@ -8460,7 +8458,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_list_environment_mission_executions**
+# **src_app_api_environments_list_environment_mission_executions**
 
 > List[MissionExecutionSchema] src_app_api_environments_list_environment_mission_executions(uuid, status=status, twin_uuid=twin_uuid, limit=limit)
 
@@ -8551,7 +8549,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_list_environment_snapshots**
+# **src_app_api_environments_list_environment_snapshots**
 
 > List[EnvironmentSnapshotSchema] src_app_api_environments_list_environment_snapshots(uuid)
 
@@ -8627,7 +8625,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_list_environment_task_executions**
+# **src_app_api_environments_list_environment_task_executions**
 
 > List[TaskExecutionSchema] src_app_api_environments_list_environment_task_executions(uuid, status=status, twin_uuid=twin_uuid, limit=limit)
 
@@ -8718,7 +8716,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_list_environments_for_project**
+# **src_app_api_environments_list_environments_for_project**
 
 > List[EnvironmentSchema] src_app_api_environments_list_environments_for_project(uuid)
 
@@ -8792,7 +8790,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_process_all_environment_sessions**
+# **src_app_api_environments_process_all_environment_sessions**
 
 > Dict[str, object] src_app_api_environments_process_all_environment_sessions(uuid)
 
@@ -8874,7 +8872,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_remove_user_from_environment**
+# **src_app_api_environments_remove_user_from_environment**
 
 > Dict[str, object] src_app_api_environments_remove_user_from_environment(uuid, user_id)
 
@@ -8951,7 +8949,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_reset_environment**
+# **src_app_api_environments_reset_environment**
 
 > Dict[str, object] src_app_api_environments_reset_environment(uuid)
 
@@ -9024,7 +9022,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_restore_environment_snapshot**
+# **src_app_api_environments_restore_environment_snapshot**
 
 > EnvironmentSchema src_app_api_environments_restore_environment_snapshot(uuid, snapshot_uuid)
 
@@ -9102,7 +9100,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_revoke_environment_link**
+# **src_app_api_environments_revoke_environment_link**
 
 > Dict[str, object] src_app_api_environments_revoke_environment_link(uuid)
 
@@ -9177,7 +9175,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_share_environment_with_user**
+# **src_app_api_environments_share_environment_with_user**
 
 > Dict[str, object] src_app_api_environments_share_environment_with_user(uuid)
 
@@ -9252,7 +9250,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_stop_environment_simulation**
+# **src_app_api_environments_stop_environment_simulation**
 
 > Dict[str, object] src_app_api_environments_stop_environment_simulation(uuid, simulation_id)
 
@@ -9327,7 +9325,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_update_environment**
+# **src_app_api_environments_update_environment**
 
 > EnvironmentSchema src_app_api_environments_update_environment(uuid, environment_create_schema)
 
@@ -9404,7 +9402,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_update_environment_for_project**
+# **src_app_api_environments_update_environment_for_project**
 
 > EnvironmentSchema src_app_api_environments_update_environment_for_project(project_uuid, uuid, environment_create_schema)
 
@@ -9483,7 +9481,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_update_environment_snapshot**
+# **src_app_api_environments_update_environment_snapshot**
 
 > EnvironmentSnapshotSchema src_app_api_environments_update_environment_snapshot(uuid, snapshot_uuid)
 
@@ -9561,7 +9559,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_environments_update_recording_metadata**
+# **src_app_api_environments_update_recording_metadata**
 
 > TwinTelemetryMetadataSchema src_app_api_environments_update_recording_metadata(uuid, recording_uuid, update_recording_metadata_schema)
 
@@ -9642,7 +9640,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_episode_create_episode**
+# **src_app_api_episode_create_episode**
 
 > EpisodeSchema src_app_api_episode_create_episode(episode_create_schema)
 
@@ -9719,7 +9717,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_episode_delete_episode**
+# **src_app_api_episode_delete_episode**
 
 > Dict[str, Optional[bool]] src_app_api_episode_delete_episode(uuid)
 
@@ -9794,7 +9792,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_episode_get_episode**
+# **src_app_api_episode_get_episode**
 
 > EpisodeSchema src_app_api_episode_get_episode(uuid)
 
@@ -9870,7 +9868,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_episode_list_episode_task_names**
+# **src_app_api_episode_list_episode_task_names**
 
 > List[Optional[str]] src_app_api_episode_list_episode_task_names()
 
@@ -9942,7 +9940,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_episode_list_episodes**
+# **src_app_api_episode_list_episodes**
 
 > List[EpisodeSchema] src_app_api_episode_list_episodes()
 
@@ -10015,7 +10013,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_episode_update_episode**
+# **src_app_api_episode_update_episode**
 
 > EpisodeSchema src_app_api_episode_update_episode(uuid, episode_update_schema)
 
@@ -10094,7 +10092,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_events_create_business_event**
+# **src_app_api_events_create_business_event**
 
 > BusinessEventSchema src_app_api_events_create_business_event(business_event_create_schema)
 
@@ -10176,7 +10174,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_events_list_live_events**
+# **src_app_api_events_list_live_events**
 
 > BusinessEventListResponseSchema src_app_api_events_list_live_events(environment_uuid=environment_uuid, source=source, severity=severity, event_type=event_type, last_timestamp_ms=last_timestamp_ms, limit=limit)
 
@@ -10270,7 +10268,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_executions_get_task_execution**
+# **src_app_api_executions_get_task_execution**
 
 > DeferredTaskExecutionResponseSchema src_app_api_executions_get_task_execution(uuid, workspace_uuid)
 
@@ -10348,7 +10346,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_executions_list_task_executions**
+# **src_app_api_executions_list_task_executions**
 
 > List[DeferredTaskExecutionResponseSchema] src_app_api_executions_list_task_executions(workspace_uuid)
 
@@ -10424,7 +10422,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_invitation_router_accept_invitation_endpoint**
+# **src_app_api_invitation_router_accept_invitation_endpoint**
 
 > Dict[str, object] src_app_api_invitation_router_accept_invitation_endpoint(token)
 
@@ -10499,7 +10497,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_invitation_router_get_invitation_info**
+# **src_app_api_invitation_router_get_invitation_info**
 
 > Dict[str, object] src_app_api_invitation_router_get_invitation_info(token)
 
@@ -10574,7 +10572,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_keybindings_create_keybinding**
+# **src_app_api_keybindings_create_keybinding**
 
 > KeybindingSchema src_app_api_keybindings_create_keybinding(keybinding_create_schema)
 
@@ -10651,7 +10649,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_keybindings_delete_keybinding**
+# **src_app_api_keybindings_delete_keybinding**
 
 > src_app_api_keybindings_delete_keybinding(uuid)
 
@@ -10724,7 +10722,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_keybindings_get_keybinding**
+# **src_app_api_keybindings_get_keybinding**
 
 > KeybindingSchema src_app_api_keybindings_get_keybinding(uuid)
 
@@ -10800,7 +10798,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_keybindings_list_keybindings**
+# **src_app_api_keybindings_list_keybindings**
 
 > List[KeybindingSchema] src_app_api_keybindings_list_keybindings()
 
@@ -10873,7 +10871,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_keybindings_update_keybinding**
+# **src_app_api_keybindings_update_keybinding**
 
 > KeybindingSchema src_app_api_keybindings_update_keybinding(uuid, keybinding_update_schema)
 
@@ -10952,7 +10950,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_labs_end_milan_lab_session**
+# **src_app_api_labs_end_milan_lab_session**
 
 > EndSessionResponseSchema src_app_api_labs_end_milan_lab_session()
 
@@ -11028,7 +11026,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_labs_get_milan_lab_status**
+# **src_app_api_labs_get_milan_lab_status**
 
 > LabStatusResponseSchema src_app_api_labs_get_milan_lab_status()
 
@@ -11104,7 +11102,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_labs_request_milan_lab_access**
+# **src_app_api_labs_request_milan_lab_access**
 
 > LabAccessResponseSchema src_app_api_labs_request_milan_lab_access(body)
 
@@ -11184,7 +11182,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_maps_create_map**
+# **src_app_api_maps_create_map**
 
 > MapDataSchema src_app_api_maps_create_map(map_type, twin_uuid=twin_uuid, environment_uuid=environment_uuid, resolution=resolution, origin_x=origin_x, origin_y=origin_y, origin_z=origin_z, origin_roll=origin_roll, origin_pitch=origin_pitch, origin_yaw=origin_yaw, metadata=metadata, file=file)
 
@@ -11283,7 +11281,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_maps_delete_map**
+# **src_app_api_maps_delete_map**
 
 > src_app_api_maps_delete_map(uuid)
 
@@ -11356,7 +11354,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_maps_download_map_data**
+# **src_app_api_maps_download_map_data**
 
 > src_app_api_maps_download_map_data(uuid)
 
@@ -11429,7 +11427,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_maps_finalize_stream_map**
+# **src_app_api_maps_finalize_stream_map**
 
 > MapDataSchema src_app_api_maps_finalize_stream_map(uuid, resolution=resolution, origin_x=origin_x, origin_y=origin_y, origin_z=origin_z, origin_roll=origin_roll, origin_pitch=origin_pitch, origin_yaw=origin_yaw, metadata=metadata, file=file)
 
@@ -11524,7 +11522,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_maps_get_map**
+# **src_app_api_maps_get_map**
 
 > MapDataSchema src_app_api_maps_get_map(uuid)
 
@@ -11600,7 +11598,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_maps_get_map_image**
+# **src_app_api_maps_get_map_image**
 
 > src_app_api_maps_get_map_image(uuid)
 
@@ -11673,7 +11671,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_maps_list_environment_maps**
+# **src_app_api_maps_list_environment_maps**
 
 > List[MapDataSchema] src_app_api_maps_list_environment_maps(uuid)
 
@@ -11749,7 +11747,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_maps_list_maps**
+# **src_app_api_maps_list_maps**
 
 > List[MapDataSchema] src_app_api_maps_list_maps()
 
@@ -11822,7 +11820,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_maps_list_twin_maps**
+# **src_app_api_maps_list_twin_maps**
 
 > List[MapDataSchema] src_app_api_maps_list_twin_maps(uuid)
 
@@ -11898,7 +11896,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_maps_start_map_from_stream**
+# **src_app_api_maps_start_map_from_stream**
 
 > MapDataSchema src_app_api_maps_start_map_from_stream(map_stream_start_schema)
 
@@ -11975,7 +11973,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_maps_stop_map_from_stream**
+# **src_app_api_maps_stop_map_from_stream**
 
 > MapDataSchema src_app_api_maps_stop_map_from_stream(map_stream_stop_schema)
 
@@ -12052,7 +12050,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_missions_cancel_mission_execution**
+# **src_app_api_missions_cancel_mission_execution**
 
 > src_app_api_missions_cancel_mission_execution(twin_uuid, mission_uuid, uuid)
 
@@ -12129,7 +12127,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_missions_create_mission**
+# **src_app_api_missions_create_mission**
 
 > MissionSchema src_app_api_missions_create_mission(uuid, create_mission_schema)
 
@@ -12208,7 +12206,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_missions_delete_mission**
+# **src_app_api_missions_delete_mission**
 
 > src_app_api_missions_delete_mission(twin_uuid, uuid)
 
@@ -12283,7 +12281,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_missions_execute_mission**
+# **src_app_api_missions_execute_mission**
 
 > MissionExecutionSchema src_app_api_missions_execute_mission(twin_uuid, uuid, create_mission_execution_schema)
 
@@ -12364,7 +12362,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_missions_get_mission**
+# **src_app_api_missions_get_mission**
 
 > MissionSchema src_app_api_missions_get_mission(twin_uuid, uuid)
 
@@ -12442,7 +12440,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_missions_get_mission_execution**
+# **src_app_api_missions_get_mission_execution**
 
 > MissionExecutionSchema src_app_api_missions_get_mission_execution(twin_uuid, mission_uuid, uuid)
 
@@ -12522,7 +12520,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_missions_list_mission_executions**
+# **src_app_api_missions_list_mission_executions**
 
 > List[MissionExecutionSchema] src_app_api_missions_list_mission_executions(twin_uuid, uuid, status=status, limit=limit)
 
@@ -12604,7 +12602,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_missions_list_missions**
+# **src_app_api_missions_list_missions**
 
 > List[MissionSchema] src_app_api_missions_list_missions(uuid)
 
@@ -12680,7 +12678,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_mlmodels_create_mlmodel**
+# **src_app_api_mlmodels_create_mlmodel**
 
 > MLModelSchema src_app_api_mlmodels_create_mlmodel(ml_model_create_schema)
 
@@ -12757,7 +12755,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_mlmodels_delete_mlmodel**
+# **src_app_api_mlmodels_delete_mlmodel**
 
 > src_app_api_mlmodels_delete_mlmodel(uuid)
 
@@ -12830,7 +12828,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_mlmodels_get_mlmodel**
+# **src_app_api_mlmodels_get_mlmodel**
 
 > MLModelSchema src_app_api_mlmodels_get_mlmodel(uuid)
 
@@ -12906,7 +12904,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_mlmodels_get_mlmodel_weights**
+# **src_app_api_mlmodels_get_mlmodel_weights**
 
 > Dict[str, Optional[str]] src_app_api_mlmodels_get_mlmodel_weights(uuid)
 
@@ -12987,7 +12985,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_mlmodels_list_mlmodels**
+# **src_app_api_mlmodels_list_mlmodels**
 
 > List[MLModelSchema] src_app_api_mlmodels_list_mlmodels(deployment=deployment, edge_compatible=edge_compatible)
 
@@ -13069,7 +13067,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_mlmodels_update_mlmodel**
+# **src_app_api_mlmodels_update_mlmodel**
 
 > MLModelSchema src_app_api_mlmodels_update_mlmodel(uuid, ml_model_update_schema)
 
@@ -13148,7 +13146,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_mltrainings_create_mltraining**
+# **src_app_api_mltrainings_create_mltraining**
 
 > Response src_app_api_mltrainings_create_mltraining(ml_training_create_schema)
 
@@ -13225,7 +13223,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_mltrainings_delete_mltraining**
+# **src_app_api_mltrainings_delete_mltraining**
 
 > Dict[str, object] src_app_api_mltrainings_delete_mltraining(uuid)
 
@@ -13300,7 +13298,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_mltrainings_deploy_mltraining**
+# **src_app_api_mltrainings_deploy_mltraining**
 
 > Dict[str, object] src_app_api_mltrainings_deploy_mltraining(uuid, ml_training_deploy_schema)
 
@@ -13391,7 +13389,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_mltrainings_get_deployed_mltrainings**
+# **src_app_api_mltrainings_get_deployed_mltrainings**
 
 > List[MLTrainingSchema] src_app_api_mltrainings_get_deployed_mltrainings()
 
@@ -13464,7 +13462,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_mltrainings_get_mltraining**
+# **src_app_api_mltrainings_get_mltraining**
 
 > MLTrainingSchema src_app_api_mltrainings_get_mltraining(uuid)
 
@@ -13540,7 +13538,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_mltrainings_list_mltrainings_for_user_workspaces**
+# **src_app_api_mltrainings_list_mltrainings_for_user_workspaces**
 
 > List[MLTrainingSchema] src_app_api_mltrainings_list_mltrainings_for_user_workspaces()
 
@@ -13613,7 +13611,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_mltrainings_update_mltraining**
+# **src_app_api_mltrainings_update_mltraining**
 
 > MLTrainingSchema src_app_api_mltrainings_update_mltraining(uuid, ml_training_update_schema)
 
@@ -13692,7 +13690,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_navigation_execute_twin_navigation**
+# **src_app_api_navigation_execute_twin_navigation**
 
 > TwinActionResponseSchema src_app_api_navigation_execute_twin_navigation(uuid, twin_navigation_command_schema)
 
@@ -13769,7 +13767,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_projects_create_project**
+# **src_app_api_projects_create_project**
 
 > ProjectSchema src_app_api_projects_create_project(project_create_schema)
 
@@ -13844,7 +13842,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_projects_create_project_link**
+# **src_app_api_projects_create_project_link**
 
 > src_app_api_projects_create_project_link(uuid, link_share_create_schema)
 
@@ -13920,7 +13918,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_projects_delete_project**
+# **src_app_api_projects_delete_project**
 
 > src_app_api_projects_delete_project(uuid)
 
@@ -13991,7 +13989,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_projects_get_my_project_permissions**
+# **src_app_api_projects_get_my_project_permissions**
 
 > PermissionsSchema src_app_api_projects_get_my_project_permissions(uuid)
 
@@ -14067,7 +14065,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_projects_get_project**
+# **src_app_api_projects_get_project**
 
 > ProjectSchema src_app_api_projects_get_project(uuid)
 
@@ -14141,7 +14139,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_projects_get_project_shares**
+# **src_app_api_projects_get_project_shares**
 
 > SharesResponseSchema src_app_api_projects_get_project_shares(uuid)
 
@@ -14217,7 +14215,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_projects_invite_user_to_project**
+# **src_app_api_projects_invite_user_to_project**
 
 > Dict[str, object] src_app_api_projects_invite_user_to_project(uuid)
 
@@ -14292,7 +14290,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_projects_list_projects**
+# **src_app_api_projects_list_projects**
 
 > List[ProjectSchema] src_app_api_projects_list_projects()
 
@@ -14365,7 +14363,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_projects_revoke_project_link**
+# **src_app_api_projects_revoke_project_link**
 
 > src_app_api_projects_revoke_project_link(uuid, link_share_revoke_schema)
 
@@ -14441,7 +14439,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_projects_share_project**
+# **src_app_api_projects_share_project**
 
 > ProjectShareResponseSchema src_app_api_projects_share_project(uuid, share_schema)
 
@@ -14520,7 +14518,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_projects_unshare_project**
+# **src_app_api_projects_unshare_project**
 
 > ProjectShareResponseSchema src_app_api_projects_unshare_project(uuid, share_schema)
 
@@ -14599,7 +14597,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_projects_update_project**
+# **src_app_api_projects_update_project**
 
 > ProjectSchema src_app_api_projects_update_project(uuid, project_create_schema)
 
@@ -14676,7 +14674,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_tagged_frames_create_tagged_frames**
+# **src_app_api_tagged_frames_create_tagged_frames**
 
 > TaggedFramesSchema src_app_api_tagged_frames_create_tagged_frames(tagged_frames_create_schema)
 
@@ -14753,7 +14751,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_tagged_frames_delete_tagged_frames**
+# **src_app_api_tagged_frames_delete_tagged_frames**
 
 > src_app_api_tagged_frames_delete_tagged_frames(uuid)
 
@@ -14826,7 +14824,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_tagged_frames_get_tagged_frames**
+# **src_app_api_tagged_frames_get_tagged_frames**
 
 > TaggedFramesSchema src_app_api_tagged_frames_get_tagged_frames(uuid)
 
@@ -14902,7 +14900,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_tagged_frames_list_tagged_frames**
+# **src_app_api_tagged_frames_list_tagged_frames**
 
 > List[TaggedFramesSchema] src_app_api_tagged_frames_list_tagged_frames(recording_uuid=recording_uuid)
 
@@ -14979,7 +14977,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_tagged_frames_update_tagged_frames**
+# **src_app_api_tagged_frames_update_tagged_frames**
 
 > TaggedFramesSchema src_app_api_tagged_frames_update_tagged_frames(uuid, tagged_frames_update_schema)
 
@@ -15058,7 +15056,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_tasks_cancel_task_execution**
+# **src_app_api_tasks_cancel_task_execution**
 
 > src_app_api_tasks_cancel_task_execution(uuid)
 
@@ -15131,7 +15129,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_tasks_create_task**
+# **src_app_api_tasks_create_task**
 
 > TaskSchema src_app_api_tasks_create_task(create_task_schema)
 
@@ -15208,7 +15206,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_tasks_delete_task**
+# **src_app_api_tasks_delete_task**
 
 > src_app_api_tasks_delete_task(uuid)
 
@@ -15281,7 +15279,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_tasks_execute_task**
+# **src_app_api_tasks_execute_task**
 
 > TaskExecutionSchema src_app_api_tasks_execute_task(uuid, execute_task_schema)
 
@@ -15360,7 +15358,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_tasks_get_task**
+# **src_app_api_tasks_get_task**
 
 > TaskSchema src_app_api_tasks_get_task(uuid)
 
@@ -15436,7 +15434,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_tasks_get_task_execution**
+# **src_app_api_tasks_get_task_execution**
 
 > TaskExecutionSchema src_app_api_tasks_get_task_execution(uuid)
 
@@ -15510,7 +15508,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_tasks_list_task_queue**
+# **src_app_api_tasks_list_task_queue**
 
 > List[TaskExecutionSchema] src_app_api_tasks_list_task_queue(status=status, environment_uuid=environment_uuid, twin_uuid=twin_uuid, task_type=task_type, limit=limit)
 
@@ -15609,7 +15607,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_tasks_list_tasks**
+# **src_app_api_tasks_list_tasks**
 
 > List[TaskSchema] src_app_api_tasks_list_tasks(workspace_uuid=workspace_uuid, task_type=task_type)
 
@@ -15687,7 +15685,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_tasks_update_task**
+# **src_app_api_tasks_update_task**
 
 > TaskSchema src_app_api_tasks_update_task(uuid, update_task_schema)
 
@@ -15766,7 +15764,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_create_twin**
+# **src_app_api_twins_create_twin**
 
 > TwinSchema src_app_api_twins_create_twin(twin_create_schema)
 
@@ -15841,7 +15839,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_delete_twin**
+# **src_app_api_twins_delete_twin**
 
 > src_app_api_twins_delete_twin(uuid)
 
@@ -15912,7 +15910,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_execute_twin_action**
+# **src_app_api_twins_execute_twin_action**
 
 > TwinActionResponseSchema src_app_api_twins_execute_twin_action(uuid, twin_action_request_schema)
 
@@ -15989,7 +15987,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_get_recording**
+# **src_app_api_twins_get_recording**
 
 > TwinConnectionEventSchema src_app_api_twins_get_recording(recording_uuid)
 
@@ -16067,7 +16065,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_get_twin**
+# **src_app_api_twins_get_twin**
 
 > TwinSchema src_app_api_twins_get_twin(uuid)
 
@@ -16141,7 +16139,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_get_twin_action_status**
+# **src_app_api_twins_get_twin_action_status**
 
 > TwinActionStatusSchema src_app_api_twins_get_twin_action_status(uuid, action_id)
 
@@ -16217,7 +16215,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_get_twin_calibration**
+# **src_app_api_twins_get_twin_calibration**
 
 > TwinJointCalibrationSchema src_app_api_twins_get_twin_calibration(uuid)
 
@@ -16291,7 +16289,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_get_twin_connection_history**
+# **src_app_api_twins_get_twin_connection_history**
 
 > List[TwinConnectionEventSchema] src_app_api_twins_get_twin_connection_history(uuid, limit=limit)
 
@@ -16370,7 +16368,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_get_twin_driver_logs**
+# **src_app_api_twins_get_twin_driver_logs**
 
 > TwinDriverLogsResponseSchema src_app_api_twins_get_twin_driver_logs(uuid, limit=limit, offset=offset)
 
@@ -16455,17 +16453,16 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_get_twin_latest_frame**
+# **src_app_api_twins_get_twin_latest_frame**
 
 > src_app_api_twins_get_twin_latest_frame(uuid, mock=mock)
 
 Get Twin Latest Frame
 
 Get the latest frame from a twin's camera stream.
-Serves the frame directly from Redis without saving to permanent storage.
+Serves the latest frame directly without saving it to permanent storage.
 
-For multi-camera twins, the media service stores frames with key
-`frame:{twin*uuid}*{sensor_id}:rgb:latest`. Pass ?sensor_id=wrist_camera to get a specific camera.
+For multi-camera twins, pass ?sensor_id=wrist_camera to get a specific camera.
 
 Query params:
 
@@ -16538,7 +16535,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_get_twin_latest_metrics**
+# **src_app_api_twins_get_twin_latest_metrics**
 
 > src_app_api_twins_get_twin_latest_metrics(uuid)
 
@@ -16546,7 +16543,7 @@ Get Twin Latest Metrics
 
 Get the latest metrics snapshot for a twin.
 
-Returns the most recent metrics from Twin.metadata (current state)
+Returns the most recent metrics from the twin metadata (current state)
 plus the timestamp of the last update.
 
 This is more efficient than querying historical data when you only
@@ -16617,7 +16614,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_get_twin_links**
+# **src_app_api_twins_get_twin_links**
 
 > List[Optional[str]] src_app_api_twins_get_twin_links(uuid)
 
@@ -16695,7 +16692,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_get_twin_metrics**
+# **src_app_api_twins_get_twin_metrics**
 
 > List[TwinMetricsQuerySchema] src_app_api_twins_get_twin_metrics(uuid, start=start, end=end, limit=limit)
 
@@ -16704,7 +16701,7 @@ Get Twin Metrics
 Get historical metrics for a twin.
 
 Returns time-series metrics data (battery level, navigation status, etc.)
-logged via MQTT from edge devices.
+reported by edge devices.
 
 Args:
 uuid: Twin UUID
@@ -16794,7 +16791,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_get_twin_motions**
+# **src_app_api_twins_get_twin_motions**
 
 > TwinMotionResponseSchema src_app_api_twins_get_twin_motions(uuid, environment_uuid=environment_uuid)
 
@@ -16870,7 +16867,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_get_twin_notebook**
+# **src_app_api_twins_get_twin_notebook**
 
 > src_app_api_twins_get_twin_notebook(uuid)
 
@@ -16934,7 +16931,7 @@ No authorization required
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_get_twin_recordings**
+# **src_app_api_twins_get_twin_recordings**
 
 > List[TwinConnectionEventSchema] src_app_api_twins_get_twin_recordings(uuid)
 
@@ -17013,7 +17010,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_get_twin_universal_schema_at_path**
+# **src_app_api_twins_get_twin_universal_schema_at_path**
 
 > Dict[str, object] src_app_api_twins_get_twin_universal_schema_at_path(uuid, path=path)
 
@@ -17096,14 +17093,14 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_link_occupancy_map**
+# **src_app_api_twins_link_occupancy_map**
 
 > src_app_api_twins_link_occupancy_map(uuid, occupancy_map_create_schema)
 
 Link Occupancy Map
 
 Link an occupancy-grid map to this twin, compute (or retrieve)
-the world->map transform, and send it to the edge via MQTT.
+the world->map transform, and send it to the edge.
 
 The map must have been uploaded beforehand via `POST /maps`
 (with `map_type=occupancy_grid`).
@@ -17114,9 +17111,8 @@ Flow:
 2. If the environment already has a manually-set navigation
    transform, use it. Otherwise, attempt to auto-align the
    SLAM map with the 3D scene (currently mocked as identity).
-3. Save the transform into `environment.settings.navigation`.
-4. Publish the transform on the `occupancy-map-tf` MQTT topic
-   so the edge waypoint bridge sets its `world -> map` TF.
+3. Save the transform in the environment's navigation settings.
+4. Send the transform to the edge so it can set its `world -> map` transform.
 
 ### Example
 
@@ -17186,7 +17182,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_list_all_twins**
+# **src_app_api_twins_list_all_twins**
 
 > List[TwinSchema] src_app_api_twins_list_all_twins()
 
@@ -17257,7 +17253,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_patch_twin_universal_schema**
+# **src_app_api_twins_patch_twin_universal_schema**
 
 > Dict[str, object] src_app_api_twins_patch_twin_universal_schema(uuid, twin_universal_schema_patch_schema)
 
@@ -17359,15 +17355,15 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_reload_twin_capabilities**
+# **src_app_api_twins_reload_twin_capabilities**
 
 > Dict[str, object] src_app_api_twins_reload_twin_capabilities(uuid)
 
 Reload Twin Capabilities
 
-Get capabilities from Twin.universal_schema.
+Get capabilities from the twin's universal schema.
 
-Note: Capabilities are now derived from schema only, not cached in DB.
+Note: Capabilities are derived from the twin's schema.
 This endpoint is kept for backward compatibility.
 
 Returns:
@@ -17443,7 +17439,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_reload_twins_capabilities_bulk**
+# **src_app_api_twins_reload_twins_capabilities_bulk**
 
 > Dict[str, object] src_app_api_twins_reload_twins_capabilities_bulk(reload_capabilities_bulk_schema)
 
@@ -17533,7 +17529,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_sync_twin_with_asset**
+# **src_app_api_twins_sync_twin_with_asset**
 
 > SyncWithAssetSchema src_app_api_twins_sync_twin_with_asset(uuid)
 
@@ -17617,7 +17613,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_update_twin**
+# **src_app_api_twins_update_twin**
 
 > TwinSchema src_app_api_twins_update_twin(uuid, twin_create_schema)
 
@@ -17700,7 +17696,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_update_twin_calibration**
+# **src_app_api_twins_update_twin_calibration**
 
 > TwinJointCalibrationSchema src_app_api_twins_update_twin_calibration(uuid, twin_joint_calibration_schema)
 
@@ -17776,7 +17772,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_twins_update_twin_state**
+# **src_app_api_twins_update_twin_state**
 
 > TwinSchema src_app_api_twins_update_twin_state(uuid, twin_state_update_schema)
 
@@ -17853,7 +17849,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_urdf_create_urdf_project**
+# **src_app_api_urdf_create_urdf_project**
 
 > URDFProjectSchema src_app_api_urdf_create_urdf_project(urdf_project_create_schema)
 
@@ -17928,7 +17924,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_urdf_delete_urdf_project**
+# **src_app_api_urdf_delete_urdf_project**
 
 > src_app_api_urdf_delete_urdf_project(uuid)
 
@@ -17999,15 +17995,15 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_urdf_fix_urdf_project_slug**
+# **src_app_api_urdf_fix_urdf_project_slug**
 
 > URDFProjectSchema src_app_api_urdf_fix_urdf_project_slug(uuid, new_slug, new_main_file_path)
 
 Fix Urdf Project Slug
 
-Fix a URDF project's slug and main_file_path to match actual storage.
+Fix a URDF project's slug and main file path to match actual storage.
 
-This is useful when files exist in storage but the DB record points to the wrong location.
+This is useful when files exist in storage but the project points to the wrong location.
 Requires staff/superuser permissions.
 
 ### Example
@@ -18082,7 +18078,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_urdf_get_twin_joint_state**
+# **src_app_api_urdf_get_twin_joint_state**
 
 > JointStateSchema src_app_api_urdf_get_twin_joint_state(uuid, joint_name)
 
@@ -18158,7 +18154,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_urdf_get_twin_joint_states**
+# **src_app_api_urdf_get_twin_joint_states**
 
 > JointStatesSchema src_app_api_urdf_get_twin_joint_states(uuid)
 
@@ -18232,7 +18228,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_urdf_get_twin_joints**
+# **src_app_api_urdf_get_twin_joints**
 
 > List[JointSchema] src_app_api_urdf_get_twin_joints(uuid)
 
@@ -18306,7 +18302,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_urdf_get_twin_robot_description**
+# **src_app_api_urdf_get_twin_robot_description**
 
 > RobotDescriptionSchema src_app_api_urdf_get_twin_robot_description(uuid)
 
@@ -18380,7 +18376,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_urdf_get_twin_urdf_raw**
+# **src_app_api_urdf_get_twin_urdf_raw**
 
 > str src_app_api_urdf_get_twin_urdf_raw(uuid)
 
@@ -18453,7 +18449,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_urdf_get_urdf_project**
+# **src_app_api_urdf_get_urdf_project**
 
 > URDFProjectSchema src_app_api_urdf_get_urdf_project(uuid)
 
@@ -18527,7 +18523,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_urdf_list_urdf_projects**
+# **src_app_api_urdf_list_urdf_projects**
 
 > List[URDFProjectSchema] src_app_api_urdf_list_urdf_projects()
 
@@ -18598,7 +18594,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_urdf_update_twin_joint_state**
+# **src_app_api_urdf_update_twin_joint_state**
 
 > JointStateSchema src_app_api_urdf_update_twin_joint_state(uuid, joint_name, joint_state_update_schema)
 
@@ -18677,7 +18673,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_urdf_update_twin_joint_states**
+# **src_app_api_urdf_update_twin_joint_states**
 
 > JointStatesSchema src_app_api_urdf_update_twin_joint_states(uuid, bulk_joint_states_update_schema)
 
@@ -18754,7 +18750,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_urdf_update_urdf_project**
+# **src_app_api_urdf_update_urdf_project**
 
 > URDFProjectSchema src_app_api_urdf_update_urdf_project(uuid, urdf_project_create_schema)
 
@@ -18831,7 +18827,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_urdf_upload_zip_file**
+# **src_app_api_urdf_upload_zip_file**
 
 > URDFProjectSchema src_app_api_urdf_upload_zip_file(uuid, file)
 
@@ -18907,7 +18903,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_workflows_activate_workflow**
+# **src_app_api_workflows_activate_workflow**
 
 > WorkflowSchema src_app_api_workflows_activate_workflow(uuid)
 
@@ -18983,7 +18979,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_workflows_cancel_workflow_execution**
+# **src_app_api_workflows_cancel_workflow_execution**
 
 > WorkflowExecutionSchema src_app_api_workflows_cancel_workflow_execution(execution_uuid)
 
@@ -19059,7 +19055,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_workflows_create_workflow**
+# **src_app_api_workflows_create_workflow**
 
 > WorkflowSchema src_app_api_workflows_create_workflow(workflow_create_schema)
 
@@ -19136,7 +19132,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_workflows_create_workflow_connection**
+# **src_app_api_workflows_create_workflow_connection**
 
 > WorkflowConnectionSchema src_app_api_workflows_create_workflow_connection(uuid, workflow_connection_create_schema)
 
@@ -19215,7 +19211,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_workflows_create_workflow_node**
+# **src_app_api_workflows_create_workflow_node**
 
 > WorkflowNodeSchema src_app_api_workflows_create_workflow_node(uuid, workflow_node_create_schema)
 
@@ -19294,7 +19290,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_workflows_deactivate_workflow**
+# **src_app_api_workflows_deactivate_workflow**
 
 > WorkflowSchema src_app_api_workflows_deactivate_workflow(uuid)
 
@@ -19370,7 +19366,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_workflows_delete_workflow**
+# **src_app_api_workflows_delete_workflow**
 
 > src_app_api_workflows_delete_workflow(uuid)
 
@@ -19443,7 +19439,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_workflows_delete_workflow_connection**
+# **src_app_api_workflows_delete_workflow_connection**
 
 > src_app_api_workflows_delete_workflow_connection(uuid, connection_uuid)
 
@@ -19518,7 +19514,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_workflows_delete_workflow_node**
+# **src_app_api_workflows_delete_workflow_node**
 
 > src_app_api_workflows_delete_workflow_node(uuid, node_uuid)
 
@@ -19593,7 +19589,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_workflows_edge_sync_workflows**
+# **src_app_api_workflows_edge_sync_workflows**
 
 > Dict[str, object] src_app_api_workflows_edge_sync_workflows(twin_uuid)
 
@@ -19677,7 +19673,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_workflows_execute_workflow**
+# **src_app_api_workflows_execute_workflow**
 
 > WorkflowExecutionSchema src_app_api_workflows_execute_workflow(uuid, workflow_execute_schema)
 
@@ -19756,7 +19752,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_workflows_get_execution_by_uuid**
+# **src_app_api_workflows_get_execution_by_uuid**
 
 > WorkflowExecutionSchema src_app_api_workflows_get_execution_by_uuid(execution_uuid)
 
@@ -19832,7 +19828,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_workflows_get_node_schema**
+# **src_app_api_workflows_get_node_schema**
 
 > Dict[str, object] src_app_api_workflows_get_node_schema(node_type, node_subtype=node_subtype)
 
@@ -19909,14 +19905,14 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_workflows_get_node_schemas**
+# **src_app_api_workflows_get_node_schemas**
 
 > List[Dict[str, object]] src_app_api_workflows_get_node_schemas()
 
 Get Node Schemas
 
 Get all available node type schemas with their input/output definitions.
-This is used by the frontend to display available node types and their I/O.
+Used to display available node types and their inputs/outputs.
 
 ### Example
 
@@ -19982,7 +19978,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_workflows_get_workflow**
+# **src_app_api_workflows_get_workflow**
 
 > WorkflowSchema src_app_api_workflows_get_workflow(uuid)
 
@@ -20058,7 +20054,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_workflows_get_workflow_execution**
+# **src_app_api_workflows_get_workflow_execution**
 
 > WorkflowExecutionSchema src_app_api_workflows_get_workflow_execution(uuid, execution_uuid)
 
@@ -20136,7 +20132,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_workflows_get_workflow_node**
+# **src_app_api_workflows_get_workflow_node**
 
 > WorkflowNodeSchema src_app_api_workflows_get_workflow_node(uuid, node_uuid)
 
@@ -20214,7 +20210,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_workflows_list_workflow_connections**
+# **src_app_api_workflows_list_workflow_connections**
 
 > List[WorkflowConnectionSchema] src_app_api_workflows_list_workflow_connections(uuid)
 
@@ -20290,7 +20286,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_workflows_list_workflow_executions**
+# **src_app_api_workflows_list_workflow_executions**
 
 > List[WorkflowExecutionSchema] src_app_api_workflows_list_workflow_executions(uuid)
 
@@ -20366,7 +20362,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_workflows_list_workflow_nodes**
+# **src_app_api_workflows_list_workflow_nodes**
 
 > List[WorkflowNodeSchema] src_app_api_workflows_list_workflow_nodes(uuid)
 
@@ -20442,7 +20438,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_workflows_list_workflows**
+# **src_app_api_workflows_list_workflows**
 
 > List[WorkflowSchema] src_app_api_workflows_list_workflows()
 
@@ -20515,7 +20511,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_workflows_update_workflow**
+# **src_app_api_workflows_update_workflow**
 
 > WorkflowSchema src_app_api_workflows_update_workflow(uuid, workflow_update_schema)
 
@@ -20594,7 +20590,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_workflows_update_workflow_node**
+# **src_app_api_workflows_update_workflow_node**
 
 > WorkflowNodeSchema src_app_api_workflows_update_workflow_node(uuid, node_uuid, workflow_node_update_schema)
 
@@ -20675,7 +20671,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_app_api_workflows_validate_node_inputs**
+# **src_app_api_workflows_validate_node_inputs**
 
 > Dict[str, object] src_app_api_workflows_validate_node_inputs(node_uuid)
 
@@ -20751,7 +20747,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_organizations_add_organization_member_by_email**
+# **src_users_api_organizations_add_organization_member_by_email**
 
 > AddMemberByEmailResponse src_users_api_organizations_add_organization_member_by_email(uuid, add_member_by_email_request)
 
@@ -20760,7 +20756,7 @@ Add Organization Member By Email
 Add a member to an organization by email address.
 
 If user exists in Cyberwave, add them to the organization.
-If user doesn't exist, return user_exists=False so frontend can show contact link.
+If user doesn't exist, return user_exists=False so clients can show a contact link.
 
 ### Example
 
@@ -20833,7 +20829,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_organizations_create_organization**
+# **src_users_api_organizations_create_organization**
 
 > Dict[str, OrganizationSchema] src_users_api_organizations_create_organization(organization_create_schema)
 
@@ -20910,7 +20906,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_organizations_delete_organization**
+# **src_users_api_organizations_delete_organization**
 
 > src_users_api_organizations_delete_organization(uuid)
 
@@ -20983,7 +20979,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_organizations_get_organization**
+# **src_users_api_organizations_get_organization**
 
 > Dict[str, OrganizationSchema] src_users_api_organizations_get_organization(uuid)
 
@@ -21059,7 +21055,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_organizations_get_organization_by_slug**
+# **src_users_api_organizations_get_organization_by_slug**
 
 > Dict[str, OrganizationSchema] src_users_api_organizations_get_organization_by_slug(slug)
 
@@ -21133,7 +21129,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_organizations_list_organization_members**
+# **src_users_api_organizations_list_organization_members**
 
 > OrgMembersResponse src_users_api_organizations_list_organization_members(uuid)
 
@@ -21209,7 +21205,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_organizations_list_organization_workspaces**
+# **src_users_api_organizations_list_organization_workspaces**
 
 > Dict[str, List[OrganizationWorkspaceSchema]] src_users_api_organizations_list_organization_workspaces(uuid)
 
@@ -21285,7 +21281,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_organizations_list_organizations**
+# **src_users_api_organizations_list_organizations**
 
 > Dict[str, List[OrganizationSchema]] src_users_api_organizations_list_organizations()
 
@@ -21358,7 +21354,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_organizations_remove_organization_member**
+# **src_users_api_organizations_remove_organization_member**
 
 > src_users_api_organizations_remove_organization_member(uuid, user_uuid)
 
@@ -21433,7 +21429,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_organizations_update_organization**
+# **src_users_api_organizations_update_organization**
 
 > Dict[str, OrganizationSchema] src_users_api_organizations_update_organization(uuid, organization_update_schema)
 
@@ -21512,7 +21508,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_organizations_update_organization_member_role**
+# **src_users_api_organizations_update_organization_member_role**
 
 > UpdateMemberRoleResponse src_users_api_organizations_update_organization_member_role(uuid, user_uuid, update_member_role_request)
 
@@ -21596,7 +21592,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_plans_get_plan**
+# **src_users_api_plans_get_plan**
 
 > PlanSchema src_users_api_plans_get_plan()
 
@@ -21669,7 +21665,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_workspaces_add_workspace_member_by_email**
+# **src_users_api_workspaces_add_workspace_member_by_email**
 
 > AddMemberByEmailResponse src_users_api_workspaces_add_workspace_member_by_email(uuid, add_member_by_email_request)
 
@@ -21678,7 +21674,7 @@ Add Workspace Member By Email
 Add a member to a workspace by email address.
 
 If user exists in Cyberwave, add them to the workspace.
-If user doesn't exist, return user_exists=False so frontend can show contact link.
+If user doesn't exist, return user_exists=False so clients can show a contact link.
 
 ### Example
 
@@ -21751,7 +21747,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_workspaces_check_workspace_slug**
+# **src_users_api_workspaces_check_workspace_slug**
 
 > SlugAvailabilitySchema src_users_api_workspaces_check_workspace_slug(slug)
 
@@ -21827,7 +21823,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_workspaces_create_workspace**
+# **src_users_api_workspaces_create_workspace**
 
 > WorkspaceSchema src_users_api_workspaces_create_workspace(workspace_create_schema=workspace_create_schema)
 
@@ -21904,7 +21900,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_workspaces_delete_workspace**
+# **src_users_api_workspaces_delete_workspace**
 
 > src_users_api_workspaces_delete_workspace(uuid)
 
@@ -21977,7 +21973,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_workspaces_get_default_workspace**
+# **src_users_api_workspaces_get_default_workspace**
 
 > WorkspaceSchema src_users_api_workspaces_get_default_workspace()
 
@@ -22050,7 +22046,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_workspaces_get_vendor_description**
+# **src_users_api_workspaces_get_vendor_description**
 
 > VendorDescriptionSchema src_users_api_workspaces_get_vendor_description(slug)
 
@@ -22114,7 +22110,7 @@ No authorization required
 | **200**     | OK          | -                |
 
 
-## **src_users_api_workspaces_get_workspace**
+# **src_users_api_workspaces_get_workspace**
 
 > WorkspaceResponseSchema src_users_api_workspaces_get_workspace(uuid)
 
@@ -22190,7 +22186,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_workspaces_get_workspace_by_slug**
+# **src_users_api_workspaces_get_workspace_by_slug**
 
 > WorkspaceSchema src_users_api_workspaces_get_workspace_by_slug(slug)
 
@@ -22266,7 +22262,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_workspaces_leave_team**
+# **src_users_api_workspaces_leave_team**
 
 > src_users_api_workspaces_leave_team(team_uuid, uuid)
 
@@ -22341,7 +22337,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_workspaces_list_team_members**
+# **src_users_api_workspaces_list_team_members**
 
 > List[TeamMemberResponse] src_users_api_workspaces_list_team_members(team_uuid)
 
@@ -22417,7 +22413,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_workspaces_list_workspaces**
+# **src_users_api_workspaces_list_workspaces**
 
 > List[WorkspaceSchema] src_users_api_workspaces_list_workspaces()
 
@@ -22490,7 +22486,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_workspaces_remove_team_member**
+# **src_users_api_workspaces_remove_team_member**
 
 > src_users_api_workspaces_remove_team_member(team_uuid, uuid)
 
@@ -22565,7 +22561,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_workspaces_remove_workspace_member**
+# **src_users_api_workspaces_remove_workspace_member**
 
 > RemoveMemberResponse src_users_api_workspaces_remove_workspace_member(uuid, user_uuid)
 
@@ -22646,7 +22642,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_workspaces_set_default_workspace**
+# **src_users_api_workspaces_set_default_workspace**
 
 > src_users_api_workspaces_set_default_workspace(workspace_uuid)
 
@@ -22719,7 +22715,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_workspaces_update_workspace**
+# **src_users_api_workspaces_update_workspace**
 
 > WorkspaceSchema src_users_api_workspaces_update_workspace(uuid, workspace_update_schema)
 
@@ -22798,7 +22794,7 @@ CustomTokenAuthentication
 | **200**     | OK          | -                |
 
 
-## **src_users_api_workspaces_update_workspace_member_role**
+# **src_users_api_workspaces_update_workspace_member_role**
 
 > UpdateMemberRoleResponse src_users_api_workspaces_update_workspace_member_role(uuid, user_uuid, update_member_role_request)
 

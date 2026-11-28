@@ -57,7 +57,8 @@ See [Reference pattern: Agilex Piper](#reference-pattern-ros-manipulator-arm-agi
 | **`EECartesianPoseMixin`** | — | EE pose seams | Cartesian command extensions |
 | **`DualArmMixin`** | — | `DualArmConfig` + per-arm routing | `left_*` / `right_*` commands on one twin |
 | **`Ros2JointFeedbackMixin`** | `use_joint_feedback=True` | `joint_feedback_topic()`, `joint_name_map()`; optional `on_first_joint_feedback()` | ROS `JointState` subscription; `convert_joints_to_payload()` for `from_ros` |
-| **`VideoStreamMixin`** | — | Frame publish hooks | WebRTC / video catalog |
+| **`VideoStreamMixin`** | — | `_on_start_video_async()`, `_on_stop_video_async()` | `start_video` / `stop_video` commands and their status replies |
+| **`CameraStreamMixin`** | `CAMERAS` or `CAMERA_SOURCE` (or subclass `BaseCameraDriver`) | optional `on_camera_frame(frame, camera)`, `on_camera_status(camera, status, reason)`, `push_h264()` for pre-encoded frames | Opens each camera, one WebRTC stream per camera with reconnect, `frames/<sensor>` and `depth/<sensor>` on Zenoh, frame filter, worker overlays, per-frame video sync data. Starts itself in `on_start_monitoring()`; a failing camera is retried without stopping the driver or the other cameras |
 | **`AudioStreamMixin`** | — | Audio stream hooks | Microphone catalog |
 | **`ZenohPublisherMixin`** / **`ZenohSubscriberMixin`** | — | Channel callbacks | Zenoh catalog entries |
 
@@ -85,6 +86,171 @@ The `cyberwave/joint/{uuid}/update` topic carries **both** teleop commands and e
 | **Teleop** (MQTT → ROS) | `tele`, `edit`, `sim_tele` | **`JointControllerMixin`** — do **not** add a second `joint/update` listener |
 
 Teleop listeners **reject `edge*`** messages so the driver never re-ingests its own feedback.
+
+---
+
+## Camera drivers
+
+`CameraStreamMixin` streams a driver's cameras to the twin. Declare where the video comes from, one `CameraSourceConfig` per camera; the mixin does the rest.
+
+Each camera is one `CameraSourceConfig`. Pick the factory for how the camera reaches the edge device:
+
+| Camera | Declare | Video path | Driver image |
+| ------ | ------- | ---------- | ------------ |
+| USB (UVC / V4L2) | `CameraSourceConfig.usb(device_or_serial, camera_name)` | Captured and encoded by the SDK | standard |
+| H.264 sent as RTP over UDP | `CameraSourceConfig.from_url("rtp://0.0.0.0:<port>", camera_name)` | Forwarded, no decode or re-encode | `-gstreamer` |
+| IP camera with RTSP (H.264) | `CameraSourceConfig.from_url("rtsp://…", camera_name)` | Forwarded, no decode or re-encode | `-gstreamer` |
+| IP camera, MJPEG/HTTP or H.265 | `CameraSourceConfig.from_url(url, camera_name, decode=True)` | Decoded by OpenCV, re-encoded by the SDK | standard |
+| H.264 the vendor SDK hands over | `CameraSourceConfig.push(camera_name)` + `self.push_h264(frame)` | Forwarded, no decode or re-encode | `-gstreamer` |
+| MPEG-TS over UDP or TCP | `CameraSourceConfig.from_url("udp://…" / "tcp://…", camera_name)` | Forwarded, no decode or re-encode | `-gstreamer` |
+
+`camera_name` is the camera's sensor id on the twin. It names the WebRTC stream and the `frames/<camera_name>` Zenoh channel. Forwarded sources need GStreamer: `cyberwave[gstreamer]` plus the system plugins, which the `-gstreamer` driver image ships. Every frame carries video sync data when the `cyberwave-video-sync` extension is installed; set `VIDEO_SYNC_REQUIRED = True` to refuse to start without it.
+
+### Connect a camera
+
+#### A USB camera
+
+The SDK opens the camera with OpenCV's V4L2 backend and encodes the frames itself.
+
+```python
+CameraSourceConfig.usb("/dev/v4l/by-id/usb-Acme_HD_Camera_0123ABCD-video-index0", camera_name="wrist_camera")
+CameraSourceConfig.usb(serial_number="0123ABCD", camera_name="wrist_camera", resolution=(1280, 720), fps=30)
+```
+
+- **Name the physical camera, not its slot.** An index (`0`) or `/dev/videoN` moves when cameras are replugged or the host reboots, and a driver with one such camera falls back to any detected camera when it fails. A `/dev/v4l/by-id/…` link or the UVC `serial_number` pins the camera: the driver never substitutes another one. A serial is looked up under `/dev/v4l/by-id` each time the camera opens, so a camera plugged in later, or into another port, is found; until then that camera retries. Keep serials as strings (leading zeros).
+- **Find the camera** on the edge host: `ls -l /dev/v4l/by-id/` (the serial is the field before `-video-index0`; use the `video-index0` node, the capture node), or `v4l2-ctl --list-devices`. A camera that reports no serial (the Logitech C920 is one) can be pinned by port with `/dev/v4l/by-path/…`.
+- **Capture mode:** `resolution` must be a mode the camera offers (`v4l2-ctl -d /dev/video0 --list-formats-ext`). Without it the SDK's default (640×480) is used.
+- **Give the container the device.** In `docker run` or `docker-compose.yml`, pass the node and the udev links, for example `--device /dev/video0` and `-v /dev/v4l:/dev/v4l:ro`. For a driver Edge Core runs, put the same flags in the twin's driver `params`.
+
+#### An incoming RTP stream over UDP
+
+For a camera, drone, or companion computer that sends H.264 as RTP to the edge device. The driver listens on the port and forwards the H.264 without decoding it.
+
+```python
+CameraSourceConfig.from_url("rtp://0.0.0.0:5600", camera_name="nose_camera")   # any interface
+CameraSourceConfig.from_url("rtp://239.0.0.1:5600", camera_name="nose_camera") # join a multicast group
+```
+
+- **Sender:** H.264 in RTP, 90 kHz clock, to the edge device's address and this port, one port per camera. To test without hardware:
+
+  ```bash
+  gst-launch-1.0 videotestsrc is-live=true ! video/x-raw,width=1280,height=720,framerate=30/1 \
+    ! x264enc tune=zerolatency key-int-max=30 ! rtph264pay config-interval=1 pt=96 \
+    ! udpsink host=<edge-ip> port=5600
+  ```
+
+- **Keyframes:** the stream starts at the first keyframe; the driver waits `GST_KEYFRAME_TIMEOUT_S` (15 s) and then retries. Have the sender repeat SPS/PPS (`config-interval=1`) and send a keyframe every second or two, so a viewer that joins late gets a picture quickly.
+- **Network:** on Linux, Edge Core runs drivers with host networking, so the container receives on the host's port; open it in the host firewall. Elsewhere (macOS, or a container on a bridge network) publish it: `-p 5600:5600/udp`.
+- Only H.264 is forwarded. For H.265 or VP8, convert at the sender or use `push_h264()` from your own receiver. MPEG-TS over UDP or TCP works the same way with `udp://host:port` or `tcp://host:port`.
+
+#### An IP camera
+
+Most IP cameras and NVRs serve H.264 over RTSP. The driver pulls it over TCP and forwards the camera's own H.264, so a 4K camera costs no encoding on the edge device.
+
+```python
+import os
+
+CameraSourceConfig.from_url(os.environ["GATE_CAMERA_URL"], camera_name="gate_camera")
+# GATE_CAMERA_URL=rtsp://user:password@10.0.0.9:554/Streaming/Channels/101
+```
+
+- **The URL** is vendor-specific; check the camera's manual. Common forms: Hikvision `rtsp://<ip>:554/Streaming/Channels/101` (main) or `102` (sub stream), Axis `rtsp://<ip>/axis-media/media.amp`, Reolink `rtsp://<ip>:554/h264Preview_01_main`. Check it from the edge host with `gst-launch-1.0 rtspsrc location="<url>" ! fakesink` or `ffprobe "<url>"`.
+- **Camera settings:** set the codec to H.264 (not H.265 or "H.264+"), and the I-frame interval to about one or two seconds. Prefer the sub stream when the main one is larger than you need: the driver forwards the camera's resolution and bitrate as they are.
+- **Credentials:** keep them out of the code and the image. Read the URL from an environment variable as above; the driver redacts `user:password@` from logs and errors.
+- **Decode instead** with `decode=True` when the camera serves MJPEG over `http://`, only H.265, or when you need worker overlays or the frame filter on this camera: OpenCV opens the URL and the SDK re-encodes the frames. This works on the standard image and costs CPU per frame.
+
+### A camera driver
+
+`BaseCameraDriver` is `BaseDriver` with the mixin wired in. The camera is the device: if it cannot be opened, the driver exits (code 66) before it reports ACTIVE.
+
+```python
+import os
+
+from cyberwave.driver import BaseCameraDriver, CameraSourceConfig
+
+
+class MyIpCamera(BaseCameraDriver):
+    CAMERA_SOURCE = CameraSourceConfig.from_url(os.environ["CAMERA_URL"], camera_name="color_camera")
+
+
+MyIpCamera.main()
+```
+
+Without `CAMERA_SOURCE`, the camera comes from the twin metadata Edge Core passes to the container:
+
+| Metadata | Effect |
+| -------- | ------ |
+| `video_device` | Index, `/dev/video*` or `/dev/v4l/by-*` path, or stream URL. Default `0`. |
+| `serial_number` | UVC: resolved to its `/dev/v4l/by-id` node. RealSense: pins that unit. |
+| `is_depth_camera` | Overrides the depth mode derived from the twin's sensors (RealSense when true). |
+| `resolution`, `fps`, `depth_fps` | Capture mode (`"WxH"`) and rates. Defaults: SDK resolution, 30, 30. |
+| `gst_source` | GStreamer fragment that produces H.264 (for example `v4l2src device=/dev/video2 ! video/x-h264`). Forwarded without re-encoding. |
+| `h264_passthrough` | With a stream URL as `video_device`: forward the camera's own H.264, using the same URL forms as `from_url`. |
+| `frame_filter_enabled`, `frame_filter_freshness_ms` | Encode worker frames from `frames/filtered` instead of the capture; black when stale. Needs the Zenoh data bus and a source the SDK encodes. |
+
+When a camera from metadata fails to open, the driver retries with the first detected camera, unless the configuration names one physical device (a serial, a `/dev/v4l/by-*` path, a URL or a GStreamer source). Override `on_camera_frame(frame, camera)` to edit raw frames before they are encoded.
+
+### Several cameras
+
+List them in `CAMERAS`, each with a `camera_name`. The name is the sensor id on the driver's twin; it names the camera's WebRTC stream and its `frames/<camera_name>` channel. The same driver can mix sources:
+
+```python
+from cyberwave.driver import BaseDriver, CameraSourceConfig, CameraStatus, CameraStreamMixin
+
+
+class MyArmDriver(CameraStreamMixin, BaseDriver):
+    CAMERAS = [
+        CameraSourceConfig.from_url("rtsp://10.0.0.5/wrist", camera_name="wrist_camera"),
+        CameraSourceConfig.usb(serial_number="0123ABCD", camera_name="base_camera"),
+        CameraSourceConfig.push(camera_name="overhead_camera"),
+    ]
+
+    async def on_connect_to_device(self) -> None:
+        arm_sdk.on_h264_frame(lambda frame: self.push_h264(frame, camera="overhead_camera"))
+
+    def on_camera_status(self, camera: str, status: CameraStatus, reason: str | None) -> None:
+        if camera == "wrist_camera" and status is CameraStatus.RETRYING:
+            ...  # e.g. pause grasping until the wrist camera is back
+```
+
+Each camera runs on its own:
+
+- It has its own stream, retry with backoff, and alert (component `camera/<camera_name>`). A camera that fails never stops the driver or the other cameras. With several cameras, the driver never substitutes a detected device for one that fails, because it could be another camera's.
+- `on_camera_status(camera, status, reason)` reports `starting`, `streaming`, `retrying`, `stopped` and `failed` (a camera that cannot stream at all, for example with frame sync required but missing). `self.cameras` maps each `camera_name` to its stream, with `.status` and `.config`.
+- `start_video` / `stop_video` apply to every camera, or only to the one whose `sensor` the command names.
+- `push_h264(frame, camera=...)` names the push camera; you can leave `camera` out when the driver has only one.
+- Worker detections are drawn on the camera whose `sensor` the payload names: pass `stream="<camera_name>"` to `model.predict()`. Detections that name no sensor are drawn only when the driver has a single camera, never on a guessed one. Workflow overlays (`frames/overlay`) name no sensor, so they are drawn on the first camera. The frame filter (`frames/filtered`) also names no sensor, so a driver with several cameras refuses to start with it enabled rather than stream the others unfiltered.
+
+A `BaseCameraDriver` with several cameras activates as long as one camera opens, and retries the rest. It exits with code 66 only when none opens.
+
+<Note>
+  `CAMERAS` is for cameras that are **sensors of one twin**: the robot's asset declares them under its sensors, and they stream through the robot's driver. A camera modelled as **its own twin** (for example a child camera twin attached to an arm) gets its own driver: Edge Core starts one per camera twin. That driver is usually the stock camera driver, or a two-line `BaseCameraDriver`. See [Multi-camera driver orchestration](/feature-reference/edge/drivers/multi-camera-driver-orchestration).
+</Note>
+
+### Video from a robot driver
+
+Compose the mixin with your own `BaseDriver` or `BaseROS2Driver`, for example in a bridge next to a vendor driver. It starts itself in `on_start_monitoring()` once the driver is ACTIVE, next to the base class's monitoring:
+
+```python
+from cyberwave.driver import CameraSourceConfig, CameraStreamMixin
+from cyberwave.driver.ros2 import BaseROS2Driver
+
+
+class MyRobotBridge(CameraStreamMixin, BaseROS2Driver):
+    CAMERA_SOURCE = CameraSourceConfig.push(camera_name="front_camera")
+
+    def connect_to_device(self) -> None:
+        super().connect_to_device()
+        robot_sdk.on_h264_frame(lambda frame, captured_at: self.push_h264(frame, capture_time=captured_at))
+```
+
+In a robot driver the camera does not decide the driver's fate:
+
+- A stream that fails to open raises a camera alert and is retried with backoff (`CAMERA_START_RETRY_S`, doubling up to 60 s); the driver and its other cameras keep running.
+- `start_video` / `stop_video` start and stop the stream without changing the driver's lifecycle state.
+- The driver keeps its own `edge_health` heartbeat.
+
+`push_h264()` is safe from any thread and never blocks; frames pushed before the stream opens are dropped. `capture_time` is the frame's capture time as `time.time()` seconds; it goes into the frame's video sync data. Omit it to use the arrival time. See `examples/h264_push_camera.py` and `examples/h264_passthrough_camera.py` in the Python SDK.
 
 ---
 

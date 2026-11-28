@@ -8,7 +8,7 @@ icon: "cube"
 detector — `call_model`, `barcode_reader`, or any node that emits a `detections` array — plus a
 color-registered depth map, and returns a metric 3D position in the camera's optical frame.
 
-A companion ROS 2 node (`cyberwave_object_pose_transform`) can tf2-lift that pose into `base_link`
+A companion ROS 2 node can tf2-lift that pose into `base_link`
 or any other frame configured in your robot's URDF; the workflow node itself stays out of TF
 resolution so it runs unchanged across robots.
 
